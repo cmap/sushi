@@ -129,7 +129,9 @@ filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, cell_set_me
     merge(sample_meta, by.x=c("index_1", "index_2"), by.y=c("IndexBarcode1", "IndexBarcode2")) %>% 
     merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% 
     merge(cell_set_meta, by="cell_set", all.x=T) %>% 
-    dplyr::filter(mapply(grepl, LUA, members) | (forward_read_cl_barcode %in% CB_meta$Sequence)) 
+    dplyr::filter(mapply(grepl, LUA, members) | 
+                    (mapply(grepl, LUA, cell_set) & is.na(members)) | 
+                    (forward_read_cl_barcode %in% CB_meta$Sequence)) 
   cell_line_purity = sum(cell_line_filtered$n) / sum(index_filtered$n) 
   
   write(paste0("index_purity: ", round(index_purity*100, 2), "% \n",
