@@ -260,8 +260,9 @@ filtrc_out_file = paste(
   'filtered_counts.csv',
   sep='/'
 )
-write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
 
+print(paste("writing filtered counts csv to: ", filtrc_out_file))
+write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
 
 ## Make GCTX file
 ## For compatibility with other tools
