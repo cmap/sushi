@@ -7,7 +7,7 @@ suppressPackageStartupMessages(library(magrittr))
 #suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(readr)) #write_delim 
 suppressPackageStartupMessages(library(stringr)) #str_detect
-suppressPackageStartupMessages(library(dplyr)) #n()
+suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 suppressPackageStartupMessages(library(reshape2))
 
@@ -294,7 +294,7 @@ rownames(cell_line_meta) <- cell_line_meta$LUA
 col_desc = sample_meta[sample_meta$profile_id %in% colnames(counts_mat),]
 row_desc = cell_line_meta[cell_line_meta$LUA %in% rids,]
 
-counts_gct <- new("GCT", mat=counts_mat, rdesc=row_desc, cdesc=col_desc)
+counts_gct <- new("GCT", mat=counts_mat, rid = rownames(counts_mat), cid = colnames(counts_mat), rdesc=row_desc, cdesc=col_desc)
 
 filtrc_out_gct = paste(
   args$out,
