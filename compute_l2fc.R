@@ -1,3 +1,11 @@
+suppressPackageStartupMessages(library(argparse))
+#suppressMessages(library(cmapR))
+suppressPackageStartupMessages(library(dplyr)) #n()
+#suppressPackageStartupMessages(library(scam))
+#suppressPackageStartupMessages(library(magrittr))
+#suppressPackageStartupMessages(library(tidyverse))
+#suppressPackageStartupMessages(library(reshape2))
+
 ## compute_l2fc
 ## takes collapsed counts and computes log-fold change values as compared to the annotated control columns
 ##

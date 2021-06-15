@@ -119,7 +119,7 @@ write_df_from_fastq <- function(
 ##      cell_line_meta - master metadata of cell lines
 ##      cell_set_meta - master metdata of cell sets and their contents
 ##      CB_meta - master metdata of control barcodes, their sequences, and their doses
-filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, cell_set_meta, CB_meta) {
+filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, cell_set_meta, CB_meta, out=getwd()) {
   index_filtered = raw_counts %>% 
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1,
                   index_2 %in% sample_meta$IndexBarcode2)
@@ -136,7 +136,7 @@ filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, cell_set_me
   
   write(paste0("index_purity: ", round(index_purity*100, 2), "% \n",
                "cell_line_purity: ", round(cell_line_purity*100, 2), "%"),
-        "filtering_QC.txt")
+        paste(out, "filtering_QC.txt", sep='/'))
   
   annotated_counts = cell_line_filtered %>% 
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% 
