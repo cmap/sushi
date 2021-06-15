@@ -267,40 +267,41 @@ write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
 ## Make GCTX file
 ## For compatibility with other tools
 
-counts_df = with(
-  filtered_counts[!is.na(filtered_counts$LUA),], #Remove rows where cell line LUA is not known
-  data.frame(
-    cid = profile_id,
-    rid=LUA,
-    value=n )
-)   #Extract matrix columns
-
-#Pivot 
-counts_mat <- counts_df %>% 
-  pivot_wider(
-    names_from = cid,
-    id_cols = rid,
-    values_from = value,
-    values_fn=as.numeric
-  )
-
-rids = counts_mat$rid
-counts_mat <- as.matrix(counts_mat[-1])
-rownames(counts_mat) <- rids
-
-rownames(sample_meta) <- sample_meta$profile_id
-rownames(cell_line_meta) <- cell_line_meta$LUA
-
-col_desc = sample_meta[sample_meta$profile_id %in% colnames(counts_mat),]
-row_desc = cell_line_meta[cell_line_meta$LUA %in% rids,]
-
-counts_gct <- new("GCT", mat=counts_mat, rid = rownames(counts_mat), cid = colnames(counts_mat), rdesc=row_desc, cdesc=col_desc)
-
-filtrc_out_gct = paste(
-  args$out,
-  'Level2_counts',
-  sep='/'
-)
-print(paste0("Writing GCTx file to ", filtrc_out_gct))
-write_gctx(counts_gct, filtrc_out_gct)
+# 
+# counts_df = with(
+#   filtered_counts[!is.na(filtered_counts$LUA),], #Remove rows where cell line LUA is not known
+#   data.frame(
+#     cid = profile_id,
+#     rid=LUA,
+#     value=n )
+# )   #Extract matrix columns
+# 
+# #Pivot 
+# counts_mat <- counts_df %>% 
+#   pivot_wider(
+#     names_from = cid,
+#     id_cols = rid,
+#     values_from = value,
+#     values_fn=as.numeric
+#   )
+# 
+# rids = counts_mat$rid
+# counts_mat <- as.matrix(counts_mat[-1])
+# rownames(counts_mat) <- rids
+# 
+# rownames(sample_meta) <- sample_meta$profile_id
+# rownames(cell_line_meta) <- cell_line_meta$LUA
+# 
+# col_desc = sample_meta[sample_meta$profile_id %in% colnames(counts_mat),]
+# row_desc = cell_line_meta[cell_line_meta$LUA %in% rids,]
+# 
+# #counts_gct <- new("GCT", mat=counts_mat, rid = rownames(counts_mat), cid = colnames(counts_mat), rdesc=row_desc, cdesc=col_desc)
+# 
+# filtrc_out_gct = paste(
+#   args$out,
+#   'Level2_counts',
+#   sep='/'
+# )
+# #print(paste0("Writing GCTx file to ", filtrc_out_gct))
+# #write_gctx(counts_gct, filtrc_out_gct)
 
