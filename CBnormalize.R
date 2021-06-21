@@ -1,9 +1,9 @@
 suppressPackageStartupMessages(library(argparse))
-suppressMessages(library(cmapR))
+#suppressMessages(library(cmapR))
 suppressPackageStartupMessages(library(dplyr)) #n()
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-suppressPackageStartupMessages(library(tidyverse))
+#suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(reshape2))
 ## normalize
 ## takes a filtered dataframe of raw read counts and normalizes
@@ -19,13 +19,13 @@ suppressPackageStartupMessages(library(reshape2))
 normalize <- function(X, barcodes) {
   normalized <- X %>%
     dplyr::group_by(sample_ID) %>%
-    dplyr::mutate(new_log_n = scam(y ~ s(x, bs = "mpi"), 
-                                   data = tibble(
-                                     y = log_dose[Name %in% barcodes], 
-                                     x = log_n[Name %in% barcodes])) %>% 
+    dplyr::mutate(log_normalized_n = glm(y ~ x,
+                                         data = tibble(
+                                           y = log_dose[Name %in% barcodes],
+                                           x = log_n[Name %in% barcodes])) %>% 
                     predict(newdata = tibble(x = log_n))) %>%
     dplyr::ungroup() %>% 
-    dplyr::mutate(normalized_n = 10^new_log_n)
+    dplyr::mutate(normalized_n = 10^log_normalized_n)
   
   return(normalized)
 }

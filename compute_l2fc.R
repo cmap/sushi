@@ -6,28 +6,37 @@ suppressPackageStartupMessages(library(dplyr)) #n()
 #suppressPackageStartupMessages(library(tidyverse))
 #suppressPackageStartupMessages(library(reshape2))
 
-#TODO fix dependecies
-
-
 ## compute_l2fc
-## takes collapsed counts and computes log-fold change values as compared to the annotated control columns
+## takes normalized counts and computes log-fold change values as compared to the annotated control columns
 ##
 ## takes:
-##      collapsed_counts - table with median_normalized_n column and control_sample column that designates the 
+##      normalized_counts - table with normalized_n column and control_sample column that designates the 
 ##          name of the control sample for each treatment sample
-compute_l2fc = function(collapsed_counts) {
-  treatments = collapsed_counts %>% 
-    filter(!(trt_type %in% c("trt_ctrl", "negcon", "day_0")))
-  controls = collapsed_counts %>% 
-    filter(trt_type %in% c("trt_ctrl", "negcon")) %>% 
+compute_l2fc = function(normalized_counts) {
+  treatments = normalized_counts %>% 
+    filter(!(trt_type %in% c("trt_ctrl", "negcon", "day_0")),
+           is.na(Name)) %>% 
+    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
+    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
+    dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
+    ungroup()
+  controls = normalized_counts %>% 
+    filter(trt_type %in% c("trt_ctrl", "negcon"),
+           is.na(Name)) %>% 
     mutate(control_sample=sample_ID) %>% 
-    rename(control_median_normalized_n = median_normalized_n) %>% 
-    dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, control_sample, control_median_normalized_n)
+    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
+    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
+    dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
+    ungroup() %>% 
+    group_by_at(setdiff(names(.), c("sum_normalized_n", "bio_rep"))) %>% 
+    dplyr::summarise(control_median_normalized_n = median(sum_normalized_n),
+                     control_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(n())) %>% 
+    ungroup() %>% 
+    mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5, F, T)) %>% 
+    dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, control_sample, control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
   l2fc = treatments %>% 
     merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set", "control_sample"), all.x=T, all.y=T) %>% 
-    mutate(l2fc=log2(median_normalized_n/control_median_normalized_n)) %>% 
-    dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, sample_ID, trt_type, control_sample, 
-                  median_normalized_n, control_median_normalized_n, l2fc)
+    mutate(l2fc=log2(sum_normalized_n/control_median_normalized_n)) 
   
   return(l2fc)
 }
@@ -43,7 +52,6 @@ parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--collapsed_counts", default="collapsed_counts.csv",
                     help="Path to directory containing fastq files")
 parser$add_argument("--out", default="", help = "Output path. Default is working directory")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
