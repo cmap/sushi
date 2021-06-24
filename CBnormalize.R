@@ -39,8 +39,8 @@ parser$add_argument("-q", "--quietly", action="store_false",
 
 
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--read_counts", default="filtered_counts.csv",
-                    help="Path to directory containing fastq files")
+parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
+                    help="path to file containing filtered counts")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("--out", default="", help = "Output path. Default is working directory")
 
@@ -53,7 +53,7 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
-filtered_counts = read.csv(args$read_counts)
+filtered_counts = read.csv(args$filtered_counts)
 CB_meta = read.csv(args$CB_meta)
 
 print("creating normalized count file")
