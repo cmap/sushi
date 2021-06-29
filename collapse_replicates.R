@@ -3,9 +3,10 @@ suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(dplyr)) #n()
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-suppressPackageStartupMessages(library(tidyverse))
+#suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
-
+suppressPackageStartupMessages(library(tibble))
 
 ## check_replicate_cor
 ## checks that technical and biological replicates are all well correlated with each other
@@ -16,29 +17,58 @@ suppressPackageStartupMessages(library(reshape2))
 ##          with at least one negcon sample and normalized_n column
 check_replicate_cor = function(normalized_counts) {
   tech_rep_cor = normalized_counts %>% 
-    filter(trt_type=="negcon", is.na(Name)) %>% 
-    dcast(CCLE_name+sample_ID+bio_rep~tech_rep, value.var="normalized_n") %>% 
-    dplyr::select(-CCLE_name, -sample_ID, -bio_rep) %>% 
-    cor(use="complete.obs") %>% 
-    as.data.frame()
+    filter(is.na(Name)) %>% 
+    dcast(CCLE_name~sample_ID+bio_rep+tech_rep, value.var="log_normalized_n") %>% 
+    dplyr::select(-CCLE_name) %>% 
+    cor(use="complete.obs") %>% as.data.frame() 
   
   write.csv(tech_rep_cor, "tech_rep_cor.csv", row.names=T, quote=F)
   
+  tech_rep_cor_long = tech_rep_cor %>% 
+    rownames_to_column("sample_1") %>% 
+    melt(id.vars="sample_1", variable.name="sample_2", value.name="cor") %>% 
+    mutate(sample_ID_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist(),
+           sample_ID_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist()) %>% 
+    filter(sample_ID_1 == sample_ID_2) %>% 
+    mutate(bio_rep_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist(),
+           bio_rep_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist()) %>% 
+    filter(bio_rep_1 == bio_rep_2) %>%
+    mutate(tech_rep_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 3) %>% unlist(),
+           tech_rep_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 3) %>% unlist()) %>%
+    filter(tech_rep_2>tech_rep_1) %>% 
+    dplyr::rename(sample_ID = sample_ID_1, bio_rep = bio_rep_1) %>% 
+    dcast(sample_ID+bio_rep~tech_rep_1+tech_rep_2, value.var="cor")
+  
+  write.csv(tech_rep_cor_long, "tech_rep_cor_long.csv", row.names=T, quote=F)
+  
   tech_collapsed_counts = normalized_counts %>% 
     filter(is.na(Name)) %>%  
-    #group_by(CCLE_name, DepMap_ID, prism_cell_set, sample_ID, bio_rep, trt_type, control_sample) %>% 
-    group_by(CCLE_name, DepMap_ID, prism_cell_set, sample_ID, bio_rep, trt_type) %>% 
+    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n, -profile_id) %>% 
+    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     ungroup()
   
   bio_rep_cor = tech_collapsed_counts %>% 
-    filter(trt_type=="negcon") %>% 
-    dcast(CCLE_name+sample_ID~bio_rep, value.var="sum_normalized_n") %>% 
-    dplyr::select(-CCLE_name, -sample_ID) %>% 
+    dcast(CCLE_name~sample_ID+bio_rep, value.var="sum_normalized_n") %>% 
+    dplyr::select(-CCLE_name) %>% 
     cor(use="complete.obs") %>% 
     as.data.frame()
   
   write.csv(bio_rep_cor, "bio_rep_cor.csv", row.names=T, quote=F)
+  
+  bio_rep_cor_long = bio_rep_cor %>% 
+    rownames_to_column("sample_1") %>% 
+    melt(id.vars="sample_1", variable.name="sample_2", value.name="cor") %>% 
+    mutate(sample_ID_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist(),
+           sample_ID_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist()) %>% 
+    filter(sample_ID_1 == sample_ID_2) %>% 
+    mutate(bio_rep_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist(),
+           bio_rep_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist()) %>% 
+    filter(bio_rep_2>bio_rep_1) %>% 
+    dplyr::rename(sample_ID = sample_ID_1) %>% 
+    dcast(sample_ID~bio_rep_1+bio_rep_2, value.var="cor")
+  
+  write.csv(bio_rep_cor_long, "bio_rep_cor_long.csv", row.names=T, quote=F)
 }
 
 ## collapse_counts
@@ -48,19 +78,16 @@ check_replicate_cor = function(normalized_counts) {
 ##
 ## takes:
 ##      filtered_normalized_counts - normalized counts with bad replicates already filtered out
-collapse_counts = function(normalized_counts) {
-  collapsed_counts = normalized_counts %>% 
-    filter(is.na(Name)) %>%  
-    #group_by(CCLE_name, DepMap_ID, prism_cell_set, cell_set, sample_ID, trt_type, control_sample, bio_rep) %>% 
-    group_by(CCLE_name, DepMap_ID, prism_cell_set, cell_set, sample_ID, trt_type, bio_rep) %>% 
-    dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
+collapse_counts = function(l2fc) {
+  collapsed_counts = l2fc %>% 
+    filter(control_pass_QC) %>% 
+    group_by_at(setdiff(names(.), c("bio_rep", "sum_normalized_n", "control_mad_sqrtN", "l2fc", "control_pass_QC", "control_median_normalized_n"))) %>% 
+    dplyr::summarise(trt_median_normalized_n = median(sum_normalized_n),
+                     median_l2fc = median(l2fc),
+                     trt_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(n())) %>% 
     ungroup() %>% 
-    #group_by(CCLE_name, DepMap_ID, prism_cell_set, scell_set, ample_ID, trt_type, control_sample) %>% 
-    group_by(CCLE_name, DepMap_ID, prism_cell_set, cell_set, sample_ID, trt_type) %>% 
-    dplyr::summarise(median_normalized_n = median(sum_normalized_n),
-                     mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(n())) %>% 
-    ungroup() %>% 
-    mutate(pass_QC = ifelse(mad_sqrtN > 0.5, F, T))
+    mutate(trt_pass_QC = ifelse(trt_mad_sqrtN > 0.5, F, T)) %>% 
+    dplyr::relocate(trt_median_normalized_n, trt_mad_sqrtN, trt_pass_QC, median_l2fc, .after=last_col())
   
   return(collapsed_counts)
 }
@@ -73,10 +100,11 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
 parser$add_argument("-q", "--quietly", action="store_false", 
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
-                    help="Path to directory containing fastq files")
+parser$add_argument("-c", "--lfc", default="l2fc.csv",
+                    help="path to file containing l2fc values")
+parser$add_argument("-n", "--normalized_counts", default="normalized_counts.csv",
+                    help="path to file containing normalized counts")
 parser$add_argument("--out", default="", help = "Output path. Default is working directory")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -85,17 +113,18 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
+lfc_values = read.csv(args$lfc)
 normalized_counts = read.csv(args$normalized_counts)
 
 print("checking replicate correlation")
 check_replicate_cor(normalized_counts)
 
 print("collapsing counts")
-collapsed_counts = collapse_counts(normalized_counts)
+collapsed_counts = collapse_counts(lfc_values)
 
 collapsed_count_out_file = paste(
   args$out,
-  "collapsed_counts.csv",
+  "collapsed_values.csv",
   sep='/'
 )
 

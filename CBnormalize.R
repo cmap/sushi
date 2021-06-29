@@ -1,9 +1,9 @@
 suppressPackageStartupMessages(library(argparse))
-suppressMessages(library(cmapR))
+#suppressMessages(library(cmapR))
 suppressPackageStartupMessages(library(dplyr)) #n()
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-suppressPackageStartupMessages(library(tidyverse))
+#suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(reshape2))
 ## normalize
 ## takes a filtered dataframe of raw read counts and normalizes
@@ -19,13 +19,13 @@ suppressPackageStartupMessages(library(reshape2))
 normalize <- function(X, barcodes) {
   normalized <- X %>%
     dplyr::group_by(sample_ID) %>%
-    dplyr::mutate(new_log_n = scam(y ~ s(x, bs = "mpi"), 
-                                   data = tibble(
-                                     y = log_dose[Name %in% barcodes], 
-                                     x = log_n[Name %in% barcodes])) %>% 
+    dplyr::mutate(log_normalized_n = glm(y ~ x,
+                                         data = tibble(
+                                           y = log_dose[Name %in% barcodes],
+                                           x = log_n[Name %in% barcodes])) %>% 
                     predict(newdata = tibble(x = log_n))) %>%
     dplyr::ungroup() %>% 
-    dplyr::mutate(normalized_n = 10^new_log_n)
+    dplyr::mutate(normalized_n = 10^log_normalized_n)
   
   return(normalized)
 }
@@ -39,8 +39,8 @@ parser$add_argument("-q", "--quietly", action="store_false",
 
 
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--read_counts", default="filtered_counts.csv",
-                    help="Path to directory containing fastq files")
+parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
+                    help="path to file containing filtered counts")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("--out", default="", help = "Output path. Default is working directory")
 
@@ -53,7 +53,7 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
-filtered_counts = read.csv(args$read_counts)
+filtered_counts = read.csv(args$filtered_counts)
 CB_meta = read.csv(args$CB_meta)
 
 print("creating normalized count file")
