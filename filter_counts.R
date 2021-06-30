@@ -80,11 +80,6 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-#parser$add_argument("-f", "--fastq", default="fastq/",
-#                    help="Path to directory containing fastq files")
-#parser$add_argument("-i1", "--index_1", default="", help = "Index 1 code")
-#parser$add_argument("-i2", "--index_2", default="", help = "Index 2 code")
-#parser$add_argument("-b", "--barcode_suffix", default="", help = "Barcode Read Files code")
 parser$add_argument("-c", "--raw_counts", default="raw_counts.csv", help = "path to file containing raw counts")
 parser$add_argument("--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("-s", "--sample_meta", default="", help = "Sample metadata")
@@ -115,14 +110,6 @@ id_cols = unlist(strsplit(args$id_cols, ","))
 if (!all(id_cols %in% colnames(sample_meta))){
   stop(paste("Colnames not found in sample_meta, check metadata or --id_cols argument:", args$id_cols))
 }
-
-rc_out_file = paste(
-  args$out,
-  'raw_counts.csv',
-  sep='/'
-)
-
-#raw_counts = read.csv(rc_out_file)
 
 #Generate Profile Ids based on sample_ID, PCR_well, and technical replicate 
 #DONE: make profile_id columns parameters 
