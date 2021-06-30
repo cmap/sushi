@@ -7,6 +7,7 @@ suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
+suppressPackageStartupMessages(library(cdsrbiomarker))
 
 ## collapse_counts
 ## collapses filtered normalized counts and computes MAD/sqrt(n) metrics.
@@ -34,7 +35,7 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
 parser$add_argument("-q", "--quietly", action="store_false", 
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--lfc", default="collapsed_values.csv",
+parser$add_argument("-c", "--collapsed_values", default="collapsed_values.csv",
                     help="path to file containing collapsed l2fc values")
 parser$add_argument("--out", default="", help = "Output path. Default is working directory")
 
