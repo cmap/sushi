@@ -15,14 +15,15 @@ suppressPackageStartupMessages(library(tibble))
 ## takes:
 ##      normmalized_counts - dataframe of normalized counts that must included trt_type column 
 ##          with at least one negcon sample and normalized_n column
-check_replicate_cor = function(normalized_counts) {
+check_replicate_cor = function(normalized_counts, out) {
   tech_rep_cor = normalized_counts %>% 
     filter(is.na(Name)) %>% 
     dcast(CCLE_name~sample_ID+bio_rep+tech_rep, value.var="log_normalized_n") %>% 
     dplyr::select(-CCLE_name) %>% 
     cor(use="complete.obs") %>% as.data.frame() 
   
-  write.csv(tech_rep_cor, "tech_rep_cor.csv", row.names=T, quote=F)
+  trep_out = paste(args$out, "tech_rep_cor.csv", sep='/')
+  write.csv(tech_rep_cor, trep_out, row.names=T, quote=F)
   
   tech_rep_cor_long = tech_rep_cor %>% 
     rownames_to_column("sample_1") %>% 
@@ -39,7 +40,8 @@ check_replicate_cor = function(normalized_counts) {
     dplyr::rename(sample_ID = sample_ID_1, bio_rep = bio_rep_1) %>% 
     dcast(sample_ID+bio_rep~tech_rep_1+tech_rep_2, value.var="cor")
   
-  write.csv(tech_rep_cor_long, "tech_rep_cor_long.csv", row.names=T, quote=F)
+  trep_long_out = paste(args$out, "tech_rep_cor_long.csv", sep='/')
+  write.csv(tech_rep_cor_long, trep_long_out, row.names=T, quote=F)
   
   tech_collapsed_counts = normalized_counts %>% 
     filter(is.na(Name)) %>%  
@@ -54,7 +56,8 @@ check_replicate_cor = function(normalized_counts) {
     cor(use="complete.obs") %>% 
     as.data.frame()
   
-  write.csv(bio_rep_cor, "bio_rep_cor.csv", row.names=T, quote=F)
+  brep_out = paste(args$out, "bio_rep_cor.csv", sep='/')
+  write.csv(bio_rep_cor, brep_out, row.names=T, quote=F)
   
   bio_rep_cor_long = bio_rep_cor %>% 
     rownames_to_column("sample_1") %>% 
@@ -68,7 +71,8 @@ check_replicate_cor = function(normalized_counts) {
     dplyr::rename(sample_ID = sample_ID_1) %>% 
     dcast(sample_ID~bio_rep_1+bio_rep_2, value.var="cor")
   
-  write.csv(bio_rep_cor_long, "bio_rep_cor_long.csv", row.names=T, quote=F)
+  brep_long_out = paste(args$out, "bio_rep_cor_long.csv", sep='/')
+  write.csv(bio_rep_cor_long, brep_long_out, row.names=T, quote=F)
 }
 
 
@@ -93,4 +97,4 @@ if (args$out == ""){
 normalized_counts = read.csv(args$normalized_counts)
 
 print("checking replicate correlation")
-check_replicate_cor(normalized_counts)
+check_replicate_cor(normalized_counts, args$out)
