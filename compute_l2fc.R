@@ -67,4 +67,5 @@ normalized_counts = read.csv(args$normalized_counts)
 print("computing log-fold change")
 l2fc = compute_l2fc(normalized_counts)
 
-write.csv(l2fc, "l2fc.csv", row.names=F, quote=F)
+l2fc_out = paste(args$out, "l2fc.csv", sep="/")
+write.csv(l2fc, l2fc_out, row.names=F, quote=F)

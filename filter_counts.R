@@ -86,7 +86,7 @@ parser$add_argument("-s", "--sample_meta", default="", help = "Sample metadata")
 parser$add_argument("--cell_line_meta", default="../metadata/cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--id_cols", default="sample_ID,PCR_well,tech_rep", help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
+parser$add_argument("--id_cols", default="sample_ID,pcr_well,tech_rep", help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
