@@ -7,6 +7,7 @@ suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
+suppressPackageStartupMessages(library(cdsrbiomarker))
 
 ## collapse_counts
 ## collapses filtered normalized counts and computes MAD/sqrt(n) metrics.
@@ -15,18 +16,15 @@ suppressPackageStartupMessages(library(tibble))
 ##
 ## takes:
 ##      filtered_normalized_counts - normalized counts with bad replicates already filtered out
-collapse_counts = function(l2fc) {
-  collapsed_counts = l2fc %>% 
-    filter(control_pass_QC) %>% 
-    group_by_at(setdiff(names(.), c("bio_rep", "sum_normalized_n", "control_mad_sqrtN", "l2fc", "control_pass_QC", "control_median_normalized_n"))) %>% 
-    dplyr::summarise(trt_median_normalized_n = median(sum_normalized_n),
-                     median_l2fc = median(l2fc),
-                     trt_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(n())) %>% 
-    ungroup() %>% 
-    mutate(trt_pass_QC = ifelse(trt_mad_sqrtN > 0.5, F, T)) %>% 
-    dplyr::relocate(trt_median_normalized_n, trt_mad_sqrtN, trt_pass_QC, median_l2fc, .after=last_col())
+generate_biomarkers = function(collapsed_values) {
+  bio_in = collapsed_values %>% 
+    filter(trt_pass_QC) %>% 
+    dcast(DepMap_ID~sample_ID+control_sample, value.var="median_l2fc") %>% 
+    column_to_rownames("DepMap_ID")
   
-  return(collapsed_counts)
+  bio_out = cdsrbiomarker::get_biomarkers(bio_in)
+  
+  return(bio_out)
 }
 
 
@@ -37,8 +35,8 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
 parser$add_argument("-q", "--quietly", action="store_false", 
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--lfc", default="l2fc.csv",
-                    help="path to file containing l2fc values")
+parser$add_argument("-c", "--collapsed_values", default="collapsed_values.csv",
+                    help="path to file containing collapsed l2fc values")
 parser$add_argument("--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -48,15 +46,20 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
-lfc_values = read.csv(args$lfc)
+collapsed_values = read.csv(args$collapsed_values)
 
-print("collapsing counts")
-collapsed_counts = collapse_counts(lfc_values)
+print("generating biomarker tables")
+bio_out = generate_biomarkers(collapsed_values)
 
-collapsed_count_out_file = paste(
-  args$out,
-  "collapsed_values.csv",
-  sep='/'
-)
+lin_table = biomarker_out$lin_table
+rf_table = biomarker_out$rf_table
+disc_table = biomarker_out$disc_table
 
-write.csv(collapsed_counts, collapsed_count_out_file, row.names=F, quote=F)
+lin_out = paste(args$out, "lin_table.csv", sep='/')
+rf_out = paste(args$out, "rf_table.csv", sep='/')
+disc_out = paste(args$out, "disc_table.csv", sep='/')
+
+print("writing out biomarker tables")
+write.csv(lin_table, lin_out, row.names=F, quote=F)
+write.csv(rf_table, rf_out, row.names=F, quote=F)
+write.csv(disc_table, disc_out, row.names=F, quote=F)
