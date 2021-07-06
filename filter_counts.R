@@ -95,8 +95,7 @@ args <- parser$parse_args()
 if (args$out == ""){
   args$out = args$wkdir
 }
-print_args(args)
-
+#print_args(args)
 
 CB_meta = read.csv(args$CB_meta)
 cell_line_meta = read.csv(args$cell_line_meta)
@@ -118,7 +117,14 @@ sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
 
 
 print("creating filtered count file")
-filtered_counts = filter_raw_reads(raw_counts, sample_meta, cell_line_meta, cell_set_meta, CB_meta)
+filtered_counts = filter_raw_reads(
+  raw_counts,
+  sample_meta,
+  cell_line_meta,
+  cell_set_meta,
+  CB_meta,
+  out=args$out
+)
 
 #Write Filtered Counts Table
 filtrc_out_file = paste(
