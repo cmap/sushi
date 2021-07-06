@@ -8,6 +8,8 @@ suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
 
+# Lena testing push to git
+
 ## check_replicate_cor
 ## checks that technical and biological replicates are all well correlated with each other
 ## returns normalized counts table, filtered for good replicates, and writes out file reporting bad replicates
