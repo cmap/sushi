@@ -39,7 +39,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--lfc", default="l2fc.csv",
                     help="path to file containing l2fc values")
-parser$add_argument("--out", default="", help = "Output path. Default is working directory")
+parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()

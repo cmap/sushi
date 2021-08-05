@@ -139,7 +139,7 @@ parser$add_argument("-f", "--fastq", default="fastq/",
 parser$add_argument("-i1", "--index_1", default="", help = "Index 1 code")
 parser$add_argument("-i2", "--index_2", default="", help = "Index 2 code")
 parser$add_argument("-b", "--barcode_suffix", default="", help = "Barcode Read Files code")
-parser$add_argument("--out", default="", help = "Output path. Default is working directory")
+parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
