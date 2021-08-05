@@ -42,7 +42,7 @@ parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing filtered counts")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--out", default="", help = "Output path. Default is working directory")
+parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 
 
 

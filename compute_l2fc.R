@@ -12,16 +12,16 @@ suppressPackageStartupMessages(library(dplyr)) #n()
 ## takes:
 ##      normalized_counts - table with normalized_n column and control_sample column that designates the 
 ##          name of the control sample for each treatment sample
-compute_l2fc = function(normalized_counts) {
+compute_l2fc = function(normalized_counts, control_types) {
   treatments = normalized_counts %>% 
-    filter(!(trt_type %in% c("trt_ctrl", "negcon", "day_0")),
+    filter(!(trt_type %in% control_types),
            is.na(Name)) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
     group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     ungroup()
   controls = normalized_counts %>% 
-    filter(trt_type %in% c("trt_ctrl", "negcon"),
+    filter(trt_type %in% control_types,
            is.na(Name)) %>% 
     mutate(control_sample=sample_ID) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
@@ -54,7 +54,8 @@ parser$add_argument("-q", "--quietly", action="store_false",
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
-parser$add_argument("--out", default="", help = "Output path. Default is working directory")
+parser$add_argument("-ct", "--control_types", default="trt_ctrl,negcon", help="trt_types to use as control")
+parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -63,10 +64,12 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
+control_types = unlist(strsplit(args$control_types, ","))
+
 normalized_counts = read.csv(args$normalized_counts)
 
 print("computing log-fold change")
-l2fc = compute_l2fc(normalized_counts)
+l2fc = compute_l2fc(normalized_counts, control_types)
 
 l2fc_out = paste(args$out, "l2fc.csv", sep="/")
 write.csv(l2fc, l2fc_out, row.names=F, quote=F)
