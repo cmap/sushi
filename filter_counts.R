@@ -44,7 +44,7 @@ filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, cell_set_me
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% 
     dplyr::select_if(function(col) sum(is.na(col)) < length(col)) %>% 
     dplyr::select(-any_of(c("flowcell_name", "flowcell_lane", "index_1", "index_2", "members", 
-                          "lysate_well", "lysate_plate", "PCR_well", "PCR_plate",
+                          "lysate_well", "lysate_plate", "pcr_well", "pcr_plate",
                           "forward_read_cl_barcode", "LUA"))) %>% 
     dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, Name, log_dose, profile_id, sample_ID, trt_type, control_sample, control_barcodes,
                     bio_rep, tech_rep) %>% 
@@ -86,7 +86,7 @@ parser$add_argument("-s", "--sample_meta", default="", help = "Sample metadata")
 parser$add_argument("--cell_line_meta", default="../metadata/cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--id_cols", default="sample_ID,PCR_well,tech_rep", help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
+parser$add_argument("--id_cols", default="sample_ID,pcr_well,tech_rep", help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -95,8 +95,7 @@ args <- parser$parse_args()
 if (args$out == ""){
   args$out = args$wkdir
 }
-print_args(args)
-
+#print_args(args)
 
 CB_meta = read.csv(args$CB_meta)
 cell_line_meta = read.csv(args$cell_line_meta)
@@ -118,7 +117,14 @@ sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
 
 
 print("creating filtered count file")
-filtered_counts = filter_raw_reads(raw_counts, sample_meta, cell_line_meta, cell_set_meta, CB_meta)
+filtered_counts = filter_raw_reads(
+  raw_counts,
+  sample_meta,
+  cell_line_meta,
+  cell_set_meta,
+  CB_meta,
+  out=args$out
+)
 
 #Write Filtered Counts Table
 filtrc_out_file = paste(

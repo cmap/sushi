@@ -148,7 +148,7 @@ args <- parser$parse_args()
 if (args$out == ""){
   args$out = args$wkdir
 }
-print_args(args)
+#print_args(args)
 
 read_directory_contents <- c(args$fastq) %>% 
   purrr::map(list.files, full.names = T) %>%

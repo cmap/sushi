@@ -28,7 +28,8 @@ compute_l2fc = function(normalized_counts) {
     group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     ungroup() %>% 
-    group_by_at(setdiff(names(.), c("sum_normalized_n", "bio_rep"))) %>% 
+    #group_by_at(setdiff(names(.), c("sum_normalized_n", "bio_rep"))) %>% 
+    group_by(CCLE_name, DepMap_ID, prism_cell_set, control_sample) %>% 
     dplyr::summarise(control_median_normalized_n = median(sum_normalized_n),
                      control_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(n())) %>% 
     ungroup() %>% 
@@ -67,4 +68,5 @@ normalized_counts = read.csv(args$normalized_counts)
 print("computing log-fold change")
 l2fc = compute_l2fc(normalized_counts)
 
-write.csv(l2fc, "l2fc.csv", row.names=F, quote=F)
+l2fc_out = paste(args$out, "l2fc.csv", sep="/")
+write.csv(l2fc, l2fc_out, row.names=F, quote=F)
