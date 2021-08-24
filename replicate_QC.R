@@ -18,7 +18,7 @@ suppressPackageStartupMessages(library(tibble))
 check_replicate_cor = function(normalized_counts, out) {
   tech_rep_cor = normalized_counts %>% 
     filter(is.na(Name)) %>% 
-    dcast(CCLE_name~sample_ID+bio_rep+tech_rep, value.var="log_normalized_n") %>% 
+    dcast(CCLE_name~profile_id+bio_rep+tech_rep, value.var="log_normalized_n") %>% 
     dplyr::select(-CCLE_name) %>% 
     cor(use="complete.obs") %>% as.data.frame() 
   
@@ -27,31 +27,25 @@ check_replicate_cor = function(normalized_counts, out) {
   
   tech_rep_cor_long = tech_rep_cor %>% 
     rownames_to_column("sample_1") %>% 
-    melt(id.vars="sample_1", variable.name="sample_2", value.name="cor") %>% 
-    mutate(sample_ID_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist(),
-           sample_ID_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist()) %>% 
-    filter(sample_ID_1 == sample_ID_2) %>% 
-    mutate(bio_rep_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist(),
-           bio_rep_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist()) %>% 
-    filter(bio_rep_1 == bio_rep_2) %>%
-    mutate(tech_rep_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 3) %>% unlist(),
-           tech_rep_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 3) %>% unlist()) %>%
-    filter(tech_rep_2>tech_rep_1) %>% 
-    dplyr::rename(sample_ID = sample_ID_1, bio_rep = bio_rep_1) %>% 
-    dcast(sample_ID+bio_rep~tech_rep_1+tech_rep_2, value.var="cor")
+    melt(id.vars="sample_1", variable.name="sample_2", value.name="tech_rep_cor") %>% 
+    mutate(sample_1 = gsub('.{2}$', '', sample_1),
+           sample_2 = gsub('.{2}$', '', sample_2)) %>% 
+    filter(sample_1 == sample_2) %>% 
+    dplyr::rename(profile_id = sample_1) %>% 
+    dplyr::select(profile_id, tech_rep_cor)
   
   trep_long_out = paste(args$out, "tech_rep_cor_long.csv", sep='/')
   write.csv(tech_rep_cor_long, trep_long_out, row.names=T, quote=F)
   
   tech_collapsed_counts = normalized_counts %>% 
     filter(is.na(Name)) %>%  
-    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n, -profile_id) %>% 
+    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
     group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     ungroup()
   
   bio_rep_cor = tech_collapsed_counts %>% 
-    dcast(CCLE_name~sample_ID+bio_rep, value.var="sum_normalized_n") %>% 
+    dcast(CCLE_name~profile_id+bio_rep, value.var="sum_normalized_n") %>% 
     dplyr::select(-CCLE_name) %>% 
     cor(use="complete.obs") %>% 
     as.data.frame()
@@ -68,8 +62,8 @@ check_replicate_cor = function(normalized_counts, out) {
     mutate(bio_rep_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist(),
            bio_rep_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist()) %>% 
     filter(bio_rep_2>bio_rep_1) %>% 
-    dplyr::rename(sample_ID = sample_ID_1) %>% 
-    dcast(sample_ID~bio_rep_1+bio_rep_2, value.var="cor")
+    dplyr::rename(profile_id = sample_ID_1) %>% 
+    dcast(profile_id~bio_rep_1+bio_rep_2, value.var="cor")
   
   brep_long_out = paste(args$out, "bio_rep_cor_long.csv", sep='/')
   write.csv(bio_rep_cor_long, brep_long_out, row.names=T, quote=F)

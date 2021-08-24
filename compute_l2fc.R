@@ -12,34 +12,39 @@ suppressPackageStartupMessages(library(dplyr)) #n()
 ## takes:
 ##      normalized_counts - table with normalized_n column and control_sample column that designates the 
 ##          name of the control sample for each treatment sample
-compute_l2fc = function(normalized_counts, control_types) {
+compute_l2fc = function(normalized_counts, control_type) {
   treatments = normalized_counts %>% 
-    filter(!(trt_type %in% control_types),
+    filter(trt_type!=control_type, trt_type!="day_0",
            is.na(Name)) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
+    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     ungroup()
+  
   controls = normalized_counts %>% 
-    filter(trt_type %in% control_types,
+    filter(trt_type==control_type,
            is.na(Name)) %>% 
-    mutate(control_sample=sample_ID) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
+    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     ungroup() %>% 
-    #group_by_at(setdiff(names(.), c("sum_normalized_n", "bio_rep"))) %>% 
-    group_by(CCLE_name, DepMap_ID, prism_cell_set, control_sample) %>% 
+    group_by(CCLE_name, DepMap_ID, prism_cell_set) %>% 
     dplyr::summarise(control_median_normalized_n = median(sum_normalized_n),
                      control_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(n())) %>% 
     ungroup() %>% 
     mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5, F, T)) %>% 
-    dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, control_sample, control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
+    dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
+  
+  if(nrow(controls)==0) {
+    print("No samples found for indicated control type.")
+    stop()
+  }
+  
   l2fc = treatments %>% 
-    merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set", "control_sample"), all.x=T, all.y=T) %>% 
+    merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set"), all.x=T, all.y=T) %>% 
     mutate(l2fc=log2(sum_normalized_n/control_median_normalized_n)) %>% 
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, sample_ID, trt_type, control_sample, control_barcodes,
-                    bio_rep)
+    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, profile_id, trt_type, control_barcodes,
+                    bio_rep) 
   
   return(l2fc)
 }
@@ -54,7 +59,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
-parser$add_argument("-ct", "--control_types", default="trt_ctrl,negcon", help="trt_types to use as control")
+parser$add_argument("-ct", "--control_type", default="negcon", help="trt_type to use as control")
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -64,12 +69,12 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
-control_types = unlist(strsplit(args$control_types, ","))
+control_type = args$control_type
 
 normalized_counts = read.csv(args$normalized_counts)
 
 print("computing log-fold change")
-l2fc = compute_l2fc(normalized_counts, control_types)
+l2fc = compute_l2fc(normalized_counts, control_type)
 
 l2fc_out = paste(args$out, "l2fc.csv", sep="/")
 write.csv(l2fc, l2fc_out, row.names=F, quote=F)

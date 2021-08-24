@@ -46,7 +46,7 @@ filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, cell_set_me
     dplyr::select(-any_of(c("flowcell_name", "flowcell_lane", "index_1", "index_2", "members", 
                           "lysate_well", "lysate_plate", "pcr_well", "pcr_plate",
                           "forward_read_cl_barcode", "LUA"))) %>% 
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, Name, log_dose, profile_id, sample_ID, trt_type, control_sample, control_barcodes,
+    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, Name, log_dose, profile_id, trt_type, control_barcodes,
                     bio_rep, tech_rep) %>% 
     dplyr::relocate(n, .after=last_col())
   
@@ -86,7 +86,7 @@ parser$add_argument("-s", "--sample_meta", default="", help = "Sample metadata")
 parser$add_argument("--cell_line_meta", default="../metadata/cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--id_cols", default="sample_ID,pcr_well,tech_rep", help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
+parser$add_argument("--id_cols", default="treatment,dose,dose_unit,day", help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
