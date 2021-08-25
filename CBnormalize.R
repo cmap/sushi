@@ -18,7 +18,7 @@ suppressPackageStartupMessages(library(reshape2))
 ##      barcodes - a vector of control barcode Name identifiers
 normalize <- function(X, barcodes) {
   normalized <- X %>%
-    dplyr::group_by(profile_ID) %>%
+    dplyr::group_by(profile_id) %>%
     dplyr::mutate(log_normalized_n = glm(y ~ x,
                                          data = tibble(
                                            y = log_dose[Name %in% barcodes],

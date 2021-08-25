@@ -7,6 +7,7 @@ suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
+suppressPackageStartupMessages(library(stringr))
 
 ## check_replicate_cor
 ## checks that technical and biological replicates are all well correlated with each other
@@ -35,7 +36,7 @@ check_replicate_cor = function(normalized_counts, out) {
     dplyr::select(profile_id, tech_rep_cor)
   
   trep_long_out = paste(args$out, "tech_rep_cor_long.csv", sep='/')
-  write.csv(tech_rep_cor_long, trep_long_out, row.names=T, quote=F)
+  write.csv(tech_rep_cor_long, trep_long_out, row.names=F, quote=F)
   
   tech_collapsed_counts = normalized_counts %>% 
     filter(is.na(Name)) %>%  
@@ -56,17 +57,17 @@ check_replicate_cor = function(normalized_counts, out) {
   bio_rep_cor_long = bio_rep_cor %>% 
     rownames_to_column("sample_1") %>% 
     melt(id.vars="sample_1", variable.name="sample_2", value.name="cor") %>% 
-    mutate(sample_ID_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist(),
-           sample_ID_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist()) %>% 
+    mutate(sample_ID_1 = gsub('.{2}$', '', sample_1),
+           sample_ID_2 = gsub('.{2}$', '', sample_2)) %>% 
     filter(sample_ID_1 == sample_ID_2) %>% 
-    mutate(bio_rep_1 = as.character(sample_1) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist(),
-           bio_rep_2 = as.character(sample_2) %>% purrr::map(strsplit, "_") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist()) %>% 
+    mutate(bio_rep_1 = as.character(sample_1) %>% purrr::map(str_sub, -1, -1) %>% unlist(),
+           bio_rep_2 = as.character(sample_2) %>% purrr::map(str_sub, -1, -1) %>% unlist()) %>% 
     filter(bio_rep_2>bio_rep_1) %>% 
     dplyr::rename(profile_id = sample_ID_1) %>% 
     dcast(profile_id~bio_rep_1+bio_rep_2, value.var="cor")
   
   brep_long_out = paste(args$out, "bio_rep_cor_long.csv", sep='/')
-  write.csv(bio_rep_cor_long, brep_long_out, row.names=T, quote=F)
+  write.csv(bio_rep_cor_long, brep_long_out, row.names=F, quote=F)
 }
 
 
