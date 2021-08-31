@@ -49,7 +49,7 @@ if (args$out == ""){
 collapsed_values = read.csv(args$collapsed_values)
 
 print("generating biomarker tables")
-bio_out = generate_biomarkers(collapsed_values)
+biomarker_out = generate_biomarkers(collapsed_values)
 
 lin_table = biomarker_out$lin_table
 rf_table = biomarker_out$rf_table
