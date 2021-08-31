@@ -10,8 +10,9 @@ PSEQ_obelix=/cmap/obelix/pod/prismSeq/
 if test $# -lt 1; then
   printf "Usage ./bcl2fastq.sh [options]\nOptions include:\n"
   printf -- "-s, --seq_code \t\t Sequencer run code E.g. JNV9V \n"
-  printf -- "-p, --proj_code \t Project code to prep fastq/ directory in /cmap/obelix \n"
-  printf -- "-o, --out_dir \t Path to output files/folders \n"
+  printf -- "-p, --proj_code \t Project code to prep fastq/ directory in /cmap/obelix/pod/prismSeq/ \n"
+  printf -- "-b, --build_dir \t Build directory, usually on /cmap/obelix/.\n"
+  printf -- "-o, --out_dir \t Path to temp storage of fastq files on /xchip/prism/ \n"
   printf -- "-h, --help \t\t Print this help text\n"
   exit 1
 fi
@@ -21,14 +22,20 @@ while test $# -gt 0; do
     -h|--help)
       printf "Usage ./bcl2fastq.sh [options]\nOptions include:\n"
       printf -- "-s, --seq_code \t\t Sequencer run code E.g. JNV9V \n"
-      printf -- "-p, --proj_code \t Project code to prep fastq/ directory in /cmap/obelix \n"
-      printf -- "-o, --out_dir \t Path to output files/folders \n"
+      printf -- "-p, --proj_code \t Project code to prep fastq/ directory in /cmap/obelix/pod/prismSeq/ \n"
+      printf -- "-b, --build_dir \t Build directory, usually on /cmap/obelix/. \n"
+      printf -- "-o, --out_dir \t Path to temp storage of fastq files on /xchip/prism/ \n"
       printf -- "-h, --help \t\t Print this help text\n"
       exit 0
       ;;
     -s|--seq_code)
       shift
       SEQ_CODE=$1
+      ;;
+    -b|--build_dir)
+      shift
+      #echo $1
+      BUILD_DIR=$1
       ;;
     -p|--proj_code)
       shift
@@ -59,11 +66,20 @@ echo $RUNFOLDER_DIR
 
 bcl2fastq --runfolder-dir "$RUNFOLDER_DIR" --output-dir $OUT_DIR/$SEQ_CODE --minimum-trimmed-read-length 35 --mask-short-adapter-reads 22 --create-fastq-for-index-reads
 
-if [ ! -d $PSEQ_obelix/$PROJ_CODE ]
+if [ -z $BUILD_DIR ]
 then
-  mkdir $PSEQ_obelix/$PROJ_CODE
-  mkdir $PSEQ_obelix/$PROJ_CODE/fastq/
+  BUILD_DIR=$PSEQ_obelix/$PROJ_CODE
 fi
 
-echo Copying fastq files from $OUT_DIR/$SEQ_CODE/ to $PSEQ_obelix/$PROJ_CODE/fastq/
-cp $OUT_DIR/$SEQ_CODE/*.fastq.gz $PSEQ_obelix/$PROJ_CODE/fastq/
+if [ ! -d $BUILD_DIR ]
+then
+  mkdir $BUILD_DIR
+fi
+
+if [ ! -d $BUILD_DIR/fastq/ ]
+then
+  mkdir $BUILD_DIR/fastq/
+fi
+
+echo Copying fastq files from $OUT_DIR/$SEQ_CODE/ to $BUILD_DIR/fastq/
+cp $OUT_DIR/$SEQ_CODE/*.fastq.gz $BUILD_DIR/fastq/
