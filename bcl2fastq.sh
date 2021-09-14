@@ -1,7 +1,7 @@
 #!/bin/bash
 source /broad/software/scripts/useuse
-reuse .bcl2fastq2-v2.20.0
-
+reuse .bcl2fastq2-v2.20.0 > /dev/null
+reuse .bcl2fastq2-2.20.0.422 > /dev/null
 
 OUT_DIR=/xchip/prism/bcl2fastq/
 PSEQ_obelix=/cmap/obelix/pod/prismSeq/
