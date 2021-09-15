@@ -19,7 +19,7 @@ suppressPackageStartupMessages(library(cdsrbiomarker))
 generate_biomarkers = function(collapsed_values) {
   bio_in = collapsed_values %>% 
     filter(trt_pass_QC) %>% 
-    dcast(DepMap_ID~sprofile_id, value.var="median_l2fc") %>% 
+    dcast(DepMap_ID~profile_id, value.var="median_l2fc") %>% 
     column_to_rownames("DepMap_ID")
   
   bio_out = cdsrbiomarker::get_biomarkers(bio_in)
