@@ -12,7 +12,7 @@ if test $# -lt 1; then
   printf -- "-s, --seq_code \t\t Sequencer run code E.g. JNV9V \n"
   printf -- "-p, --proj_code \t Project code to prep project directory in /cmap/obelix/pod/prismSeq/ \n"
   printf -- "-b, --build_dir \t Build directory, usually on /cmap/obelix/. Overrides PROJ_CODE\n"
-  printf -- "-o, --out_dir \t Path to temp storage of fastq files on /xchip/prism/ \n"
+  printf -- "-o, --out_dir \t\t Path to temp storage of fastq files on /xchip/prism/ \n"
   printf -- "-h, --help \t\t Print this help text\n"
   exit 1
 fi
@@ -24,7 +24,7 @@ while test $# -gt 0; do
       printf -- "-s, --seq_code \t\t Sequencer run code E.g. JNV9V \n"
       printf -- "-p, --proj_code \t Project code to prep project directory in /cmap/obelix/pod/prismSeq/ \n"
       printf -- "-b, --build_dir \t Build directory, usually on /cmap/obelix/. Overrides PROJ_CODE\n"
-      printf -- "-o, --out_dir \t Path to temp storage of fastq files on /xchip/prism/ \n"
+      printf -- "-o, --out_dir \t\t Path to temp storage of fastq files on /xchip/prism/ \n"
       printf -- "-h, --help \t\t Print this help text\n"
       exit 0
       ;;
