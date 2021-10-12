@@ -18,7 +18,7 @@ suppressPackageStartupMessages(library(reshape2))
 ##      barcodes - a vector of control barcode Name identifiers
 normalize <- function(X, barcodes) {
   normalized <- X %>%
-    dplyr::group_by(sample_ID) %>%
+    dplyr::group_by(profile_id) %>%
     dplyr::mutate(log_normalized_n = glm(y ~ x,
                                          data = tibble(
                                            y = log_dose[Name %in% barcodes],
@@ -37,14 +37,11 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
 parser$add_argument("-q", "--quietly", action="store_false", 
                     dest="verbose", help="Print little output")
 
-
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing filtered counts")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
-
-
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
