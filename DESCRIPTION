@@ -1,15 +1,15 @@
-Package: sushi
+Package: prismSeqR
 Title: Processing Pipeline for PRISM Sequencing data
 Version: 0.1.0
 Authors@R: c(
+    person("Lena", "Joesch-Cohen", email=ljoeschc@broadinstitute.org",
+        role = c("aut", "cre")),
     person("Anup", "Jonchhe", email= "anup@broadinstitute.org",
         role = c("aut", "cre"))
-    person("Lena", "Joesch-Cohen", email=ljoeschc@broadinstitute.org",
-        role = c("aut", "cre")) 
-)
-Description: As an alternative to the Luminex bead-based PRISM assay, the PRISM 
+    )
+Description: As an alternative to the Luminex bead-based PRISM assay, the PRISM
     Sequencing assay was developed for barcode detection with Next Generation
-    Sequencing. Due to different output types from sequencers vs luminex 
+    Sequencing. Due to different output types from sequencers vs luminex
     scanners, the sushi data processing pipeline was developed to generate the
     analogous data levels from merino and espresso.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
@@ -18,3 +18,18 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
+Imports:
+    magrittr,
+    ShortRead,
+    argparse,
+    scam,
+    magrittr,
+    readr,
+    stringr,
+    dplyr,
+    tidyr,
+    reshape2,
+    cdsrbiomarker
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

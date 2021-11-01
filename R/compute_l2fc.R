@@ -1,38 +1,33 @@
-suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-suppressPackageStartupMessages(library(dplyr)) #n()
-#suppressPackageStartupMessages(library(scam))
-#suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
-#suppressPackageStartupMessages(library(reshape2))
-
-## compute_l2fc
-## takes normalized counts and computes log-fold change values as compared to the annotated control columns
-##
-## takes:
-##      normalized_counts - table with normalized_n column and control_sample column that designates the 
-##          name of the control sample for each treatment sample
+#' compute_l2fc
+#' 
+#' takes normalized counts and computes log-fold change values as compared to the annotated control columns
+#'
+#' @param normalized_counts - table with normalized_n column and control_sample column that designates the 
+#'          name of the control sample for each treatment sample
+#' @param control_type - string that denotes which compute samples to compute log fold change. Matches trt_type field
+#' @return l2fc data.frame with l2fc column
+#' 
 compute_l2fc = function(normalized_counts, control_type) {
   treatments = normalized_counts %>% 
-    filter(trt_type!=control_type, trt_type!="day_0",
+    dplyr::filter(trt_type!=control_type, trt_type!="day_0",
            is.na(Name)) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
+    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
-    ungroup()
+    dplyr::ungroup()
   
   controls = normalized_counts %>% 
-    filter(trt_type==control_type,
+    dplyr::filter(trt_type==control_type,
            is.na(Name)) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
+    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
-    ungroup() %>% 
-    group_by(CCLE_name, DepMap_ID, prism_cell_set) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::group_by(CCLE_name, DepMap_ID, prism_cell_set) %>% 
     dplyr::summarise(control_median_normalized_n = median(sum_normalized_n),
-                     control_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(n())) %>% 
-    ungroup() %>% 
-    mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5, F, T)) %>% 
+                     control_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(dplyr::n())) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5, F, T)) %>% 
     dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
   
   if(nrow(controls)==0) {
@@ -42,39 +37,9 @@ compute_l2fc = function(normalized_counts, control_type) {
   
   l2fc = treatments %>% 
     merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set"), all.x=T, all.y=T) %>% 
-    mutate(l2fc=log2(sum_normalized_n/control_median_normalized_n)) %>% 
+    dplyr::mutate(l2fc=log2(sum_normalized_n/control_median_normalized_n)) %>% 
     dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, profile_id, trt_type, control_barcodes,
                     bio_rep) 
   
   return(l2fc)
 }
-
-#Need Arguments
-parser <- ArgumentParser()
-# specify our desired options 
-parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
-                    help="Print extra output [default]")
-parser$add_argument("-q", "--quietly", action="store_false", 
-                    dest="verbose", help="Print little output")
-parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
-                    help="path to file containing normalized counts")
-parser$add_argument("-ct", "--control_type", default="negcon", help="trt_type to use as control")
-parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
-
-# get command line options, if help option encountered print help and exit
-args <- parser$parse_args()
-
-if (args$out == ""){
-  args$out = args$wkdir
-}
-
-control_type = args$control_type
-
-normalized_counts = read.csv(args$normalized_counts)
-
-print("computing log-fold change")
-l2fc = compute_l2fc(normalized_counts, control_type)
-
-l2fc_out = paste(args$out, "l2fc.csv", sep="/")
-write.csv(l2fc, l2fc_out, row.names=F, quote=F)
