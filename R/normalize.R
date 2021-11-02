@@ -10,6 +10,7 @@
 #'           Name: contains the name of the control barcode that the read corresponds to, or NA
 #' @param barcodes - a vector of control barcode Name identifiers
 #' @return Table with counts normalized to control barcodes
+#' @export
 normalize <- function(X, barcodes) {
   if (!('log_n' %in% colnames(filtered_counts)) & 
       ('n' %in% colnames(filtered_counts))) {

@@ -7,7 +7,7 @@
 #' 
 #' @param collapsed_values: collapsed_l2fc values
 #' @return Biomarker object containing lin_out, rf_out and disc_out tables
-
+#' @export
 generate_biomarkers = function(collapsed_values) {
   bio_in = collapsed_values %>% 
     dplyr::filter(trt_pass_QC) %>% 

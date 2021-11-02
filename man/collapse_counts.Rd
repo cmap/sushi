@@ -14,4 +14,5 @@ log10(median counts) vs. MAD/sqrt(n) graph is saved, and collapsed filtered coun
 \details{
 @param l2fc - normalized counts with bad replicates already filtered out
 @returns collapsed_counts
+@export
 }

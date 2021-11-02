@@ -10,7 +10,7 @@
 #' @param index_2_files Vector of fastq file paths
 #' @param write_interval integer for how often a temp count file is written. 
 #' @return cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_cl_barcode
-#' 
+#' @export 
 write_df_from_fastq <- function(
   forward_read_fastq_files, 
   index_1_files, 

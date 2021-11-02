@@ -2,8 +2,8 @@ Package: prismSeqR
 Title: Processing Pipeline for PRISM Sequencing data
 Version: 0.1.0
 Authors@R: c(
-    person("Lena", "Joesch-Cohen", email=ljoeschc@broadinstitute.org",
-        role = c("aut", "cre")),
+    person("Lena", "Joesch-Cohen", email="ljoeschc@broadinstitute.org",
+        role = c("aut")),
     person("Anup", "Jonchhe", email= "anup@broadinstitute.org",
         role = c("aut", "cre"))
     )

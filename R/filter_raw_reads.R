@@ -15,6 +15,7 @@
 #'   \item filtered_table df of annotated readcounts
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
 #' }
+#' @export 
 filter_raw_reads = function(
   raw_counts, sample_meta, cell_line_meta, 
   cell_set_meta, CB_meta, id_cols=c('treatment', 'dose','dose_unit','day')) {

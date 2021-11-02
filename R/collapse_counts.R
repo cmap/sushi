@@ -6,6 +6,8 @@
 #'
 #'  @param l2fc - normalized counts with bad replicates already filtered out
 #'  @returns collapsed_counts 
+#'  @export 
+
 collapse_counts = function(l2fc) {
   collapsed_counts = l2fc %>% 
     dplyr::filter(control_pass_QC) %>% 

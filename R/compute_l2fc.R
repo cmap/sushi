@@ -6,7 +6,7 @@
 #'          name of the control sample for each treatment sample
 #' @param control_type - string that denotes which compute samples to compute log fold change. Matches trt_type field
 #' @return l2fc data.frame with l2fc column
-#' 
+#' @export
 compute_l2fc = function(normalized_counts, control_type) {
   treatments = normalized_counts %>% 
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",

@@ -9,7 +9,7 @@ normalize(X, barcodes)
 \arguments{
 \item{X}{\itemize{
 \item dataframe of annotated readcounts that must include the following columns:
-log_n: log10 of read counts
+log_n or n: raw readcounts or log10(n) of read counts. Computes log_n if not present
 log_dose: log10 of dose at which control barcode was spiked in, if applicable
 sample_ID: some identifier that distinguishes between each sample
 Name: contains the name of the control barcode that the read corresponds to, or NA
