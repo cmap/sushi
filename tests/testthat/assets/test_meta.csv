@@ -1,0 +1,6 @@
+flowcell_name,flowcell_lane,IndexBarcode1,IndexBarcode2,project_code,lysate_well,lysate_plate,pcr_well,pcr_plate,cell_set,control_barcodes,bio_rep,tech_rep,trt_type,treatment,dose,dose_unit,day
+JTFDM,NA,TTAGCGCT,CATGCTTA,21-PSEQ-MOOTHA-02,A02,1,A02,2,CS5,TRUE,2,2,day_0,Day 0,NA,,0
+JTFDM,NA,TTAGCGCT,AGTTGCTT,21-PSEQ-MOOTHA-02,A06,1,A06,2,CS5,TRUE,3,2,trt_cp,10% D20 + DMSO,NA,,5
+JTFDM,NA,GCTAACTA,ATTCCTCT,21-PSEQ-MOOTHA-02,G02,1,G02,1,CS5,TRUE,2,1,negcon,0% D2O + DMSO,NA,,5
+JTFDM,NA,TTAGCGCT,CAATAGTC,21-PSEQ-MOOTHA-02,G06,1,G06,2,CS5,TRUE,3,2,trt_cp,75% D2O + DMSO,NA,,5
+JTFDM,NA,GCTAACTA,TCGGAATG,21-PSEQ-MOOTHA-02,B03,1,B03,1,CS5,TRUE,3,1,poscon,0% D2O + Bortezomib,20,uM,5
