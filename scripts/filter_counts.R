@@ -10,49 +10,7 @@ suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 suppressPackageStartupMessages(library(reshape2))
-
-## filter raw reads
-## takes the raw readcount table and filters for expected indices and cell lines
-## using the given metadata. QC metrics are written out to a text file
-##
-## takes:
-##      raw_counts - an unfiltered counts table
-##      sample_meta - the sample metadata for the particular experiment. Must follow the given set of guidelines for metadata
-##      cell_line_meta - master metadata of cell lines
-##      cell_set_meta - master metdata of cell sets and their contents
-##      CB_meta - master metdata of control barcodes, their sequences, and their doses
-filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, cell_set_meta, CB_meta, out=getwd()) {
-  index_filtered = raw_counts %>% 
-    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1,
-                  index_2 %in% sample_meta$IndexBarcode2)
-  index_purity = sum(index_filtered$n) / sum(raw_counts$n)
-  
-  cell_line_filtered = index_filtered %>% 
-    merge(sample_meta, by.x=c("index_1", "index_2"), by.y=c("IndexBarcode1", "IndexBarcode2")) %>% 
-    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% 
-    merge(cell_set_meta, by="cell_set", all.x=T) %>% 
-    dplyr::filter(mapply(grepl, LUA, members) | 
-                    (mapply(grepl, LUA, cell_set) & is.na(members)) | 
-                    (forward_read_cl_barcode %in% CB_meta$Sequence)) 
-  cell_line_purity = sum(cell_line_filtered$n) / sum(index_filtered$n) 
-  
-  write(paste0("index_purity: ", round(index_purity*100, 2), "% \n",
-               "cell_line_purity: ", round(cell_line_purity*100, 2), "%"),
-        paste(out, "filtering_QC.txt", sep='/'))
-  
-  annotated_counts = cell_line_filtered %>% 
-    merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% 
-    dplyr::select_if(function(col) sum(is.na(col)) < length(col)) %>% 
-    dplyr::select(-any_of(c("flowcell_name", "flowcell_lane", "index_1", "index_2", "members", 
-                          "lysate_well", "lysate_plate", "pcr_well", "pcr_plate",
-                          "forward_read_cl_barcode", "LUA"))) %>% 
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, Name, log_dose, profile_id, trt_type, control_barcodes,
-                    bio_rep, tech_rep) %>% 
-    dplyr::relocate(n, .after=last_col())
-  
-  return(annotated_counts)
-}
-
+library(prismSeqR)
 
 
 ## print_args
@@ -123,8 +81,22 @@ filtered_counts = filter_raw_reads(
   cell_line_meta,
   cell_set_meta,
   CB_meta,
-  out=args$out
+  id_cols=id_cols
 )
+
+qc_table = filtered_counts$qc_table
+
+qc_out_file = paste(
+  args$out,
+  'QC_table.csv',
+  sep='/'
+)
+
+print(paste("writing QC_table to: ", qc_out_file))
+write.csv(qc_table, qc_out_file, row.names=F, quote=F)
+
+
+filtered_counts = filtered_counts$filtered_counts
 
 #Write Filtered Counts Table
 filtrc_out_file = paste(
@@ -136,44 +108,4 @@ filtrc_out_file = paste(
 print(paste("writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
 
-## Make GCTX file
-## For compatibility with other tools
-
-# 
-# counts_df = with(
-#   filtered_counts[!is.na(filtered_counts$LUA),], #Remove rows where cell line LUA is not known
-#   data.frame(
-#     cid = profile_id,
-#     rid=LUA,
-#     value=n )
-# )   #Extract matrix columns
-# 
-# #Pivot 
-# counts_mat <- counts_df %>% 
-#   pivot_wider(
-#     names_from = cid,
-#     id_cols = rid,
-#     values_from = value,
-#     values_fn=as.numeric
-#   )
-# 
-# rids = counts_mat$rid
-# counts_mat <- as.matrix(counts_mat[-1])
-# rownames(counts_mat) <- rids
-# 
-# rownames(sample_meta) <- sample_meta$profile_id
-# rownames(cell_line_meta) <- cell_line_meta$LUA
-# 
-# col_desc = sample_meta[sample_meta$profile_id %in% colnames(counts_mat),]
-# row_desc = cell_line_meta[cell_line_meta$LUA %in% rids,]
-# 
-# #counts_gct <- new("GCT", mat=counts_mat, rid = rownames(counts_mat), cid = colnames(counts_mat), rdesc=row_desc, cdesc=col_desc)
-# 
-# filtrc_out_gct = paste(
-#   args$out,
-#   'Level2_counts',
-#   sep='/'
-# )
-# #print(paste0("Writing GCTx file to ", filtrc_out_gct))
-# #write_gctx(counts_gct, filtrc_out_gct)
 
