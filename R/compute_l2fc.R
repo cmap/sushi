@@ -12,7 +12,7 @@ compute_l2fc = function(normalized_counts, control_type) {
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",
            is.na(Name)) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
+    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     dplyr::ungroup()
   
@@ -20,7 +20,7 @@ compute_l2fc = function(normalized_counts, control_type) {
     dplyr::filter(trt_type==control_type,
            is.na(Name)) %>% 
     dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
+    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     dplyr::ungroup() %>% 
     dplyr::group_by(CCLE_name, DepMap_ID, prism_cell_set) %>% 
@@ -38,7 +38,7 @@ compute_l2fc = function(normalized_counts, control_type) {
   l2fc = treatments %>% 
     merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set"), all.x=T, all.y=T) %>% 
     dplyr::mutate(l2fc=log2(sum_normalized_n/control_median_normalized_n)) %>% 
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, profile_id, trt_type, control_barcodes,
+    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes,
                     bio_rep) 
   
   return(l2fc)

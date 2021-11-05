@@ -5,7 +5,7 @@ suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 #suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(readr)) #write_delim 
+suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
@@ -16,12 +16,12 @@ library(prismSeqR)
 ## print_args
 ## writes configuration to file
 ##
-## takes: 
+## takes:
 ##      args: args object from argparse
 print_args <- function(args){
   config <- data.frame(args=names(args), values=unname(unlist(args)))
   config_path = paste(
-    args$out, 
+    args$out,
     "config.txt",
     sep="/"
   )
@@ -31,10 +31,10 @@ print_args <- function(args){
 
 # create parser object
 parser <- ArgumentParser()
-# specify our desired options 
+# specify our desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
-parser$add_argument("-q", "--quietly", action="store_false", 
+parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
@@ -44,8 +44,8 @@ parser$add_argument("-s", "--sample_meta", default="", help = "Sample metadata")
 parser$add_argument("--cell_line_meta", default="../metadata/cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--id_cols", default="treatment,dose,dose_unit,day", help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
-
+parser$add_argument("--id_cols", default="treatment,dose,dose_unit,day,bio_rep,tech_rep",
+    help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
@@ -68,8 +68,8 @@ if (!all(id_cols %in% colnames(sample_meta))){
   stop(paste("Colnames not found in sample_meta, check metadata or --id_cols argument:", args$id_cols))
 }
 
-#Generate Profile Ids based on sample_ID, PCR_well, and technical replicate 
-#DONE: make profile_id columns parameters 
+#Generate Profile Ids based on sample_ID, PCR_well, and technical replicate
+#DONE: make profile_id columns parameters
 #sample_meta$profile_id = with(sample_meta, paste(sample_ID,pcr_well, tech_rep, sep = ":"))
 sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
 
@@ -107,5 +107,3 @@ filtrc_out_file = paste(
 
 print(paste("writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
-
-

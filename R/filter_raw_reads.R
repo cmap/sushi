@@ -18,7 +18,7 @@
 #' @export 
 filter_raw_reads = function(
   raw_counts, sample_meta, cell_line_meta, 
-  cell_set_meta, CB_meta, id_cols=c('treatment', 'dose','dose_unit','day')) {
+  cell_set_meta, CB_meta, id_cols=c('treatment', 'dose','dose_unit','day','bio_rep','tech_rep')) {
   
   #insert profile_id into sample_meta
   sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
