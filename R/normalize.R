@@ -12,8 +12,8 @@
 #' @return Table with counts normalized to control barcodes
 #' @export
 normalize <- function(X, barcodes) {
-  if (!('log_n' %in% colnames(filtered_counts)) & 
-      ('n' %in% colnames(filtered_counts))) {
+  if (!('log_n' %in% colnames(X)) & 
+      ('n' %in% colnames(X))) {
     X <- X %>% dplyr::mutate(log_n = log10(n))
   }
   

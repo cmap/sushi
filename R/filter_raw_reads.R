@@ -43,7 +43,7 @@ filter_raw_reads = function(
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
     dplyr::select_if(function(col) sum(is.na(col)) < length(col)) %>%
     dplyr::select(-any_of(c("flowcell_name", "flowcell_lane", "index_1", "index_2", "members",
-                            "lysate_well", "lysate_plate","forward_read_cl_barcode"))) %>%
+                            "lysate_well", "lysate_plate","forward_read_cl_barcode", "LUA", "pcr_well", "pcr_plate"))) %>%
     dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, Name, log_dose, profile_id, trt_type, control_barcodes,
                     bio_rep, tech_rep) %>%
     dplyr::relocate(n, .after=last_col())
