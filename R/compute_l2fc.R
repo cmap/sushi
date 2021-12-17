@@ -8,7 +8,10 @@
 #' @return l2fc data.frame with l2fc column
 #' @export
 compute_l2fc = function(normalized_counts, 
-                        control_type = "negcon") {
+                        control_type = "negcon",
+                        sig_id_cols=c('treatment', 'dose','dose_unit','day')) {
+  normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_id_cols], sep=':'))
+  
   treatments = normalized_counts %>% 
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",
            is.na(Name)) %>% 
@@ -39,7 +42,7 @@ compute_l2fc = function(normalized_counts,
   l2fc = treatments %>% 
     merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set"), all.x=T, all.y=T) %>% 
     dplyr::mutate(l2fc=log2(sum_normalized_n/control_median_normalized_n)) %>% 
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes,
+    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, sig_id,
                     bio_rep) 
   
   return(l2fc)
