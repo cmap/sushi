@@ -39,12 +39,22 @@ if (!all(sig_cols %in% colnames(filtered_counts))){
 }
 
 print("running DESeq on filtered counts")
-DE_out = run_DE(
-  filtered_counts,
-  sample_cols,
-  sig_cols,
-  control_type
-)
+
+DE_out = data.frame()
+for(cs in unique(filtered_counts$cell_set)) {
+  subset = filtered_counts %>% 
+    filter(cell_set==cs)
+  hold = run_DE(subset)
+  DE_out = DE_out %>% 
+    rbind(hold)
+}
+
+#DE_out = run_DE(
+#  filtered_counts,
+#  sample_cols,
+#  sig_cols,
+#  control_type
+#)
 
 DE_out_file = paste(
   args$out,

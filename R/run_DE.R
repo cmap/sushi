@@ -26,11 +26,11 @@ run_DE = function(filtered_counts,
   
   countData = filtered_counts %>% 
     filter(!trt_type %in% c("day_0", "empty")) %>% 
-    #dplyr::select(-log_dose, -log_n, -log_normalized_n, -normalized_n) %>% 
     dplyr::select(-any_of(c("log_dose", "log_n"))) %>% 
     dplyr::group_by_at(setdiff(names(.), c("n", "tech_rep", "profile_id", "pcr_plate", "pcr_well"))) %>% 
     dplyr::summarise(n=sum(n)) %>% ungroup() %>% 
-    mutate(CCLE_name = ifelse(is.na(CCLE_name), as.character(Name), as.character(CCLE_name))) %>% 
+    mutate(CCLE_name = ifelse(is.na(CCLE_name), as.character(Name), as.character(CCLE_name)),
+           CCLE_name = paste0(CCLE_name, "__", cell_set)) %>% 
     dcast(CCLE_name~sample_id, value.var="n") %>% 
     column_to_rownames("CCLE_name") %>% 
     as.matrix()
@@ -55,9 +55,10 @@ run_DE = function(filtered_counts,
   final = data.frame()
   for(sig_id in unique(colData$sig_id)){
     if(sig_id!="control") {
-      comparison = paste0("sig_id_", str_replace_all(sig_id, regex("[[:punct:]-[_]]"), "."), "_vs_control") #"-|:|%"
+      comparison = paste0("sig_id_", str_replace_all(sig_id, regex("[[:punct:]-[_]+[\\s+]]"), "."), "_vs_control") #"-|:|%"
       print(comparison)
-      res_shrunk = lfcShrink(dds, coef=comparison, type="apeglm")
+      #res_shrunk = lfcShrink(dds, coef=comparison, type="apeglm")
+      res_shrunk = results(dds, name=comparison)
       hold = res_shrunk[,c("log2FoldChange", "lfcSE", "padj")] %>% 
         as.data.frame() %>% 
         mutate(sig_id = sig_id) %>% 
@@ -66,14 +67,16 @@ run_DE = function(filtered_counts,
         rbind(hold)
     }
   }
+  final = final %>% 
+    mutate(cell_set = as.character(CCLE_name) %>% purrr::map(str_split, "__") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist() %>% as.character(),
+           CCLE_name = as.character(CCLE_name) %>% purrr::map(str_split, "__") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist() %>% as.character())
   
   l2fc_DEseq = filtered_counts %>% 
     filter(!trt_type %in% c("day_0", "empty", control_type)) %>% 
     mutate(CCLE_name = ifelse(is.na(CCLE_name), as.character(Name), as.character(CCLE_name))) %>%
-    #select(-Name, -log_dose, -n, -log_n, -log_normalized_n, -normalized_n, -bio_rep, -tech_rep, -profile_id, -sample_id) %>% 
     select(-any_of(c("Name", "log_dose", "n", "log_n", "bio_rep", "tech_rep", "profile_id", "sample_id"))) %>% 
     distinct() %>% 
-    merge(final, by=c("CCLE_name", "sig_id"), all.x=F)
+    merge(final, by=c("CCLE_name", "cell_set", "sig_id"), all.x=F)
   
   return(l2fc_DEseq)
 }
