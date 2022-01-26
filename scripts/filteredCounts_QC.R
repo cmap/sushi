@@ -18,8 +18,51 @@ suppressPackageStartupMessages(library(grDevices))
 ## takes:
 ##      filtered_counts - dataframe of filtered counts 
 ##      out - the path to the folder where QC images should be saved
-filteredCounts_QC = function(filtered_counts, out) {
-  correlation_matrix = filtered_counts %>% 
+filteredCounts_QC = function(filtered_counts, cell_set_meta, out) {
+  num_profiles = filtered_counts$profile_id %>% unique() %>% length()
+  
+  # counts in each sample, colored by cell line or control barcode
+  total_counts = filtered_counts %>% ungroup() %>% 
+    mutate(type = ifelse(is.na(Name), "cell line", "control barcode")) %>% 
+    group_by(profile_id, type) %>% 
+    dplyr::summarise(total_counts = sum(n))
+  
+  tc = total_counts %>% 
+    ggplot() +
+    geom_col(aes(x=profile_id, y=total_counts, fill=type)) +
+    labs(x="", y="total counts", fill="") +
+    theme(axis.text.x = element_text(angle=70, hjust=1, size=5))
+    
+  pdf(file=paste(out, "total_counts.pdf", sep="/"),
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+  print(tc)
+  dev.off()
+  
+  # fraction of cexpected cell lines in each sample
+  num_cell_lines = filtered_counts %>% ungroup() %>% 
+    filter(is.na(Name)) %>% 
+    merge(cell_set_meta, by="cell_set", all.x=T) %>%
+    mutate(expected_num_cl = as.character(members) %>% purrr::map(strsplit, ";") %>% purrr::map(`[[`, 1) %>% 
+             purrr::map(length) %>% as.numeric()) %>% 
+    distinct(CCLE_name, profile_id, cell_set, expected_num_cl) %>% 
+    group_by(profile_id, cell_set, expected_num_cl) %>% 
+    dplyr::summarise(num_cl = n(),
+                     frac_cl = num_cl/expected_num_cl) %>% 
+    distinct(profile_id, cell_set, expected_num_cl, num_cl, frac_cl)
+  
+  ncl = num_cell_lines %>% 
+    ggplot() +
+    geom_col(aes(x=profile_id, y=frac_cl*100)) +
+    labs(x="", y="% expected cell lines present") +
+    theme(axis.text.x = element_text(angle=70, hjust=1, size=5))
+  
+  pdf(file=paste(out, "cell_lines_present.pdf", sep="/"),
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+  print(ncl)
+  dev.off()
+  
+  # sample correlation
+  correlation_matrix = filtered_counts %>% ungroup() %>% 
     filter(is.na(Name)) %>% 
     mutate(log_n = log10(n)) %>% 
     dcast(CCLE_name~profile_id, value.var="log_n") %>% 
@@ -36,11 +79,12 @@ filteredCounts_QC = function(filtered_counts, out) {
           axis.text.y = element_text(size=5))
   
   pdf(file=paste(out, "sample_cor.pdf", sep="/"),
-      width=10, height=10)
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
   print(cp)
   dev.off()
   
-  cbt = filtered_counts %>% 
+  # control barcode trend
+  cbt = filtered_counts %>% ungroup() %>% 
     filter(is.na(CCLE_name)) %>% 
     ggplot(aes(x=log_dose, y=log10(n))) +
     geom_point() +
@@ -51,8 +95,26 @@ filteredCounts_QC = function(filtered_counts, out) {
     labs(x="log(dose)")
   
   pdf(file=paste(out, "control_barcode_trend.pdf", sep="/"),
-      width=10, height=10)
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
   print(cbt)
+  dev.off()
+  
+  # cell line counts vs. control barcode counts
+  # assumes that last piece of profile_id is tech_rep
+  aclt = filtered_counts %>% ungroup() %>% 
+    mutate(type = ifelse(is.na(Name), "cell line", "control barcode"),
+           log_n = log10(n),
+           sample_id = gsub('.{2}$', '', profile_id)) %>% 
+    dplyr::select(-profile_id, -n) %>% 
+    dcast(...~tech_rep, value.var="log_n") %>% 
+    ggplot(aes(x=`1`, y=`2`, color=type)) +
+    geom_point(alpha=0.5) +
+    facet_wrap(~sample_id) +
+    labs(x="log10(counts) tech rep 1", y="log10(counts) tech rep 2", color="")
+  
+  pdf(file=paste(out, "all_cell_lines_trend.pdf", sep="/"),
+      width=sqrt(num_profiles), height=sqrt(num_profiles))
+  print(aclt)
   dev.off()
 }
 
@@ -64,8 +126,9 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
 parser$add_argument("-q", "--quietly", action="store_false", 
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
+parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing normalized counts")
+parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -75,7 +138,8 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
-normalized_counts = read.csv(args$normalized_counts)
+filtered_counts = read.csv(args$filtered_counts)
+cell_set_meta = read.csv(args$cell_set_meta)
 
-print("checking replicate correlation")
-check_replicate_cor(normalized_counts, args$out)
+print("generating filtered counts QC images")
+filteredCounts_QC(filtered_counts, cell_set_meta, args$out)

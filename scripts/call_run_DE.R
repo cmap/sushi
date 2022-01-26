@@ -32,10 +32,16 @@ sig_cols = unlist(strsplit(args$sig_cols, ","))
 control_type = args$control_type
 
 if (!all(sample_cols %in% colnames(filtered_counts))){
-  stop(paste("Colnames not found in filtered_counts, check metadata or --sample_cols argument:", args$sample_cols))
+  stop(paste("Colnames not found in filtered_counts, check metadata or --sample_cols argument:", 
+             paste(args$sample_cols, collapse=", "), "\n"))
 }
 if (!all(sig_cols %in% colnames(filtered_counts))){
-  stop(paste("Colnames not found in filtered_counts, check metadata or --sig_cols argument:", args$sig_cols))
+  stop(paste("Colnames not found in filtered_counts, check metadata or --sig_cols argument:", 
+             paste(args$sig_cols, collapse=", "), "\n"))
+}
+if (!(control_type %in% filtered_counts$trt_type)){
+  stop(paste("control type not found in filtered_counts, check metadata or --control_type argument:", 
+             args$control_type, "\n"))
 }
 
 print("running DESeq on filtered counts")
@@ -44,7 +50,10 @@ DE_out = data.frame()
 for(cs in unique(filtered_counts$cell_set)) {
   subset = filtered_counts %>% 
     filter(cell_set==cs)
-  hold = run_DE(subset)
+  hold = run_DE(subset,
+                sample_cols,
+                sig_cols,
+                control_type)
   DE_out = DE_out %>% 
     rbind(hold)
 }
