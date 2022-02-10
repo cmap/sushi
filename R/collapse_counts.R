@@ -3,7 +3,7 @@
 #' collapses l2fc values and computes MAD/sqrt(n) metrics for treatment conditions
 #'
 #'  @param l2fc - l2fc table with MAD/sqrt(n) metric for control condition
-#'  @returns - collapsed_counts 
+#'  @return - collapsed_counts 
 #'  @export 
 collapse_counts = function(l2fc) {
   collapsed_counts = l2fc %>% 
