@@ -1,7 +1,7 @@
 #'  QC_images
 #'
-#'  takes a filtered dataframe of raw read counts and applies DEseq to generate
-#'  logfold change and significance values
+#'  takes a filtered dataframe of raw read counts and generates and writes out QC images to assess
+#'  overall quality of project data
 #'
 #' @param filtered_counts - dataframe of annotated readcounts that must include the following columns:
 #'           n: raw readcounts
@@ -9,12 +9,11 @@
 #'           Name: name of the control barcode that the read corresponds to, or NA (if read is cell line)
 #'           CCLE_name: name of the cell line that the read corresponds to, or NA (if read is control barcode)
 #'           cell_set: string identifier of cell set expected in a given sample, must match a cell set found in cell_set_meta
-#'           all columns specified in sample_cols and sig_cols 
 #' @param cell_set_meta - a metadata dataframe that contains a mapping from cell set names (e.g. CS5) to 
 #'           lists of LUAs in that cell set separated by semicolons
 #' @param out - the filepath to the folder in which QC images are meant to be saved, NA by default and 
 #'           images are saved in the working directory 
-#' @return NA, QC images are written out to the specified folder
+#' @return - NA, QC images are written out to the specified folder
 #' @export
 QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   if(is.na(out)) {

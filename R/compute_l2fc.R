@@ -1,17 +1,17 @@
 #' compute_l2fc
 #' 
-#' takes normalized counts and computes log-fold change values as compared to the annotated control columns
+#' takes normalized counts and computes log-fold change values as compared to the designated control condition
 #'
-#' @param normalized_counts - table with normalized_n column and control_sample column that designates the 
-#'          name of the control sample for each treatment sample
-#' @param control_type - string that denotes which compute samples to compute log fold change. Matches trt_type field
+#' @param normalized_counts - table with normalized_n column and trt_type column that designates the 
+#'          the control sample
+#' @param control_type - string that denotes which samples to compute log fold change against. Matches trt_type field. negcon by default.
 #' @param sig_cols sig_cols - a vector of column names denoting which values specify each individual signature
-#'                    (by default: treatment, dose, dose_unity, and day)
-#' @return l2fc data.frame with l2fc column
+#'                    cell_set,treatment,dose,dose_unit,day by default.
+#' @return - l2fc data.frame with l2fc column
 #' @export
 compute_l2fc = function(normalized_counts, 
                         control_type = "negcon",
-                        sig_cols=c('treatment', 'dose','dose_unit','day')) {
+                        sig_cols=c('cell_set','treatment','dose','dose_unit','day')) {
   normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
   treatments = normalized_counts %>% 

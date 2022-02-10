@@ -1,16 +1,16 @@
 #' filter raw reads
 #' 
 #' takes the raw readcount table and filters for expected indices and cell lines
-#' using the given metadata. QC metrics are written out to a text file
-#'
+#' using the given metadata. QC metrics are returned as a data.frame
 #'
 #' @param raw_counts - an unfiltered counts table
 #' @param sample_meta - the sample metadata for the particular experiment. Must follow the given set of guidelines for metadata
 #' @param cell_line_meta - master metadata of cell lines
 #' @param cell_set_meta - master metdata of cell sets and their contents
 #' @param CB_meta - master metdata of control barcodes, their sequences, and their doses
-#' @param id_cols - comma
-#' @return list with the following elements
+#' @param id_cols - vector of column names used to generate unique profile_id for each sample. 
+#'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
+#' @return - list with the following elements
 #' #' \itemize{
 #'   \item filtered_table df of annotated readcounts
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
@@ -18,7 +18,7 @@
 #' @export 
 filter_raw_reads = function(
   raw_counts, sample_meta, cell_line_meta, 
-  cell_set_meta, CB_meta, id_cols=c('treatment', 'dose','dose_unit','day','bio_rep','tech_rep')) {
+  cell_set_meta, CB_meta, id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep')) {
   
   #insert profile_id into sample_meta
   sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))

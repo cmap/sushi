@@ -17,7 +17,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
 parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("-ct", "--control_type", default="negcon", help="trt_type to use as control")
-parser$add_argument("--sig_cols", default="treatment,dose,dose_unit,day", 
+parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day", 
                     help = "columns used to generate signature ids")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
 

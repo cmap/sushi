@@ -1,13 +1,10 @@
 #' collapse_counts
 #' 
-#' collapses filtered normalized counts and computes MAD/sqrt(n) metrics.
-#' cell lines with MAD/sqrt(n) > 0.5 are filtered out, and file with filtered out cell lines is written. 
-#' log10(median counts) vs. MAD/sqrt(n) graph is saved, and collapsed filtered count table is returned
+#' collapses l2fc values and computes MAD/sqrt(n) metrics for treatment conditions
 #'
-#'  @param l2fc - normalized counts with bad replicates already filtered out
-#'  @returns collapsed_counts 
+#'  @param l2fc - l2fc table with MAD/sqrt(n) metric for control condition
+#'  @returns - collapsed_counts 
 #'  @export 
-
 collapse_counts = function(l2fc) {
   collapsed_counts = l2fc %>% 
     dplyr::filter(control_pass_QC) %>% 

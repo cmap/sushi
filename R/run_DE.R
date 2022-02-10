@@ -1,7 +1,7 @@
 #'  run_DE
 #'
 #'  takes a filtered dataframe of raw read counts and applies DEseq to generate
-#'  logfold change and significance values
+#'  logfold change, standard errors, and significance values
 #'
 #' @param filtered_counts - dataframe of annotated readcounts that must include the following columns:
 #'           n: raw readcounts
@@ -10,16 +10,16 @@
 #'           Name: contains the name of the control barcode that the read corresponds to, or NA
 #'           all columns specified in sample_cols and sig_cols 
 #' @param sample_cols - a vector of column names denoting which values specify each individual sample
-#'                    (by default: treatment, dose, dose_unity, day, and bio_rep)
+#'                    (by default: cell_set, treatment, dose, dose_unity, day, and bio_rep)
 #' @param sig_cols - a vector of column names denoting which values specify each individual signature
-#'                    (by default: treatment, dose, dose_unity, and day)
+#'                    (by default: cell_set, treatment, dose, dose_unity, and day)
 #' @param control_type - character value specifying which samples to use as controls. Must match a value in the 
 #'                    trt_type column
 #' @return Table with logfold change values, standard errors, and significance values for all signatures
 #' @export
 run_DE = function(filtered_counts, 
-                  sample_cols = c("treatment", "dose", "dose_unit", "day", "bio_rep"), 
-                  sig_cols = c("treatment", "dose", "dose_unit", "day"), 
+                  sample_cols = c("cell_set", "treatment", "dose", "dose_unit", "day", "bio_rep"), 
+                  sig_cols = c("cell_set", "treatment", "dose", "dose_unit", "day"), 
                   control_type = "negcon") {
   filtered_counts$sample_id = do.call(paste,c(filtered_counts[sample_cols], sep=':'))
   filtered_counts$sig_id = do.call(paste,c(filtered_counts[sig_cols], sep=':'))
