@@ -58,13 +58,6 @@ for(cs in unique(filtered_counts$cell_set)) {
     rbind(hold)
 }
 
-#DE_out = run_DE(
-#  filtered_counts,
-#  sample_cols,
-#  sig_cols,
-#  control_type
-#)
-
 DE_out_file = paste(
   args$out,
   "DESeq_l2fc.csv",

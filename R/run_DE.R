@@ -3,7 +3,7 @@
 #'  takes a filtered dataframe of raw read counts and applies DEseq to generate
 #'  logfold change and significance values
 #'
-#' @param X - dataframe of annotated readcounts that must include the following columns:
+#' @param filtered_counts - dataframe of annotated readcounts that must include the following columns:
 #'           n: raw readcounts
 #'           trt_type: spcification of sample type (e.g. whether a sample is a control or not)
 #'           CCLE_name: contains the name of the cell line that the read corresponds to, or NA
@@ -11,7 +11,7 @@
 #'           all columns specified in sample_cols and sig_cols 
 #' @param sample_cols - a vector of column names denoting which values specify each individual sample
 #'                    (by default: treatment, dose, dose_unity, day, and bio_rep)
-#' @param sig_cols = a vector of column names denoting which values specify each individual sample
+#' @param sig_cols - a vector of column names denoting which values specify each individual signature
 #'                    (by default: treatment, dose, dose_unity, and day)
 #' @param control_type - character value specifying which samples to use as controls. Must match a value in the 
 #'                    trt_type column
