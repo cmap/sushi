@@ -11,23 +11,34 @@
 #' @export
 compute_l2fc = function(normalized_counts, 
                         control_type = "negcon",
-                        sig_cols=c('cell_set','treatment','dose','dose_unit','day')) {
+                        sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
+                        count_col_name="normalized_n") {
   normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
   treatments = normalized_counts %>% 
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",
-           is.na(Name)) %>% 
-    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
-    dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
+           #is.na(Name)) %>% 
+           !is.na(CCLE_name)) %>% 
+    #dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
+    #dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
+    #dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
+    dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
+                          [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
+    dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
+    dplyr::summarise(sum_normalized_n = sum(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup()
   
   controls = normalized_counts %>% 
     dplyr::filter(trt_type==control_type,
-           is.na(Name)) %>% 
-    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
-    dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
+           #is.na(Name)) %>% 
+           !is.na(CCLE_name)) %>% 
+    #dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
+    #dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
+    #dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
+    dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
+                          [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
+    dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
+    dplyr::summarise(sum_normalized_n = sum(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup() %>% 
     dplyr::group_by(CCLE_name, DepMap_ID, prism_cell_set) %>% 
     dplyr::summarise(control_median_normalized_n = median(sum_normalized_n),
