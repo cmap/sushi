@@ -8,12 +8,13 @@ suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(cdsrbiomarker))
+suppressPackageStartupMessages(library(prismSeqR))
 
 parser <- ArgumentParser()
-# specify our desired options 
+# specify our desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
-parser$add_argument("-q", "--quietly", action="store_false", 
+parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--collapsed_values", default="collapsed_values.csv",
