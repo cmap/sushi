@@ -106,20 +106,38 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   
   # cell line counts vs. control barcode counts
   # assumes that last piece of profile_id is tech_rep
-  aclt = filtered_counts %>% ungroup() %>% 
-    mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
-           log_n = log10(n),
-           sample_id = gsub('.{2}$', '', profile_id)) %>% 
-    dplyr::select(-profile_id, -n) %>% 
-    dcast(...~tech_rep, value.var="log_n") %>% 
-    ggplot(aes(x=`1`, y=`2`, color=type)) +
-    geom_point(alpha=0.5) +
-    facet_wrap(~sample_id) +
-    labs(x="log10(counts) tech rep 1", y="log10(counts) tech rep 2", color="")
+  num_tech_rep = filtered_counts$tech_rep %>% unique() %>% length()
   
-  pdf(file=paste(out, "all_cell_lines_trend.pdf", sep="/"),
-      width=sqrt(num_profiles), height=sqrt(num_profiles))
-  print(aclt)
-  dev.off()
+  if(num_tech_rep==2) {
+    samples_with_two_tech_rep = filtered_counts %>% 
+      filter(tech_rep==2) %>% 
+      mutate(sample_id = gsub('.{2}$', '', profile_id)) %>% 
+      pull(sample_id) 
+    samples_with_more_tech_rep = filtered_counts %>% 
+      filter(tech_rep>2) %>% 
+      mutate(sample_id = gsub('.{2}$', '', profile_id)) %>% 
+      pull(sample_id) %>% unique()
+    
+    if(length(samples_with_more_tech_rep)!=0 & sum(samples_with_more_tech_rep %in% samples_with_two_tech_rep)!=0) {
+      samples_with_two_tech_rep = samples_with_two_tech_rep[-which(samples_with_two_tech_rep %in% samples_with_more_tech_rep)]
+    }
+    
+    aclt = filtered_counts %>% ungroup() %>% 
+      mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
+             log_n = log10(n),
+             sample_id = gsub('.{2}$', '', profile_id)) %>% 
+      filter(sample_id %in% samples_with_two_tech_rep) %>% 
+      dplyr::select(-profile_id, -n) %>% 
+      dcast(...~tech_rep, value.var="log_n") %>% 
+      ggplot(aes(x=`1`, y=`2`, color=type)) +
+      geom_point(alpha=0.5) +
+      facet_wrap(~sample_id) +
+      labs(x="log10(counts) tech rep 1", y="log10(counts) tech rep 2", color="")
+    
+    pdf(file=paste(out, "all_cell_lines_trend.pdf", sep="/"),
+        width=sqrt(num_profiles), height=sqrt(num_profiles))
+    print(aclt)
+    dev.off()
+  }
 }
 
