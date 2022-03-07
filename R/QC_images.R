@@ -93,8 +93,8 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
       ggplot(aes(x=log_dose, y=log10(n))) +
       geom_point() +
       geom_smooth(method = 'glm') +
-      stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
-      stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
+      ggpubr::stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
+      ggpubr::stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
       facet_wrap(~profile_id) +
       labs(x="log(dose)")
     
