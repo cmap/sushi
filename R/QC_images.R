@@ -67,7 +67,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   print("generating sample_cor image")
   correlation_matrix = filtered_counts %>% ungroup() %>% 
     filter(!is.na(CCLE_name),
-           !(trt_type %in% c(NA, "empty"))) %>% 
+           (!trt_type %in% c("empty", "")) & !is.na(trt_type)) %>% 
     mutate(log_n = log10(n)) %>% 
     dcast(CCLE_name~profile_id, value.var="log_n") %>% 
     column_to_rownames("CCLE_name") %>% 
