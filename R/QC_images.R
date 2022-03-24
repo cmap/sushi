@@ -114,8 +114,8 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   # assumes that last piece of profile_id is tech_rep
   print("generating all_cell_lines_trend image")
   num_tech_rep = filtered_counts %>% 
-    filter(!(trt_type %in% c(NA, "empty")) %>% 
-             pull(tech_rep) %>% unique() %>% length()
+    filter(!(trt_type %in% c(NA, "empty"))) %>% 
+    pull(tech_rep) %>% unique() %>% length()
   
   if(num_tech_rep==2) {
     samples_with_two_tech_rep = filtered_counts %>% 
