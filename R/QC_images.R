@@ -22,6 +22,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   num_profiles = filtered_counts$profile_id %>% unique() %>% length()
   
   # counts in each sample, colored by cell line or control barcode
+  print("generating total_counts image")
   total_counts = filtered_counts %>% ungroup() %>% 
     mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode")) %>% 
     group_by(profile_id, type) %>% 
@@ -38,7 +39,8 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   print(tc)
   dev.off()
   
-  # fraction of cexpected cell lines in each sample
+  # fraction of expected cell lines in each sample
+  print("generating cell_lines_present image")
   num_cell_lines = filtered_counts %>% ungroup() %>% 
     filter(!is.na(CCLE_name)) %>% 
     merge(cell_set_meta, by="cell_set", all.x=T) %>%
@@ -62,6 +64,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   dev.off()
   
   # sample correlation
+  print("generating sample_cor image")
   correlation_matrix = filtered_counts %>% ungroup() %>% 
     filter(!is.na(CCLE_name)) %>% 
     mutate(log_n = log10(n)) %>% 
@@ -84,6 +87,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   dev.off()
   
   # control barcode trend
+  print("generating control_barcode_trend image")
   wells_with_cb = filtered_counts %>% ungroup() %>% 
     filter(control_barcodes=="Y")
   
@@ -106,6 +110,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   
   # cell line counts vs. control barcode counts
   # assumes that last piece of profile_id is tech_rep
+  print("generating all_cell_lines_trend image")
   num_tech_rep = filtered_counts$tech_rep %>% unique() %>% length()
   
   if(num_tech_rep==2) {
