@@ -3,7 +3,8 @@ source /broad/software/scripts/useuse
 reuse .bcl2fastq2-v2.20.0 > /dev/null
 reuse .bcl2fastq2-2.20.0.422 > /dev/null
 
-OUT_DIR=/xchip/prism/bcl2fastq/
+#OUT_DIR=/xchip/prism/bcl2fastq/
+OUT_DIR=/cmap/obelix/prismSeq/Dean_Proctor_troubleshooting/
 PSEQ_obelix=/cmap/obelix/pod/prismSeq/
 
 #optional
@@ -60,7 +61,8 @@ then
   mkdir $OUT_DIR
 fi
 
-RUNFOLDER_DIR=$(echo /xchip/prism/MiSeq\ Outputs/*-$SEQ_CODE)
+#RUNFOLDER_DIR=$(echo /xchip/prism/MiSeq\ Outputs/*-$SEQ_CODE)
+RUNFOLDER_DIR=$(echo /dropbox/sunny/*-$SEQ_CODE)
 
 echo $RUNFOLDER_DIR
 
@@ -81,5 +83,5 @@ then
   mkdir $BUILD_DIR/fastq/
 fi
 
-echo Copying fastq files from $OUT_DIR/$SEQ_CODE/ to $BUILD_DIR/fastq/
-cp $OUT_DIR/$SEQ_CODE/*.fastq.gz $BUILD_DIR/fastq/
+#echo Copying fastq files from $OUT_DIR/$SEQ_CODE/ to $BUILD_DIR/fastq/
+#cp $OUT_DIR/$SEQ_CODE/*.fastq.gz $BUILD_DIR/fastq/
