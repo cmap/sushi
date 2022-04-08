@@ -61,8 +61,8 @@ then
   mkdir $OUT_DIR
 fi
 
-#RUNFOLDER_DIR=$(echo /xchip/prism/MiSeq\ Outputs/*-$SEQ_CODE)
-RUNFOLDER_DIR=$(echo /dropbox/sunny/*-$SEQ_CODE)
+RUNFOLDER_DIR=$(echo /xchip/prism/MiSeq\ Outputs/*-$SEQ_CODE)
+#RUNFOLDER_DIR=$(echo /dropbox/sunny/*-$SEQ_CODE)
 
 echo $RUNFOLDER_DIR
 
