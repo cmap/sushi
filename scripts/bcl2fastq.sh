@@ -3,9 +3,9 @@ source /broad/software/scripts/useuse
 reuse .bcl2fastq2-v2.20.0 > /dev/null
 reuse .bcl2fastq2-2.20.0.422 > /dev/null
 
-#OUT_DIR=/xchip/prism/bcl2fastq/
+OUT_DIR=/xchip/prism/bcl2fastq/
 PSEQ_obelix=/cmap/obelix/pod/prismSeq/
-OUT_bcl2fastq=/xchip/prism/bcl2fastq/ #new
+#OUT_bcl2fastq=/xchip/prism/bcl2fastq/ #new
 
 #optional
 if test $# -lt 1; then
@@ -14,7 +14,7 @@ if test $# -lt 1; then
   printf -- "-p, --proj_code \t Project code to prep project directory in /cmap/obelix/pod/prismSeq/ \n"
   printf -- "-b, --build_dir \t Build directory, usually on /cmap/obelix/. Overrides PROJ_CODE\n"
   printf -- "-o, --out_dir \t\t Path to temp storage of fastq files on /xchip/prism/ \n"
-  printf -- "-r, --runfolder_dir \t\t Path to folder with BCL files \n" #new
+  printf -- "-r, --runfolder_dir \t Path to folder with BCL files \n" #new
   printf -- "-h, --help \t\t Print this help text\n"
   exit 1
 fi
@@ -27,7 +27,7 @@ while test $# -gt 0; do
       printf -- "-p, --proj_code \t Project code to prep project directory in /cmap/obelix/pod/prismSeq/ \n"
       printf -- "-b, --build_dir \t Build directory, usually on /cmap/obelix/. Overrides PROJ_CODE\n"
       printf -- "-o, --out_dir \t\t Path to temp storage of fastq files on /xchip/prism/ \n"
-      printf -- "-r, --runfolder_dir \t\t Path to folder with BCL files \n" #new
+      printf -- "-r, --runfolder_dir \t Path to folder with BCL files \n" #new
       printf -- "-h, --help \t\t Print this help text\n"
       exit 0
       ;;
@@ -70,12 +70,6 @@ then
 fi
 
 #new
-if [ -z $OUT_DIR ]
-then
-  OUT_DIR=$OUT_bcl2fastq/$SEQ_CODE
-fi
-
-#new
 if [ -z $RUNFOLDER_DIR ]
 then
   RUNFOLDER_DIR=$(echo /xchip/prism/MiSeq\ Outputs/*-$SEQ_CODE)
@@ -100,7 +94,7 @@ fi
 
 if [ ! -d $BUILD_DIR/fastq/ ]
 then
-  mkdir $BUILD_DIR/fastq/
+  mkdir -p $BUILD_DIR/fastq/
 fi
 
 #echo Copying fastq files from $OUT_DIR/$SEQ_CODE/ to $BUILD_DIR/fastq/
