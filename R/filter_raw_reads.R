@@ -42,8 +42,9 @@ filter_raw_reads = function(
   annotated_counts = cell_line_filtered %>%
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
     dplyr::select_if(function(col) sum(is.na(col)) < length(col)) %>%
-    dplyr::select(-any_of(c("flowcell_name", "flowcell_lane", "index_1", "index_2", "members",
-                            "lysate_well", "lysate_plate","forward_read_cl_barcode", "LUA", "pcr_well", "pcr_plate"))) %>%
+    dplyr::select(-any_of(setdiff(c("flowcell_name", "flowcell_lane", "index_1", "index_2", "members",
+                                    "lysate_well", "lysate_plate","forward_read_cl_barcode", "LUA", "pcr_well", "pcr_plate"),
+                                  id_cols))) %>%
     dplyr::relocate(any_of(c("project_code", "CCLE_name", "DepMap_ID", "prism_cell_set", "Name", 
                              "log_dose", "profile_id", "trt_type", 
                              "control_barcodes", "bio_rep", "tech_rep"))) %>%

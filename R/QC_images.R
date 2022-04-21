@@ -22,6 +22,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   num_profiles = filtered_counts$profile_id %>% unique() %>% length()
   
   # counts in each sample, colored by cell line or control barcode
+  print("generating total_counts image")
   total_counts = filtered_counts %>% ungroup() %>% 
     mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode")) %>% 
     group_by(profile_id, type) %>% 
@@ -38,7 +39,8 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   print(tc)
   dev.off()
   
-  # fraction of cexpected cell lines in each sample
+  # fraction of expected cell lines in each sample
+  print("generating cell_lines_present image")
   num_cell_lines = filtered_counts %>% ungroup() %>% 
     filter(!is.na(CCLE_name)) %>% 
     merge(cell_set_meta, by="cell_set", all.x=T) %>%
@@ -62,8 +64,10 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   dev.off()
   
   # sample correlation
+  print("generating sample_cor image")
   correlation_matrix = filtered_counts %>% ungroup() %>% 
-    filter(!is.na(CCLE_name)) %>% 
+    filter(!is.na(CCLE_name),
+           (!trt_type %in% c("empty", "")) & !is.na(trt_type)) %>% 
     mutate(log_n = log10(n)) %>% 
     dcast(CCLE_name~profile_id, value.var="log_n") %>% 
     column_to_rownames("CCLE_name") %>% 
@@ -84,8 +88,10 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   dev.off()
   
   # control barcode trend
+  print("generating control_barcode_trend image")
   wells_with_cb = filtered_counts %>% ungroup() %>% 
-    filter(control_barcodes=="Y")
+    filter(control_barcodes %in% c("Y", "T"),
+           !(trt_type %in% c(NA, "empty")))
   
   if(nrow(wells_with_cb)!=0) {
     cbt = wells_with_cb %>% 
@@ -93,8 +99,8 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
       ggplot(aes(x=log_dose, y=log10(n))) +
       geom_point() +
       geom_smooth(method = 'glm') +
-      stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
-      stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
+      ggpubr::stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
+      ggpubr::stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
       facet_wrap(~profile_id) +
       labs(x="log(dose)")
     
@@ -106,20 +112,41 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   
   # cell line counts vs. control barcode counts
   # assumes that last piece of profile_id is tech_rep
-  aclt = filtered_counts %>% ungroup() %>% 
-    mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
-           log_n = log10(n),
-           sample_id = gsub('.{2}$', '', profile_id)) %>% 
-    dplyr::select(-profile_id, -n) %>% 
-    dcast(...~tech_rep, value.var="log_n") %>% 
-    ggplot(aes(x=`1`, y=`2`, color=type)) +
-    geom_point(alpha=0.5) +
-    facet_wrap(~sample_id) +
-    labs(x="log10(counts) tech rep 1", y="log10(counts) tech rep 2", color="")
+  print("generating all_cell_lines_trend image")
+  num_tech_rep = filtered_counts %>% 
+    filter((!trt_type %in% c("empty", "")) & !is.na(trt_type)) %>% 
+    pull(tech_rep) %>% unique() %>% length()
   
-  pdf(file=paste(out, "all_cell_lines_trend.pdf", sep="/"),
-      width=sqrt(num_profiles), height=sqrt(num_profiles))
-  print(aclt)
-  dev.off()
+  if(num_tech_rep==2) {
+    samples_with_two_tech_rep = filtered_counts %>% 
+      filter(tech_rep==2) %>% 
+      mutate(sample_id = gsub('.{2}$', '', profile_id)) %>% 
+      pull(sample_id) 
+    samples_with_more_tech_rep = filtered_counts %>% 
+      filter(tech_rep>2) %>% 
+      mutate(sample_id = gsub('.{2}$', '', profile_id)) %>% 
+      pull(sample_id) %>% unique()
+    
+    if(length(samples_with_more_tech_rep)!=0 & sum(samples_with_more_tech_rep %in% samples_with_two_tech_rep)!=0) {
+      samples_with_two_tech_rep = samples_with_two_tech_rep[-which(samples_with_two_tech_rep %in% samples_with_more_tech_rep)]
+    }
+    
+    aclt = filtered_counts %>% ungroup() %>% 
+      mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
+             log_n = log10(n),
+             sample_id = gsub('.{2}$', '', profile_id)) %>% 
+      filter(sample_id %in% samples_with_two_tech_rep) %>% 
+      dplyr::select(-profile_id, -n) %>% 
+      dcast(...~tech_rep, value.var="log_n") %>% 
+      ggplot(aes(x=`1`, y=`2`, color=type)) +
+      geom_point(alpha=0.5) +
+      facet_wrap(~sample_id) +
+      labs(x="log10(counts) tech rep 1", y="log10(counts) tech rep 2", color="")
+    
+    pdf(file=paste(out, "all_cell_lines_trend.pdf", sep="/"),
+        width=sqrt(num_profiles), height=sqrt(num_profiles))
+    print(aclt)
+    dev.off()
+  }
 }
 

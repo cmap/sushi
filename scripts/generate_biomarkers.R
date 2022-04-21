@@ -8,31 +8,13 @@ suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(cdsrbiomarker))
-
-## collapse_counts
-## collapses filtered normalized counts and computes MAD/sqrt(n) metrics.
-## cell lines with MAD/sqrt(n) > 0.5 are filtered out, and file with filtered out cell lines is written. 
-## log10(median counts) vs. MAD/sqrt(n) graph is saved, and collapsed filtered count table is returned
-##
-## takes:
-##      filtered_normalized_counts - normalized counts with bad replicates already filtered out
-generate_biomarkers = function(collapsed_values) {
-  bio_in = collapsed_values %>% 
-    filter(trt_pass_QC) %>% 
-    dcast(DepMap_ID~profile_id, value.var="median_l2fc") %>% 
-    column_to_rownames("DepMap_ID")
-  
-  bio_out = cdsrbiomarker::get_biomarkers(bio_in)
-  
-  return(bio_out)
-}
-
+suppressPackageStartupMessages(library(prismSeqR))
 
 parser <- ArgumentParser()
-# specify our desired options 
+# specify our desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
-parser$add_argument("-q", "--quietly", action="store_false", 
+parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--collapsed_values", default="collapsed_values.csv",

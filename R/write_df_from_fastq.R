@@ -28,6 +28,10 @@ write_df_from_fastq <- function(
     index_1_stream <- ShortRead::FastqStreamer(index_1_files[i])
     index_2_stream <- ShortRead::FastqStreamer(index_2_files[i])
     
+    print(paste0("forward read file is: ", forward_read_fastq_files[i]))
+    print(paste0("index 1 file is: ", index_1_files[i]))
+    print(paste0("index 2 file is: ", index_2_files[i]))
+    
     j <- 0
     repeat{
       forward_reads_chunk <- ShortRead::yield(forward_stream)
