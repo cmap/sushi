@@ -90,7 +90,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   # control barcode trend
   print("generating control_barcode_trend image")
   wells_with_cb = filtered_counts %>% ungroup() %>% 
-    filter(control_barcodes=="Y",
+    filter(control_barcodes %in% c("Y", "T"),
            !(trt_type %in% c(NA, "empty")))
   
   if(nrow(wells_with_cb)!=0) {
