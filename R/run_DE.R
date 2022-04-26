@@ -25,10 +25,10 @@ run_DE = function(filtered_counts,
   filtered_counts$sig_id = do.call(paste,c(filtered_counts[sig_cols], sep=':'))
   
   countData = filtered_counts %>% 
-    filter(!trt_type %in% c("day_0", "empty")) %>% 
+    filter(!trt_type %in% c("day_0", "empty", "")) %>% 
     dplyr::select(-any_of(c("log_dose", "log_n"))) %>% 
     dplyr::group_by_at(setdiff(names(.), c("n", "tech_rep", "profile_id", "pcr_plate", "pcr_well"))) %>% 
-    dplyr::summarise(n=sum(n)) %>% ungroup() %>% 
+    dplyr::summarise(n=mean(n)) %>% ungroup() %>% 
     mutate(CCLE_name = ifelse(is.na(CCLE_name), as.character(Name), as.character(CCLE_name)),
            CCLE_name = paste0(CCLE_name, "__", cell_set)) %>% 
     dcast(CCLE_name~sample_id, value.var="n") %>% 
