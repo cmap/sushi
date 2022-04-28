@@ -16,7 +16,7 @@ Instructions for installing `ShortRead` can be found on the [BioconductR page](h
 
 Each PrismSeq project should have its own folder within which to process data and save output files. For the purposes of this tutorial, we will assume you are working with the __example_project__ folder. To begin, your project folder must contains a _sample_meta.csv_ file and a __fastq__ folder with 3 files per sample (index1, index2, read).
 
-A template for the _sample_meta.csv_ file may be found here: https://docs.google.com/spreadsheets/d/1t0Avob53rSio4qcxb5QFqnFjRSZC3wnb/edit?usp=sharing&ouid=112283500068607320752&rtpof=true&sd=true. Please contact cmapa@broadinsitute.org for access, if needed. 
+A template for the _sample_meta.csv_ file may be found [here](https://docs.google.com/spreadsheets/d/1t0Avob53rSio4qcxb5QFqnFjRSZC3wnb/edit?usp=sharing&ouid=112283500068607320752&rtpof=true&sd=true). Please contact cmapa@broadinsitute.org for access, if needed. 
 Create a copy of the _Sequencing Metadata Template [internal]_ tab, fill it out according to the specifications in the instructions tab, and export the metadata sheet as a csv to your project directory.
 
 ## Run
@@ -26,7 +26,7 @@ In order to run the PrismSeq processing pipeline, you must have copies of the fo
 3. _CB_meta.csv_
 Please contact cmapa@broadinstitue.org to request metadata files.
 
-For additional information on the outputs of the PrismSeq processing pipeline see the notes and FAQs here: https://docs.google.com/document/d/1sHpkXQzzFu63QbXYc4W3_YmBCqBikQKXmj57yBJFiCw/edit?usp=sharing. Please contact cmapa@broadinstitute.org for access, if needed.
+For additional information on the outputs of the PrismSeq processing pipeline see the notes and FAQs [here](https://docs.google.com/document/d/1sHpkXQzzFu63QbXYc4W3_YmBCqBikQKXmj57yBJFiCw/edit?usp=sharing). Please contact cmapa@broadinstitute.org for access, if needed.
 
 ### R functions
 The PrismSeq processing pipeline may be run in R using the following functions.
@@ -145,7 +145,7 @@ collapsed_values %>% write.csv("example_project/collapsed_values.csv", row.names
 ```
 
 8. Run biomarker analysis
-This function uses data which is stored on taiga. If you are a member of the Broad Institute you can install taigr, the taiga client for R, by following the instructions here: https://github.com/broadinstitute/taigr. 
+This function uses data which is stored on taiga. If you are a member of the Broad Institute you can install taigr, the taiga client for R, by following the instructions [here](https://github.com/broadinstitute/taigr). 
 This function can take several hours to run.
 
 ```r
@@ -190,11 +190,3 @@ The same considerations as above apply to the following tools.
 
 8. Run biomarker analysis
 `Rscript tools/scripts/generate_biomarkers.R --collapsed_values collapsed_values.csv`
-
-
-
-
-
-
-
-
