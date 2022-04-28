@@ -177,32 +177,48 @@ The same considerations as above apply to the following tools.
 
 1. Generate a read count table from fastq files
 
-`Rscript tools/scripts/fastq2readcounts.R --fastq fastq\ --index_1 _I1_ --index_2 _I2_ --barcode_suffix _R1_`
+```
+Rscript tools/scripts/fastq2readcounts.R --fastq fastq\ --index_1 _I1_ --index_2 _I2_ --barcode_suffix _R1_
+```
 
 2. Filter raw read counts
 
-`Rscript tools/scripts/filter_counts.R --raw_counts raw_counts.csv --sample_meta sample_meta.csv --id_cols cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep --cell_line_meta metadata/cell_line_meta.csv --cell_set_meta metadata/cell_set_meta.csv --CB_meta metadata/CB_meta.csv`
+```
+Rscript tools/scripts/filter_counts.R --raw_counts raw_counts.csv --sample_meta sample_meta.csv --id_cols cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep --cell_line_meta metadata/cell_line_meta.csv --cell_set_meta metadata/cell_set_meta.csv --CB_meta metadata/CB_meta.csv
+```
 
 3. [Optional] Generate QC images
 
-`Rscript filteredCounts_QC.R --filtered_counts filtered_counts.csv --cell_set_meta metadata/cell_set_meta.csv`
+```
+Rscript filteredCounts_QC.R --filtered_counts filtered_counts.csv --cell_set_meta metadata/cell_set_meta.csv
+```
 
 4. [Optional] Run DEseq on filtered counts
 
-`Rscript tools/scripts/call_run_DE.R --filtered_counts filtered_counts.csv --sample_cols cell_set,treatment,dose,dose_unit,day,bio_rep --sig_cols cell_set,treatment,dose,dose_unit,day --control_type negcon`
+```
+Rscript tools/scripts/call_run_DE.R --filtered_counts filtered_counts.csv --sample_cols cell_set,treatment,dose,dose_unit,day,bio_rep --sig_cols cell_set,treatment,dose,dose_unit,day --control_type negcon
+```
 
 5. [Optional] Normalize filtered counts
 
-`Rscript tools/scripts/CBnormalize.R --filtered_counts filtered_counts.csv --CB_meta metadata/CB_meta.csv`
+```
+Rscript tools/scripts/CBnormalize.R --filtered_counts filtered_counts.csv --CB_meta metadata/CB_meta.csv
+```
 
 6. Generate log-fold change values
 
-`Rscript tools/scripts/compute_l2fc.R --normalized_counts normalized_counts.csv --control_type negcon`
+```
+Rscript tools/scripts/compute_l2fc.R --normalized_counts normalized_counts.csv --control_type negcon
+```
 
 7. Collapse replicates
 
-`Rscript tools/scripts/collapse_replicates.R --lfc l2fc.csv`
+```
+Rscript tools/scripts/collapse_replicates.R --lfc l2fc.csv
+```
 
 8. Run biomarker analysis
 
-`Rscript tools/scripts/generate_biomarkers.R --collapsed_values collapsed_values.csv`
+```
+Rscript tools/scripts/generate_biomarkers.R --collapsed_values collapsed_values.csv
+```
