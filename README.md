@@ -18,7 +18,7 @@ Each PrismSeq project should have its own folder within which to process data an
 
 A template for the _sample_meta.csv_ file may be found [here](https://docs.google.com/spreadsheets/d/1t0Avob53rSio4qcxb5QFqnFjRSZC3wnb/edit?usp=sharing&ouid=112283500068607320752&rtpof=true&sd=true). Create a copy of the _Sequencing Metadata Template [internal]_ tab, fill it out according to the specifications in the instructions tab, and export the metadata sheet as a csv to your project directory.
 
-Please contact cmapa@broadinsitute.org for access, if needed. 
+Please contact prism@broadinsitute.org for access, if needed. 
 
 ## Run
 In order to run the PrismSeq processing pipeline, you must have copies of the follow three metadata files. For the purposes of this tutorial, we will assume they are saved in the __metadata__ folder.
@@ -28,14 +28,14 @@ In order to run the PrismSeq processing pipeline, you must have copies of the fo
 
 For additional information on the outputs of the PrismSeq processing pipeline see the notes and FAQs [here](https://docs.google.com/document/d/1sHpkXQzzFu63QbXYc4W3_YmBCqBikQKXmj57yBJFiCw/edit?usp=sharing). 
 
-Please contact cmapa@broadinstitue.org to request metadata files and for access to the notes and FAQs document, if needed.
+Please contact prism@broadinstitue.org to request metadata files and for access to the notes and FAQs document, if needed.
 
 ### R functions
 The PrismSeq processing pipeline may be run in R using the following functions.
 
 1. Generate a read count table from fastq files
 
-For assitance in generating fastq files from BCL files please contact anup@broadinstitute.org, if needed.
+For assitance in generating fastq files from BCL files please contact prism@broadinstitute.org, if needed.
 
 ```r
 # define invariant strings to identify fastq files
