@@ -21,7 +21,7 @@ filter_raw_reads = function(
   cell_set_meta, CB_meta, id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep')) {
   
   #insert profile_id into sample_meta
-  sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
+  #sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
   
   index_filtered = raw_counts %>%
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1,
@@ -35,6 +35,7 @@ filter_raw_reads = function(
     dplyr::filter(mapply(grepl, LUA, members) |
                     (mapply(grepl, LUA, cell_set) & is.na(members)) |
                     (forward_read_cl_barcode %in% CB_meta$Sequence))
+  cell_line_filtered$profile_id = do.call(paste,c(cell_line_filtered[id_cols], sep=':')) #new
   cell_line_purity = sum(cell_line_filtered$n) / sum(index_filtered$n)
 
   qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)

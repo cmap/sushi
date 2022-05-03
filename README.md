@@ -76,12 +76,12 @@ cell_line_meta = read.csv("metadata/cell_line_meta.csv")
 cell_set_meta = read.csv("metadata/cell_set_meta.csv") 
 CB_meta = read.csv("metadata/CB_meta.csv")
 
-filered_counts = filter_raw_reads(raw_counts, 
-                                  sample_meta, 
-                                  cell_line_meta, 
-                                  cell_set_meta, 
-                                  CB_meta, 
-                                  id_cols=c('cell_set', 'treatment', 'dose','dose_unit','day','bio_rep','tech_rep')) # change the id_cols parameter to designate which metadata column uniquely define each profile
+filtered_counts = filter_raw_reads(raw_counts, 
+                                   sample_meta, 
+                                   cell_line_meta, 
+                                   cell_set_meta, 
+                                   CB_meta, 
+                                   id_cols=c('cell_set', 'treatment', 'dose','dose_unit','day','bio_rep','tech_rep')) # change the id_cols parameter to designate which metadata column uniquely define each profile
 
 QC_table = filtered_counts$qc_table
 filtered_counts = filtered_counts$filtered_counts
@@ -92,8 +92,9 @@ filtered_counts %>% write.csv("example_project/filtered_counts.csv", row.names=F
 
 3. [Optional] Generate QC images
 ```r
-filteredCounts_QC(filtered_counts, 
-                  cell_set_meta) 
+QC_images(filtered_counts,
+          cell_set_meta,
+          out = "example_project/") 
 ```
 
 4. [Optional] Run DEseq on filtered counts
@@ -133,12 +134,13 @@ normalized_counts %>% write.csv("example_project/normalized_counts.csv", row.nam
 
 6. Generate log-fold change values
 
-If you normalized your counts, log-fold change values should be generated from normalized counts, otherwise they should be generated from basic filtered counts. Here we assume that you have generated normalized counts as in the previous step.
+If you normalized your counts, log-fold change values should be generated from normalized counts, otherwise they should be generated from basic filtered counts. Here we assume that you have generated normalized counts as in the previous step. You will need to adjust the _count_col_name_ parameter based on which file you are running this function on.
 
 ```r
 l2fc = compute_l2fc(normalized_counts,
                     control_type = "negcon",
-                    sig_cols=c('cell_set', 'treatment', 'dose','dose_unit','day'))
+                    sig_cols=c('cell_set', 'treatment', 'dose','dose_unit','day'),
+                    count_col_name="normalized_n") # change based on whether you are running compute_l2fc on normalized_counts or filtered_counts
 
 l2fc %>% write.csv("example_project/l2fc.csv", row.names=F, quote=F)
 ```
@@ -208,7 +210,7 @@ Rscript tools/scripts/CBnormalize.R --filtered_counts filtered_counts.csv --CB_m
 6. Generate log-fold change values
 
 ```
-Rscript tools/scripts/compute_l2fc.R --normalized_counts normalized_counts.csv --control_type negcon
+Rscript tools/scripts/compute_l2fc.R --normalized_counts normalized_counts.csv --control_type negcon --count_col_name normalized_n
 ```
 
 7. Collapse replicates

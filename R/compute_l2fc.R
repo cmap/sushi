@@ -7,6 +7,8 @@
 #' @param control_type - string that denotes which samples to compute log fold change against. Matches trt_type field. negcon by default.
 #' @param sig_cols - a vector of column names denoting which values specify each individual signature
 #'                    cell_set,treatment,dose,dose_unit,day by default.
+#' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. Generally normalized_n if
+#'                           running on normalied_counts or n if running on filtered_counts
 #' @return - l2fc data.frame with l2fc column
 #' @export
 compute_l2fc = function(normalized_counts, 
