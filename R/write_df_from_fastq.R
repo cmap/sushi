@@ -79,8 +79,8 @@ write_df_from_fastq <- function(
         #cumulative_count_df <- matches_df %>%
         #  dplyr::count(index_1, index_2, forward_read_cl_barcode) %>%
         #  rbind(cumulative_count_df)
-        cumulative_count_df[[lp]] = matches_df %>% # new
-          dplyr::count(index_1, index_2, forward_read_cl_barcode)
+        cumulative_count_df[[lp]] = (matches_df %>% 
+          dplyr::count(index_1, index_2, forward_read_cl_barcode)) # new
       }
     }
     close(forward_stream)
