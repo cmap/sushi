@@ -24,7 +24,7 @@ write_df_from_fastq <- function(
   #cumulative_count_df <- data.frame()
   cumulative_count_df <- list() # new
   
-  lp = 0 # new
+  lp = 1 # new
   for (i in 1:length(forward_read_fastq_files)) {
     forward_stream <- ShortRead::FastqStreamer(forward_read_fastq_files[i])
     index_1_stream <- ShortRead::FastqStreamer(index_1_files[i])
