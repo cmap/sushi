@@ -17,6 +17,9 @@ compute_l2fc = function(normalized_counts,
                         count_col_name="normalized_n") {
   normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
+  normalized_counts = normalized_counts %>% 
+    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
+  
   treatments = normalized_counts %>% 
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",
            !is.na(CCLE_name)) %>% 

@@ -67,7 +67,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   print("generating sample_cor image")
   correlation_matrix = filtered_counts %>% ungroup() %>% 
     filter(!is.na(CCLE_name),
-           (!trt_type %in% c("empty", "")) & !is.na(trt_type)) %>% 
+           (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
     mutate(log_n = log10(n)) %>% 
     dcast(CCLE_name~profile_id, value.var="log_n") %>% 
     column_to_rownames("CCLE_name") %>% 
@@ -91,7 +91,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   print("generating control_barcode_trend image")
   wells_with_cb = filtered_counts %>% ungroup() %>% 
     filter(control_barcodes %in% c("Y", "T"),
-           !(trt_type %in% c(NA, "empty")))
+           !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   
   if(nrow(wells_with_cb)!=0) {
     cbt = wells_with_cb %>% 
@@ -114,7 +114,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   # assumes that last piece of profile_id is tech_rep
   print("generating all_cell_lines_trend image")
   num_tech_rep = filtered_counts %>% 
-    filter((!trt_type %in% c("empty", "")) & !is.na(trt_type)) %>% 
+    filter((!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
     pull(tech_rep) %>% unique() %>% length()
   
   if(num_tech_rep==2) {
