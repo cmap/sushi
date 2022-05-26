@@ -3,7 +3,7 @@ source /broad/software/scripts/useuse
 reuse .bcl2fastq2-v2.20.0 > /dev/null
 reuse .bcl2fastq2-2.20.0.422 > /dev/null
 
-OUT_DIR=/xchip/prism/bcl2fastq/
+#OUT_DIR=/xchip/prism/bcl2fastq/
 PSEQ_obelix=/cmap/obelix/pod/prismSeq/
 #OUT_bcl2fastq=/xchip/prism/bcl2fastq/ #new
 
@@ -63,6 +63,12 @@ while test $# -gt 0; do
   esac
   shift
 done
+
+#new
+if [ -z $OUT_DIR ]
+then
+  OUT_DIR=$(echo /xchip/prism/bcl2fastq/$SEQ_CODE)
+fi
 
 if [ ! -d $OUT_DIR ]
 then

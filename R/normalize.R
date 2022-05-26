@@ -19,7 +19,7 @@ normalize <- function(X, barcodes) {
   }
   
   normalized <- X %>%
-    dplyr::filter(trt_type!="empty") %>% 
+    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
     dplyr::group_by(profile_id) %>%
     dplyr::mutate(log_normalized_n = glm(y ~ x,
                                          data = dplyr::tibble(

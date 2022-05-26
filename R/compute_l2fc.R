@@ -7,6 +7,8 @@
 #' @param control_type - string that denotes which samples to compute log fold change against. Matches trt_type field. negcon by default.
 #' @param sig_cols - a vector of column names denoting which values specify each individual signature
 #'                    cell_set,treatment,dose,dose_unit,day by default.
+#' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. Generally normalized_n if
+#'                           running on normalied_counts or n if running on filtered_counts
 #' @return - l2fc data.frame with l2fc column
 #' @export
 compute_l2fc = function(normalized_counts, 
@@ -15,34 +17,29 @@ compute_l2fc = function(normalized_counts,
                         count_col_name="normalized_n") {
   normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
+  normalized_counts = normalized_counts %>% 
+    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
+  
   treatments = normalized_counts %>% 
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",
-           #is.na(Name)) %>% 
            !is.na(CCLE_name)) %>% 
-    #dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    #dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
-    #dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
                           [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
     dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
-    dplyr::summarise(sum_normalized_n = sum(!! rlang::sym(count_col_name))) %>% 
+    dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup()
   
   controls = normalized_counts %>% 
     dplyr::filter(trt_type==control_type,
-           #is.na(Name)) %>% 
            !is.na(CCLE_name)) %>% 
-    #dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
-    #dplyr::group_by_at(setdiff(names(.), c("normalized_n", "tech_rep", "profile_id"))) %>% 
-    #dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
                           [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
     dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
-    dplyr::summarise(sum_normalized_n = sum(!! rlang::sym(count_col_name))) %>% 
+    dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup() %>% 
     dplyr::group_by(CCLE_name, DepMap_ID, prism_cell_set) %>% 
-    dplyr::summarise(control_median_normalized_n = median(sum_normalized_n),
-                     control_mad_sqrtN = mad(log10(sum_normalized_n))/sqrt(dplyr::n())) %>% 
+    dplyr::summarise(control_median_normalized_n = median(mean_normalized_n),
+                     control_mad_sqrtN = mad(log10(mean_normalized_n))/sqrt(dplyr::n())) %>% 
     dplyr::ungroup() %>% 
     dplyr::mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5, F, T)) %>% 
     dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
@@ -54,7 +51,7 @@ compute_l2fc = function(normalized_counts,
   
   l2fc = treatments %>% 
     merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set"), all.x=T, all.y=T) %>% 
-    dplyr::mutate(l2fc=log2(sum_normalized_n/control_median_normalized_n)) %>% 
+    dplyr::mutate(l2fc=log2(mean_normalized_n/control_median_normalized_n)) %>% 
     dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, sig_id,
                     bio_rep) 
   

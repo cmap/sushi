@@ -21,8 +21,10 @@ write_df_from_fastq <- function(
   WELL_BC_LENGTH <- 8
   
   n_total_reads <- 0
-  cumulative_count_df <- data.frame()
+  #cumulative_count_df <- data.frame()
+  cumulative_count_df <- list() # new
   
+  lp = 1 # new
   for (i in 1:length(forward_read_fastq_files)) {
     forward_stream <- ShortRead::FastqStreamer(forward_read_fastq_files[i])
     index_1_stream <- ShortRead::FastqStreamer(index_1_files[i])
@@ -32,7 +34,7 @@ write_df_from_fastq <- function(
     print(paste0("index 1 file is: ", index_1_files[i]))
     print(paste0("index 2 file is: ", index_2_files[i]))
     
-    j <- 0
+    j <- 1
     repeat{
       forward_reads_chunk <- ShortRead::yield(forward_stream)
       index_1_chunk <- ShortRead::yield(index_1_stream)
@@ -74,23 +76,30 @@ write_df_from_fastq <- function(
       if(nrow(matches_df) == 0) {
         next
       } else {
-        cumulative_count_df <- matches_df %>%
-          dplyr::count(index_1, index_2, forward_read_cl_barcode) %>%
-          rbind(cumulative_count_df)
+        #cumulative_count_df <- matches_df %>%
+        #  dplyr::count(index_1, index_2, forward_read_cl_barcode) %>%
+        #  rbind(cumulative_count_df)
+        cumulative_count_df[[lp]] = (matches_df %>% 
+          dplyr::count(index_1, index_2, forward_read_cl_barcode)) # new
       }
     }
     close(forward_stream)
+    
+    lp = lp + 1 # new
     
     close(index_2_stream)
     close(index_1_stream)
     
     if (!is.na(write_interval) & (i %% write_interval == 0)) {
       print(paste0('saving cumulative count df at iteration, ', i))
-      saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
+      out = cumulative_count_df %>% dplyr::bind_rows() # new
+      #saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
+      saveRDS(out, 'temporary_cumulative_count_df.Rds') # new
     }
   }
   
   cumulative_count_df <- cumulative_count_df %>%
+    dplyr::bind_rows() %>% # new 
     dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
     dplyr::summarise(n = sum(n, na.rm = T)) %>%
     dplyr::ungroup()
