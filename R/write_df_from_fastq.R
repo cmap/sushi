@@ -94,14 +94,14 @@ write_df_from_fastq <- function(
     
     if (!is.na(write_interval) & (i %% write_interval == 0)) {
       print(paste0('saving cumulative count df at iteration, ', i))
-      out = rbind(cumulative_count_df) # new
+      out = cumulative_count_df %>% dplyr::bind_rows() # new
       #saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
       saveRDS(out,  paste(save_loc,'temporary_cumulative_count_df.Rds', sep='/')) # new
     }
   }
   
   print('saving final cumulative_count_df ')
-  out = rbind(cumulative_count_df) # new
+  out = cumulative_count_df %>% dplyr::bind_rows() # new
   #saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
   saveRDS(out, paste(save_loc, 'cumulative_count_df.Rds', sep = '/')) # new
   
