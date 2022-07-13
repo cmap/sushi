@@ -13,9 +13,10 @@
 #' @export
 compute_l2fc = function(normalized_counts, 
                         control_type = "negcon",
-                        sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
+                        sample_id_cols=c('treatment','dose','dose_unit','day', 'bio_rep'),
+                        cell_id_cols=c('CCLE_name', 'DepMap_ID', 'prism_cell_set'),
                         count_col_name="normalized_n") {
-  normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_cols], sep=':'))
+  normalized_counts$profile_id = do.call(paste,c(normalized_counts[sample_id_cols], sep=':'))
   
   normalized_counts = normalized_counts %>% 
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
@@ -25,7 +26,7 @@ compute_l2fc = function(normalized_counts,
            !is.na(CCLE_name)) %>% 
     dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
                           [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
-    dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
+    dplyr::group_by_at(c(sample_id_cols, cell_id_cols)) %>% 
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup()
   
@@ -34,10 +35,10 @@ compute_l2fc = function(normalized_counts,
            !is.na(CCLE_name)) %>% 
     dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
                           [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
-    dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
+    dplyr::group_by_at(c(sample_id_cols, cell_id_cols)) %>% 
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup() %>% 
-    dplyr::group_by(CCLE_name, DepMap_ID, prism_cell_set) %>% 
+    dplyr::group_by(cell_id_cols) %>% 
     dplyr::summarise(control_median_normalized_n = median(mean_normalized_n),
                      control_mad_sqrtN = mad(log10(mean_normalized_n))/sqrt(dplyr::n())) %>% 
     dplyr::ungroup() %>% 
@@ -52,7 +53,7 @@ compute_l2fc = function(normalized_counts,
   l2fc = treatments %>% 
     merge(controls, by=c("CCLE_name", "DepMap_ID", "prism_cell_set"), all.x=T, all.y=T) %>% 
     dplyr::mutate(l2fc=log2(mean_normalized_n/control_median_normalized_n)) %>% 
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, sig_id,
+    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, profile_id,
                     bio_rep) 
   
   return(l2fc)

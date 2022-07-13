@@ -5,10 +5,12 @@
 #'  @param l2fc - l2fc table with MAD/sqrt(n) metric for control condition
 #'  @return - collapsed_counts 
 #'  @export 
-collapse_counts = function(l2fc) {
+collapse_counts = function(l2fc, sig_cols=c('cell_set','treatment','dose','dose_unit','day'), cell_id_cols=c('CCLE_name', 'DepMap_ID', 'prism_cell_set') ) {
+  l2fc$sig_id = do.call(paste,c(l2fc[sig_cols], sep=':'))
+  
   collapsed_counts = l2fc %>% 
     dplyr::filter(control_pass_QC) %>% 
-    dplyr::group_by_at(setdiff(names(.), c("bio_rep", "mean_normalized_n", "control_mad_sqrtN", "l2fc", "control_pass_QC", "control_median_normalized_n"))) %>% 
+    dplyr::group_by_at(c('sig_id', cell_id_cols)) %>% 
     dplyr::summarise(trt_median_normalized_n = median(mean_normalized_n),
                      median_l2fc = median(l2fc),
                      trt_mad_sqrtN = mad(log10(mean_normalized_n))/sqrt(dplyr::n())) %>% 
