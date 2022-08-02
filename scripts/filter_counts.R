@@ -44,7 +44,7 @@ parser$add_argument("-s", "--sample_meta", default="", help = "Sample metadata")
 parser$add_argument("--cell_line_meta", default="../metadata/cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--id_cols", default="treatment,dose,dose_unit,day,bio_rep,tech_rep",
+parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -68,11 +68,7 @@ if (!all(id_cols %in% colnames(sample_meta))){
   stop(paste("Colnames not found in sample_meta, check metadata or --id_cols argument:", args$id_cols))
 }
 
-#Generate Profile Ids based on sample_ID, PCR_well, and technical replicate
-#DONE: make profile_id columns parameters
-#sample_meta$profile_id = with(sample_meta, paste(sample_ID,pcr_well, tech_rep, sep = ":"))
 sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
-
 
 print("creating filtered count file")
 filtered_counts = filter_raw_reads(

@@ -12,16 +12,26 @@ write_df_from_fastq(
 )
 }
 \arguments{
-\item{forward_read_fastq_files}{Vector of fastq file paths}
+\item{forward_read_fastq_files}{\itemize{
+\item vector of fastq file paths
+}}
 
-\item{index_1_files}{Vector of fastq file paths}
+\item{index_1_files}{\itemize{
+\item vector of fastq file paths
+}}
 
-\item{index_2_files}{Vector of fastq file paths}
+\item{index_2_files}{\itemize{
+\item vector of fastq file paths
+}}
 
-\item{write_interval}{integer for how often a temp count file is written.}
+\item{write_interval}{\itemize{
+\item integer for how often a temp count file is written, NA by default.
+}}
 }
 \value{
-cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_cl_barcode
+\itemize{
+\item cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_cl_barcode
+}
 }
 \description{
 takes PRISM miseq or hiseq fastqs and returns a dataframe

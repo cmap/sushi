@@ -4,21 +4,30 @@
 \alias{compute_l2fc}
 \title{compute_l2fc}
 \usage{
-compute_l2fc(normalized_counts, control_type)
+compute_l2fc(
+  normalized_counts,
+  control_type = "negcon",
+  sig_cols = c("cell_set", "treatment", "dose", "dose_unit", "day")
+)
 }
 \arguments{
 \item{normalized_counts}{\itemize{
-\item table with normalized_n column and control_sample column that designates the
-name of the control sample for each treatment sample
+\item table with normalized_n column and trt_type column that designates the
+the control sample
 }}
 
 \item{control_type}{\itemize{
-\item string that denotes which compute samples to compute log fold change. Matches trt_type field
+\item string that denotes which samples to compute log fold change against. Matches trt_type field. negcon by default.
 }}
+
+\item{sig_cols}{sig_cols - a vector of column names denoting which values specify each individual signature
+cell_set,treatment,dose,dose_unit,day by default.}
 }
 \value{
-l2fc data.frame with l2fc column
+\itemize{
+\item l2fc data.frame with l2fc column
+}
 }
 \description{
-takes normalized counts and computes log-fold change values as compared to the annotated control columns
+takes normalized counts and computes log-fold change values as compared to the designated control condition
 }
