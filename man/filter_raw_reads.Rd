@@ -10,7 +10,8 @@ filter_raw_reads(
   cell_line_meta,
   cell_set_meta,
   CB_meta,
-  id_cols = c("treatment", "dose", "dose_unit", "day")
+  id_cols = c("cell_set", "treatment", "dose", "dose_unit", "day", "bio_rep",
+    "tech_rep")
 )
 }
 \arguments{
@@ -35,17 +36,20 @@ filter_raw_reads(
 }}
 
 \item{id_cols}{\itemize{
-\item comma
+\item vector of column names used to generate unique profile_id for each sample.
+cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
 }}
 }
 \value{
-list with the following elements
+\itemize{
+\item list with the following elements
 #' \itemize{
 \item filtered_table df of annotated readcounts
 \item qc_table: QC table of index_purity and cell_line_purity
 }
 }
+}
 \description{
 takes the raw readcount table and filters for expected indices and cell lines
-using the given metadata. QC metrics are written out to a text file
+using the given metadata. QC metrics are returned as a data.frame
 }
