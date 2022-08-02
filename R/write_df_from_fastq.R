@@ -14,13 +14,12 @@ write_df_from_fastq <- function(
   index_1_files, 
   index_2_files,
   write_interval = NA,
+  CL_BC_LENGTH = 24,
+  PLATE_BC_LENGTH = 8,
+  WELL_BC_LENGTH = 8,
   save_loc = getwd()) 
 {
   write_interval = as.numeric(write_interval)
-  
-  CL_BC_LENGTH <- 24
-  PLATE_BC_LENGTH <- 8
-  WELL_BC_LENGTH <- 8
   
   n_total_reads <- 0
   #cumulative_count_df <- data.frame()
