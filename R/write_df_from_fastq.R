@@ -43,7 +43,7 @@ write_df_from_fastq <- function(
       index_2_chunk <- ShortRead::yield(index_2_stream)
       
       if (length(forward_reads_chunk) == 0) {break}
-      browser()
+      
       print(paste0('Processing read ', j * 1e6, ' to ', 
                    j*1e6 + length(forward_reads_chunk), 
                    ' from file ', i)) #(ShortRead)The default size for both streams and samples is 1M records;
@@ -75,7 +75,6 @@ write_df_from_fastq <- function(
       
       n_total_reads <- n_total_reads + length(forward_reads_string_set)
       
-      browser()
       if(nrow(matches_df) == 0) {
         next
       } else if (lp > length(cumulative_count_df)) { 
