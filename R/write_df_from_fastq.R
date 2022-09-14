@@ -24,6 +24,7 @@ write_df_from_fastq <- function(
   n_total_reads <- 0
   #cumulative_count_df <- data.frame()
   cumulative_count_df <- list() # new
+
   
   lp = 1 # new
   for (i in 1:length(forward_read_fastq_files)) {
@@ -35,17 +36,17 @@ write_df_from_fastq <- function(
     print(paste0("index 1 file is: ", index_1_files[i]))
     print(paste0("index 2 file is: ", index_2_files[i]))
     
-    j <- 1
+    j <- 0
     repeat{
       forward_reads_chunk <- ShortRead::yield(forward_stream)
       index_1_chunk <- ShortRead::yield(index_1_stream)
       index_2_chunk <- ShortRead::yield(index_2_stream)
       
       if (length(forward_reads_chunk) == 0) {break}
-      
+      browser()
       print(paste0('Processing read ', j * 1e6, ' to ', 
                    j*1e6 + length(forward_reads_chunk), 
-                   ' from file ', i))
+                   ' from file ', i)) #(ShortRead)The default size for both streams and samples is 1M records;
       j <- j + 1
       
       forward_reads_string_set <- forward_reads_chunk  %>%
@@ -74,14 +75,15 @@ write_df_from_fastq <- function(
       
       n_total_reads <- n_total_reads + length(forward_reads_string_set)
       
+      browser()
       if(nrow(matches_df) == 0) {
         next
-      } else {
-        #cumulative_count_df <- matches_df %>%
-        #  dplyr::count(index_1, index_2, forward_read_cl_barcode) %>%
-        #  rbind(cumulative_count_df)
+      } else if (lp > length(cumulative_count_df)) { 
         cumulative_count_df[[lp]] = (matches_df %>% 
-          dplyr::count(index_1, index_2, forward_read_cl_barcode)) # new
+                                     dplyr::count(index_1, index_2, forward_read_cl_barcode))
+      } else {
+        cumulative_count_df[[lp]] = (matches_df %>% 
+          dplyr::count(index_1, index_2, forward_read_cl_barcode) %>% rbind(cumulative_count_df[[lp]])) # new
       }
     }
     close(forward_stream)
