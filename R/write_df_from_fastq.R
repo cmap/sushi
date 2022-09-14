@@ -13,12 +13,13 @@ write_df_from_fastq <- function(
   forward_read_fastq_files, 
   index_1_files, 
   index_2_files,
-  write_interval = NA) 
+  write_interval = NA,
+  CL_BC_LENGTH = 24,
+  PLATE_BC_LENGTH = 8,
+  WELL_BC_LENGTH = 8,
+  save_loc = getwd()) 
 {
-  
-  CL_BC_LENGTH <- 24
-  PLATE_BC_LENGTH <- 8
-  WELL_BC_LENGTH <- 8
+  write_interval = as.numeric(write_interval)
   
   n_total_reads <- 0
   #cumulative_count_df <- data.frame()
@@ -94,9 +95,14 @@ write_df_from_fastq <- function(
       print(paste0('saving cumulative count df at iteration, ', i))
       out = cumulative_count_df %>% dplyr::bind_rows() # new
       #saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
-      saveRDS(out, 'temporary_cumulative_count_df.Rds') # new
+      saveRDS(out,  paste(save_loc,'temporary_cumulative_count_df.Rds', sep='/')) # new
     }
   }
+  
+  print('saving final cumulative_count_df ')
+  out = cumulative_count_df %>% dplyr::bind_rows() # new
+  #saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
+  saveRDS(out, paste(save_loc, 'cumulative_count_df.Rds', sep = '/')) # new
   
   cumulative_count_df <- cumulative_count_df %>%
     dplyr::bind_rows() %>% # new 
