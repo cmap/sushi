@@ -33,7 +33,9 @@ parser$add_argument("-i1", "--index_1", default="", help = "Index 1 code")
 parser$add_argument("-i2", "--index_2", default="", help = "Index 2 code")
 parser$add_argument("-b", "--barcode_suffix", default="", help = "Barcode Read Files code")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
-parser$add_argument("-w", "--write_interval", help = "integer for how often a temp count file is written.")
+parser$add_argument("-w", "--write_interval", default=500, help = "integer for how often a temp count file is written.")
+parser$add_argument("-l", "--barcode_lengths", default='8,8,24',
+                    help = "Three number, comma-separated string that denotes, PLATE_BC_LEN,WELL_BC_LEN,CELL_BC_LEN, e.g. 8,8,24")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -70,12 +72,22 @@ print("creating read count file")
 
 if (is.null(args$write_interval)){
   write_interval = NA
+} else {
+  write_interval = as.numeric(args$write_interval)
 }
+
+
+#barcode_read_lengths
+read_lengths = as.integer(unlist(strsplit(args$barcode_lengths, ",")))
 
 raw_counts <- write_df_from_fastq(forward_read_fastq_files = barcode_read_files,
                                   index_1_file = index_1_files,
                                   index_2_file = index_2_files,
-                                  write_interval = write_interval
+                                  write_interval = write_interval, 
+                                  PLATE_BC_LENGTH = read_lengths[1],
+                                  WELL_BC_LENGTH = read_lengths[2],
+                                  CL_BC_LENGTH = read_lengths[3],
+                                  save_loc = args$out
                         )
 
 

@@ -13,16 +13,18 @@ write_df_from_fastq <- function(
   forward_read_fastq_files, 
   index_1_files, 
   index_2_files,
-  write_interval = NA) 
+  write_interval = NA,
+  CL_BC_LENGTH = 24,
+  PLATE_BC_LENGTH = 8,
+  WELL_BC_LENGTH = 8,
+  save_loc = getwd()) 
 {
-  
-  CL_BC_LENGTH <- 24
-  PLATE_BC_LENGTH <- 8
-  WELL_BC_LENGTH <- 8
+  write_interval = as.numeric(write_interval)
   
   n_total_reads <- 0
   #cumulative_count_df <- data.frame()
   cumulative_count_df <- list() # new
+
   
   lp = 1 # new
   for (i in 1:length(forward_read_fastq_files)) {
@@ -34,17 +36,17 @@ write_df_from_fastq <- function(
     print(paste0("index 1 file is: ", index_1_files[i]))
     print(paste0("index 2 file is: ", index_2_files[i]))
     
-    j <- 1
+    j <- 0
     repeat{
       forward_reads_chunk <- ShortRead::yield(forward_stream)
       index_1_chunk <- ShortRead::yield(index_1_stream)
       index_2_chunk <- ShortRead::yield(index_2_stream)
       
       if (length(forward_reads_chunk) == 0) {break}
-      
+      browser()
       print(paste0('Processing read ', j * 1e6, ' to ', 
                    j*1e6 + length(forward_reads_chunk), 
-                   ' from file ', i))
+                   ' from file ', i)) #(ShortRead)The default size for both streams and samples is 1M records;
       j <- j + 1
       
       forward_reads_string_set <- forward_reads_chunk  %>%
@@ -73,14 +75,15 @@ write_df_from_fastq <- function(
       
       n_total_reads <- n_total_reads + length(forward_reads_string_set)
       
+      browser()
       if(nrow(matches_df) == 0) {
         next
-      } else {
-        #cumulative_count_df <- matches_df %>%
-        #  dplyr::count(index_1, index_2, forward_read_cl_barcode) %>%
-        #  rbind(cumulative_count_df)
+      } else if (lp > length(cumulative_count_df)) { 
         cumulative_count_df[[lp]] = (matches_df %>% 
-          dplyr::count(index_1, index_2, forward_read_cl_barcode)) # new
+                                     dplyr::count(index_1, index_2, forward_read_cl_barcode))
+      } else {
+        cumulative_count_df[[lp]] = (matches_df %>% 
+          dplyr::count(index_1, index_2, forward_read_cl_barcode) %>% rbind(cumulative_count_df[[lp]])) # new
       }
     }
     close(forward_stream)
@@ -94,9 +97,14 @@ write_df_from_fastq <- function(
       print(paste0('saving cumulative count df at iteration, ', i))
       out = cumulative_count_df %>% dplyr::bind_rows() # new
       #saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
-      saveRDS(out, 'temporary_cumulative_count_df.Rds') # new
+      saveRDS(out,  paste(save_loc,'temporary_cumulative_count_df.Rds', sep='/')) # new
     }
   }
+  
+  print('saving final cumulative_count_df ')
+  out = cumulative_count_df %>% dplyr::bind_rows() # new
+  #saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
+  saveRDS(out, paste(save_loc, 'cumulative_count_df.Rds', sep = '/')) # new
   
   cumulative_count_df <- cumulative_count_df %>%
     dplyr::bind_rows() %>% # new 
