@@ -27,7 +27,7 @@ def format_wells(row, well_field='pcr_well'):
 
 def make_file_names(row, seq_type):
     if seq_type == 'HiSeq':
-        return '{fc_lane}_{fc_name}.{fc_lane}.{index_1}_{index_2}.unmapped.{read_type}'.format( # HiSeq
+        return '[{fc_lane}]_{fc_name}.[{fc_lane}].{index_1}_{index_2}.unmapped.{read_type}'.format( # HiSeq
             fc_name=row['flowcell_name'],
             fc_lane=row['flowcell_lane'],
             index_1=row['IndexBarcode1'],
