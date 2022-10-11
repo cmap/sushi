@@ -1,5 +1,5 @@
 # sushi
-Data Processing Pipeline for PRISM Sequencing (PRISM SEQ)
+Data Processing Pipeline for PRISM Sequencing
 
 ## Install
 
