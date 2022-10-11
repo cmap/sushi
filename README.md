@@ -224,3 +224,5 @@ Rscript tools/scripts/collapse_replicates.R --lfc l2fc.csv
 ```
 Rscript tools/scripts/generate_biomarkers.R --collapsed_values collapsed_values.csv
 ```
+
+Add to github
