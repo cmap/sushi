@@ -46,6 +46,8 @@ parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", 
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
+parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq")
+
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
@@ -77,7 +79,8 @@ filtered_counts = filter_raw_reads(
   cell_line_meta,
   cell_set_meta,
   CB_meta,
-  id_cols=id_cols
+  id_cols=id_cols,
+  reverse_index2=args$reverse_index2
 )
 
 qc_table = filtered_counts$qc_table

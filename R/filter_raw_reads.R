@@ -18,11 +18,18 @@
 #' @export 
 filter_raw_reads = function(
   raw_counts, sample_meta, cell_line_meta, 
-  cell_set_meta, CB_meta, id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep')) {
+  cell_set_meta, CB_meta, 
+  id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
+  reverse_index2 = FALSE) {
   
   #insert profile_id into sample_meta
   #sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
   
+  if (reverse_index2){
+    sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
+    print("Reverse-complementing index 2 barcode.")
+    }
+
   index_filtered = raw_counts %>%
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1,
                   index_2 %in% sample_meta$IndexBarcode2)
