@@ -11,6 +11,6 @@ test_that("Test l2fc function", {
   
   expect_equal(('l2fc' %in% colnames(l2fc_table)), TRUE)
   expect_equal(nrow(ground_truth), nrow(l2fc_table))
-  
+  expect_equal(ground_truth$l2fc, l2fc_table$l2fc)
 }
 )
