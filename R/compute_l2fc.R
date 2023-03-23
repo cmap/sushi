@@ -14,12 +14,14 @@
 compute_l2fc = function(normalized_counts, 
                         control_type = "negcon",
                         sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
+                        control_sigs= c('cell_set', 'day'), # will probably be a subset of sig_cols
                         count_col_name="normalized_n") {
   normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
   normalized_counts = normalized_counts %>% 
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   
+  # collapse tech reps for treatments
   treatments = normalized_counts %>% 
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",
            !is.na(CCLE_name)) %>% 
@@ -29,6 +31,7 @@ compute_l2fc = function(normalized_counts,
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup()
   
+  # collapse controls 
   controls = normalized_counts %>% 
     dplyr::filter(trt_type==control_type,
            !is.na(CCLE_name)) %>% 
@@ -36,13 +39,13 @@ compute_l2fc = function(normalized_counts,
                           [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
     dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::group_by_at(c(sig_cols, "CCLE_name", "DepMap_ID", "prism_cell_set")) %>% 
+    dplyr::ungroup() %>% # tech rep collapse
+    dplyr::group_by_at(c(control_sigs, "CCLE_name", "DepMap_ID", "prism_cell_set")) %>% 
     dplyr::summarise(control_median_normalized_n = median(mean_normalized_n),
                      control_mad_sqrtN = mad(log10(mean_normalized_n))/sqrt(dplyr::n())) %>% 
     dplyr::ungroup() %>% 
     dplyr::mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5, F, T)) %>% 
-    dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, all_of(sig_cols), control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
+    dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, any_of(control_sigs), control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
   
   if(nrow(controls)==0) {
     print("No samples found for indicated control type.")
@@ -50,11 +53,9 @@ compute_l2fc = function(normalized_counts,
   }
   
   l2fc = treatments %>% 
-    merge(controls, by=setdiff(c("CCLE_name", "DepMap_ID", "prism_cell_set", sig_cols), c('treatment','dose','dose_unit')), all.x=T, all.y=T) %>%
+    merge(controls, by= c("CCLE_name", "DepMap_ID", "prism_cell_set", control_sigs), all.x=T, all.y=T) %>%
     dplyr::mutate(l2fc=log2(mean_normalized_n/control_median_normalized_n)) %>%
-    dplyr::rename(treatment = treatment.x, control = treatment.y, dose = dose.x, dose_unit = dose_unit.x) %>%
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, sig_id, bio_rep) %>%
-    dplyr::select(-dose.y, -dose_unit.y)
+    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, sig_id, bio_rep)
   
   return(l2fc)
 }
