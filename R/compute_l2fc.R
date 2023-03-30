@@ -18,6 +18,12 @@ compute_l2fc = function(normalized_counts,
                         sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
                         control_sigs= c('cell_set', 'day'), # will probably be a subset of sig_cols
                         count_col_name="normalized_n") {
+  
+  if(!all(control_sigs %in% sig_cols)) {
+    print("Control sigs are not a subset of sig cols.")
+    stop()
+  }
+  
   normalized_counts$sig_id = do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
   normalized_counts = normalized_counts %>% 
@@ -41,7 +47,6 @@ compute_l2fc = function(normalized_counts,
                           [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
     dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
-    dplyr::ungroup() %>% # tech rep collapse
     dplyr::group_by_at(c(control_sigs, "CCLE_name", "DepMap_ID", "prism_cell_set")) %>% 
     dplyr::summarise(control_median_normalized_n = median(mean_normalized_n),
                      control_mad_sqrtN = mad(log10(mean_normalized_n))/sqrt(dplyr::n())) %>% 
