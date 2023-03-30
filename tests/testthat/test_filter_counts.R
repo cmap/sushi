@@ -16,6 +16,6 @@ test_that("Test filter counts function", {
   filtered_counts = filter_raw_reads(rc, sm, cell_meta, cell_set_meta, CB_meta, id_cols = c('treatment', 'dose','dose_unit','day') )
   
   expect_equal(nrow(filtered_counts$filtered_counts), 69)
-  expect_equal(length(filtered_counts$filtered_counts), 20)
+  expect_equal(length(filtered_counts$filtered_counts), 17)
 }
 )

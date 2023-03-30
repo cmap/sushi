@@ -5,7 +5,7 @@ library(prismSeqR)
 test_that("Test collapse function", {
   
   l2fc_table = read.csv(test_path('assets', 'test_l2fc.csv'))
-  l2fc_collapsed = collapse_counts(l2fc_table)
+  l2fc_collapsed = collapse_counts(l2fc_table %>% dplyr::mutate(mean_normalized_n = 0))
   
   ground_truth = read.csv(test_path('assets', 'test_l2fc_collapsed.csv'))
   
