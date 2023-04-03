@@ -90,17 +90,19 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   # control barcode trend
   print("generating control_barcode_trend image")
   wells_with_cb = filtered_counts %>% ungroup() %>% 
-    filter(control_barcodes %in% c("Y", "T"),
+    filter(control_barcodes %in% c("Y", "T", T),
            !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   
   if(nrow(wells_with_cb)!=0) {
     cbt = wells_with_cb %>% 
       filter(is.na(CCLE_name)) %>% 
+      group_by(profile_id) %>% dplyr::mutate(intercept= glm(I(log10(n)-1*log_dose)~1)$coefficients[1]) %>% ungroup() %>%
       ggplot(aes(x=log_dose, y=log10(n))) +
       geom_point() +
-      geom_smooth(method = 'glm') +
-      ggpubr::stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
-      ggpubr::stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
+      geom_abline(aes(slope=1,intercept= intercept) , color='blue') +
+      #geom_smooth(formula= , method = 'glm') +
+      #ggpubr::stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
+      #ggpubr::stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
       facet_wrap(~profile_id) +
       labs(x="log(dose)")
     
