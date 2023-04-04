@@ -96,10 +96,16 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   if(nrow(wells_with_cb)!=0) {
     cbt = wells_with_cb %>% 
       filter(is.na(CCLE_name)) %>% 
-      group_by(profile_id) %>% dplyr::mutate(intercept= glm(I(log10(n)-1*log_dose)~1)$coefficients[1]) %>% ungroup() %>%
+      group_by(profile_id) %>% dplyr::mutate(intercept= glm(I(log10(n)-1*log_dose)~1)$coefficients[1],
+                                             mean_y= mean(log10(n)),
+                                             predict= log_dose*1 + intercept,
+                                             residual= (log10(n)-predict)^2,
+                                             denom= (log10(n) - mean_y)^2,
+                                             r2= 1- sum(residual)/sum(denom)) %>% ungroup() %>%
       ggplot(aes(x=log_dose, y=log10(n))) +
       geom_point() +
       geom_abline(aes(slope=1,intercept= intercept) , color='blue') +
+      geom_text(x=.2, y=4, aes(label= paste('r2=', r2, sep=''))) +
       #geom_smooth(formula= , method = 'glm') +
       #ggpubr::stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
       #ggpubr::stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
