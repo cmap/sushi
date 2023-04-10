@@ -103,6 +103,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
                                              denom= (log10(n) - mean_y)^2,
                                              r2= 1- sum(residual)/sum(denom)) %>% ungroup() 
     cbt = cb_linear_fit %>%
+      dplyr::mutate(profile_id= reorder(profile_id, r2)) %>%
       ggplot(aes(x=log_dose, y=log10(n))) +
       geom_point() +
       geom_abline(aes(slope=1,intercept= intercept) , color='blue') +
