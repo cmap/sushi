@@ -63,6 +63,36 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   print(ncl)
   dev.off()
   
+  # cumulative counts by number of cell lines
+  print("generating cummulative image")
+  cumulative_counts = filtered_counts %>% ungroup() %>% 
+    dplyr::filter(!is.na(CCLE_name)) %>% # filters out control barcodes
+    pivot_wider(id_cols=DepMap_ID, names_from= profile_id, values_from= n, values_fill= 0) %>% melt() %>%
+    group_by(variable) %>% dplyr::mutate(total_counts= sum(value), pct_counts= (value/total_counts)*100,) %>%
+    dplyr::arrange(-value) %>% dplyr::mutate(cum_pct= cumsum(pct_counts), nlines= row_number()) %>% ungroup %>%
+    dplyr::select(DepMap_ID, variable, value, nlines, total_counts, pct_counts, cum_pct)
+  
+  # table to help with arrangement 
+  half_mark= cumulative_counts %>% dplyr::filter(cum_pct >= 50) %>% dplyr::group_by(variable) %>% 
+    arrange(cum_pct) %>% dplyr::filter(row_number() ==1) %>% ungroup %>% rename(num50= nlines) %>%
+    dplyr::select(variable, num50)
+  cumulative_counts %<>% merge(half_mark, by= 'variable')
+  
+  cc_cl_plt= cumulative_counts %>% dplyr::mutate(variable= reorder(variable, num50)) %>%
+    ggplot(aes(x=nlines, y=cum_pct, color= num50)) +
+    scale_color_viridis_c() +
+    geom_line(alpha= 0.5) + 
+    geom_hline(yintercept=50, linetype='dashed', linewidth= 0.25) +
+    geom_hline(yintercept=95, linetype='dashed', linewidth= 0.25) +
+    geom_hline(yintercept=100, linewidth= 0.25) +
+    facet_wrap_paginate(~variable, nrow= 2, ncol= 4, page= 1) + 
+    labs(x='Number of cell lines', y='Cummulative percentage', color= 'CLs to hit 50%') + theme_bw()
+
+  pdf(file=paste(out, "cumulative_counts.pdf", sep="/"),
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+  print(cc_cl_plt)
+  dev.off()
+  
   # sample correlation
   print("generating sample_cor image")
   correlation_matrix = filtered_counts %>% ungroup() %>% 
