@@ -65,8 +65,8 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   
   # cumulative counts by number of cell lines
   print("generating cummulative image")
-  cumulative_counts = filtered_counts %>% ungroup() %>% 
-    dplyr::filter(!is.na(CCLE_name)) %>% # filters out control barcodes
+  cumulative_counts= filtered_counts %>% ungroup() %>% 
+    dplyr::filter(!is.na(CCLE_name), trt_type=='negcon') %>% # filters out control barcodes and keep negcons
     pivot_wider(id_cols=DepMap_ID, names_from= profile_id, values_from= n, values_fill= 0) %>% melt() %>%
     group_by(variable) %>% dplyr::mutate(total_counts= sum(value), pct_counts= (value/total_counts)*100,) %>%
     dplyr::arrange(-value) %>% dplyr::mutate(cum_pct= cumsum(pct_counts), nlines= row_number()) %>% ungroup %>%
