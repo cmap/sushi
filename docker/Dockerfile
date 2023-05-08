@@ -14,6 +14,7 @@ RUN cd /cmap/bin/ && \
 git clone https://github.com/cmap/sushi.git && \
 cd /
 
+RUN Rscript -e "setwd('/cmap/bin/sushi/');getwd();devtools::install()"
 COPY ./aws_batch.sh /clue/bin/aws_batch
 
 WORKDIR /
