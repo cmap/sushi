@@ -90,17 +90,24 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   # control barcode trend
   print("generating control_barcode_trend image")
   wells_with_cb = filtered_counts %>% ungroup() %>% 
-    filter(control_barcodes %in% c("Y", "T"),
+    filter(control_barcodes %in% c("Y", "T", T),
            !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   
   if(nrow(wells_with_cb)!=0) {
-    cbt = wells_with_cb %>% 
+    cb_linear_fit = wells_with_cb %>% 
       filter(is.na(CCLE_name)) %>% 
+      group_by(profile_id) %>% dplyr::mutate(intercept= glm(I(log10(n)-1*log_dose)~1)$coefficients[1],
+                                             mean_y= mean(log10(n)),
+                                             predict= log_dose*1 + intercept,
+                                             residual= (log10(n)-predict)^2,
+                                             denom= (log10(n) - mean_y)^2,
+                                             r2= 1- sum(residual)/sum(denom)) %>% ungroup() 
+    cbt = cb_linear_fit %>%
+      dplyr::mutate(profile_id= reorder(profile_id, r2)) %>%
       ggplot(aes(x=log_dose, y=log10(n))) +
       geom_point() +
-      geom_smooth(method = 'glm') +
-      ggpubr::stat_regline_equation(aes(label =  ..eq.label..), label.y.npc = "top") +
-      ggpubr::stat_regline_equation(aes(label =  ..adj.rr.label..), label.y.npc = "top", position = position_nudge(y=-0.5)) +
+      geom_abline(aes(slope=1,intercept= intercept) , color='blue') +
+      geom_text(aes(x= sort(unique(log_dose))[2], y= max(log10(n)), label= paste('r2=', r2, sep=''))) +
       facet_wrap(~profile_id) +
       labs(x="log(dose)")
     
@@ -108,8 +115,18 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
         width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
     print(cbt)
     dev.off()
+    
+    # creates a histogram of the r2 values across all unique profiles
+    cbth = ggplot(cb_linear_fit, aes(x=r2)) + 
+      geom_histogram(binwidth=0.01, color='black', alpha=0.5) +
+      labs(x= 'Sample R2', title= 'Distribution of R2 values of control barcode') + theme_bw()
+    
+    pdf(file=paste(out, "control_barcode_trend_histogram.pdf", sep="/"),
+        width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
+    print(cbth)
+    dev.off()
   }
-  
+
   # cell line counts vs. control barcode counts
   # assumes that last piece of profile_id is tech_rep
   print("generating all_cell_lines_trend image")
