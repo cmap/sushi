@@ -90,7 +90,7 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
     merge(mark50, by= 'profile_id') %>% merge(mark95, by='profile_id') %>%
     dplyr::mutate(profile_id= reorder(profile_id, num50)) %>%
     ggplot(aes(x=nlines, y=cum_pct, color= num50)) +
-    geom_line() + scale_color_viridis_c() +
+    geom_line(color='navy') +
     # point for 50% of counts
     geom_segment(aes(x= -Inf , y= 50, xend = num50, yend = 50), color= 'black', linetype='dashed') +
     geom_segment(aes(x= num50  , y= -Inf, xend = num50, yend = 50), color= 'black', linetype='dashed') +
