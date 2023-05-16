@@ -63,6 +63,51 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   print(ncl)
   dev.off()
   
+  # cumulative counts by number of cell lines in negcons
+  print("generating cummulative image")
+  cumulative_counts= filtered_counts %>% ungroup() %>% 
+    dplyr::filter(!is.na(CCLE_name), trt_type=='negcon') %>% # filters out control barcodes and keep negcons
+    pivot_wider(id_cols= DepMap_ID, names_from= profile_id, values_from= n, values_fill= 0) %>% melt() %>%
+    dplyr::rename(profile_id=variable, n= value) %>%
+    group_by(profile_id) %>% dplyr::mutate(total_counts= sum(n), pct_counts= (n/total_counts)*100,) %>%
+    dplyr::arrange(-n) %>% dplyr::mutate(cum_pct= cumsum(pct_counts), nlines= row_number()) %>% ungroup %>%
+    dplyr::select(DepMap_ID, profile_id, n, nlines, total_counts, pct_counts, cum_pct)
+  
+  # additional tables
+  mark50= total_counts %>% dplyr::filter(cum_pct >= 50) %>% dplyr::group_by(profile_id) %>% 
+    arrange(cum_pct) %>% dplyr::filter(row_number() ==1) %>% ungroup %>% rename(num50= nlines) %>%
+    dplyr::select(profile_id, num50)
+  mark95= total_counts %>% dplyr::filter(cum_pct >= 95) %>% dplyr::group_by(profile_id) %>% 
+    arrange(cum_pct) %>% dplyr::filter(row_number() ==1) %>% ungroup %>% rename(num95= nlines) %>%
+    dplyr::select(profile_id, num95)
+  # table with low count cell lines
+  print("exporting low counts csv")
+  low_counts_cl= total_counts %>% dplyr::filter(n < 40) %>%
+    group_by(DepMap_ID) %>% dplyr::mutate(num_profiles=n()) %>% ungroup
+  write.csv(low_counts_cl, file=paste(out, "low_counts_cl_40.csv", sep="/"), row.names=F, quote=F)
+  
+  cc_cl_plt= total_counts %>% 
+    merge(mark50, by= 'profile_id') %>% merge(mark95, by='profile_id') %>%
+    dplyr::mutate(profile_id= reorder(profile_id, num50)) %>%
+    ggplot(aes(x=nlines, y=cum_pct, color= num50)) +
+    geom_line(color='navy') +
+    # point for 50% of counts
+    geom_segment(aes(x= -Inf , y= 50, xend = num50, yend = 50), color= 'black', linetype='dashed') +
+    geom_segment(aes(x= num50  , y= -Inf, xend = num50, yend = 50), color= 'black', linetype='dashed') +
+    geom_label(aes(x=num50, y= 25, label= num50), color= 'black') +
+    # point for 95% of counts
+    geom_segment(aes(x= -Inf , y= 95, xend = num95, yend = 95), color= 'black', linetype='dashed') +
+    geom_segment(aes(x= num95  , y= -Inf, xend = num95, yend = 95), color= 'black', linetype='dashed') +
+    geom_label(aes(x=num95, y= 75, label= num95), color= 'black') +
+    geom_hline(yintercept=100, linewidth= 0.25) +
+    facet_wrap(~profile_id) + 
+    labs(x='Number of cell lines', y='Cummulative percentage', color= 'CLs to hit 50%') + theme_bw()
+
+  pdf(file=paste(out, "cumulative_counts.pdf", sep="/"),
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+  print(cc_cl_plt)
+  dev.off()
+  
   # sample correlation
   print("generating sample_cor image")
   correlation_matrix = filtered_counts %>% ungroup() %>% 
