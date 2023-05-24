@@ -72,21 +72,21 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
     group_by(profile_id) %>% dplyr::mutate(total_counts= sum(n), pct_counts= (n/total_counts)*100,) %>%
     dplyr::arrange(-n) %>% dplyr::mutate(cum_pct= cumsum(pct_counts), nlines= row_number()) %>% ungroup %>%
     dplyr::select(DepMap_ID, profile_id, n, nlines, total_counts, pct_counts, cum_pct)
-  
+
   # additional tables
-  mark50= total_counts %>% dplyr::filter(cum_pct >= 50) %>% dplyr::group_by(profile_id) %>% 
+  mark50= cumulative_counts %>% dplyr::filter(cum_pct >= 50) %>% dplyr::group_by(profile_id) %>% 
     arrange(cum_pct) %>% dplyr::filter(row_number() ==1) %>% ungroup %>% rename(num50= nlines) %>%
     dplyr::select(profile_id, num50)
-  mark95= total_counts %>% dplyr::filter(cum_pct >= 95) %>% dplyr::group_by(profile_id) %>% 
+  mark95= cumulative_counts %>% dplyr::filter(cum_pct >= 95) %>% dplyr::group_by(profile_id) %>% 
     arrange(cum_pct) %>% dplyr::filter(row_number() ==1) %>% ungroup %>% rename(num95= nlines) %>%
     dplyr::select(profile_id, num95)
   # table with low count cell lines
   print("exporting low counts csv")
-  low_counts_cl= total_counts %>% dplyr::filter(n < 40) %>%
+  low_counts_cl= cumulative_counts %>% dplyr::filter(n < 40) %>%
     group_by(DepMap_ID) %>% dplyr::mutate(num_profiles=n()) %>% ungroup
   write.csv(low_counts_cl, file=paste(out, "low_counts_cl_40.csv", sep="/"), row.names=F, quote=F)
   
-  cc_cl_plt= total_counts %>% 
+  cc_cl_plt= cumulative_counts %>% 
     merge(mark50, by= 'profile_id') %>% merge(mark95, by='profile_id') %>%
     dplyr::mutate(profile_id= reorder(profile_id, num50)) %>%
     ggplot(aes(x=nlines, y=cum_pct, color= num50)) +
