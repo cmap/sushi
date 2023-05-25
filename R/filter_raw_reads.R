@@ -25,11 +25,14 @@ filter_raw_reads = function(
   #insert profile_id into sample_meta
   #sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
   
+  # convert CB_meta from log10 to log2
+  CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log2(10^log_dose)) %>% dplyr::select(-log_dose)
+  
   if (reverse_index2){
     sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
     print("Reverse-complementing index 2 barcode.")
-    }
-
+  }
+  
   index_filtered = raw_counts %>%
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1,
                   index_2 %in% sample_meta$IndexBarcode2)
@@ -54,7 +57,7 @@ filter_raw_reads = function(
                                     "lysate_well", "lysate_plate","forward_read_cl_barcode", "LUA", "pcr_well", "pcr_plate"),
                                   id_cols))) %>%
     dplyr::relocate(any_of(c("project_code", "CCLE_name", "DepMap_ID", "prism_cell_set", "Name", 
-                             "log_dose", "profile_id", "trt_type", 
+                             "log2_dose", "profile_id", "trt_type", 
                              "control_barcodes", "bio_rep", "tech_rep"))) %>%
     dplyr::relocate(n, .after=last_col())
   
