@@ -113,8 +113,8 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   correlation_matrix = filtered_counts %>% ungroup() %>% 
     filter(!is.na(CCLE_name),
            (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
-    mutate(log_n = log10(n)) %>% 
-    dcast(CCLE_name~profile_id, value.var="log_n") %>% 
+    mutate(log2_n = log2(n)) %>% 
+    dcast(CCLE_name~profile_id, value.var="log2_n") %>% 
     column_to_rownames("CCLE_name") %>% 
     cor(use="pairwise.complete.obs") 
   
@@ -141,18 +141,18 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
   if(nrow(wells_with_cb)!=0) {
     cb_linear_fit = wells_with_cb %>% 
       filter(is.na(CCLE_name)) %>% 
-      group_by(profile_id) %>% dplyr::mutate(intercept= glm(I(log10(n)-1*log_dose)~1)$coefficients[1],
-                                             mean_y= mean(log10(n)),
-                                             predict= log_dose*1 + intercept,
-                                             residual= (log10(n)-predict)^2,
-                                             denom= (log10(n) - mean_y)^2,
+      group_by(profile_id) %>% dplyr::mutate(intercept= glm(I(log2(n)-1*log2_dose)~1)$coefficients[1],
+                                             mean_y= mean(log2(n)),
+                                             predict= log2_dose*1 + intercept,
+                                             residual= (log2(n)-predict)^2,
+                                             denom= (log2(n) - mean_y)^2,
                                              r2= 1- sum(residual)/sum(denom)) %>% ungroup() 
     cbt = cb_linear_fit %>%
       dplyr::mutate(profile_id= reorder(profile_id, r2)) %>%
-      ggplot(aes(x=log_dose, y=log10(n))) +
+      ggplot(aes(x=log2_dose, y=log2(n))) +
       geom_point() +
       geom_abline(aes(slope=1,intercept= intercept) , color='blue') +
-      geom_text(aes(x= sort(unique(log_dose))[2], y= max(log10(n)), label= paste('r2=', r2, sep=''))) +
+      geom_text(aes(x= sort(unique(log2_dose))[2], y= max(log2(n)), label= paste('r2=', r2, sep=''))) +
       facet_wrap(~profile_id) +
       labs(x="log(dose)")
     
@@ -195,15 +195,15 @@ QC_images = function(filtered_counts, cell_set_meta, out = NA) {
     
     aclt = filtered_counts %>% ungroup() %>% 
       mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
-             log_n = log10(n),
+             log2_n = log2(n),
              sample_id = gsub('.{2}$', '', profile_id)) %>% 
       filter(sample_id %in% samples_with_two_tech_rep) %>% 
       dplyr::select(-profile_id, -n) %>% 
-      dcast(...~tech_rep, value.var="log_n") %>% 
+      dcast(...~tech_rep, value.var="log2_n") %>% 
       ggplot(aes(x=`1`, y=`2`, color=type)) +
       geom_point(alpha=0.5) +
       facet_wrap(~sample_id) +
-      labs(x="log10(counts) tech rep 1", y="log10(counts) tech rep 2", color="")
+      labs(x="log2(counts) tech rep 1", y="log2(counts) tech rep 2", color="")
     
     pdf(file=paste(out, "all_cell_lines_trend.pdf", sep="/"),
         width=sqrt(num_profiles), height=sqrt(num_profiles))
