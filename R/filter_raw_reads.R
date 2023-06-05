@@ -25,8 +25,8 @@ filter_raw_reads = function(
   #insert profile_id into sample_meta
   #sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
   
-  # convert CB_meta from log10 to log2
-  CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log2(10^log_dose)) %>% dplyr::select(-log_dose)
+  # New: convert CB_meta from log10 to log2
+  CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
   if (reverse_index2){
     sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
@@ -45,7 +45,7 @@ filter_raw_reads = function(
     dplyr::filter(mapply(grepl, LUA, members) |
                     (mapply(grepl, LUA, cell_set) & is.na(members)) |
                     (forward_read_cl_barcode %in% CB_meta$Sequence))
-  cell_line_filtered$profile_id = do.call(paste,c(cell_line_filtered[id_cols], sep=':')) #new
+  cell_line_filtered$profile_id = do.call(paste,c(cell_line_filtered[id_cols], sep=':')) 
   cell_line_purity = sum(cell_line_filtered$n) / sum(index_filtered$n)
 
   qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)
