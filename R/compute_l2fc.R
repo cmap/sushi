@@ -20,7 +20,7 @@ compute_l2fc = function(normalized_counts,
                         count_col_name="normalized_n") {
   
   if(!all(control_sigs %in% sig_cols)) {
-    print("Control sigs are not a subset of sig cols.")
+    print("Control sigs are not a subset of sig cols.") # new
     stop()
   }
   
@@ -33,8 +33,8 @@ compute_l2fc = function(normalized_counts,
   treatments = normalized_counts %>% 
     dplyr::filter(trt_type!=control_type, trt_type!="day_0",
            !is.na(CCLE_name)) %>% 
-    dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
-                          [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
+    dplyr::select(-any_of(c("Name", "log2_dose", "n", "log2_n", "log2_normalized_n", "normalized_n")
+                          [!(c("Name", "log2_dose", "n", "log2_n", "log2_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
     dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
     dplyr::ungroup()
@@ -43,15 +43,15 @@ compute_l2fc = function(normalized_counts,
   controls = normalized_counts %>% 
     dplyr::filter(trt_type==control_type,
            !is.na(CCLE_name)) %>% 
-    dplyr::select(-any_of(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n")
-                          [!(c("Name", "log_dose", "n", "log_n", "log_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
+    dplyr::select(-any_of(c("Name", "log2_dose", "n", "log2_n", "log2_normalized_n", "normalized_n")
+                          [!(c("Name", "log2_dose", "n", "log2_n", "log2_normalized_n", "normalized_n") %in% count_col_name)])) %>% 
     dplyr::group_by_at(setdiff(names(.), c(count_col_name, "tech_rep", "profile_id"))) %>% 
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name))) %>% 
     dplyr::group_by_at(c(control_sigs, "CCLE_name", "DepMap_ID", "prism_cell_set")) %>% 
     dplyr::summarise(control_median_normalized_n = median(mean_normalized_n),
-                     control_mad_sqrtN = mad(log10(mean_normalized_n))/sqrt(dplyr::n())) %>% 
+                     control_mad_sqrtN = mad(log2(mean_normalized_n))/sqrt(dplyr::n())) %>% 
     dplyr::ungroup() %>% 
-    dplyr::mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5, F, T)) %>% 
+    dplyr::mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5/log10(2), F, T)) %>% # New: adjusted cut off to log2
     dplyr::select(CCLE_name, DepMap_ID, prism_cell_set, any_of(control_sigs), control_median_normalized_n, control_mad_sqrtN, control_pass_QC)
   
   if(nrow(controls)==0) {
