@@ -28,7 +28,7 @@ normalize <- function(X, barcodes) {
                   log2_normalized_n= log2_n + intercept) %>%
     dplyr::ungroup() %>%
     dplyr::select(-intercept) %>%
-    dplyr::mutate(normalized_n = 2^log_normalized_n)
+    dplyr::mutate(normalized_n = 2^log2_normalized_n)
 
   return(normalized)
 }
