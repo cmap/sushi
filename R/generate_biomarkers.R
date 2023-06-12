@@ -1,7 +1,7 @@
 #' generate_biomarkers
 #' 
 #' collapses filtered normalized counts and computes MAD/sqrt(n) metrics.
-#' cell lines with MAD/sqrt(n) > 0.5 are filtered out, and file with filtered out cell lines is written. 
+#' cell lines with MAD/sqrt(n) > 0.5/log10(2) are filtered out, and file with filtered out cell lines is written. 
 #' log10(median counts) vs. MAD/sqrt(n) graph is saved, and collapsed filtered count table is returned
 #'
 #' 
