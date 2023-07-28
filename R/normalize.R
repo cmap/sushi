@@ -15,7 +15,7 @@
 normalize <- function(X, barcodes) {
   if (!('log2_n' %in% colnames(X)) & 
       ('n' %in% colnames(X))) {
-    X <- X %>% dplyr::mutate(log2_n = log2(n))
+    X <- X %>% dplyr::mutate(log2_n = log2(n + 1)) # New: added a pseudocount for reads with 0.
   }
   
   normalized <- X %>%
