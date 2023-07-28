@@ -22,22 +22,18 @@ filter_raw_reads = function(
   id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
   reverse_index2 = FALSE) {
   
-  #insert profile_id into sample_meta
-  #sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
-  
   # New: convert CB_meta from log10 to log2
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
-  if (reverse_index2){
+  if (reverse_index2) {
     sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
     print("Reverse-complementing index 2 barcode.")
   }
   
   index_filtered = raw_counts %>%
-    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1,
-                  index_2 %in% sample_meta$IndexBarcode2)
+    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2)
   index_purity = sum(index_filtered$n) / sum(raw_counts$n)
-
+  
   cell_line_filtered = index_filtered %>%
     merge(sample_meta, by.x=c("index_1", "index_2"), by.y=c("IndexBarcode1", "IndexBarcode2")) %>%
     merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
@@ -45,21 +41,47 @@ filter_raw_reads = function(
     dplyr::filter(mapply(grepl, LUA, members) |
                     (mapply(grepl, LUA, cell_set) & is.na(members)) |
                     (forward_read_cl_barcode %in% CB_meta$Sequence))
-  cell_line_filtered$profile_id = do.call(paste,c(cell_line_filtered[id_cols], sep=':')) 
-  cell_line_purity = sum(cell_line_filtered$n) / sum(index_filtered$n)
-
+  cell_line_purity = sum(cell_line_filtered$n)/ sum(index_filtered$n)
+  
   qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)
   
-  annotated_counts = cell_line_filtered %>%
-    merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
-    dplyr::select_if(function(col) sum(is.na(col)) < length(col)) %>%
-    dplyr::select(-any_of(setdiff(c("flowcell_name", "flowcell_lane", "index_1", "index_2", "members",
-                                    "lysate_well", "lysate_plate","forward_read_cl_barcode", "LUA", "pcr_well", "pcr_plate"),
-                                  id_cols))) %>%
-    dplyr::relocate(any_of(c("project_code", "CCLE_name", "DepMap_ID", "prism_cell_set", "Name", 
-                             "log2_dose", "profile_id", "trt_type", 
-                             "control_barcodes", "bio_rep", "tech_rep"))) %>%
-    dplyr::relocate(n, .after=last_col())
+  # make template of expected reads
+  plate_map= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
+  sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
+  template= sample_meta %>% merge(cell_set_meta, by='cell_set') %>%
+    dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
+    unnest(cols=c(members)) %>%
+    merge(cell_line_meta, by.x= 'members', by.y= 'LUA', all.x= T)
   
-  return(list(filtered_counts=annotated_counts, qc_table=qc_table))
+  # check for control barcodes and add them to the template
+  if ('Y' %in% sample_meta$control_barcodes) {
+    cb_template= sample_meta %>% dplyr::filter(control_barcodes== 'Y') %>% 
+      merge(CB_meta %>% dplyr::mutate(control_barcodes='Y'), by='control_barcodes')
+    template= plyr::rbind.fill(template, cb_template)
+  }
+  
+  # annotating reads now takes much longer
+  annotated_counts= raw_counts %>%
+    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
+    merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
+    merge(plate_map, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
+    merge(template, 
+          by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
+          by.y= c('IndexBarcode1', 'IndexBarcode2', 'Sequence', intersect(colnames(template), colnames(.))),
+          all.x=T, all.y=T) %>% 
+    dplyr::mutate(n= replace_na(n, 0))
+  
+  # filtered counts
+  filt_cols= c('project_code', 'pcr_plate', 'pcr_well', 'CCLE_name', 'DepMap_ID', 'prism_cell_set',
+               'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type')
+  filtered_counts= annotated_counts %>% dplyr::filter(!is.na(project_code)) %>%
+    dplyr::select(any_of(c(filt_cols, id_cols, 'n', 'low_counts'))) %>%
+    dplyr::mutate(low_counts= ifelse(n < 40, T, F))
+  
+  # excluded counts
+  #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
+  #  dplyr::select_if(function(col) sum(is.na(col)) < length(col)) # ignore columns with all NAs
+  
+  return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts,
+              qc_table= qc_table))
 }
