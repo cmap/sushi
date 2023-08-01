@@ -21,13 +21,13 @@ normalize <- function(X, barcodes) {
   normalized <- X %>%
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
     dplyr::group_by(profile_id) %>%
-    dplyr::mutate(intercept = glm(I(y-1*x)~1,
+    dplyr::mutate(cb_intercept = glm(I(y-1*x)~1,
                                   data = dplyr::tibble(
                                     y = log2_dose[Name %in% barcodes],
                                     x = log2_n[Name %in% barcodes]))$coefficients[1],
-                  log2_normalized_n= log2_n + intercept) %>%
+                  log2_normalized_n= log2_n + cb_intercept) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-intercept) %>%
+    #dplyr::select(-cb_intercept) %>%
     dplyr::mutate(normalized_n = 2^log2_normalized_n)
 
   return(normalized)
