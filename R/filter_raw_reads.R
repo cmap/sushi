@@ -54,9 +54,10 @@ filter_raw_reads = function(
     merge(cell_line_meta, by.x= 'members', by.y= 'LUA', all.x= T)
   
   # check for control barcodes and add them to the template
-  if ('Y' %in% sample_meta$control_barcodes) {
-    cb_template= sample_meta %>% dplyr::filter(control_barcodes== 'Y') %>% 
-      merge(CB_meta %>% dplyr::mutate(control_barcodes='Y'), by='control_barcodes')
+  if ('Y' %in% sample_meta$control_barcodes | T %in% sample_meta$control_barcodes) {
+    cb_template= sample_meta %>% dplyr::filter(control_barcodes %in% c('Y', 'T', T)) %>%
+      dplyr::mutate(joiner = 'temp') %>%
+      merge(CB_meta %>% dplyr::mutate(joiner= 'temp'), by='joiner') %>% dplyr::select(-joiner)
     template= plyr::rbind.fill(template, cb_template)
   }
   
@@ -75,8 +76,8 @@ filter_raw_reads = function(
   filt_cols= c('project_code', 'pcr_plate', 'pcr_well', 'CCLE_name', 'DepMap_ID', 'prism_cell_set',
                'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type')
   filtered_counts= annotated_counts %>% dplyr::filter(!is.na(project_code)) %>%
-    dplyr::select(any_of(c(filt_cols, id_cols, 'n', 'low_counts'))) %>%
-    dplyr::mutate(low_counts= ifelse(n < 40, T, F))
+    dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
+    dplyr::mutate(flag= ifelse(n==0, 'Missing', NA))
   
   # excluded counts
   #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
