@@ -32,7 +32,7 @@ compute_l2fc = function(normalized_counts,
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
     dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
                                            'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 'log2_normalized_n',
-                                           'low_counts', count_col_name))) %>% 
+                                           'flag', count_col_name))) %>% 
     dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name)), 
                      num_tech_reps= n()) %>% 
     dplyr::ungroup()
