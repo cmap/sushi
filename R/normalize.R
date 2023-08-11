@@ -15,11 +15,11 @@
 normalize <- function(X, barcodes) {
   if (!('log2_n' %in% colnames(X)) & 
       ('n' %in% colnames(X))) {
-    X <- X %>% dplyr::mutate(log2_n = log2(n + 1)) # New: added a pseudocount for reads with 0.
+    X <- X %>% dplyr::mutate(log2_n = log2(n))
   }
   
   normalized <- X %>%
-    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
+    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), n!=0) %>% 
     dplyr::group_by(profile_id) %>%
     dplyr::mutate(cb_intercept = glm(I(y-1*x)~1,
                                   data = dplyr::tibble(
