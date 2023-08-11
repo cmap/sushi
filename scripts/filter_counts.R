@@ -84,25 +84,17 @@ filtered_counts = filter_raw_reads(
 )
 
 qc_table = filtered_counts$qc_table
-
-qc_out_file = paste(
-  args$out,
-  'QC_table.csv',
-  sep='/'
-)
-
+qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
 print(paste("writing QC_table to: ", qc_out_file))
 write.csv(qc_table, qc_out_file, row.names=F, quote=F)
 
-
 filtered_counts = filtered_counts$filtered_counts
-
 #Write Filtered Counts Table
-filtrc_out_file = paste(
-  args$out,
-  'filtered_counts.csv',
-  sep='/'
-)
-
+filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
 print(paste("writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
+
+annotated_counts = filtered_counts$annotated_counts
+annot_out_file = paste(args$out, 'annotated_counts.csv', sep='/')
+print(paste("writing annotated counts to: ", annot_out_file))
+write.csv(annotated_counts, annot_out_file, row.names=F, quote=F)
