@@ -19,7 +19,7 @@ parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv"
 parser$add_argument("-ct", "--control_type", default="negcon", help="trt_type to use as control")
 parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day", 
                     help = "columns used to generate signature ids")
-parser$add_argument("--control_sigs", default="cell_set,day", 
+parser$add_argument("--ctrl_cols", default="cell_set,day", 
                     help = "columns used to collapse controls to generate l2fc")
 parser$add_argument("-ccn", "--count_col_name", default="normalized_n", 
                     help = "column containing counts with which to calculate l2fc")
@@ -31,11 +31,11 @@ args <- parser$parse_args()
 control_type = args$control_type
 normalized_counts = read.csv(args$normalized_counts)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
-control_sigs = unlist(strsplit(args$control_sigs, ","))
+ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 count_col_name = args$count_col_name
 
 print("computing log-fold change")
-l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, control_sigs, count_col_name)
+l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, ctrl_cols, count_col_name)
 
 l2fc_out = paste(args$out, "l2fc.csv", sep="/")
 write.csv(l2fc, l2fc_out, row.names=F, quote=F)
