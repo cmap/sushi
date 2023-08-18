@@ -22,7 +22,7 @@
 #' @return - NA, QC images are written out to the specified folder
 #' @export
 QC_images = function(annotated_counts, filtered_counts, normalized_counts,
-                     CB_meta, cell_set_meta, out = NA, sig_cols, count_col_names= 'normalized_n',
+                     CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
                      count_threshold=40) {
   if(is.na(out)) {
     out = getwd()
@@ -193,7 +193,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
   
   recurring_low_cl= filtered_counts %>% dplyr::filter(n < count_threshold, is.na(Name), trt_type=='negcon') %>%
     dplyr::group_by(project_code, CCLE_name, DepMap_ID, cell_set) %>%
-    dplyr::summarize(num_profiles= length(unique(profile_id)),
+    dplyr::summarize(num_profiles= n(),
                      median_n= median(n), max_n= max(n)) %>% dplyr::ungroup() %>%
     dplyr::arrange(cell_set, desc(num_profiles), median_n, max_n)
   recurring_low_cl %>% write.csv(file= paste(out, 'recurring_low_cl.csv', sep='/'), row.names=F)
@@ -246,13 +246,13 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
   dev.off()
   
   ## Control barcode trends ----
-  contains_cbs= filtered_counts %>%
+  contains_cbs= normalized_counts %>%
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   
   if(nrow(contains_cbs)!= 0) {
     print("generating control_barcode_trend image")
-    cb_trend= normalized_counts %>% dplyr::filter(control_barcodes=='Y', !is.na(Name)) %>%
+    cb_trend= contains_cbs %>% dplyr::filter(!is.na(Name)) %>%
       dplyr::group_by(profile_id) %>%
       dplyr::mutate(mean_y= mean(log2_dose),
                     residual2= (log2_dose - log2_normalized_n)^2,
@@ -318,15 +318,19 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     tech_reps_piv= normalized_counts %>% dplyr::mutate(bio_rep_id= str_replace(profile_id, ':\\d+$', '')) %>%
       dplyr::group_by_at(c(static_cols, 'bio_rep_id')) %>% dplyr::filter(n!=0, n()==2) %>% dplyr::ungroup() %>%
       pivot_wider(id_cols= all_of(c(static_cols, 'bio_rep_id')),
-                  names_from= tech_rep, names_prefix= 'tech_rep', values_from= log_n) %>%
-      dplyr::mutate(type= ifelse(!is.na(CCLE_name), "cell line", "control barcode"))
+                  names_from= tech_rep, names_prefix= 'tech_rep', values_from= log2_n) %>%
+    dplyr::group_by(bio_rep_id) %>%
+      dplyr::mutate(r2= cor(tech_rep1, tech_rep2, use='p')^2,
+                    type= ifelse(!is.na(CCLE_name), "cell line", "control barcode")) %>% dplyr::ungroup()
     
-    tech_reps_plt= tech_reps_piv %>% ggplot(aes(x= tech_rep1, y= tech_rep2)) +
+    tech_reps_plt= tech_reps_piv %>% dplyr::mutate(bio_rep_id= reorder(bio_rep_id, r2)) %>%
+      ggplot(aes(x= tech_rep1, y= tech_rep2)) +
       geom_point(aes(color= type), alpha=0.75) +
       geom_smooth(method='lm', se=F, color='black', linewidth=0.5, linetype=2) +
       stat_correlation(mapping = use_label(c("R2", "n")))+ 
       facet_wrap(~bio_rep_id, scales= 'free') +
       labs(x="tech rep 1 log2(n)", y="tech rep 2 log2(n)") + theme_bw()
+    
     
     pdf(file=paste(out, "tech_reps_plt.pdf", sep="/"),
         width=sqrt(num_profiles), height=sqrt(num_profiles))
@@ -340,13 +344,13 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     pull(bio_rep) %>% unique() %>% length()
   
   if(num_bio_reps > 1) {
+    print("generating bio rep correlations image")
     # collapse tech reps taken from 'compute_l2fc'
     collapsed_tech_rep= normalized_counts %>%
       dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
       dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
                                              'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 
-                                             'log2_normalized_n',
-                                             'low_counts', count_col_name))) %>% 
+                                             'log2_normalized_n', count_col_name))) %>% 
       dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name)), 
                        num_tech_reps= n()) %>% 
       dplyr::ungroup()
@@ -413,5 +417,5 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     print(aclt)
     dev.off()
   }
+  print('QC finishing')
 }
-
