@@ -43,12 +43,13 @@ filter_raw_reads = function(
                     (forward_read_cl_barcode %in% CB_meta$Sequence))
   cell_line_purity = sum(cell_line_filtered$n)/ sum(index_filtered$n)
   
+  print("Generating QC table ...")
   qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)
   
   # make template of expected reads
   plate_map= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
   sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
-  template= sample_meta %>% merge(cell_set_meta, by='cell_set') %>%
+  template= sample_meta %>% merge(cell_set_meta, by='cell_set', all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     unnest(cols=c(members)) %>%
     merge(cell_line_meta, by.x= 'members', by.y= 'LUA', all.x= T)
@@ -62,6 +63,7 @@ filter_raw_reads = function(
   }
   
   # annotating reads now takes much longer
+  print("Annotating reads ...")
   annotated_counts= raw_counts %>%
     merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
@@ -73,6 +75,7 @@ filter_raw_reads = function(
     dplyr::mutate(n= replace_na(n, 0))
   
   # filtered counts
+  print("Filtering reads ...")
   filt_cols= c('project_code', 'pcr_plate', 'pcr_well', 'CCLE_name', 'DepMap_ID', 'prism_cell_set',
                'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type')
   filtered_counts= annotated_counts %>% dplyr::filter(!is.na(project_code)) %>%
