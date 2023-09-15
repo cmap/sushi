@@ -29,7 +29,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
   }
   num_profiles = filtered_counts$profile_id %>% unique() %>% length()
   
-  # Are there control barcodes?
+  # Control barcode check ----
   cb_check= filtered_counts %>%
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
@@ -47,7 +47,8 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
                   expected= ifelse(index_1 %in% expected_index1, T, F),
                   contains_n= ifelse(grepl('N', index_1), T, F),
                   lv_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="lv"), 1, min),
-                  ham_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="hamming"), 1, min)) %>%
+                  ham_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="hamming"), 
+                                  1, min)) %>%
     dplyr::arrange(desc(fraction_n))
   index2_counts= annotated_counts %>% dplyr::group_by(index_2) %>%
     dplyr::summarise(n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
@@ -55,15 +56,36 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
                   expected= ifelse(index_2 %in% expected_index2, T, F),
                   contains_n= ifelse(grepl('N', index_2), T, F),
                   lv_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="lv"), 1, min),
-                  ham_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="hamming"), 1, min)) %>%
+                  ham_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="hamming"), 
+                                  1, min)) %>%
     dplyr::arrange(desc(fraction_n))
   # export
   index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
   index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
   
+  ## Total counts ----
+  print("generating total_counts image")
+  total_counts= filtered_counts %>% ungroup() %>% 
+    mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
+           sample_id= paste(pcr_plate, pcr_well, sep='_')) %>%
+    group_by(pcr_plate, pcr_well, sample_id, profile_id, type) %>% 
+    dplyr::summarise(total_counts = sum(n))
+  
+  tc= total_counts %>% ggplot() +
+    geom_col(aes(x=sample_id, y=total_counts, fill=type), alpha=0.75, position='identity') +
+    geom_hline(yintercept= 10^4, linetype=2) + 
+    facet_wrap(~pcr_plate, scale= 'free_x') +
+    labs(x="", y="total counts", fill="") + theme_bw() +
+    theme(axis.text.x = element_text(angle=70, hjust=1, size=5)) 
+  
+  pdf(file=paste(out, "total_counts.pdf", sep="/"),
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+  print(tc)
+  dev.off()
+  
   ## Control barcode counts ----
   if(contains_cbs) { 
-  print('generating control barcode counts')
+    print('generating control barcode counts')
     idx_pairs_cbs= annotated_counts %>% dplyr::filter(!is.na(Name), !is.na(project_code)) %>%
       dplyr::group_by(index_1, index_2, pcr_plate, pcr_well) %>%
       dplyr::summarise(total_well_cbs= sum(n)) %>%
@@ -74,6 +96,19 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     
     idx_pairs_cbs %>% write.csv(file= paste(out, 'cbs_counts.csv', sep='/'), row.names=F)
   }
+  
+  ## Distribution of included and excluded reads ----
+  distrib_fc= annotated_counts %>% dplyr::filter(n > 1, !is.na(pcr_plate), !is.na(pcr_well)) %>%
+    ggplot(aes(x= log10(n), fill= project_code)) +
+    geom_histogram(position='identity', alpha=0.5) +
+    geom_vline(xintercept= log10(low_counts), linetype=2) +
+    facet_wrap(~pcr_plate, scales='free') +
+    labs(x= 'log10(n)', title= 'Distribution of excluded and included reads') +
+    theme_bw()
+  pdf(file=paste(out, "count_distribution.pdf", sep="/"),
+      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+  print(distrib_fc)
+  dev.off()
   
   ## In set/out set reads by well ----
   print('generating in set/out set figures')
@@ -114,53 +149,10 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
   print(out_set_rpm)
   dev.off()
   
-  ## Total counts ----
-  print("generating total_counts image")
-  total_counts= filtered_counts %>% ungroup() %>% 
-    mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
-           sample_id= paste(pcr_plate, pcr_well, sep='_')) %>%
-    group_by(pcr_plate, pcr_well, sample_id, profile_id, type) %>% 
-    dplyr::summarise(total_counts = sum(n))
-  
-  tc= total_counts %>% ggplot() +
-    geom_col(aes(x=sample_id, y=total_counts, fill=type)) +
-    geom_hline(yintercept= 10^4, linetype=2) + 
-    facet_wrap(~pcr_plate, scale= 'free_x') +
-    labs(x="", y="total counts", fill="") + theme_bw() +
-    theme(axis.text.x = element_text(angle=70, hjust=1, size=5)) 
-  
-  pdf(file=paste(out, "total_counts.pdf", sep="/"),
-      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
-  print(tc)
-  dev.off()
-  
-  ## Distribution of included and excluded reads ----
-  distrib_fc= annotated_counts %>% dplyr::filter(n > 1, !is.na(pcr_plate), !is.na(pcr_well)) %>%
-    ggplot(aes(x= log10(n), fill= project_code)) +
-    geom_histogram(position='identity', alpha=0.5) +
-    geom_vline(xintercept= log10(low_counts), linetype=2) +
-    facet_wrap(~pcr_plate, scales='free') +
-    labs(x= 'log10(n)', title= 'Distribution of excluded and included reads') +
-    theme_bw()
-  pdf(file=paste(out, "count_distribution.pdf", sep="/"),
-      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
-  print(distrib_fc)
-  dev.off()
-  
-  ## Contaminants ----
-  # relies on project_code being filled out
-  contams= annotated_counts %>% 
-    dplyr::filter(!is.na(pcr_plate), !is.na(pcr_well), is.na(project_code), !is.na(CCLE_name) | !is.na(Name)) %>%
-    dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
-    dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
-    dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
-    dplyr::arrange(desc(num_wells))
-  contams %>% write.csv(file= paste(out, 'contams.csv', sep='/'), row.names=F)
-  
   # Assay QCs _________________________ ----
   ## Cell lines recovered ----
   print("generating cell_lines_present image")
-  recovery = filtered_counts %>% ungroup() %>% 
+  recovery= filtered_counts %>% ungroup() %>% 
     dplyr::filter(!is.na(CCLE_name)) %>%
     merge(cell_set_meta, by="cell_set", all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), cell_set, members), # for custom cell sets
@@ -218,7 +210,17 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
                      median_n= median(n), max_n= max(n)) %>% dplyr::ungroup() %>%
     dplyr::arrange(desc(num_negcon_profiles))
   recurring_low_cl %>% write.csv(file= paste(out, 'recurring_low_cl.csv', sep='/'), row.names=F)
-  
+  #
+  ## Contaminants ----
+  # relies on project_code being filled out
+  contams= annotated_counts %>% 
+    dplyr::filter(!is.na(pcr_plate), !is.na(pcr_well), is.na(project_code), !is.na(CCLE_name) | !is.na(Name)) %>%
+    dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
+    dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
+    dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
+    dplyr::arrange(desc(num_wells))
+  contams %>% write.csv(file= paste(out, 'contams.csv', sep='/'), row.names=F)
+  #
   ## Cumulative counts by lines in negcons ----
   print("generating cummulative image")
   cdf= filtered_counts %>% ungroup() %>% 
@@ -240,9 +242,11 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
   mark50= cdf %>% dplyr::filter(cum_pct >= 0.5) %>% dplyr::group_by(profile_id) %>% 
     arrange(cum_pct) %>% dplyr::filter(row_number()==1) %>% ungroup() %>% 
     dplyr::select(profile_id, rank_pct= rank_pct, num50= rank, num50_loc= rank_pct)
-  mark95= cdf %>% dplyr::filter(cum_pct >= 0.95) %>% dplyr::group_by(profile_id) %>% 
-    arrange(cum_pct) %>% dplyr::filter(row_number()==1) %>% ungroup() %>% 
-    dplyr::select(profile_id, rank_pct= rank_pct, num95= rank, num95_loc= rank_pct)
+  mark95= cdf %>% dplyr::group_by(profile_id) %>% 
+    dplyr::mutate(auc= sum(cum_pct*(1/expected_num_cl))) %>% # calculate AUCs
+    dplyr::filter(cum_pct >= 0.95) %>% 
+    arrange(cum_pct) %>% dplyr::filter(row_number() ==1) %>% ungroup() %>% 
+    dplyr::select(profile_id, rank_pct= rank_pct, num95= rank, num95_loc= rank_pct, auc)
   
   cdf_plot= cdf %>% 
     merge(mark50, by= c('profile_id', 'rank_pct'), all.x=T) %>% 
@@ -259,6 +263,8 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     geom_segment(aes(x= -Inf , y= .95, xend = num95_loc, yend = .95), color= 'black', linetype='dashed') +
     geom_segment(aes(x= num95_loc, y= -Inf, xend = num95_loc, yend = .95), color= 'black', linetype='dashed') +
     geom_label(aes(x=num95_loc, y= .75, label= num95), hjust= 0, color= 'black') +
+    # label for AUC
+    geom_label(aes(x=num95_loc, y= .25, label= paste0('AUC ', round(auc,3))), hjust= 'inward', color= 'black') +
     facet_wrap(~profile_id) + 
     labs(x='% rank of unique reads', y='Cumulative percentage', color= 'CBs') + theme_bw()
   
