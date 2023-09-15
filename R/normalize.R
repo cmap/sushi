@@ -17,17 +17,20 @@ normalize <- function(X, barcodes) {
       ('n' %in% colnames(X))) {
     X <- X %>% dplyr::mutate(log2_n = log2(n))
   }
-  
+
   normalized <- X %>%
-    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), n!=0) %>% 
+    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), 
+                  control_barcodes==T, !grepl('Missing', flag)) %>% 
     dplyr::group_by(profile_id) %>%
+    # filter out profiles with 4 or fewer detected control barcodes
+    dplyr::mutate(num_cbs= length(unique(na.omit(Name)))) %>% dplyr::filter(num_cbs > 4) %>%
     dplyr::mutate(cb_intercept = glm(I(y-1*x)~1,
-                                  data = dplyr::tibble(
-                                    y = log2_dose[Name %in% barcodes],
-                                    x = log2_n[Name %in% barcodes]))$coefficients[1],
+                                     data = dplyr::tibble(
+                                       y = log2_dose[Name %in% barcodes],
+                                       x = log2_n[Name %in% barcodes]))$coefficients[1],
                   log2_normalized_n= log2_n + cb_intercept) %>%
     dplyr::ungroup() %>%
-    #dplyr::select(-cb_intercept) %>%
+    dplyr::select(-num_cbs) %>%
     dplyr::mutate(normalized_n = 2^log2_normalized_n)
 
   return(normalized)
