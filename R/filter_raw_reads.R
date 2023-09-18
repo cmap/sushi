@@ -18,9 +18,9 @@
 #' @export 
 filter_raw_reads = function(
   raw_counts, sample_meta, cell_line_meta, 
-  cell_set_meta, CB_meta, 
+  cell_set_meta, CB_meta,
   id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
-  reverse_index2 = FALSE) {
+  reverse_index2= FALSE, count_threshold= 40) {
   
   # New: convert CB_meta from log10 to log2
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
@@ -80,7 +80,8 @@ filter_raw_reads = function(
                'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type')
   filtered_counts= annotated_counts %>% dplyr::filter(!is.na(project_code)) %>%
     dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
-    dplyr::mutate(flag= ifelse(n==0, 'Missing', NA))
+    dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
+                  flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
   # excluded counts
   #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
