@@ -33,6 +33,8 @@ parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day
                     help = "columns used to generate signature ids")
 parser$add_argument("-ccn", "--count_col_name", default="normalized_n", 
                     help = "column containing counts with which to calculate l2fc")
+parser$add_argument("-cout_thres", "--count_threshold", default=40, 
+                    help = "Low counts threshold")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -48,8 +50,11 @@ CB_meta= ead.csv(args$CB_meta)
 cell_set_meta = read.csv(args$cell_set_meta)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 count_col_name = args$count_col_name
+count_threshold = args$count_threshold
 
 
 print("generating filtered counts QC images")
+#QC_images(annotated_counts, filtered_counts, normalized_counts,
+#          CB_meta, cell_set_meta, args$out, sig_cols, count_col_name)
 QC_images(annotated_counts, filtered_counts, normalized_counts,
-          CB_meta, cell_set_meta, args$out, sig_cols, count_col_name)
+          CB_meta, cell_set_meta, out= args$out, sig_cols, count_col_name, count_threshold)
