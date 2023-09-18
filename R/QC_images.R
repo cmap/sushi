@@ -17,13 +17,14 @@
 #'           lists of LUAs in that cell set separated by semicolons
 #' @param out - the filepath to the folder in which QC images are meant to be saved, NA by default and 
 #'           images are saved in the working directory 
-#' @param sig_cols -
+#' @param sig_cols - 
 #' @param count_col_names -
+#' @param count_threshold - threshold for low counts
 #' @return - NA, QC images are written out to the specified folder
 #' @export
 QC_images = function(annotated_counts, filtered_counts, normalized_counts,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
-                     count_threshold=40) {
+                     count_threshold= 40) {
   if(is.na(out)) {
     out = getwd()
   }
@@ -101,7 +102,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
   distrib_fc= annotated_counts %>% dplyr::filter(n > 1, !is.na(pcr_plate), !is.na(pcr_well)) %>%
     ggplot(aes(x= log10(n), fill= project_code)) +
     geom_histogram(position='identity', alpha=0.5) +
-    geom_vline(xintercept= log10(low_counts), linetype=2) +
+    geom_vline(xintercept= log10(count_threshold), linetype=2) +
     facet_wrap(~pcr_plate, scales='free') +
     labs(x= 'log10(n)', title= 'Distribution of excluded and included reads') +
     theme_bw()
