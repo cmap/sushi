@@ -47,7 +47,7 @@ filter_raw_reads = function(
   qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)
   
   # make template of expected reads
-  plate_map= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
+  index_to_well= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
   sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
   template= sample_meta %>% merge(cell_set_meta, by='cell_set', all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
@@ -67,7 +67,7 @@ filter_raw_reads = function(
   annotated_counts= raw_counts %>%
     merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
-    merge(plate_map, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
+    merge(index_to_well, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
     merge(template, 
           by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
           by.y= c('IndexBarcode1', 'IndexBarcode2', 'Sequence', intersect(colnames(template), colnames(.))),
