@@ -348,7 +348,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     
     tech_rep_hist= tech_rep_cors %>% ggplot(aes(x= value)) + geom_histogram() + 
       labs(x= 'Tech rep correlations', y= 'Frequency',
-           title= 'Histogram of R2 values from tech rep corrleations') + 
+           title= 'Histogram of Tech rep corrleations') + 
       theme_bw()
     
     pdf(file=paste(out, "tech_rep_hist.pdf", sep="/"),
@@ -433,7 +433,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
       
       bio_rep_hist= bio_rep_cor_long %>% ggplot(aes(x= value)) + geom_histogram() + 
         labs(x= 'Bio rep correlations', y= 'Frequency',
-             title= 'Histogram of R2 values from bio rep corrleations') + 
+             title= 'Histogram of bio rep corrleations') + 
         theme_bw()
       
       pdf(file=paste(out, "bio_rep_hist.pdf", sep="/"),
