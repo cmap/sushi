@@ -31,9 +31,9 @@ parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", 
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day", 
                     help = "columns used to generate signature ids")
-parser$add_argument("-ccn", "--count_col_name", default="normalized_n", 
+parser$add_argument("--count_col_name", default="normalized_n", 
                     help = "column containing counts with which to calculate l2fc")
-parser$add_argument("-cout_thres", "--count_threshold", default=40, 
+parser$add_argument("--count_threshold", default=40, 
                     help = "Low counts threshold")
 
 # get command line options, if help option encountered print help and exit
@@ -46,7 +46,7 @@ if (args$out == ""){
 annotated_counts= read.csv(args$annotated_counts)
 filtered_counts = read.csv(args$filtered_counts)
 normalized_counts= read.csv(args$normalized_counts)
-CB_meta= ead.csv(args$CB_meta)
+CB_meta= read.csv(args$CB_meta)
 cell_set_meta = read.csv(args$cell_set_meta)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 count_col_name = args$count_col_name
