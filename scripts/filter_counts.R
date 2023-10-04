@@ -40,7 +40,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--raw_counts", default="raw_counts.csv", help = "path to file containing raw counts")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
-parser$add_argument("-s", "--sample_meta", default="", help = "Sample metadata")
+parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
 parser$add_argument("--cell_line_meta", default="../metadata/cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
@@ -81,7 +81,7 @@ filtered_counts = filter_raw_reads(
   cell_set_meta,
   CB_meta,
   id_cols=id_cols,
-  count_threshold= count_threshold,
+  count_threshold= args$count_threshold,
   reverse_index2=args$reverse_index2
 )
 
@@ -91,12 +91,12 @@ qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
 print(paste("writing QC_table to: ", qc_out_file))
 write.csv(qc_table, qc_out_file, row.names=F, quote=F)
 
-filtered_counts = filtered_counts$filtered_counts
-filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
-print(paste("writing filtered counts csv to: ", filtrc_out_file))
-write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
-
 annotated_counts = filtered_counts$annotated_counts
 annot_out_file = paste(args$out, 'annotated_counts.csv', sep='/')
 print(paste("writing annotated counts to: ", annot_out_file))
 write.csv(annotated_counts, annot_out_file, row.names=F, quote=F)
+
+filtered_counts = filtered_counts$filtered_counts
+filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
+print(paste("writing filtered counts csv to: ", filtrc_out_file))
+write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
