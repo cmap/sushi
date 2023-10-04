@@ -396,7 +396,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
         dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
         dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
                                                'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 
-                                               'log2_normalized_n', count_col_name))) %>% 
+                                               'log2_normalized_n', 'flag', count_col_name))) %>% 
         dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name)), 
                          num_tech_reps= n()) %>% dplyr::ungroup()
       collapsed_tech_rep$sig_id= do.call(paste,c(collapsed_tech_rep[sig_cols], sep=':'))
