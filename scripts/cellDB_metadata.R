@@ -7,7 +7,7 @@ library(sets)
 api_url <- "https://api.clue.io/api/cell_sets"  
 
 # Define api key 
-#api_key <- Sys.getenv("API_KEY")
+api_key <- Sys.getenv("API_KEY")
 
 # Function to get cell lines, pools, sets using API from CellDB
 get_cell_api_info = function(api_url, api_key, filter = NULL) {
@@ -131,20 +131,19 @@ create_cell_set_meta = function(sample_meta) {
 }
 
 # Pulling/storing full collection of sets, pools, and lines
-cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", "a0c2e1dab8bcaad34fbb269a3e7c791b")
+cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", "api_key")
 
 # TODO - Uber pools 
-# uber_pools_df <- get_cell_api_info("https://api.clue.io/api/uber_pools", "a0c2e1dab8bcaad34fbb269a3e7c791b")
+# uber_pools_df <- get_cell_api_info("https://api.clue.io/api/uber_pools", "api_key")
 
 # Old cell_pools API endpoint deleted? - https://api.clue.io/api/cell_pools
-cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", "a0c2e1dab8bcaad34fbb269a3e7c791b")
-cell_lines_df <- get_cell_api_info("https://api.clue.io/api/cell_lines", "a0c2e1dab8bcaad34fbb269a3e7c791b")
+cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", "api_key")
+cell_lines_df <- get_cell_api_info("https://api.clue.io/api/cell_lines", "api_key")
 
 sample_meta <- read.csv("PATH TO SAMPLE META")
 raw_counts <- read.csv("PATH TO RAW COUNTS")
 
 # Calling function to create cell set metadata specific to project's sample_meta
 curated_cell_set_meta <- create_cell_set_meta(sample_meta)
-# print(curated_cell_set_meta)
 
 # TODO - generate a comprehensive cell_set_meta for all cell set info (required to make annotated counts)
