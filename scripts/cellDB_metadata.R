@@ -8,7 +8,6 @@ api_url <- "https://api.clue.io/api/cell_sets"
 
 # Define api key 
 #api_key <- Sys.getenv("API_KEY")
-api_key <- "a0c2e1dab8bcaad34fbb269a3e7c791b"
 
 # Function to get cell lines, pools, sets using API from CellDB
 get_cell_api_info = function(api_url, api_key, filter = NULL) {
