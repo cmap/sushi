@@ -57,88 +57,94 @@ get_LUAs_from_sets <- function(cell_set_name) {
 }
 
 get_LUAs_from_pools <- function(cell_pool_name) {
-  v_cell_pool_api_url <- "https://api.clue.io/api/v_cell_pools"
+  v_assay_pool_api_url <- "https://api.clue.io/api/v_assay_pools"
   # Construct the filter object as a JSON string
-  filter <- list(where = list(pool_id = cell_pool_name), fields = c("pool_id","lua"))
-  cell_pool_lua_df <- get_cell_api_info(v_cell_pool_api_url, api_key, filter)
-  LUAs <- list(cell_pool_lua_df$lua)
+  filter <- list(where = list(name = cell_pool_name), fields = c("name","barcode_id"))
+  cell_pool_lua_df <- get_cell_api_info(v_assay_pool_api_url, api_key, filter)
+  LUAs <- list(cell_pool_lua_df$barcode_id)
   return(LUAs)
 }
 
 get_cell_line_info <- function(all_LUAs) {
-  cell_lines_api_url <- "https://api.clue.io/api/v_cell_lines"
+  cell_lines_api_url <- "https://api.clue.io/api/cell_lines"
   # Construct the filter object as a JSON string
   filter <- list(where = list(lua = list(inq = all_LUAs)))
   cell_lines_info <- get_cell_api_info(cell_lines_api_url, api_key, filter)
   return(cell_lines_info)
 }
 
-
+create_cell_set_meta = function(sample_meta) {
+  unique_cell_sets <- unique(sample_meta$cell_set)
+  cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))
+  columns <- c("cell_set", "members")
+  colnames(cell_set_meta) <- columns
   
-# Pulling/storing full collection of sets, pools, and lines
-cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", "a0c2e1dab8bcaad34fbb269a3e7c791b")
-# uber_pools_df <- get_cell_api_info("https://api.clue.io/api/uber_pools", "a0c2e1dab8bcaad34fbb269a3e7c791b")
-cell_pools_df <- get_cell_api_info("https://api.clue.io/api/cell_pools", "a0c2e1dab8bcaad34fbb269a3e7c791b")
-cell_lines_df <- get_cell_api_info("https://api.clue.io/api/cell_lines", "a0c2e1dab8bcaad34fbb269a3e7c791b")
-
-sample_meta <- read.csv("/Users/naim/Documents/Work/Troubleshooting/SUSHI_Testing/pseq-005-miseq/sample_meta_test.csv")
-raw_counts <- read.csv("/Users/naim/Documents/Work/Troubleshooting/SUSHI_Testing/pseq-005-miseq/raw_counts.csv")
-
-# Creating cell_set_meta
-unique_cell_sets <- unique(sample_meta$cell_set)
-cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))
-columns <- c("cell_set", "members")
-colnames(cell_set_meta) <- columns
-
-for (i in 1:length(unique_cell_sets)) {
-  
-  # Splitting cell set by LUA
-  chr_unique_cell_sets <- toString(unique_cell_sets[i])
-  print(paste("Expanding", unique_cell_sets[i])) 
-  cs <- unlist(strsplit(chr_unique_cell_sets,";"))
-
-  # Storing information to generate cell_set_meta
-  insert_index <- i
-  known_cell_sets <- list()
-  all_LUAs <- list()
-  
-  for (j in 1:length(cs)) {
-    if (cs[j] %in% cell_sets_df$name) {
-    print(paste(cs[j], "is a cell set.")) 
-    known_cell_sets = c(known_cell_sets, cs[j])
-      
-    # Collecting and storing set LUA members   
-    cs_members = get_LUAs_from_sets(cs[j])
-    all_LUAs = c(all_LUAs, cs_members)
-
-  } else if (cs[j] %in% cell_pools_df$name){
-    print(paste(cs[j], "is a cell pool")) 
-    known_cell_sets = c(known_cell_sets, cs[j])
+  for (i in 1:length(unique_cell_sets)) {
     
-    # Collecting pool LUA members
-    pool_members = get_LUAs_from_pools(cs[j])
-    all_LUAs = c(all_LUAs, pool_members)
-
-  } else if (cs[j] %in% cell_lines_df$lua){
-    print(paste(cs, "is a cell line")) 
-    all_LUAs = c(all_LUAs, cs[j])
-    known_cell_sets = c(known_cell_sets, cs[j])
+    # Splitting cell set by LUA
+    chr_unique_cell_sets <- toString(unique_cell_sets[i])
+    print(paste("Expanding", unique_cell_sets[i])) 
+    cs <- unlist(strsplit(chr_unique_cell_sets,";"))
     
-  } else {
-    print(paste(cs[j], "is not in our collection of cell sets, pools, or lines")) 
-  }}
-  
-  # Should duplicates be removed before adding to cell_set_meta?
-  # How should situations where sets/pools/lines within a collection do not exist in the CellDB be handled?
+    # Storing information to generate cell_set_meta
+    insert_index <- i
+    known_cell_sets <- list()
+    all_LUAs <- list()
+    
+    for (j in 1:length(cs)) {
+      if (cs[j] %in% cell_sets_df$name) {
+        print(paste(cs[j], "is a cell set.")) 
+        known_cell_sets = c(known_cell_sets, cs[j])
+        
+        # Collecting and storing set LUA members   
+        cs_members = get_LUAs_from_sets(cs[j])
+        all_LUAs = c(all_LUAs, cs_members)
+        
+      } else if (cs[j] %in% cell_pools_df$name){
+        print(paste(cs[j], "is a cell pool")) 
+        known_cell_sets = c(known_cell_sets, cs[j])
+        
+        # Collecting pool LUA members
+        pool_members = get_LUAs_from_pools(cs[j])
+        all_LUAs = c(all_LUAs, pool_members)
+        
+      } else if (cs[j] %in% cell_lines_df$lua){
+        print(paste(cs, "is a cell line")) 
+        all_LUAs = c(all_LUAs, cs[j])
+        known_cell_sets = c(known_cell_sets, cs[j])
+        
+      } else {
+        print(paste(cs[j], "is not in our collection of cell sets, pools, or lines")) 
+      }}
+    
+    # Should duplicates be removed before adding to cell_set_meta?
+    # How should situations where sets/pools/lines within a collection do not exist in the CellDB be handled?
     # Currently, known cell instances are concatenated together for unique cell sets
     # Should it instead throw warnings, not include the unique cell set entry entirely, etc?
-  if (length(all_LUAs) > 0) {
-    known_cell_sets <- paste(known_cell_sets, collapse = ";")
-    all_LUAs <- paste(all_LUAs, collapse = ";")
-    cell_set_meta$cell_set[insert_index] <- known_cell_sets
-    cell_set_meta$members[insert_index] <- all_LUAs   
-  }}
+    if (length(all_LUAs) > 0) {
+      known_cell_sets <- paste(known_cell_sets, collapse = ";")
+      all_LUAs <- paste(all_LUAs, collapse = ";")
+      cell_set_meta$cell_set[insert_index] <- known_cell_sets
+      cell_set_meta$members[insert_index] <- all_LUAs   
+    }}
+  return(cell_set_meta)
+}
 
+# Pulling/storing full collection of sets, pools, and lines
+cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", "a0c2e1dab8bcaad34fbb269a3e7c791b")
 
-# cellDBexpansion(sample_meta, raw_counts)
+# TODO - Uber pools 
+# uber_pools_df <- get_cell_api_info("https://api.clue.io/api/uber_pools", "a0c2e1dab8bcaad34fbb269a3e7c791b")
 
+# Old cell_pools API endpoint deleted? - https://api.clue.io/api/cell_pools
+cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", "a0c2e1dab8bcaad34fbb269a3e7c791b")
+cell_lines_df <- get_cell_api_info("https://api.clue.io/api/cell_lines", "a0c2e1dab8bcaad34fbb269a3e7c791b")
+
+sample_meta <- read.csv("PATH TO SAMPLE META")
+raw_counts <- read.csv("PATH TO RAW COUNTS")
+
+# Calling function to create cell set metadata specific to project's sample_meta
+curated_cell_set_meta <- create_cell_set_meta(sample_meta)
+# print(curated_cell_set_meta)
+
+# TODO - generate a comprehensive cell_set_meta for all cell set info (required to make annotated counts)
