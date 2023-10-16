@@ -3,6 +3,7 @@
 #'  takes a filtered dataframe of raw read counts and generates and writes out QC images to assess
 #'  overall quality of project data
 #'  
+#' @param sample_meta - sample metadata
 #' @param annotated_counts -
 #' @param filtered_counts - dataframe of annotated readcounts that must include the following columns:
 #'           n: raw readcounts
@@ -12,7 +13,7 @@
 #'           cell_set: string identifier of cell set expected in a given sample, must match a cell set 
 #'           found in cell_set_meta
 #' @param normalized_counts - 
-#' @param CB_meta -
+#' @param CB_meta - control barcode metadata
 #' @param cell_set_meta - a metadata dataframe that contains a mapping from cell set names (e.g. CS5) to 
 #'           lists of LUAs in that cell set separated by semicolons
 #' @param out - the filepath to the folder in which QC images are meant to be saved, NA by default and 
@@ -22,7 +23,7 @@
 #' @param count_threshold - threshold for low counts
 #' @return - NA, QC images are written out to the specified folder
 #' @export
-QC_images = function(annotated_counts, filtered_counts, normalized_counts,
+QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_counts,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
                      count_threshold= 40) {
   if(is.na(out)) {
