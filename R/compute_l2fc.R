@@ -31,11 +31,11 @@ compute_l2fc = function(normalized_counts,
   collapsed_tech_rep= normalized_counts %>%
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
     dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
-                                           'profile_id', 'tech_rep', 'n', 'log2_np1', 'normalized_n', 'log2_normalized_n',
+                                           'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 'log2_normalized_n',
                                            'flag', count_col_name))) %>% 
     dplyr::summarise(mean_n= mean(n),
                      mean_normalized_n = mean(!!rlang::sym(count_col_name)), 
-                     num_tech_reps= n()) %>% 
+                     num_tech_reps= dplyr::n()) %>% 
     dplyr::ungroup()
   
   # collapse controls
@@ -45,7 +45,7 @@ compute_l2fc = function(normalized_counts,
     dplyr::summarise(control_median_n= median(mean_n),
                      control_median_normalized_n = median(mean_normalized_n),
                      control_mad_sqrtN = mad(log2(mean_normalized_n))/sqrt(dplyr::n()),
-                     num_ctrl_bio_reps = n()) %>% 
+                     num_ctrl_bio_reps = dplyr::n()) %>% 
     dplyr::ungroup() %>% 
     dplyr::mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5/log10(2), F, T)) # New: adjusted cut off to log2
   
