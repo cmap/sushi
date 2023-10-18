@@ -9,7 +9,7 @@ suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
-suppressPackageStartupMessages(library(reshape2))
+# suppressPackageStartupMessages(library(reshape2))
 library(prismSeqR)
 
 
