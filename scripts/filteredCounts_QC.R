@@ -58,5 +58,18 @@ count_threshold = args$count_threshold
 print("generating filtered counts QC images")
 #QC_images(annotated_counts, filtered_counts, normalized_counts,
 #          CB_meta, cell_set_meta, args$out, sig_cols, count_col_name)
-QC_images(annotated_counts, filtered_counts, normalized_counts,
-          CB_meta, cell_set_meta, out= args$out, sig_cols, count_col_name, count_threshold)
+
+if(file.exists(args$normalized_counts)) {
+  QC_images(annotated_counts= annotated_counts, 
+            filtered_counts= filtered_counts,
+            normalized_counts= normalized_counts,
+            CB_meta= CB_meta, cell_set_meta= cell_set_meta, 
+            out= args$out, 
+            sig_cols= sig_cols, count_col_name= count_col_name, count_threshold= count_threshold)
+} else {
+  QC_images(annotated_counts= annotated_counts, 
+            filtered_counts= filtered_counts,
+            CB_meta= CB_meta, cell_set_meta= cell_set_meta, 
+            out= args$out, 
+            sig_cols= sig_cols, count_col_name= count_col_name, count_threshold= count_threshold)
+}
