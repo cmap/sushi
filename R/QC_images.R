@@ -22,7 +22,7 @@
 #' @param count_threshold - threshold for low counts
 #' @return - NA, QC images are written out to the specified folder
 #' @export
-QC_images = function(annotated_counts, filtered_counts, normalized_counts,
+QC_images = function(annotated_counts, filtered_counts, normalized_counts= NA,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
                      count_threshold= 40) {
   if(is.na(out)) {
@@ -35,6 +35,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   contains_cbs= ifelse(nrow(cb_check)!= 0, T, F)
+  #
   
   # Sequencing QCs ____________________ ----
   ## Index count summaries ----
@@ -222,6 +223,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
     dplyr::arrange(desc(num_wells))
   contams %>% write.csv(file= paste(out, 'contams.csv', sep='/'), row.names=F)
   #
+  
   ## Cumulative counts by lines in negcons ----
   print("generating cummulative image")
   cdf= filtered_counts %>% ungroup() %>% 
@@ -275,7 +277,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts,
   dev.off()
   
   ## Control barcode trends ----
-  if(contains_cbs) {
+  if(contains_cbs & is.data.frame(normalized_counts)) {
     print("generating control_barcode_trend image")
     cb_trend= normalized_counts %>% 
       dplyr::filter(control_barcodes %in% c("Y", "T", T),
