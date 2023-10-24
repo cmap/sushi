@@ -12,6 +12,7 @@
 #'                    cell_set,day by default.
 #' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. 
 #'          Generally normalized_n if running on normalied_counts or n if running on filtered_counts
+#' @param count_threshold - threshold for determining low counts, defaults to 40.
 #' @return - l2fc data.frame with l2fc column
 #' @export
 compute_l2fc = function(normalized_counts, 
@@ -47,7 +48,7 @@ compute_l2fc = function(normalized_counts,
                      control_mad_sqrtN = mad(log2(mean_normalized_n))/sqrt(dplyr::n()),
                      num_ctrl_bio_reps = dplyr::n()) %>% 
     dplyr::ungroup() %>% 
-    dplyr::mutate(control_pass_QC = ifelse(control_mad_sqrtN > 0.5/log10(2), F, T)) # New: adjusted cut off to log2
+    dplyr::mutate(control_MAD_QC = ifelse(control_mad_sqrtN > 0.5/log10(2), F, T)) # New: adjusted cut off to log2
   
   if(nrow(controls)==0) {
     print("No samples found for indicated control type.")
@@ -57,7 +58,7 @@ compute_l2fc = function(normalized_counts,
   l2fc= collapsed_tech_rep %>% dplyr::filter(!trt_type %in% c(control_type, 'day_0')) %>% 
     merge(controls, by= c('project_code',"CCLE_name", "DepMap_ID", "prism_cell_set", ctrl_cols), all.x=T, all.y=T) %>%
     dplyr::mutate(l2fc= log2(mean_normalized_n/control_median_normalized_n),
-                  flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
+                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
     dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, sig_id, bio_rep)
   
   return(l2fc)
