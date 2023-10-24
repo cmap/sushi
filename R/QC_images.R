@@ -88,7 +88,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts= NA,
   ## Control barcode counts ----
   if(contains_cbs) { 
     print('generating control barcode counts')
-    idx_pairs_cbs= annotated_counts %>% dplyr::filter(!is.na(Name), !is.na(project_code)) %>%
+    idx_pairs_cbs= annotated_counts %>% dplyr::filter(!is.na(Name), expected_read) %>%
       dplyr::group_by(index_1, index_2, pcr_plate, pcr_well) %>%
       dplyr::summarise(total_well_cbs= sum(n)) %>%
       dplyr::mutate(rpm= total_well_cbs/10^6,
@@ -101,7 +101,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts= NA,
   
   ## Distribution of included and excluded reads ----
   distrib_fc= annotated_counts %>% dplyr::filter(n > 1, !is.na(pcr_plate), !is.na(pcr_well)) %>%
-    ggplot(aes(x= log10(n), fill= project_code)) +
+    ggplot(aes(x= log10(n), fill= expected_read)) +
     geom_histogram(position='identity', alpha=0.5) +
     geom_vline(xintercept= log10(count_threshold), linetype=2) +
     facet_wrap(~pcr_plate, scales='free') +
@@ -114,7 +114,7 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts= NA,
   
   ## In set/out set reads by well ----
   print('generating in set/out set figures')
-  idx_pairs= annotated_counts %>% dplyr::mutate(in_set= ifelse(!is.na(project_code), T, F)) %>%
+  idx_pairs= annotated_counts %>% dplyr::mutate(in_set= ifelse(expected_read, T, F)) %>%
     dplyr::group_by(index_1, index_2, pcr_plate, pcr_well, in_set) %>% 
     dplyr::summarise(sum_n= sum(n, na.rm=T)) %>% dplyr::ungroup() %>%
     dplyr::group_by(index_1, index_2) %>% 
@@ -214,9 +214,8 @@ QC_images = function(annotated_counts, filtered_counts, normalized_counts= NA,
   recurring_low_cl %>% write.csv(file= paste(out, 'recurring_low_cl.csv', sep='/'), row.names=F)
   #
   ## Contaminants ----
-  # relies on project_code being filled out
   contams= annotated_counts %>% 
-    dplyr::filter(!is.na(pcr_plate), !is.na(pcr_well), is.na(project_code), !is.na(CCLE_name) | !is.na(Name)) %>%
+    dplyr::filter(!is.na(pcr_plate), !is.na(pcr_well), expected_read==F, !is.na(CCLE_name) | !is.na(Name)) %>%
     dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
     dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
     dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
