@@ -49,7 +49,11 @@ if (args$out == ""){
 sample_meta = read.csv(args$sample_meta)
 annotated_counts= read.csv(args$annotated_counts)
 filtered_counts = read.csv(args$filtered_counts)
-normalized_counts= read.csv(args$normalized_counts)
+if(file.exists(args$normalized_counts)) {
+  normalized_counts= read.csv(args$normalized_counts)
+} else {
+  normalized_counts= NA
+}
 CB_meta= read.csv(args$CB_meta)
 cell_set_meta = read.csv(args$cell_set_meta)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
@@ -60,5 +64,10 @@ count_threshold = args$count_threshold
 print("generating filtered counts QC images")
 #QC_images(annotated_counts, filtered_counts, normalized_counts,
 #          CB_meta, cell_set_meta, args$out, sig_cols, count_col_name)
-QC_images(sample_meta, annotated_counts, filtered_counts, normalized_counts,
-          CB_meta, cell_set_meta, out= args$out, sig_cols, count_col_name, count_threshold)
+QC_images(sample_meta= sample_meta,
+          annotated_counts= annotated_counts, 
+          filtered_counts= filtered_counts,
+          normalized_counts= normalized_counts,
+          CB_meta= CB_meta, cell_set_meta= cell_set_meta, 
+          out= args$out, 
+          sig_cols= sig_cols, count_col_name= count_col_name, count_threshold= count_threshold)

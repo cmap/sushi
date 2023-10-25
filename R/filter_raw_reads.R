@@ -4,7 +4,8 @@
 #' using the given metadata. QC metrics are returned as a data.frame
 #'
 #' @param raw_counts - an unfiltered counts table
-#' @param sample_meta - the sample metadata for the particular experiment. Must follow the given set of guidelines for metadata
+#' @param sample_meta - the sample metadata for the particular experiment. Must follow the given set of 
+#'                      guidelines for metadata
 #' @param cell_line_meta - master metadata of cell lines
 #' @param cell_set_meta - master metdata of cell sets and their contents
 #' @param CB_meta - master metdata of control barcodes, their sequences, and their doses
@@ -47,7 +48,7 @@ filter_raw_reads = function(
   qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)
   
   # make template of expected reads
-  index_to_well= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
+  #index_to_well= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
   sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
   template= sample_meta %>% merge(cell_set_meta, by='cell_set', all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
@@ -57,7 +58,7 @@ filter_raw_reads = function(
   # check for control barcodes and add them to the template
   if ('Y' %in% sample_meta$control_barcodes | T %in% sample_meta$control_barcodes) {
     cb_template= sample_meta %>% dplyr::filter(control_barcodes %in% c('Y', 'T', T)) %>%
-      dplyr::mutate(joiner = 'temp') %>%
+      dplyr::mutate(joiner= 'temp') %>%
       merge(CB_meta %>% dplyr::mutate(joiner= 'temp'), by='joiner') %>% dplyr::select(-joiner)
     template= plyr::rbind.fill(template, cb_template)
   }
@@ -67,18 +68,19 @@ filter_raw_reads = function(
   annotated_counts= raw_counts %>%
     merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
-    merge(index_to_well, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
-    merge(template, 
+    merge(sample_meta, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
+    merge(template %>% dplyr::mutate(expected_read= T), 
           by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
           by.y= c('IndexBarcode1', 'IndexBarcode2', 'Sequence', intersect(colnames(template), colnames(.))),
           all.x=T, all.y=T) %>% 
-    dplyr::mutate(n= replace_na(n, 0))
+    dplyr::mutate(n= replace_na(n, 0),
+                  expected_read= replace_na(expected_read, F))
   
   # filtered counts
   print("Filtering reads ...")
   filt_cols= c('project_code', 'pcr_plate', 'pcr_well', 'CCLE_name', 'DepMap_ID', 'prism_cell_set',
                'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type')
-  filtered_counts= annotated_counts %>% dplyr::filter(!is.na(project_code)) %>%
+  filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
     dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
