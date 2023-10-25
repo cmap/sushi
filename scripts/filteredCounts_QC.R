@@ -22,6 +22,7 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
 parser$add_argument("-q", "--quietly", action="store_false", 
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
+parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
 parser$add_argument("--annotated_counts", default="annotated_counts.csv",
                     help="path to file containing annotated counts")
 parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
@@ -45,6 +46,7 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
+sample_meta = read.csv(args$sample_meta)
 annotated_counts= read.csv(args$annotated_counts)
 filtered_counts = read.csv(args$filtered_counts)
 if(file.exists(args$normalized_counts)) {
