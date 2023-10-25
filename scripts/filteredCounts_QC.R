@@ -62,7 +62,8 @@ count_threshold = args$count_threshold
 print("generating filtered counts QC images")
 #QC_images(annotated_counts, filtered_counts, normalized_counts,
 #          CB_meta, cell_set_meta, args$out, sig_cols, count_col_name)
-QC_images(annotated_counts= annotated_counts, 
+QC_images(sample_meta= sample_meta,
+          annotated_counts= annotated_counts, 
           filtered_counts= filtered_counts,
           normalized_counts= normalized_counts,
           CB_meta= CB_meta, cell_set_meta= cell_set_meta, 

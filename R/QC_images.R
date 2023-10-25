@@ -22,7 +22,7 @@
 #' @param count_threshold - threshold for low counts
 #' @return - NA, QC images are written out to the specified folder
 #' @export
-QC_images = function(annotated_counts, filtered_counts, normalized_counts= NA,
+QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_counts= NA,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
                      count_threshold= 40) {
   if(is.na(out)) {
