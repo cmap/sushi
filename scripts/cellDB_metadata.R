@@ -1,13 +1,17 @@
-# Load the required library
-library(httr)
-library(jsonlite)
-library(sets)
-
-# Define the API endpoint URL
-api_url <- "https://api.clue.io/api/cell_sets"  
-
-# Define api key 
-api_key <- Sys.getenv("API_KEY")
+#' cellDB_metadata
+#' 
+#' takes the user's API information to pull cell set information from CellDB
+#' based on the the given project metadata, a curared project cell_set_meta is created
+#'
+#' @param sample_meta - master metadata of cell lines
+#' @param api_key - master metadata of cell sets and their contents
+#' @return - list with the following elements
+#' #' \itemize{
+#'   \item cell_set_meta: metadata of cell sets specific to provided project sample metadata
+#'   \item cell_line_meta: metadata of cell lines 
+#' }
+#' @export 
+#' 
 
 # Function to get cell lines, pools, sets using API from CellDB
 get_cell_api_info = function(api_url, api_key, filter = NULL) {
@@ -15,18 +19,12 @@ get_cell_api_info = function(api_url, api_key, filter = NULL) {
   if (!is.null(filter)){
     # Convert the filter to a JSON string
     filter_json <- toJSON(filter)
-    
-    # Encode the JSON string for URL query parameter
     filter_encoded <- URLencode(filter_json)
-    
-    # Create the full API URL with the filter as a query parameter
     api_url <- paste0(api_url, "?filter=", filter_encoded)
   }
   
   # Define headers
   headers <- c("Accept" = "application/json", "user_key" = api_key, "prism_key" = "prism_mts")
-  
-  # Make the API request with headers
   response <- GET(api_url, add_headers(headers))
   
   # Check if the request was successful (status code 200)
@@ -74,10 +72,11 @@ get_cell_line_info <- function(all_LUAs) {
 }
 
 create_cell_set_meta = function(sample_meta) {
-  unique_cell_sets <- unique(sample_meta$cell_set)
+  unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))
   columns <- c("cell_set", "members")
   colnames(cell_set_meta) <- columns
+  failed_sets <- list()
   
   for (i in 1:length(unique_cell_sets)) {
     
@@ -90,7 +89,7 @@ create_cell_set_meta = function(sample_meta) {
     insert_index <- i
     known_cell_sets <- list()
     all_LUAs <- list()
-    
+    cell_set_failed <- FALSE
     for (j in 1:length(cs)) {
       if (cs[j] %in% cell_sets_df$name) {
         print(paste(cs[j], "is a cell set.")) 
@@ -108,42 +107,34 @@ create_cell_set_meta = function(sample_meta) {
         pool_members = get_LUAs_from_pools(cs[j])
         all_LUAs = c(all_LUAs, pool_members)
         
-      } else if (cs[j] %in% cell_lines_df$lua){
-        print(paste(cs, "is a cell line")) 
+      } else if (cs[j] %in% cell_line_meta$lua){
+        print(paste(cs[j], "is a cell line")) 
         all_LUAs = c(all_LUAs, cs[j])
         known_cell_sets = c(known_cell_sets, cs[j])
         
       } else {
-        print(paste(cs[j], "is not in our collection of cell sets, pools, or lines")) 
+        print(paste(cs[j], "is not in our collection of cell sets, pools, or lines"))
+        print(paste(chr_unique_cell_sets, "will not be added to the cell_set_meta."))
+        cell_set_failed <- TRUE
+        break
       }}
     
-    # Should duplicates be removed before adding to cell_set_meta?
-    # How should situations where sets/pools/lines within a collection do not exist in the CellDB be handled?
-    # Currently, known cell instances are concatenated together for unique cell sets
-    # Should it instead throw warnings, not include the unique cell set entry entirely, etc?
-    if (length(all_LUAs) > 0) {
-      known_cell_sets <- paste(known_cell_sets, collapse = ";")
-      all_LUAs <- paste(all_LUAs, collapse = ";")
-      cell_set_meta$cell_set[insert_index] <- known_cell_sets
-      cell_set_meta$members[insert_index] <- all_LUAs   
-    }}
-  return(cell_set_meta)
+    if (!cell_set_failed) {
+      # Should duplicates be removed before adding to cell_set_meta?
+      if (length(all_LUAs) > 0) {
+        known_cell_sets <- paste(known_cell_sets, collapse = ";")
+        all_LUAs <- paste(all_LUAs, collapse = ";")
+        cell_set_meta$cell_set[insert_index] <- known_cell_sets
+        cell_set_meta$members[insert_index] <- all_LUAs   
+      }
+    } else {
+      failed_sets <- c(failed_sets, chr_unique_cell_sets)
+    }
+  }
+  cell_set_meta <- na.omit(cell_set_meta)
+  if (nrow(cell_set_meta) == 0) {
+    print("cell_set_meta is empty. One or more pieces of cell information within a cell set in the cell_set column of sample_meta was not found.")
+  }
+  
+  return(list(cell_set_meta, failed_sets))
 }
-
-# Pulling/storing full collection of sets, pools, and lines
-cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", "api_key")
-
-# TODO - Uber pools 
-# uber_pools_df <- get_cell_api_info("https://api.clue.io/api/uber_pools", "api_key")
-
-# Old cell_pools API endpoint deleted? - https://api.clue.io/api/cell_pools
-cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", "api_key")
-cell_lines_df <- get_cell_api_info("https://api.clue.io/api/cell_lines", "api_key")
-
-sample_meta <- read.csv("PATH TO SAMPLE META")
-raw_counts <- read.csv("PATH TO RAW COUNTS")
-
-# Calling function to create cell set metadata specific to project's sample_meta
-curated_cell_set_meta <- create_cell_set_meta(sample_meta)
-
-# TODO - generate a comprehensive cell_set_meta for all cell set info (required to make annotated counts)

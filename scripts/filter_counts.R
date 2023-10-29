@@ -4,13 +4,18 @@ suppressPackageStartupMessages(library(argparse))
 #source("../src/load_libraries.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 suppressPackageStartupMessages(library(reshape2))
 library(prismSeqR)
+suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
+
+# NEW - for cellDB
+suppressPackageStartupMessages(library(httr))
+suppressPackageStartupMessages(library(jsonlite))
+suppressPackageStartupMessages(library(sets))
 
 
 ## print_args
@@ -36,7 +41,6 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
-
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--raw_counts", default="raw_counts.csv", help = "path to file containing raw counts")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
@@ -49,6 +53,11 @@ parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq")
 
+# NEW
+parser$add_argument("--api_url", default="https://api.clue.io/api/cell_sets", help = "Default API URL to CellDB cell sets")
+parser$add_argument("--api_key", default="", help = "Clue API key")
+parser$add_argument("--db_flag", action="store_true", default=TRUE, help = "Use CellDB to locate cell set information")
+
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
@@ -59,10 +68,30 @@ if (args$out == ""){
 #print_args(args)
 
 CB_meta = read.csv(args$CB_meta)
-cell_line_meta = read.csv(args$cell_line_meta)
-cell_set_meta = read.csv(args$cell_set_meta)
 sample_meta = read.csv(args$sample_meta)
 raw_counts = read.csv(args$raw_counts)
+
+# NEW
+api_url <- args$api_url
+# api_key <- Sys.getenv("API_KEY")
+api_key <- args$api_key
+
+# Using CellDB, otherwise checking static files
+if (args$db_flag) {
+  print("Using CellDB to locate cell information.")
+  cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", api_key)
+  cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", api_key)
+  cell_line_meta <- get_cell_api_info("https://api.clue.io/api/cell_lines", api_key)
+  cell_sets <- create_cell_set_meta(sample_meta)
+  cell_set_meta <- cell_sets[[1]]
+  failed_cell_sets <- cell_sets[[2]]
+  } else {
+    print("Using static cell set information files to locate cell information.")
+    cell_line_meta = read.csv(args$cell_line_meta)
+    cell_line_meta$dna_sequence <- cell_line_meta$Sequence
+    cell_line_meta$lua <- cell_line_meta$LUA
+    cell_set_meta = read.csv(args$cell_set_meta)
+  }
 
 #split id_cols args
 id_cols = unlist(strsplit(args$id_cols, ","))
