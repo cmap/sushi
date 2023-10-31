@@ -94,7 +94,7 @@ write.csv(qc_table, qc_out_file, row.names=F, quote=F)
 annotated_counts = filtered_counts$annotated_counts
 annot_out_file = paste(args$out, 'annotated_counts.csv', sep='/')
 print(paste("writing annotated counts to: ", annot_out_file))
-write.csv(annotated_counts, annot_out_file, row.names=F, quote=F)
+write.csv(annotated_counts, annot_out_file, row.names=F)
 
 filtered_counts = filtered_counts$filtered_counts
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
