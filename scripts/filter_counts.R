@@ -73,6 +73,9 @@ if (!all(id_cols %in% colnames(sample_meta))){
 
 sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
 
+count_threshold_arg= args$count_threshold
+count_threshold = as.numeric(count_threshold_arg)
+  
 print("creating filtered count file")
 filtered_counts = filter_raw_reads(
   raw_counts,
@@ -81,7 +84,7 @@ filtered_counts = filter_raw_reads(
   cell_set_meta,
   CB_meta,
   id_cols=id_cols,
-  count_threshold= args$count_threshold,
+  count_threshold=count_threshold,
   reverse_index2=args$reverse_index2
 )
 

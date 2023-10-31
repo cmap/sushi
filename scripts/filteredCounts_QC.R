@@ -58,7 +58,8 @@ CB_meta= read.csv(args$CB_meta)
 cell_set_meta = read.csv(args$cell_set_meta)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 count_col_name = args$count_col_name
-count_threshold = args$count_threshold
+count_threshold_arg= args$count_threshold
+count_threshold = as.numeric(count_threshold_arg)
 
 
 print("generating filtered counts QC images")

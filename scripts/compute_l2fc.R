@@ -34,7 +34,8 @@ normalized_counts = read.csv(args$normalized_counts)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 count_col_name = args$count_col_name
-count_threshold= args$count_threshold
+count_threshold_arg= args$count_threshold
+count_threshold = as.numeric(count_threshold_arg)
 
 print("computing log-fold change")
 l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, ctrl_cols, count_col_name, count_threshold)
