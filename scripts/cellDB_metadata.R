@@ -97,19 +97,19 @@ create_cell_set_meta = function(sample_meta) {
         
         # Collecting and storing set LUA members   
         cs_members = get_LUAs_from_sets(cs[j])
-        all_LUAs = c(all_LUAs, cs_members)
+        all_LUAs = append(all_LUAs, cs_members)
         
       } else if (cs[j] %in% cell_pools_df$name){
         print(paste(cs[j], "is a cell pool")) 
-        known_cell_sets = c(known_cell_sets, cs[j])
+        known_cell_sets = append(known_cell_sets, cs[j])
         
         # Collecting pool LUA members
         pool_members = get_LUAs_from_pools(cs[j])
-        all_LUAs = c(all_LUAs, pool_members)
+        all_LUAs = append(all_LUAs, pool_members)
         
       } else if (cs[j] %in% cell_line_meta$lua){
         print(paste(cs[j], "is a cell line")) 
-        all_LUAs = c(all_LUAs, cs[j])
+        all_LUAs = append(all_LUAs, cs[j])
         known_cell_sets = c(known_cell_sets, cs[j])
         
       } else {
@@ -123,7 +123,7 @@ create_cell_set_meta = function(sample_meta) {
       # Should duplicates be removed before adding to cell_set_meta?
       if (length(all_LUAs) > 0) {
         known_cell_sets <- paste(known_cell_sets, collapse = ";")
-        all_LUAs <- paste(all_LUAs, collapse = ";")
+        all_LUAs <- paste(all_LUAs[[1]], collapse = ";")
         cell_set_meta$cell_set[insert_index] <- known_cell_sets
         cell_set_meta$members[insert_index] <- all_LUAs   
       }
@@ -138,3 +138,89 @@ create_cell_set_meta = function(sample_meta) {
   
   return(list(cell_set_meta, failed_sets))
 }
+
+# 
+# ### Manually testing function ###
+# # # Pulling/storing full collection of sets, pools, and lines
+# cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", api_key)
+# # 
+# # # TODO - Uber pools 
+# # # uber_pools_df <- get_cell_api_info("https://api.clue.io/api/uber_pools", api_key)
+# # 
+# # Old cell_pools API endpoint deleted? - https://api.clue.io/api/cell_pools
+# cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", api_key)
+# cell_line_meta <- get_cell_api_info("https://api.clue.io/api/cell_lines", api_key)
+
+# sample_meta <- read.csv("PATH TO SAMPLE META")
+# raw_counts <- read.csv("PATH TO RAW COUNTS")
+# 
+# # Calling function to create cell set metadata specific to project's sample_meta
+# cell_sets <- create_cell_set_meta(sample_meta)
+# cell_set_meta <- cell_sets[[1]]
+# failed_cell_sets <- cell_sets[[2]]
+# 
+# 
+# ## Manual - no function ###
+# sample_meta <- read.csv("/Users/naim/Documents/Work/Troubleshooting/SUSHI_Testing/pseq-005-miseq_copy/sample_meta.csv")
+# # raw_counts <- read.csv("/Users/naim/Documents/Work/Troubleshooting/SUSHI_Testing/pseq-005-miseq/raw_counts.csv")
+# sample_meta <- read.csv("~/Documents/Work/Troubleshooting/SUSHI_Testing/EPS001/sample_meta.csv")
+# 
+# unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
+# 
+# cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))
+# columns <- c("cell_set", "members")
+# colnames(cell_set_meta) <- columns
+# 
+# # Stores cell elements that were not found 
+# failed_sets <- list()
+# 
+# for (i in 1:length(unique_cell_sets)) {
+# 
+#   # Splitting cell set by LUA
+#   chr_unique_cell_sets <- toString(unique_cell_sets[i])
+#   print(paste("Expanding", unique_cell_sets[i]))
+#   cs <- unlist(strsplit(chr_unique_cell_sets,";"))
+# 
+#   # Storing information to generate cell_set_meta
+#   insert_index <- i
+#   known_cell_sets <- list()
+#   all_LUAs <- list()
+# 
+#   for (j in 1:length(cs)) {
+#     if (cs[j] %in% cell_sets_df$name) {
+#       print(paste(cs[j], "is a cell set."))
+#       known_cell_sets = c(known_cell_sets, cs[j])
+# 
+#       # Collecting and storing set LUA members
+#       cs_members = get_LUAs_from_sets(cs[j])
+#       # all_LUAs = c(all_LUAs, cs_members)
+#       all_LUAs <- append(all_LUAs, cs_members)
+#       
+# 
+#     } else if (cs[j] %in% cell_pools_df$name){
+#       print(paste(cs[j], "is a cell pool"))
+#       known_cell_sets = c(known_cell_sets, cs[j])
+# 
+#       # Collecting pool LUA members
+#       pool_members = get_LUAs_from_pools(cs[j])
+#       all_LUAs = append(all_LUAs, pool_members)
+# 
+#     } else if (cs[j] %in% cell_line_meta$lua){
+#       print(paste(cs, "is a cell line"))
+#       all_LUAs = append(all_LUAs, cs[j])
+#       known_cell_sets = c(known_cell_sets, cs[j])
+# 
+#     } else {
+#       print(paste(cs[j], "is not in our collection of cell sets, pools, or lines."))
+#       print(paste(chr_unique_cell_sets, "will not be added to the cell_set_meta."))
+#       failed_sets <- c(failed_sets, chr_unique_cell_sets)
+#       break
+#     }}
+# 
+#   # Should duplicates be removed before adding to cell_set_meta?
+#   if (length(all_LUAs) > 0) {
+#     known_cell_sets <- paste(known_cell_sets, collapse = ";")
+#     all_LUAs <- paste(all_LUAs[[1]], collapse = ";")
+#     cell_set_meta$cell_set[insert_index] <- known_cell_sets
+#     cell_set_meta$members[insert_index] <- all_LUAs
+#   }}

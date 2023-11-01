@@ -50,6 +50,7 @@ filter_raw_reads = function(
   # make template of expected reads
   index_to_well= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
   sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
+  
   template= sample_meta %>% merge(cell_set_meta, by='cell_set', all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     unnest(cols=c(members)) %>%
@@ -77,12 +78,17 @@ filter_raw_reads = function(
   
   # filtered counts
   print("Filtering reads ...")
-  filt_cols= c('project_code', 'pcr_plate', 'pcr_well', 'CCLE_name', 'DepMap_ID', 'prism_cell_set',
+  filt_cols= c('project_code', 'pcr_plate', 'pcr_well', 'ccle_name', 'depmap_id', 'prism_cell_set',
                'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type')
   filtered_counts= annotated_counts %>% dplyr::filter(!is.na(project_code)) %>%
     dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
+  
+  #renamed case sensitivity of columns - may need to adjust across several modules
+  # filtered_counts <- filtered_counts %>% 
+  #   rename("CCLE_name" = "ccle_name",
+  #          "DepMap_ID" = "depmap_id")
   
   # excluded counts
   #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
