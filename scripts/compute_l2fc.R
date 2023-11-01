@@ -23,6 +23,7 @@ parser$add_argument("--ctrl_cols", default="cell_set,day",
                     help = "columns used to collapse controls to generate l2fc")
 parser$add_argument("-ccn", "--count_col_name", default="normalized_n", 
                     help = "column containing counts with which to calculate l2fc")
+parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -33,9 +34,11 @@ normalized_counts = read.csv(args$normalized_counts)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 count_col_name = args$count_col_name
+count_threshold_arg= args$count_threshold
+count_threshold = as.numeric(count_threshold_arg)
 
 print("computing log-fold change")
-l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, ctrl_cols, count_col_name)
+l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, ctrl_cols, count_col_name, count_threshold)
 
 l2fc_out = paste(args$out, "l2fc.csv", sep="/")
 write.csv(l2fc, l2fc_out, row.names=F, quote=F)

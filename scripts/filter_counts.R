@@ -14,7 +14,7 @@ suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
-suppressPackageStartupMessages(library(reshape2))
+# suppressPackageStartupMessages(library(reshape2))
 library(prismSeqR)
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 
@@ -108,6 +108,9 @@ if (!all(id_cols %in% colnames(sample_meta))){
 
 sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
 
+count_threshold_arg= args$count_threshold
+count_threshold = as.numeric(count_threshold_arg)
+  
 print("creating filtered count file")
 filtered_counts = filter_raw_reads(
   raw_counts,
@@ -116,7 +119,7 @@ filtered_counts = filter_raw_reads(
   cell_set_meta,
   CB_meta,
   id_cols=id_cols,
-  count_threshold= args$count_threshold,
+  count_threshold=count_threshold,
   reverse_index2=args$reverse_index2
 )
 
@@ -129,7 +132,7 @@ write.csv(qc_table, qc_out_file, row.names=F, quote=F)
 annotated_counts = filtered_counts$annotated_counts
 annot_out_file = paste(args$out, 'annotated_counts.csv', sep='/')
 print(paste("writing annotated counts to: ", annot_out_file))
-write.csv(annotated_counts, annot_out_file, row.names=F, quote=F)
+write.csv(annotated_counts, annot_out_file, row.names=F)
 
 filtered_counts = filtered_counts$filtered_counts
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')

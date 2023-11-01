@@ -15,12 +15,11 @@
 normalize <- function(X, barcodes) {
   if (!('log2_n' %in% colnames(X)) & 
       ('n' %in% colnames(X))) {
-    X <- X %>% dplyr::mutate(log2_n = log2(n))
+    X <- X %>% dplyr::mutate(log2_n = log2(n+1))
   }
 
   normalized <- X %>%
-    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), 
-                  control_barcodes==T, !grepl('Missing', flag)) %>% 
+    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), control_barcodes==T) %>% 
     dplyr::group_by(profile_id) %>%
     # filter out profiles with 4 or fewer detected control barcodes
     dplyr::mutate(num_cbs= length(unique(na.omit(Name)))) %>% dplyr::filter(num_cbs > 4) %>%
