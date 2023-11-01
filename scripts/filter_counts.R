@@ -1,13 +1,9 @@
 suppressPackageStartupMessages(library(argparse))
 #suppressMessages(library(cmapR))
 
-# To load functions locally
-# source("~/Documents/Work/Pipeline_Code/sushi/scripts/cellDB_metadata.R")
-# source("~/Documents/Work/Pipeline_Code/sushi/R/filter_raw_reads.R")
-
 #source("../src/load_libraries.R")
 
-source("./cellDB_metadata.R")
+# source("./cellDB_metadata.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(readr)) #write_delim
@@ -57,12 +53,12 @@ parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Cont
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=TRUE, help = "Reverse complement of index 2 for NovaSeq")
+parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq")
 
 # NEW
 parser$add_argument("--api_url", default="https://api.clue.io/api/cell_sets", help = "Default API URL to CellDB cell sets")
 parser$add_argument("--api_key", default="", help = "Clue API key")
-parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
+parser$add_argument("--db_flag", action="store_true", default=TRUE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
