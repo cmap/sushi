@@ -68,7 +68,7 @@ if (args$db_flag) {
   # Otherwise, use static file
 } else {
   print("Using static cell set metadata file to locate cell information.")
-  cell_set_meta = read.csv("../metadata/cell_set_meta.csv")
+  cell_set_meta = read.csv(args$cell_set_meta)
 }
 
 print("generating filtered counts QC images")
