@@ -14,6 +14,7 @@ def build_parser():
     parser.add_argument('--build_path', '-b', help='Build path with SUSHI level 3, 4, and 5 data.', required=True)
     parser.add_argument('--out', '-o', help='Output for project level folders', required=True)
     parser.add_argument("--verbose", '-v', help="Whether to print a bunch of output", action="store_true", default=False)
+    parser.add_argument('--build_name', '-n', help='Build name.', required=True)
     return parser
 
 def read_build_file(search_pattern, args):
@@ -136,8 +137,9 @@ def main(args):
     level_5 = level_5[[col for col in level_5.columns if col != 'LFC'] + ['LFC']]
 
     # Writing out modified dataframes
-    project = level_4["screen"].unique()[0]
-    
+    # project = level_4["screen"].unique()[0]
+    project = args.build_name
+
     # Writing out project key
     project_key = write_key(level_3)
 
