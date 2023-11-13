@@ -4,6 +4,8 @@ suppressPackageStartupMessages(library(argparse))
 #source("../src/load_libraries.R")
 
 source("./src/cellDB_metadata.R")
+source("./src/filter_raw_reads.R")
+
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(readr)) #write_delim
@@ -11,7 +13,7 @@ suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 # suppressPackageStartupMessages(library(reshape2))
-library(prismSeqR)
+# library(prismSeqR)
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 
 # NEW - for cellDB
