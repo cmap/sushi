@@ -14,7 +14,7 @@ def build_parser():
     parser.add_argument('--build_dir', '-b', help='Project directory', required=True)
     parser.add_argument('--fastq_dir', '-f', help='Location of fastq files', required=True)
     parser.add_argument('--seq_type', help='Machine that generated fastq files. (Affects file names)',
-                        choices=['MiSeq', 'HiSeq'], required=True)
+                        choices=['MiSeq', 'HiSeq', 'NovaSeq'], required=True)
     parser.add_argument("--verbose", '-v', help="Whether to print a bunch of output", action="store_true", default=False)
 
     return parser
@@ -34,6 +34,16 @@ def make_file_names(row, seq_type):
             index_2=row['IndexBarcode2'],
             read_type="*"
         )
+    
+    elif seq_type == 'NovaSeq':
+        return '[{fc_lane}]_{fc_name}.[{fc_lane}].{index_1}_{index_2_rc}.unmapped.{read_type}'.format( # NovaSeq
+            fc_name=row['flowcell_name'],
+            fc_lane=row['flowcell_lane'],
+            index_1=row['IndexBarcode1'],
+            index_2_rc=reverse_complement(row['IndexBarcode2']),
+            read_type="*"
+        )
+    
     elif seq_type == 'MiSeq':
         return '{pcr_plate}_{pcr_well}_*.fastq.gz'.format( #MiSeq
             pcr_plate=row['pcr_plate'],
@@ -41,6 +51,10 @@ def make_file_names(row, seq_type):
         )
     else:
         raise ValueError("unknown sequencer type")
+
+def reverse_complement(sequence):
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+    return ''.join([complement[base] for base in reversed(sequence)])
 
 def main(args):
     project_info =  pd.read_csv(os.path.join(args.build_dir, 'sample_meta.csv'))

@@ -1,4 +1,4 @@
-FROM rocker/r-ver:4.0.2
+FROM rocker/r-ver:4.0.3
 MAINTAINER Anup Jonchhe <cmap-soft@broadinstitute.org>
 LABEL base.mts.pipeline.clue.io.version="0.0.1"
 LABEL base.mts.pipeline.clue.io.vendor="PRISM"
@@ -21,3 +21,12 @@ RUN mkdir -p /src && apt-get -y --no-install-recommends install \
 RUN apt-get install -y --no-install-recommends libbz2-dev liblzma-dev
 COPY ./install_packages.R /src/install_packages.R
 RUN mkdir -p /clue/bin && Rscript /src/install_packages.R
+COPY ./install_sushi_packages.R /src/install_sushi_packages.R
+RUN Rscript /src/install_sushi_packages.R
+RUN apt-get -y update; apt-get -y install curl
+RUN curl -L -o taigr.zip https://github.com/broadinstitute/taigr/archive/master.zip && \
+    unzip taigr.zip && \
+    cd taigr-master && \
+    R CMD INSTALL .
+COPY ./install_sushi_packages2.R /src/install_sushi_packages2.R
+RUN Rscript /src/install_sushi_packages2.R

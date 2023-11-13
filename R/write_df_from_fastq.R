@@ -61,9 +61,9 @@ write_df_from_fastq <- function(
         Biostrings::DNAStringSet()
       
       forward_reads_cl_barcode <- XVector::subseq(forward_reads_string_set, 1, CL_BC_LENGTH)
-      
-      index_1 <- XVector::subseq(index_1_string_set, 1, WELL_BC_LENGTH)
-      index_2 <- XVector::subseq(index_2_string_set, 1, PLATE_BC_LENGTH)
+ 
+      index_1 <- XVector::subseq(index_1_string_set, start = 1, end = PLATE_BC_LENGTH)
+      index_2 <- XVector::subseq(index_2_string_set, start = 1, end = WELL_BC_LENGTH)
       
       forward_reads_cl_barcode = as.character(forward_reads_cl_barcode)
       index_1 = as.character(index_1)
