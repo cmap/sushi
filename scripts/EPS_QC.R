@@ -3,7 +3,7 @@
 ##Assay pool information will need to be added when merging has been implemented in pipeline
 ## so now QC table has cell set information rather than assay pool information
 # import necessary libraries and functions
-suppressPackageStartupMessages(library(arparse))
+suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(data.table))
