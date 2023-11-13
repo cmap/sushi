@@ -3,7 +3,7 @@ suppressPackageStartupMessages(library(argparse))
 
 #source("../src/load_libraries.R")
 
-# source("./cellDB_metadata.R")
+source("./src/cellDB_metadata.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(readr)) #write_delim
