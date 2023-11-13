@@ -14,15 +14,14 @@ suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 # suppressPackageStartupMessages(library(reshape2))
 # library(prismSeqR)
+suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 
 # NEW - for cellDB
 suppressPackageStartupMessages(library(httr))
 suppressPackageStartupMessages(library(jsonlite))
-suppressPackageStartupMessages(library(sets))
 
 
-## print_args
 ## writes configuration to file
 ##
 ## takes:
