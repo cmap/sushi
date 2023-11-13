@@ -93,14 +93,25 @@ filter_raw_reads = function(
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
-  # Adjusted column naming for case sensitivity - may need to adjust across several modules
-  filtered_counts <- filtered_counts %>%
-    rename("CCLE_name" = "ccle_name",
-           "DepMap_ID" = "depmap_id")
+  library(dplyr)
+  
+  # Function to perform conditional renaming
+  conditionalRename <- function(df) {
+    if("ccle_name" %in% colnames(df)) {
+      df <- df %>% rename("CCLE_name" = "ccle_name")
+    }
+    
+    if("depmap_id" %in% colnames(df)) {
+      df <- df %>% rename("DepMap_ID" = "depmap_id")
+    }
+    return(df)
+  }
+  
+  # Adjusting column naming for case sensitivity
+  filtered_counts <- conditionalRename(filtered_counts)
+  annotated_counts <- conditionalRename(annotated_counts)
+  
 
-  annotated_counts <- annotated_counts %>%
-    rename("CCLE_name" = "ccle_name",
-           "DepMap_ID" = "depmap_id")
   # excluded counts
   #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
   #  dplyr::select_if(function(col) sum(is.na(col)) < length(col)) # ignore columns with all NAs
