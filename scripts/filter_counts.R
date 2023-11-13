@@ -75,8 +75,13 @@ raw_counts = read.csv(args$raw_counts)
 
 # NEW
 api_url <- args$api_url
-# api_key <- Sys.getenv("API_KEY")
-api_key <- args$api_key
+if (args$api_key != ""){
+  api_key = args$api_key
+} else (Sys.getenv("API_KEY") != "") {
+ api_key = Sys.getenv("API_KEY")
+} else {
+  stop("No API key provided via argument or environment variable API_KEY.")
+}
 
 # Using CellDB, otherwise checking static files
 if (args$db_flag) {
