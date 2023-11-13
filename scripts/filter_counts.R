@@ -120,6 +120,10 @@ filtered_counts = filter_raw_reads(
 )
 
 # Write out module outputs
+cell_set_out_file = paste(args$out, 'cell_set_meta.csv', sep='/')
+print(paste("writing cell_set_meta to: ", cell_set_out_file))
+write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
+
 qc_table = filtered_counts$qc_table
 qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
 print(paste("writing QC_table to: ", qc_out_file))

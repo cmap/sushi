@@ -92,6 +92,9 @@ filter_raw_reads = function(
     rename("CCLE_name" = "ccle_name",
            "DepMap_ID" = "depmap_id")
 
+  annotated_counts <- annotated_counts %>%
+    rename("CCLE_name" = "ccle_name",
+           "DepMap_ID" = "depmap_id")
   # excluded counts
   #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
   #  dplyr::select_if(function(col) sum(is.na(col)) < length(col)) # ignore columns with all NAs
