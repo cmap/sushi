@@ -44,7 +44,7 @@ def main(args):
         fstr = os.path.join(args.build_path, '*l2fc*.csv')
         fmatch = glob.glob(fstr)
         assert (len(fmatch) == 1) , "Too many files found"
-        # Reading in data
+        print("Reading in data")
         sample_meta = read_build_file("*sample_meta*.csv", args)
         level_3 = read_build_file("*normalized_counts*.csv", args)
         level_4 = read_build_file("*l2fc*.csv", args)
@@ -90,7 +90,7 @@ def main(args):
 
 
     # Setting columns
-    #### Do we need to split the project so that letters and numbers are separated by a - (EXT007 --> EXT-007)?
+    print("Reformatting columns...")
     sample_meta = sample_meta.assign(pert_vehicle=pert_vehicle, x_project_id=sample_meta["pert_plate"], screen=sample_meta["pert_plate"], pert_time_unit = pert_time_unit, 
                             pert_id = sample_meta["pert_iname"].str.upper(), prc_id = sample_meta["pert_iname"].str.upper())
 
@@ -139,6 +139,8 @@ def main(args):
     # Writing out modified dataframes
     # project = level_4["screen"].unique()[0]
     project = args.build_name
+
+    print("Creating compound key...")
 
     # Writing out project key
     project_key = write_key(level_3)
