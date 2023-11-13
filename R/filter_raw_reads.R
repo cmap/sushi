@@ -31,8 +31,10 @@ filter_raw_reads = function(
     print("Reverse-complementing index 2 barcode.")
   }
   
+  print("Filtering raw counts")
   index_filtered = raw_counts %>%
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2)
+  print("Computing index purity")
   index_purity = sum(index_filtered$n) / sum(raw_counts$n)
   
   print("Filtering cell lines")
