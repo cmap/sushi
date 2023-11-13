@@ -30,6 +30,7 @@ parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "control barcode metadata")
+parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "control barcode metadata")
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day", 
                     help = "columns used to generate signature ids")
@@ -37,7 +38,7 @@ parser$add_argument("--count_col_name", default="normalized_n",
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default=40, 
                     help = "Low counts threshold")
-parser$add_argument("--db_flag", action="store_true", default=TRUE, help = "Use CellDB to locate cell set information")
+parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()

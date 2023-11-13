@@ -54,7 +54,7 @@ parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Cont
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq")
+parser$add_argument("--reverse_index2", action="store_true", default=TRUE, help = "Reverse complement of index 2 for NovaSeq")
 
 # NEW
 parser$add_argument("--api_url", default="https://api.clue.io/api/cell_sets", help = "Default API URL to CellDB cell sets")
@@ -93,6 +93,9 @@ if (args$db_flag) {
   cell_sets <- create_cell_set_meta(sample_meta)
   cell_set_meta <- cell_sets[[1]]
   failed_cell_sets <- cell_sets[[2]]
+  cell_set_out_file = paste(args$out, 'cell_set_meta.csv', sep='/')
+  print(paste("writing cell_set_meta to: ", cell_set_out_file))
+  write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
   } else {
     print("Using static cell set information files to locate cell information.")
     cell_line_meta = read.csv(args$cell_line_meta)
@@ -126,10 +129,6 @@ filtered_counts = filter_raw_reads(
 )
 
 # Write out module outputs
-cell_set_out_file = paste(args$out, 'cell_set_meta.csv', sep='/')
-print(paste("writing cell_set_meta to: ", cell_set_out_file))
-write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
-
 qc_table = filtered_counts$qc_table
 qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
 print(paste("writing QC_table to: ", qc_out_file))
