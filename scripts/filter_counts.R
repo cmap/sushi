@@ -58,7 +58,7 @@ parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help
 # NEW
 parser$add_argument("--api_url", default="https://api.clue.io/api/cell_sets", help = "Default API URL to CellDB cell sets")
 parser$add_argument("--api_key", default="", help = "Clue API key")
-parser$add_argument("--db_flag", action="store_true", default=TRUE, help = "Use CellDB to locate cell set information")
+parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
