@@ -25,6 +25,7 @@ filter_raw_reads = function(
   
   # New: convert CB_meta from log10 to log2
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
+  print("Converting CB_meta from log10 to log2")
   
   if (reverse_index2) {
     sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
