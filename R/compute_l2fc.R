@@ -42,7 +42,7 @@ compute_l2fc = function(normalized_counts,
   # collapse controls
   controls= collapsed_tech_rep %>% 
     dplyr::filter(trt_type==control_type) %>% 
-    dplyr::group_by_at(c('project_code', 'CCLE_name', 'DepMap_ID', 'prism_cell_set', ctrl_cols)) %>% 
+    dplyr::group_by_at(c('project_code', 'CCLE_name', 'DepMap_ID', ctrl_cols)) %>% 
     dplyr::summarise(control_median_n= median(mean_n),
                      control_median_normalized_n = median(mean_normalized_n),
                      control_mad_sqrtN = mad(log2(mean_normalized_n))/sqrt(dplyr::n()),
@@ -56,10 +56,10 @@ compute_l2fc = function(normalized_counts,
   }
   
   l2fc= collapsed_tech_rep %>% dplyr::filter(!trt_type %in% c(control_type, 'day_0')) %>% 
-    merge(controls, by= c('project_code',"CCLE_name", "DepMap_ID", "prism_cell_set", ctrl_cols), all.x=T, all.y=T) %>%
+    merge(controls, by= c('project_code',"CCLE_name", "DepMap_ID", ctrl_cols), all.x=T, all.y=T) %>%
     dplyr::mutate(l2fc= log2(mean_normalized_n/control_median_normalized_n),
                   counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, prism_cell_set, trt_type, control_barcodes, sig_id, bio_rep)
+    dplyr::relocate(project_code, CCLE_name, DepMap_ID, trt_type, control_barcodes, sig_id, bio_rep)
   
   return(l2fc)
 }
