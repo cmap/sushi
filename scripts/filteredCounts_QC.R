@@ -38,7 +38,7 @@ parser$add_argument("--count_col_name", default="normalized_n",
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default=40, 
                     help = "Low counts threshold")
-parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
+# parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -60,16 +60,17 @@ sig_cols = unlist(strsplit(args$sig_cols, ","))
 count_col_name = args$count_col_name
 count_threshold_arg= args$count_threshold
 count_threshold = as.numeric(count_threshold_arg)
+cell_set_meta = read.csv(args$cell_set_meta)
 
-# If flag passed, use cell_set_meta file generated for the project via CellDB
-if (args$db_flag) {
-  print("Calling cell_set_meta generated using CellDB")
-  cell_set_meta = read.csv("cell_set_meta.csv")
-  # Otherwise, use static file
-} else {
-  print("Using static cell set metadata file to locate cell information.")
-  cell_set_meta = read.csv(args$cell_set_meta)
-}
+# # If flag passed, use cell_set_meta file generated for the project via CellDB
+# if (args$db_flag) {
+#   print("Calling cell_set_meta generated using CellDB")
+#   cell_set_meta = read.csv("cell_set_meta.csv")
+#   # Otherwise, use static file
+# } else {
+#   print("Using static cell set metadata file to locate cell information.")
+#   cell_set_meta = read.csv(args$cell_set_meta)
+# }
 
 print("generating filtered counts QC images")
 #QC_images(annotated_counts, filtered_counts, normalized_counts,
