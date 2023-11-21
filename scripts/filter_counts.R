@@ -54,7 +54,7 @@ parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Cont
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=TRUE, help = "Reverse complement of index 2 for NovaSeq")
+parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq")
 
 # NEW
 parser$add_argument("--api_url", default="https://api.clue.io/api/cell_sets", help = "Default API URL to CellDB cell sets")
@@ -74,23 +74,29 @@ CB_meta = read.csv(args$CB_meta)
 sample_meta = read.csv(args$sample_meta)
 raw_counts = read.csv(args$raw_counts)
 
-# NEW
-api_url <- args$api_url
-if (args$api_key != ""){
-  api_key = args$api_key
-} else if (Sys.getenv("API_KEY") != "") {
- api_key = Sys.getenv("API_KEY")
-} else {
-  stop("No API key provided via argument or environment variable API_KEY.")
-}
 
 # Using CellDB, otherwise checking static files
 if (args$db_flag) {
+  api_url <- args$api_url
+  if (args$api_key != ""){
+    api_key = args$api_key
+  } else if (Sys.getenv("API_KEY") != "") {
+    api_key = Sys.getenv("API_KEY")
+  } else {
+    stop("No API key provided via argument or environment variable API_KEY.")
+  }
+  
   print("Using CellDB to locate cell information.")
   cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", api_key)
   cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", api_key)
   cell_line_meta <- get_cell_api_info("https://api.clue.io/api/cell_lines", api_key)
   cell_sets <- create_cell_set_meta(sample_meta)
+  # Renaming columns to match expected naming from static files
+  cell_line_meta <- cell_line_meta %>%
+    rename("LUA" = "lua",
+           "Sequence" = "dna_sequence",
+           "DepMap_ID" = "depmap_id",
+           "CCLE_name" = "ccle_name")
   cell_set_meta <- cell_sets[[1]]
   failed_cell_sets <- cell_sets[[2]]
   cell_set_out_file = paste(args$out, 'cell_set_meta.csv', sep='/')
@@ -99,8 +105,6 @@ if (args$db_flag) {
   } else {
     print("Using static cell set information files to locate cell information.")
     cell_line_meta = read.csv(args$cell_line_meta)
-    cell_line_meta$dna_sequence <- cell_line_meta$Sequence
-    cell_line_meta$lua <- cell_line_meta$LUA
     cell_set_meta = read.csv(args$cell_set_meta)
   }
 

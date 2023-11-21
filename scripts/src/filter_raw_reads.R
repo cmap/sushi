@@ -40,20 +40,20 @@ filter_raw_reads = function(
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2)
   print("Computing index purity")
   index_purity = sum(index_filtered$n) / sum(raw_counts$n)
-  
+
   print("Filtering cell lines")
   cell_line_filtered = index_filtered %>%
     merge(sample_meta, by.x=c("index_1", "index_2"), by.y=c("IndexBarcode1", "IndexBarcode2")) %>%
-    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="dna_sequence", all.x=T) %>% # NEW  
+    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% # NEW
     merge(cell_set_meta, by="cell_set", all.x=T) %>%
-    dplyr::filter(mapply(grepl, lua, members) | # NEW
-                    (mapply(grepl, lua, cell_set) & is.na(members)) | # NEW
+    dplyr::filter(mapply(grepl, LUA, members) | # NEW
+                    (mapply(grepl, LUA, cell_set) & is.na(members)) | # NEW
                     (forward_read_cl_barcode %in% CB_meta$Sequence))
   cell_line_purity = sum(cell_line_filtered$n)/ sum(index_filtered$n)
-  
+
   print("Generating QC table ...")
   qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)
-  
+
   # make template of expected reads
   #index_to_well= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
   sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
@@ -61,7 +61,7 @@ filter_raw_reads = function(
   template= sample_meta %>% merge(cell_set_meta, by='cell_set', all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     unnest(cols=c(members)) %>%
-    merge(cell_line_meta, by.x= 'members', by.y= 'lua', all.x= T) # NEW
+    merge(cell_line_meta, by.x= 'members', by.y= 'LUA', all.x= T) # NEW
   
   # check for control barcodes and add them to the template
   if ('Y' %in% sample_meta$control_barcodes | T %in% sample_meta$control_barcodes) {
@@ -73,13 +73,13 @@ filter_raw_reads = function(
   
   # annotating reads now takes much longer
   print("Annotating reads ...")
-  annotated_counts= raw_counts %>%
-    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="dna_sequence", all.x=T) %>% # NEW
+  annotated_counts= raw_counts %>% dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
+    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% # NEW
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
     merge(sample_meta, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
     merge(template %>% dplyr::mutate(expected_read= T), 
           by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
-          by.y= c('IndexBarcode1', 'IndexBarcode2', 'dna_sequence', intersect(colnames(template), colnames(.))), # NEW
+          by.y= c('IndexBarcode1', 'IndexBarcode2', 'Sequence', intersect(colnames(template), colnames(.))), # NEW
           all.x=T, all.y=T) %>% 
     dplyr::mutate(n= replace_na(n, 0),
                   expected_read= replace_na(expected_read, F))
@@ -94,26 +94,11 @@ filter_raw_reads = function(
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
 
-  # Function to perform conditional renaming
-  conditionalRename <- function(df) {
-    if("ccle_name" %in% colnames(df)) {
-      df <- df %>% rename("CCLE_name" = "ccle_name")
-    }
-    
-    if("depmap_id" %in% colnames(df)) {
-      df <- df %>% rename("DepMap_ID" = "depmap_id")
-    }
-    return(df)
-  }
-  
-  # Adjusting column naming for case sensitivity
-  filtered_counts <- conditionalRename(filtered_counts)
-  annotated_counts <- conditionalRename(annotated_counts)
-  
-
   # excluded counts
   #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
   #  dplyr::select_if(function(col) sum(is.na(col)) < length(col)) # ignore columns with all NAs
+  
+  # return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts))
   
   return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts,
               qc_table= qc_table))
