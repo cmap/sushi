@@ -81,6 +81,8 @@ def main(args):
             if old_name in dataset.columns:
                 dataset.rename(columns={old_name: new_name}, inplace=True)
 
+        #Seq projects are all PR500 for now
+        dataset["culture"] = "PR500"
 
     # Define the pert_time values to drop
     pert_time_to_drop = [0, 6]
