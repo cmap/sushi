@@ -39,7 +39,11 @@ def write_key(df):
     return grouped_df
 
 def main(args):
-    
+    if os.path.isdir(args.out):
+        pass
+    else:
+        os.makedirs(args.out)
+
     try:
         fstr = os.path.join(args.build_path, '*l2fc*.csv')
         fmatch = glob.glob(fstr)
@@ -59,6 +63,7 @@ def main(args):
     # Define the column renaming dictionary
     column_mapping = {
         "project_code": "pert_plate",
+        "DepMap_ID": "depmap_id",
         "CCLE_name": "ccle_name",
         "prism_cell_set": "culture",
         "trt_type": "pert_type",
