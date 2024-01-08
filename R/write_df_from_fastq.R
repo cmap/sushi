@@ -113,3 +113,99 @@ write_df_from_fastq <- function(
   
   return(cumulative_count_df)
 }
+
+
+# this function is for DRAGEN-formatted files
+write_df_from_fastq_DRAGEN <- function(
+    forward_read_fastq_files,
+    write_interval = NA,
+    CL_BC_LENGTH = 24,
+    PLATE_BC_LENGTH = 8,
+    WELL_BC_LENGTH = 8,
+    save_loc = getwd()
+) 
+{
+  write_interval = as.numeric(write_interval)
+  
+  n_total_reads <- 0
+  cumulative_count_df <- list()
+  
+  lp = 1
+  for (i in 1:length(forward_read_fastq_files)) {
+    forward_stream <- ShortRead::FastqStreamer(forward_read_fastq_files[i])
+    
+    print(paste0("forward read file is: ", forward_read_fastq_files[i]))
+    
+    j <- 0
+    repeat{
+      forward_reads_chunk <- ShortRead::yield(forward_stream)
+      
+      if (length(forward_reads_chunk) == 0) {break}
+      
+      print(paste0('Processing read ', j * 1e6, ' to ', 
+                   j*1e6 + length(forward_reads_chunk), 
+                   ' from file ', i)) #(ShortRead)The default size for both streams and samples is 1M records;
+      j <- j + 1
+      
+      forward_reads_string_set <- forward_reads_chunk  %>%
+        ShortRead::sread() %>%
+        Biostrings::DNAStringSet()
+      
+      forward_reads_cl_barcode <- XVector::subseq(forward_reads_string_set, 1, CL_BC_LENGTH)
+      
+      forward_reads_cl_barcode = as.character(forward_reads_cl_barcode)
+      
+      # get the index 1 and index 2 barcodes from the fastq file
+      print("Get index 1 and index 2 barcodes from fastq file")
+      
+      # do the below string splitting but for each read in the fastq file
+      temp <- as.character(forward_reads_chunk@id)
+      
+      fastq_header_split <- function(str){
+        indeces <- str_split_i(string = str_split_i(string = str, pattern = " ", i = 2), pattern = ":", i = 4)
+        index_1 <- str_split_i(string = indeces, pattern = "\\+", i = 1)
+        index_2 <- str_split_i(string = indeces, pattern = "\\+", i = 2)
+        
+        return(data.frame(index1 = index_1, index2 = index_2))
+      }
+      
+      indeces <- lapply(temp, fastq_header_split) %>% bind_rows()
+      index_1 <- indeces$index1
+      index_2 <- indeces$index2
+      
+      chunk_df <- data.frame(forward_read_cl_barcode = forward_reads_cl_barcode, index_1 = index_1, index_2 = index_2)
+      
+      matches_df <- chunk_df %>%
+        dplyr::mutate(index_number = 1:dplyr::n()) 
+      
+      n_total_reads <- n_total_reads + length(forward_reads_string_set)
+      
+      if(nrow(matches_df) == 0) {
+        next
+      } else if (lp > length(cumulative_count_df)) { 
+        cumulative_count_df[[lp]] = (matches_df %>% 
+                                       dplyr::count(index_1, index_2, forward_read_cl_barcode))
+      } else {
+        cumulative_count_df[[lp]] = (matches_df %>% 
+                                       dplyr::count(index_1, index_2, forward_read_cl_barcode) %>% 
+                                       rbind(cumulative_count_df[[lp]])) # new
+      }
+    }
+    close(forward_stream)
+    
+  }
+  
+  print('saving final cumulative_count_df ')
+  out = cumulative_count_df %>% dplyr::bind_rows() # new
+  
+  saveRDS(cumulative_count_df, 'temporary_cumulative_count_df.Rds')
+  saveRDS(out, paste(save_loc, 'cumulative_count_df.Rds', sep = '/')) # new
+  
+  cumulative_count_df <- cumulative_count_df %>%
+    dplyr::bind_rows() %>% # new 
+    dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
+    dplyr::summarise(n = sum(n, na.rm = T)) %>%
+    dplyr::ungroup()
+  
+  return(cumulative_count_df)
+}

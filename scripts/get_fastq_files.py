@@ -14,7 +14,7 @@ def build_parser():
     parser.add_argument('--build_dir', '-b', help='Project directory', required=True)
     parser.add_argument('--fastq_dir', '-f', help='Location of fastq files', required=True)
     parser.add_argument('--seq_type', help='Machine that generated fastq files. (Affects file names)',
-                        choices=['MiSeq', 'HiSeq', 'NovaSeq'], required=True)
+                        choices=['MiSeq', 'HiSeq', 'NovaSeq', 'DRAGEN'], required=True)
     parser.add_argument("--verbose", '-v', help="Whether to print a bunch of output", action="store_true", default=False)
 
     return parser
@@ -42,6 +42,19 @@ def make_file_names(row, seq_type):
             index_1=row['IndexBarcode1'],
             index_2_rc=reverse_complement(row['IndexBarcode2']),
             read_type="*"
+        )
+        
+    elif seq_type == "DRAGEN":
+      return '{fc_name}_[{fc_lane}]_{PoolTubeBarcode}_{index_1}-{index_2_rc}_{SampleNum}_{fc_L_lane}_{read_type}'.format( # NextSeq DRAGEN
+            fc_name=row['flowcell_name'],
+            fc_lane=row['flowcell_lane'],
+            index_1=row['IndexBarcode1'],
+            index_2_rc=reverse_complement(row['IndexBarcode2']),
+            read_type="*",
+            PoolTubeBarcode = "*",
+            SampleNum = "*",
+            fc_L_lane = "*",
+            
         )
     
     elif seq_type == 'MiSeq':
