@@ -56,10 +56,9 @@ barcode_read_files <- read_directory_contents %>%
   sort()
 
 if(args$seq_type == "DRAGEN"){
-  barcode_read_files %<>% purrr::discard(stringr::str_detect, fixed("_R2_001.fastq.gz"))
-}
-
-if(args$seq_type != "DRAGEN"){
+  barcode_read_files %<>% purrr::keep(stringr::str_detect, fixed("_R1_001.fastq.gz"))
+  
+} else {
   # plates
   index_1_files <- read_directory_contents %>%
     purrr::keep(stringr::str_detect, fixed(args$index_1)) %>%
@@ -94,8 +93,6 @@ if (args$seq_type == "DRAGEN"){
   raw_counts <- write_df_from_fastq_DRAGEN(forward_read_fastq_files = barcode_read_files,
                                        write_interval = NA,
                                        CL_BC_LENGTH = read_lengths[3],
-                                       PLATE_BC_LENGTH = read_lengths[1],
-                                       WELL_BC_LENGTH = read_lengths[2],
                                        save_loc =  args$out)
 }else{
   raw_counts <- write_df_from_fastq(forward_read_fastq_files = barcode_read_files,

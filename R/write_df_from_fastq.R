@@ -114,14 +114,20 @@ write_df_from_fastq <- function(
   return(cumulative_count_df)
 }
 
+# function to get index barcodes from fastq headers
+fastq_header_split <- function(str){
+  indeces <- str_split_i(string = str_split_i(string = str, pattern = " ", i = 2), pattern = ":", i = 4)
+  index_1 <- str_split_i(string = indeces, pattern = "\\+", i = 1)
+  index_2 <- str_split_i(string = indeces, pattern = "\\+", i = 2)
+  
+  return(data.frame(index1 = index_1, index2 = index_2))
+}
 
 # this function is for DRAGEN-formatted files
 write_df_from_fastq_DRAGEN <- function(
     forward_read_fastq_files,
     write_interval = NA,
     CL_BC_LENGTH = 24,
-    PLATE_BC_LENGTH = 8,
-    WELL_BC_LENGTH = 8,
     save_loc = getwd()
 ) 
 {
@@ -147,12 +153,11 @@ write_df_from_fastq_DRAGEN <- function(
                    ' from file ', i)) #(ShortRead)The default size for both streams and samples is 1M records;
       j <- j + 1
       
-      forward_reads_string_set <- forward_reads_chunk  %>%
+      forward_reads_string_set <- forward_reads_chunk %>%
         ShortRead::sread() %>%
         Biostrings::DNAStringSet()
       
       forward_reads_cl_barcode <- XVector::subseq(forward_reads_string_set, 1, CL_BC_LENGTH)
-      
       forward_reads_cl_barcode = as.character(forward_reads_cl_barcode)
       
       # get the index 1 and index 2 barcodes from the fastq file
@@ -160,14 +165,6 @@ write_df_from_fastq_DRAGEN <- function(
       
       # do the below string splitting but for each read in the fastq file
       temp <- as.character(forward_reads_chunk@id)
-      
-      fastq_header_split <- function(str){
-        indeces <- str_split_i(string = str_split_i(string = str, pattern = " ", i = 2), pattern = ":", i = 4)
-        index_1 <- str_split_i(string = indeces, pattern = "\\+", i = 1)
-        index_2 <- str_split_i(string = indeces, pattern = "\\+", i = 2)
-        
-        return(data.frame(index1 = index_1, index2 = index_2))
-      }
       
       indeces <- lapply(temp, fastq_header_split) %>% bind_rows()
       index_1 <- indeces$index1
