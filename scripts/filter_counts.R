@@ -54,7 +54,7 @@ parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Cont
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq")
+parser$add_argument("--reverse_index2", action="store_true", default=TRUE, help = "Reverse complement of index 2 for NovaSeq")
 
 # NEW
 parser$add_argument("--api_url", default="https://api.clue.io/api/cell_sets", help = "Default API URL to CellDB cell sets")
@@ -70,10 +70,13 @@ if (args$out == ""){
 }
 #print_args(args)
 
-CB_meta = read.csv(args$CB_meta)
-sample_meta = read.csv(args$sample_meta)
-raw_counts = read.csv(args$raw_counts)
+# CB_meta = read.csv(args$CB_meta)
+# sample_meta = read.csv(args$sample_meta)
+# raw_counts = read.csv(args$raw_counts)
 
+CB_meta = read.csv("/Users/naim/Documents/Work/Troubleshooting/SUSHI_Testing/metadata/CB_meta.csv")
+raw_counts = read.csv("/Users/naim/Documents/Work/Troubleshooting/SUSHI_Testing/EPS001_CellDB_01092023/raw_counts.csv")
+sample_meta = read.csv("/Users/naim/Documents/Work/Troubleshooting/SUSHI_Testing/EPS001_CellDB_01092023/sample_meta.csv")
 
 # Using CellDB, otherwise checking static files
 if (args$db_flag) {
@@ -90,6 +93,7 @@ if (args$db_flag) {
   cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", api_key)
   cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", api_key)
   cell_line_meta <- get_cell_api_info("https://api.clue.io/api/cell_lines", api_key)
+  assay_pool_meta <- get_cell_api_info("https://api.clue.io/api/cell_set_definition_files", api_key)
   cell_sets <- create_cell_set_meta(sample_meta)
   # Renaming columns to match expected naming from static files
   cell_line_meta <- cell_line_meta %>%
