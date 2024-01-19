@@ -90,6 +90,7 @@ read_lengths = as.integer(unlist(strsplit(args$barcode_lengths, ",")))
 
 # here, 
 if (args$seq_type == "DRAGEN"){
+  print("Seq_type is DRAGEN")
   raw_counts <- write_df_from_fastq_DRAGEN(forward_read_fastq_files = barcode_read_files,
                                        write_interval = NA,
                                        CL_BC_LENGTH = read_lengths[3],
