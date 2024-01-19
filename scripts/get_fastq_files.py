@@ -44,17 +44,16 @@ def make_file_names(row, seq_type):
             read_type="*"
         )
         
-    elif seq_type == "DRAGEN":
+    elif seq_type == 'DRAGEN':
       return '{fc_name}_[{fc_lane}]_{PoolTubeBarcode}_{index_1}-{index_2_rc}_{SampleNum}_{fc_L_lane}_{read_type}'.format( # NextSeq DRAGEN
             fc_name=row['flowcell_name'],
             fc_lane=row['flowcell_lane'],
             index_1=row['IndexBarcode1'],
-            index_2_rc=reverse_complement(row['IndexBarcode2']),
+            index_2_rc=row['IndexBarcode2'],
             read_type="*",
             PoolTubeBarcode = "*",
             SampleNum = "*",
-            fc_L_lane = "*",
-            
+            fc_L_lane = "*"
         )
     
     elif seq_type == 'MiSeq':
@@ -72,18 +71,17 @@ def reverse_complement(sequence):
 def main(args):
     project_info =  pd.read_csv(os.path.join(args.build_dir, 'sample_meta.csv'))
     project_info['pcr_well'] = project_info.apply(format_wells, axis=1)
-
     proj_files = project_info.apply(
         lambda row: make_file_names(row, args.seq_type),
         axis=1
     )
 
+    print(proj_files)
     paths = proj_files.apply(lambda f: glob.glob(os.path.join(args.fastq_dir, f)))
     paths = [file for row in paths for file in row]
-
+    
     proj_dir = args.build_dir
     fastq_out = os.path.join(proj_dir, "fastq/")
-
     logger.info("dir: {}".format(fastq_out))
     if os.path.isdir(fastq_out):
         logger.info("directory exists")
