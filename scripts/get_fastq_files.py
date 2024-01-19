@@ -49,7 +49,7 @@ def make_file_names(row, seq_type):
             fc_name=row['flowcell_name'],
             fc_lane=row['flowcell_lane'],
             index_1=row['IndexBarcode1'],
-            index_2_rc=reverse_complement(row['IndexBarcode2']),
+            index_2_rc=row['IndexBarcode2'],
             read_type="*",
             PoolTubeBarcode = "*",
             SampleNum = "*",
