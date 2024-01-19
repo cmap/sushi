@@ -1,8 +1,8 @@
-library(prismSeqR)
+#library(prismSeqR)
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(tidyverse)) ###### debug
 suppressPackageStartupMessages(library(magrittr))
-
+source("./src/write_df_from_fastq.R")
 ## print_args
 ## writes configuration to file
 ##
@@ -57,7 +57,6 @@ barcode_read_files <- read_directory_contents %>%
 
 if(args$seq_type == "DRAGEN"){
   barcode_read_files %<>% purrr::keep(stringr::str_detect, fixed("_R1_001.fastq.gz"))
-  
 } else {
   # plates
   index_1_files <- read_directory_contents %>%
@@ -90,7 +89,7 @@ read_lengths = as.integer(unlist(strsplit(args$barcode_lengths, ",")))
 
 # here, 
 if (args$seq_type == "DRAGEN"){
-  print("Seq_type is DRAGEN")
+  print("Detecting DRAGEN")
   raw_counts <- write_df_from_fastq_DRAGEN(forward_read_fastq_files = barcode_read_files,
                                        write_interval = NA,
                                        CL_BC_LENGTH = read_lengths[3],
