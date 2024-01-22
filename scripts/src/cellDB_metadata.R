@@ -71,6 +71,7 @@ get_cell_line_info <- function(all_LUAs) {
 
 create_cell_set_meta = function(sample_meta) {
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
+  cell_line_meta <- cell_line_meta[cell_line_meta$davepool_id %in% unique_cell_sets,]
   cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))
   columns <- c("cell_set", "members")
   colnames(cell_set_meta) <- columns
@@ -92,7 +93,7 @@ create_cell_set_meta = function(sample_meta) {
       if (cs[j] %in% cell_sets_df$name) {
         print(paste(cs[j], "is a cell set.")) 
         known_cell_sets = c(known_cell_sets, cs[j])
-        
+
         # Collecting and storing set LUA members   
         cs_members = get_LUAs_from_sets(cs[j])
         all_LUAs = append(all_LUAs, cs_members)
@@ -105,7 +106,7 @@ create_cell_set_meta = function(sample_meta) {
         pool_members = get_LUAs_from_pools(cs[j])
         all_LUAs = append(all_LUAs, pool_members)
         
-      } else if (cs[j] %in% cell_line_meta$lua){
+      } else if (cs[j] %in% cell_line_meta$LUA){
         print(paste(cs[j], "is a cell line")) 
         all_LUAs = append(all_LUAs, cs[j])
         known_cell_sets = c(known_cell_sets, cs[j])
@@ -134,5 +135,5 @@ create_cell_set_meta = function(sample_meta) {
     print("cell_set_meta is empty. One or more pieces of cell information within a cell set in the cell_set column of sample_meta was not found.")
   }
   
-  return(list(cell_set_meta, failed_sets))
+  return(list(cell_line_meta, cell_set_meta, failed_sets))
 }
