@@ -47,6 +47,11 @@ if (args$out == ""){
 }
 #print_args(args)
 
+#if args$out doesn't exist, make it one
+if (!dir.exists(args$out)){
+  dir.create(args$out)
+}
+
 read_directory_contents <- c(args$fastq) %>% 
   purrr::map(list.files, full.names = T) %>%
   purrr::reduce(union)
