@@ -53,7 +53,7 @@ parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,
     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq and NextSeq")
-parser$add_argument("--api_url", default="https://api.clue.io/api/cell_sets", help = "Default API URL to CellDB cell sets")
+parser$add_argument("--api_url", default="https://dev-api.clue.io/api/", help = "Default API URL to CellDB is DEV")
 parser$add_argument("--api_key", default="", help = "Clue API key")
 parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
@@ -82,21 +82,22 @@ if (args$db_flag) {
   }
   
   print("Using CellDB to locate cell information.")
-  cell_sets_df <- get_cell_api_info("https://api.clue.io/api/cell_sets", api_key)
-  cell_pools_df <- get_cell_api_info("https://api.clue.io/api/assay_pools", api_key)
-  assay_pools_df <- get_cell_api_info("https://dev-api.clue.io/api/cell_set_definition_files", api_key)
+  cell_sets_df <- get_cell_api_info(paste(api_url,"cell_sets", sep = "/"), api_key)
+  cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_key)
+  cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
+  assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
   
   # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-  cell_line_meta <- assay_pools_df %>%
-    rename("LUA" = "barcode_id",
+  cell_line_meta <- cell_lines_df %>%
+    rename("LUA" = "lua",
            "Sequence" = "dna_sequence",
            "DepMap_ID" = "depmap_id",
            "CCLE_name" = "ccle_name")
   
-  cell_sets <- create_cell_set_meta(sample_meta)
-  cell_line_meta <- cell_sets[[1]]
-  cell_set_meta <- cell_sets[[2]]
-  failed_cell_sets <- cell_sets[[3]]
+  cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df)
+  cell_set_meta <- cell_sets[[1]]
+  failed_cell_sets <- cell_sets[[2]]
+  # Add failure code if failed cell sets not empty
   
   # Writing out cell_line_meta - may be necessary for downstream SUSHI?
   cell_line_out_file = paste(args$out, 'cell_line_meta.csv', sep='/')
@@ -136,6 +137,17 @@ filtered_counts = filter_raw_reads(
   count_threshold=count_threshold,
   reverse_index2=args$reverse_index2
 )
+
+# Pulling pool_id
+unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
+assay_pools_df <- assay_pools_df[assay_pools_df$davepool_id %in% unique_cell_sets,] %>% 
+  select(pool_id, ccle_name, davepool_id, depmap_id, culture)
+
+filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
+  merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
+
+filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
+  merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
 
 # Write out module outputs
 qc_table = filtered_counts$qc_table

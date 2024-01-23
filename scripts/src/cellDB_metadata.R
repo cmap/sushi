@@ -69,9 +69,8 @@ get_cell_line_info <- function(all_LUAs) {
   return(cell_lines_info)
 }
 
-create_cell_set_meta = function(sample_meta) {
+create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta) {
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
-  cell_line_meta <- cell_line_meta[cell_line_meta$davepool_id %in% unique_cell_sets,]
   cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))
   columns <- c("cell_set", "members")
   colnames(cell_set_meta) <- columns
@@ -130,10 +129,11 @@ create_cell_set_meta = function(sample_meta) {
       failed_sets <- c(failed_sets, chr_unique_cell_sets)
     }
   }
+  
   cell_set_meta <- na.omit(cell_set_meta)
   if (nrow(cell_set_meta) == 0) {
     print("cell_set_meta is empty. One or more pieces of cell information within a cell set in the cell_set column of sample_meta was not found.")
   }
   
-  return(list(cell_line_meta, cell_set_meta, failed_sets))
+  return(list(cell_set_meta, failed_sets))
 }
