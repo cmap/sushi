@@ -138,16 +138,18 @@ filtered_counts = filter_raw_reads(
   reverse_index2=args$reverse_index2
 )
 
-# Pulling pool_id
-unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
-assay_pools_df <- assay_pools_df[assay_pools_df$davepool_id %in% unique_cell_sets,] %>% 
-  select(pool_id, ccle_name, davepool_id, depmap_id, culture)
-
-filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
-  merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
-
-filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
-  merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
+# Pulling pool_id and culture when db_flag is passed
+if (args$db_flag) {
+  unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
+  assay_pools_df <- assay_pools_df[assay_pools_df$davepool_id %in% unique_cell_sets,] %>% 
+    select(pool_id, ccle_name, davepool_id, depmap_id, culture)
+  
+  filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
+    merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
+  
+  filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
+    merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
+}
 
 # Write out module outputs
 qc_table = filtered_counts$qc_table
