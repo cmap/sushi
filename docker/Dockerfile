@@ -13,9 +13,10 @@ mkdir -p /cmap/bin/sushi/
 #COPY ../R /cmap/bin/sushi/R
 #COPY ../scripts /cmap/bin/sushi/scripts
 COPY ./ /cmap/bin/sushi/
+COPY ./docker/install_packages.R /src/install_packages.R
 
-
-#RUN Rscript -e "setwd('/cmap/bin/sushi/');getwd();devtools::install()"
+RUN Rscript /src/install_packages.R
+RUN Rscript -e "setwd('/cmap/bin/sushi/');getwd();devtools::install()"
 COPY ./docker/aws_batch.sh /clue/bin/aws_batch
 
 WORKDIR /
