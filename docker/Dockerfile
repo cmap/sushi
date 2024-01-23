@@ -10,12 +10,14 @@ RUN apt-get -y install git
 RUN mkdir -p /cmap/bin && \
 mkdir -p /cmap/bin/sushi/
 
-RUN cd /cmap/bin/ && \
-git clone https://github.com/cmap/sushi.git && \
-cd /
+#COPY ../R /cmap/bin/sushi/R
+#COPY ../scripts /cmap/bin/sushi/scripts
+COPY ./ /cmap/bin/sushi/
+COPY ./docker/install_packages.R /src/install_packages.R
 
+RUN Rscript /src/install_packages.R
 RUN Rscript -e "setwd('/cmap/bin/sushi/');getwd();devtools::install()"
-COPY ./aws_batch.sh /clue/bin/aws_batch
+COPY ./docker/aws_batch.sh /clue/bin/aws_batch
 
 WORKDIR /
 ENV PATH /clue/bin:$PATH
