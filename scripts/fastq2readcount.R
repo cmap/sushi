@@ -91,8 +91,8 @@ if (is.null(args$write_interval)){
 #barcode_read_lengths
 read_lengths = as.integer(unlist(strsplit(args$barcode_lengths, ",")))
 
-shouldBeDRAGEN <- replicate(3, args$seq_type) # debug
-print(paste0("read lengths: ", read_lengths, " seq type: ", shouldBeDRAGEN)) # debug
+shouldBeDRAGEN <- args$seq_type # debug
+print(paste0(" This should be DRAGEN: ", shouldBeDRAGEN)) # debug
 
 if (args$seq_type == "DRAGEN"){
   print("Detecting DRAGEN")
