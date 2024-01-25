@@ -1,10 +1,10 @@
 #' cellDB_metadata
 #' 
 #' takes the user's API information to pull cell set information from CellDB
-#' based on the the given project metadata, a curared project cell_set_meta is created
+#' based on the the given project metadata, a curated project cell_set_meta is created
 #'
 #' @param sample_meta - master metadata of cell lines
-#' @param api_key - master metadata of cell sets and their contents
+#' @param api_key - personal api_key to Clue
 #' @return - list with the following elements
 #' #' \itemize{
 #'   \item cell_set_meta: metadata of cell sets specific to provided project sample metadata
@@ -56,7 +56,6 @@ get_LUAs_from_sets <- function(cell_set_name) {
 
 get_LUAs_from_pools <- function(cell_pool_name) {
   v_assay_pool_api_url <- "https://api.clue.io/api/v_assay_pools"
-  # Construct the filter object as a JSON string
   filter <- list(where = list(name = cell_pool_name), fields = c("name","barcode_id"))
   cell_pool_lua_df <- get_cell_api_info(v_assay_pool_api_url, api_key, filter)
   LUAs <- list(cell_pool_lua_df$barcode_id)
@@ -65,13 +64,12 @@ get_LUAs_from_pools <- function(cell_pool_name) {
 
 get_cell_line_info <- function(all_LUAs) {
   cell_lines_api_url <- "https://api.clue.io/api/cell_lines"
-  # Construct the filter object as a JSON string
   filter <- list(where = list(lua = list(inq = all_LUAs)))
   cell_lines_info <- get_cell_api_info(cell_lines_api_url, api_key, filter)
   return(cell_lines_info)
 }
 
-create_cell_set_meta = function(sample_meta) {
+create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta) {
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))
   columns <- c("cell_set", "members")
@@ -94,7 +92,7 @@ create_cell_set_meta = function(sample_meta) {
       if (cs[j] %in% cell_sets_df$name) {
         print(paste(cs[j], "is a cell set.")) 
         known_cell_sets = c(known_cell_sets, cs[j])
-        
+
         # Collecting and storing set LUA members   
         cs_members = get_LUAs_from_sets(cs[j])
         all_LUAs = append(all_LUAs, cs_members)
@@ -107,7 +105,7 @@ create_cell_set_meta = function(sample_meta) {
         pool_members = get_LUAs_from_pools(cs[j])
         all_LUAs = append(all_LUAs, pool_members)
         
-      } else if (cs[j] %in% cell_line_meta$lua){
+      } else if (cs[j] %in% cell_line_meta$LUA){
         print(paste(cs[j], "is a cell line")) 
         all_LUAs = append(all_LUAs, cs[j])
         known_cell_sets = c(known_cell_sets, cs[j])
@@ -131,6 +129,7 @@ create_cell_set_meta = function(sample_meta) {
       failed_sets <- c(failed_sets, chr_unique_cell_sets)
     }
   }
+  
   cell_set_meta <- na.omit(cell_set_meta)
   if (nrow(cell_set_meta) == 0) {
     print("cell_set_meta is empty. One or more pieces of cell information within a cell set in the cell_set column of sample_meta was not found.")

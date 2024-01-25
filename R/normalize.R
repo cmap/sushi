@@ -12,10 +12,10 @@
 #' @param barcodes - a vector of control barcode Name identifiers
 #' @return - table with additional log_normalized_n and normalized_n columns containing counts normalized to control barcodes
 #' @export
-normalize <- function(X, barcodes) {
+normalize <- function(X, barcodes,pseudocount) {
   if (!('log2_n' %in% colnames(X)) & 
       ('n' %in% colnames(X))) {
-    X <- X %>% dplyr::mutate(log2_n = log2(n+1))
+    X <- X %>% dplyr::mutate(log2_n = log2(n+pseudocount))
   }
 
   normalized <- X %>%
