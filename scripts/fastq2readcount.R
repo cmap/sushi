@@ -91,8 +91,9 @@ if (is.null(args$write_interval)){
 #barcode_read_lengths
 read_lengths = as.integer(unlist(strsplit(args$barcode_lengths, ",")))
 
+shouldBeDRAGEN <- args$seq_type # debug
+print(paste0(" This should be DRAGEN: ", shouldBeDRAGEN)) # debug
 
-# here, 
 if (args$seq_type == "DRAGEN"){
   print("Detecting DRAGEN")
   raw_counts <- write_df_from_fastq_DRAGEN(forward_read_fastq_files = barcode_read_files,
