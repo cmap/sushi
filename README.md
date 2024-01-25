@@ -1,4 +1,4 @@
-# sushi
+# Sushi
 Data Processing Pipeline for PRISM Sequencing.
 
 ## Install
@@ -20,7 +20,8 @@ A template for the _sample_meta.csv_ file may be found [here](https://docs.googl
 
 Please contact prism@broadinsitute.org for access, if needed. 
 
-## Run
+## Running the pipeline
+
 In order to run the PrismSeq processing pipeline, you must have copies of the follow three metadata files. For the purposes of this tutorial, we will assume they are saved in the __metadata__ folder.
 1. _cell_line_meta.csv_
 2. _cell_set_meta.csv_
@@ -30,12 +31,15 @@ For additional information on the outputs of the PrismSeq processing pipeline se
 
 Please contact prism@broadinstitue.org to request metadata files and for access to the notes and FAQs document, if needed.
 
-### R functions
-The PrismSeq processing pipeline may be run in R using the following functions.
+### Using R functions
+
+The PrismSeq processing pipeline may run in R using the following functions.
 
 1. Generate a read count table from fastq files
 
-For assitance in generating fastq files from BCL files please contact prism@broadinstitute.org, if needed.
+The function _write_df_from_fastq_ reads in fastq files associated with the project and organizes the reads into a table or dataframe saved as _raw_counts.csv_.
+
+For assistance in generating fastq files from BCL files please contact prism@broadinstitute.org, if needed.
 
 ```r
 # define invariant strings to identify fastq files
@@ -69,6 +73,8 @@ raw_counts %>% write.csv("example_project/raw_counts.csv", row.names=F, quote=F)
 
 2. Filter raw read counts
 
+The function _filter_raw_reads_ filters _raw_counts.csv_ for only the reads associated with the project as defined in the submitted sample meta.
+
 ```r
 # load relevant metadata
 sample_meta = read.csv("example_project/sample_meta.csv")
@@ -84,47 +90,20 @@ filtered_counts = filter_raw_reads(raw_counts,
                                    id_cols=c('cell_set', 'treatment', 'dose','dose_unit','day','bio_rep','tech_rep')) # change the id_cols parameter to designate which metadata column uniquely define each profile
 
 QC_table = filtered_counts$qc_table
+annotated_counts= filtered_counts$annotated_counts
 filtered_counts = filtered_counts$filtered_counts
 
 QC_table %>% write.csv("example_project/QC_table.csv", row.names=F, quote=F)
+annotated_counts %>% write.csv("example_project/annotated_counts.csv", row.names=F, quote=F)
 filtered_counts %>% write.csv("example_project/filtered_counts.csv", row.names=F, quote=F)
 ```
 
-3. [Optional] Generate QC images
-```r
-QC_images(filtered_counts,
-          cell_set_meta,
-          out = "example_project/") 
-```
+3. [Optional] Normalize filtered counts
 
-4. [Optional] Run DEseq on filtered counts
+The function _normalize_ fits a linear model to a set of control barcodes (usually 10) supplied at specific doses. This model is then used to calculate the equivalent dose of cell line barcodes detected in each well. The normalized values are in the units of control barcode doses, and are not interpretable on their own.
 
-Your project must include control barcodes in order for DESeq to run.
+This function can only be used if control barcodes are included in the run. If control barcodes were not used, this function can be skipped.
 
-```r
-# define DESeq input values. Change sample_cols and id_cols to reflect which columns uniquely define each sample and signature
-sample_cols = c("cell_set", "treatment", "dose", "dose_unit", "day", "bio_rep")
-sig_cols = c("cell_set", "treatment", "dose", "dose_unit", "day")
-control_type = "negcon"
-
-l2fc_DEseq = data.frame()
-for(cs in unique(filtered_counts$cell_set)) {
-  subset = filtered_counts %>% 
-    filter(cell_set==cs)
-  hold = run_DE(subset,
-                sample_cols,
-                sig_cols,
-                control_type)
-  l2fc_DEseq = l2fc_DEseq %>% 
-    rbind(hold)
-}
-
-l2fc_DEseq %>% write.csv("example_project/l2fc_DEseq.csv", row.names=F, quote=F)
-```
-
-5. [Optional] Normalize filtered counts
-
-Your project must include control barcodes if you want to normalize your counts.
 ```r
 normalized_counts = normalize(filtered_counts, 
                               CB_meta$Name)
@@ -132,9 +111,11 @@ normalized_counts = normalize(filtered_counts,
 normalized_counts %>% write.csv("example_project/normalized_counts.csv", row.names=F, quote=F)
 ```
 
-6. Generate log-fold change values
+4. Generate log-fold change values
 
-If you normalized your counts, log-fold change values should be generated from normalized counts, otherwise they should be generated from basic filtered counts. Here we assume that you have generated normalized counts as in the previous step. You will need to adjust the _count_col_name_ parameter based on which file you are running this function on.
+The function _l2fc_ computes the log2 fold change between treatments and negative controls. This is done by collecting the negative control and collapsing across all replicates. The negative controls are then joined with the treatments to calculate log2 fold change values for each treatment replicate. If _normalize_ was called, then log2 fold change values should be generated from normalized counts. If _normalize_ was not called, log2 fold change values can be calculated from the read counts in _filtered_counts.csv_ by adjusting the _count_col_name_ parameter. 
+
+The example code below assues that the previous step, _normalize_, was performed.
 
 ```r
 l2fc = compute_l2fc(normalized_counts,
@@ -145,32 +126,30 @@ l2fc = compute_l2fc(normalized_counts,
 l2fc %>% write.csv("example_project/l2fc.csv", row.names=F, quote=F)
 ```
 
-7. Collapse replicates
+5. Collapse replicates
+
+This function collapses the biological replicates of the treatments to get a single value for each unique cell line and treatment combination. 
+
 ```r
 collapsed_values = collapse_counts(l2fc)
 
 collapsed_values %>% write.csv("example_project/collapsed_values.csv", row.names=F, quote=F)
 ```
 
-8. Run biomarker analysis
+6. [Optional] Generate QC images
 
-This function uses data which is stored on taiga. If you are a member of the Broad Institute you can install taigr, the taiga client for R, by following the instructions [here](https://github.com/broadinstitute/taigr). 
-
-This function can take several hours to run.
+This function outputs several files and images that can be used to assess the quality of the run. 
 
 ```r
-biomarkers = generate_biomarkers(collapsed_values)
-
-lin_table = biomarkers$lin_table
-rf_table = biomarkers$rf_table
-disc_table = biomarkers$disc_table
-
-lin_table %>% write.csv("example_project/lin_table.csv", row.names=F, quote=F)
-rf_table %>% write.csv("example_project/rf_table.csv", row.names=F, quote=F)
-disc_table %>% write.csv("example_project/disc_table.csv", row.names=F, quote=F)
+QC_images(sample_meta,
+          annotated_counts,
+          filtered_counts,
+          cell_set_meta,
+          out = "example_project/") 
 ```
 
-### Command line tools
+### Using command line tools
+
 The PrismSeq processing tools may alternatively be run through the command line. For the purposes of this tutorial, we will assume that the PrismSeq processing scripts are saved in the __tools/scripts/__ folder.
 
 `Rscript [toolname] --help` will provide information about arguments for specified tools.
@@ -189,38 +168,30 @@ Rscript tools/scripts/fastq2readcounts.R --fastq fastq\ --index_1 _I1_ --index_2
 Rscript tools/scripts/filter_counts.R --raw_counts raw_counts.csv --sample_meta sample_meta.csv --id_cols cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep --cell_line_meta metadata/cell_line_meta.csv --cell_set_meta metadata/cell_set_meta.csv --CB_meta metadata/CB_meta.csv
 ```
 
-3. [Optional] Generate QC images
-
-```
-Rscript filteredCounts_QC.R --filtered_counts filtered_counts.csv --cell_set_meta metadata/cell_set_meta.csv
-```
-
-4. [Optional] Run DEseq on filtered counts
-
-```
-Rscript tools/scripts/call_run_DE.R --filtered_counts filtered_counts.csv --sample_cols cell_set,treatment,dose,dose_unit,day,bio_rep --sig_cols cell_set,treatment,dose,dose_unit,day --control_type negcon
-```
-
-5. [Optional] Normalize filtered counts
+3. [Optional] Normalize filtered counts
 
 ```
 Rscript tools/scripts/CBnormalize.R --filtered_counts filtered_counts.csv --CB_meta metadata/CB_meta.csv
 ```
 
-6. Generate log-fold change values
+4. Generate log-fold change values
 
 ```
 Rscript tools/scripts/compute_l2fc.R --normalized_counts normalized_counts.csv --control_type negcon --count_col_name normalized_n
 ```
 
-7. Collapse replicates
+5. Collapse replicates
 
 ```
 Rscript tools/scripts/collapse_replicates.R --lfc l2fc.csv
 ```
 
-8. Run biomarker analysis
+6. [Optional] Generate QC images
 
 ```
-Rscript tools/scripts/generate_biomarkers.R --collapsed_values collapsed_values.csv
+Rscript filteredCounts_QC.R --sample_meta sample_meta.csv --annotated_counts annotated_counts.csv --filtered_counts filtered_counts.csv --cell_set_meta metadata/cell_set_meta.csv
 ```
+
+## Other
+
+This document was last update on Jan 25, 2024
