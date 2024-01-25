@@ -97,8 +97,13 @@ if (args$db_flag) {
   cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df)
   cell_set_meta <- cell_sets[[1]]
   failed_cell_sets <- cell_sets[[2]]
-  # Add failure code if failed cell sets not empty
   
+  # Fail if failed cell sets not empty
+  if (nrow(failed_cell_sets) != 0){
+    print(failed_cell_sets)
+    stop("The sample_meta contains cell sets not registered in CellDB.")
+  }
+
   # Writing out cell_line_meta - may be necessary for downstream SUSHI?
   cell_line_out_file = paste(args$out, 'cell_line_meta.csv', sep='/')
   print(paste("writing cell_line_meta to: ", cell_line_out_file))
@@ -142,7 +147,7 @@ filtered_counts = filter_raw_reads(
 if (args$db_flag) {
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   assay_pools_df <- assay_pools_df[assay_pools_df$davepool_id %in% unique_cell_sets,] %>% 
-    select(pool_id, ccle_name, davepool_id, depmap_id, culture)
+    select(pool_id, ccle_name, davepool_id, depmap_id)
   
   filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
     merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
