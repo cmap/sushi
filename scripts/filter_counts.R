@@ -99,9 +99,9 @@ if (args$db_flag) {
   failed_cell_sets <- cell_sets[[2]]
   
   # Fail if failed cell sets not empty
-  if (nrow(failed_cell_sets) != 0){
+  if (length(failed_cell_sets) != 0) {
     print(failed_cell_sets)
-    stop("The sample_meta contains cell sets not registered in CellDB.")
+    stop("The sample_meta contains the above cell sets which are not registered in CellDB:")
   }
 
   # Writing out cell_line_meta - may be necessary for downstream SUSHI?
