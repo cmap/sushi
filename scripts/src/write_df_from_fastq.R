@@ -114,7 +114,7 @@ write_df_from_fastq <- function(
   return(cumulative_count_df)
 }
 
-suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(require(stringr))
 # function to get index barcodes from fastq headers
 fastq_header_split <- function(str){
   indeces <- stringr::str_split_i(string = stringr::str_split_i(string = str, pattern = " ", i = 2), pattern = ":", i = 4)
