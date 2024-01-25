@@ -27,6 +27,11 @@ case "$1" in
     shift
     Rscript replicate_QC.R "${@}"
     ;;
+  seq_to_mts)
+    shift
+    source activate prism
+    python seq_to_mts.py "${@}"
+    ;;
   generate_biomarkers)
     shift
     Rscript generate_biomarkers.R "${@}"
