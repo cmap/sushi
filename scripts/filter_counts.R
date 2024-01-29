@@ -88,11 +88,12 @@ if (args$db_flag) {
   assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
   
   # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
+  cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence', 'LUA')
   cell_line_meta <- cell_lines_df %>%
     rename("LUA" = "lua",
            "Sequence" = "dna_sequence",
            "DepMap_ID" = "depmap_id",
-           "CCLE_name" = "ccle_name")
+           "CCLE_name" = "ccle_name") %>% dplyr::select(any_of(c(cell_line_cols)))
   
   cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df)
   cell_set_meta <- cell_sets[[1]]
@@ -153,7 +154,7 @@ if (args$db_flag) {
     merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
   
   filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
-    merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
+   merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
 }
 
 # Write out module outputs
