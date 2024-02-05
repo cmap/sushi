@@ -4,3 +4,4 @@ scratch/
 .idea/
 .DS_Store
 /tests/assets/out/
+/tests/assets/build/
