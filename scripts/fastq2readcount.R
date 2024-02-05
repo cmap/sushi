@@ -2,8 +2,7 @@
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(tidyverse)) ###### debug
 suppressPackageStartupMessages(library(magrittr))
-#source("./src/write_df_from_fastq.R")
-source("~/Desktop/sushi/scripts/src/write_df_from_fastq.R")
+source("./src/write_df_from_fastq.R")
 ## print_args
 ## writes configuration to file
 ##
