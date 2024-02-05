@@ -117,7 +117,7 @@ write_df_from_fastq <- function(
 # function to get index barcodes from fastq headers
 fastq_header_split <- function(str){
   indeces <- str_split_fixed(string = str_split_fixed(string = str, pattern = " ", n = 2)[2], pattern = ":", n = 4)[4]
-  indeces_split <- str_split_fixed(string = indeces, pattern = "+", n = 2)
+  indeces_split <- str_split_fixed(string = indeces, pattern = "\\+", n = 2)
   index_1 <- indeces_split[1] # the first
   index_2 <- indeces_split[2] # the second
   

@@ -2,7 +2,8 @@
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(tidyverse)) ###### debug
 suppressPackageStartupMessages(library(magrittr))
-source("./src/write_df_from_fastq.R")
+#source("./src/write_df_from_fastq.R")
+source("~/Desktop/sushi/scripts/src/write_df_from_fastq.R")
 ## print_args
 ## writes configuration to file
 ##
@@ -61,7 +62,7 @@ barcode_read_files <- read_directory_contents %>%
   sort()
 
 if(args$seq_type == "DRAGEN"){
-  barcode_read_files %<>% purrr::keep(stringr::str_detect, fixed("_R1_001.fastq.gz"))
+  barcode_read_files %<>% purrr::keep(stringr::str_detect, fixed("_R1_001.fastq"))
 } else {
   # plates
   index_1_files <- read_directory_contents %>%
