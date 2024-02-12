@@ -46,14 +46,14 @@ cell_counts_negcon <- norm_counts %>%
 
 ## get median counts in negcon and apply count threshold to generate the QC table
 med_cell_counts_qc <- cell_counts_negcon %>% 
-    dplyr::group_by(CCLE_name, DepMap_ID, cell_set, day) %>% 
+    dplyr::group_by(CCLE_name, DepMap_ID, cell_set, day, pert_plate) %>% 
     dplyr::summarize(med_log_raw_counts=median(log2_n), 
                      med_log_norm_counts= median(log2_normalized_n),
                      med_raw_counts= median(n)) %>% 
     dplyr::mutate(pass_raw_count_qc=med_raw_counts>count_threshold) %>% 
     dplyr::ungroup() 
 
-## in log2 space, the threshold should be at log2(41), not 40!
+## in log2 space, the threshold should be at log2(40+threshold)
 
 ## save the output along with build name? or without ?
 write_csv(med_cell_counts_qc, paste0(out_dir, "/", build_name, "_QC_TABLE.csv"))
