@@ -22,7 +22,14 @@ normalize <- function(X, barcodes,pseudocount) {
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), control_barcodes==T) %>% 
     dplyr::group_by(profile_id) %>%
     # filter out profiles with 4 or fewer detected control barcodes
-    dplyr::mutate(num_cbs= length(unique(na.omit(Name)))) %>% dplyr::filter(num_cbs > 4) %>%
+    dplyr::mutate(num_cbs= sum(!is.na(Name) & n!=0)) %>% dplyr::filter(num_cbs > 4) %>% 
+    dplyr::ungroup()
+  
+  if(nrow(normalized)==0) {
+    print('Error: No CBs detected or not enough unique CBs detected in any of the wells.')
+  }
+  
+  normalized %<>% dplyr::group_by(profile_id) %>%
     dplyr::mutate(cb_intercept = glm(I(y-1*x)~1,
                                      data = dplyr::tibble(
                                        y = log2_dose[Name %in% barcodes],
