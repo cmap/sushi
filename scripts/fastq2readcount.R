@@ -87,17 +87,13 @@ if (is.null(args$write_interval)){
   write_interval = as.numeric(args$write_interval)
 }
 
-
 #barcode_read_lengths
 read_lengths = as.integer(unlist(strsplit(args$barcode_lengths, ",")))
 
-shouldBeDRAGEN <- args$seq_type # debug
-print(paste0(" This should be DRAGEN: ", shouldBeDRAGEN)) # debug
-
 if (args$seq_type == "DRAGEN"){
-  print("Detecting DRAGEN")
   raw_counts <- write_df_from_fastq_DRAGEN(forward_read_fastq_files = barcode_read_files,
-                                       write_interval = NA,
+                                       PLATE_BC_LENGTH = read_lengths[1],
+                                       WELL_BC_LENGTH = read_lengths[2],
                                        CL_BC_LENGTH = read_lengths[3],
                                        save_loc =  args$out)
 }else{
