@@ -62,7 +62,7 @@ def main(args):
 
     # Define the column renaming dictionary
     column_mapping = {
-        "project_code": "pert_plate",
+        "project_code": "screen",
         "DepMap_ID": "depmap_id",
         "CCLE_name": "ccle_name",
         "prism_cell_set": "culture",
@@ -77,16 +77,23 @@ def main(args):
         "median_l2fc": "LFC"  # Add the mapping for level_5 dataset
     }
 
+
     # Define the list of datasets
     datasets = [sample_meta, level_3, level_4, level_5]
 
-    # Rename columns for each dataset
-    for dataset in datasets:
-        for old_name, new_name in column_mapping.items():
-            if old_name in dataset.columns:
-                dataset.rename(columns={old_name: new_name}, inplace=True)
+    # Check for existence of "x_project_id" and "pert_plate" before renaming columns
+    for ind, dataset in enumerate(datasets):
+        dataset_name = ["sample_meta", "level_3", "level_4", "level_5"][ind]
+        missing_columns = [col for col in ["x_project_id", "pert_plate"] if col not in dataset.columns]
+        if missing_columns:
+            missing_cols_str = ", ".join(missing_columns)
+            raise ValueError(f"Columns '{missing_cols_str}' not found in the '{dataset_name}' dataset. Cannot proceed.")
+        else:
+            for old_name, new_name in column_mapping.items():
+                if old_name in dataset.columns:
+                    dataset.rename(columns={old_name: new_name}, inplace=True)
 
-        #Seq projects are all PR500 for now
+        # Seq projects are all PR500 for now
         dataset["culture"] = "PR500"
 
     # Define the pert_time values to drop
@@ -98,17 +105,17 @@ def main(args):
 
     # Setting columns
     print("Reformatting columns...")
-    sample_meta = sample_meta.assign(pert_vehicle=pert_vehicle, x_project_id=sample_meta["pert_plate"], screen=sample_meta["pert_plate"], pert_time_unit = pert_time_unit, 
+    sample_meta = sample_meta.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
                             pert_id = sample_meta["pert_iname"].str.upper(), prc_id = sample_meta["pert_iname"].str.upper())
 
-    level_3 = level_3.assign(pert_vehicle=pert_vehicle, x_project_id=level_3["pert_plate"], screen=level_3["pert_plate"], pert_time_unit = pert_time_unit, 
-                             pert_id = level_3["pert_iname"].str.upper(), prc_id = level_3["pert_iname"].str.upper())
+    level_3 = level_3.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
+                                pert_id = level_3["pert_iname"].str.upper(), prc_id = level_3["pert_iname"].str.upper())
 
-    level_4 = level_4.assign(pert_vehicle=pert_vehicle, x_project_id=level_4["pert_plate"], screen=level_4["pert_plate"], pert_time_unit = pert_time_unit, 
-                             pert_id = level_4["pert_iname"].str.upper(), prc_id = level_4["pert_iname"].str.upper())
+    level_4 = level_4.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
+                                pert_id = level_4["pert_iname"].str.upper(), prc_id = level_4["pert_iname"].str.upper())
 
-    level_5 = level_5.assign(pert_vehicle=pert_vehicle, x_project_id=level_5["pert_plate"], pert_time_unit = pert_time_unit, 
-                             pert_id = level_5["pert_iname"].str.upper())
+    level_5 = level_5.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
+                                pert_id = level_5["pert_iname"].str.upper())
 
     # Adding itime/time and idose
     sample_meta["pert_itime"] = sample_meta["pert_time"].astype(str) + " " + sample_meta["pert_time_unit"]
@@ -158,7 +165,7 @@ def main(args):
     level_3.to_csv(args.out + project + "_inst_info.txt", sep="\t", index=None)
     level_3.to_csv(args.out + project + "_LEVEL3_NORMALIZED_COUNTS.csv", index=0)
     level_4.to_csv(args.out + project + "_LEVEL4_LFC.csv", index=0)
-    level_5.to_csv(args.out + project + "_LEVEL5_LFC.csv", index=0)
+    level_5.to_csv(args.out + "/" + project + "_LEVEL5_LFC.csv", index=0)
     project_key.to_csv(args.out + project + "_compound_key.csv", index=False)
     return level_3, project_key, level_4, level_5
 

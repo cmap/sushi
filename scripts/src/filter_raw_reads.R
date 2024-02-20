@@ -87,7 +87,7 @@ filter_raw_reads = function(
   # filtered counts
   print("Filtering reads ...")
   filt_cols= c('project_code', 'DepMap_ID', 'CCLE_name', 'pcr_plate', 'pcr_well', 'ccle_name', 'depmap_id',
-               'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type','pool_id')
+               'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type','pool_id', 'x_project_id', 'pert_plate')
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
     dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
