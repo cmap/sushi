@@ -26,7 +26,7 @@ normalize <- function(X, barcodes,pseudocount) {
     dplyr::ungroup()
   
   # Which profiles were dropped out?
-  if(nrow(normalized %>% dplyr::filter(num_cbs > 4)) != nrows(normalized)) {
+  if(nrow(normalized %>% dplyr::filter(num_cbs > 4)) != nrow(normalized)) {
     profiles_dropped_at_norm= normalized %>% dplyr::filter(num_cbs <= 4) %>%
       dplyr::distinct(profile_id) %>% unlist() %>% unname()
     print(paste('Number of profiles with insufficient control barcodes: ', length(profiles_dropped_at_norm)))
