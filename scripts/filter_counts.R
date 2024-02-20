@@ -131,7 +131,20 @@ sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
 
 count_threshold_arg= args$count_threshold
 count_threshold = as.numeric(count_threshold_arg)
-  
+
+# make sure LUA codes in cell line meta are unique
+cell_line_meta %<>% 
+  dplyr::group_by(LUA) %>% 
+  dplyr::mutate(LUA.duplicity = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(duplicated(cell_line_meta$LUA, fromLast = TRUE)) 
+
+print(paste0("LUAs that are duplicated ", 
+              dplyr::filter(cell_line_meta, LUA.duplicity > 1)$LUA %>% 
+              unique() %>% sort() %>% paste0(collapse = ", "))) # print LUA duplicates
+
+cell_line_meta %<>% dplyr::select(-LUA.duplicity)
+
 print("creating filtered count file")
 filtered_counts = filter_raw_reads(
   raw_counts,
