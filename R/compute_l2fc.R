@@ -28,12 +28,16 @@ compute_l2fc = function(normalized_counts,
   
   normalized_counts$sig_id= do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
+  # ignore these columns when collapsing tech reps
+  candidate_excluded_columns= c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
+                                'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 'log2_normalized_n',
+                                'flag', count_col_name)
+  tech_rep_excluded_columns= candidate_excluded_columns[!candidate_excluded_columns %in% sig_cols]
+  
   # collapse tech reps
   collapsed_tech_rep= normalized_counts %>%
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
-    dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
-                                           'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 'log2_normalized_n',
-                                           'flag', count_col_name))) %>% 
+    dplyr::group_by_at(setdiff(names(.), tech_rep_excluded_columns)) %>% 
     dplyr::summarise(mean_n= mean(n),
                      mean_normalized_n = mean(!!rlang::sym(count_col_name)), 
                      num_tech_reps= dplyr::n()) %>% 
