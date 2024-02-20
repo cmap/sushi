@@ -21,7 +21,7 @@ normalize <- function(X, barcodes,pseudocount) {
   normalized <- X %>%
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), control_barcodes==T) %>% 
     dplyr::group_by(profile_id) %>%
-    # filter out profiles with 4 or fewer detected control barcodes
+    # determine number of CBs detected for each profile
     dplyr::mutate(num_cbs= sum(!is.na(Name) & n!=0)) %>%
     dplyr::ungroup()
   
@@ -40,7 +40,7 @@ normalize <- function(X, barcodes,pseudocount) {
   }
 
   # Continue with normalize
-  normalized %<>% dplyr::filter(num_cbs > 4) %>% 
+  normalized %<>% dplyr::filter(num_cbs > 4) %>%  # filter out profiles with 4 or fewer detected CBs
     dplyr::group_by(profile_id) %>%
     dplyr::mutate(cb_intercept = glm(I(y-1*x)~1,
                                      data = dplyr::tibble(
