@@ -21,8 +21,27 @@ normalize <- function(X, barcodes,pseudocount) {
   normalized <- X %>%
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), control_barcodes==T) %>% 
     dplyr::group_by(profile_id) %>%
-    # filter out profiles with 4 or fewer detected control barcodes
-    dplyr::mutate(num_cbs= length(unique(na.omit(Name)))) %>% dplyr::filter(num_cbs > 4) %>%
+    # determine number of CBs detected for each profile
+    dplyr::mutate(num_cbs= sum(!is.na(Name) & n!=0)) %>%
+    dplyr::ungroup()
+  
+  # Which profiles were dropped out?
+  if(nrow(normalized %>% dplyr::filter(num_cbs > 4)) != nrow(normalized)) {
+    profiles_dropped_at_norm= normalized %>% dplyr::filter(num_cbs <= 4) %>%
+      dplyr::distinct(profile_id) %>% unlist() %>% unname()
+    print(paste('Number of profiles with insufficient control barcodes: ', length(profiles_dropped_at_norm)))
+    print("Dropped profiles are ...")
+    print(profiles_dropped_at_norm)
+    
+    # Print error if all profiles were dropped
+    if(nrow(normalized %>% dplyr::filter(num_cbs > 4)) == 0) {
+      print('Error: No CBs detected or not enough unique CBs detected in any of the wells.')
+    }
+  }
+
+  # Continue with normalize
+  normalized %<>% dplyr::filter(num_cbs > 4) %>%  # filter out profiles with 4 or fewer detected CBs
+    dplyr::group_by(profile_id) %>%
     dplyr::mutate(cb_intercept = glm(I(y-1*x)~1,
                                      data = dplyr::tibble(
                                        y = log2_dose[Name %in% barcodes],
