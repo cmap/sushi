@@ -139,7 +139,7 @@ print(paste0("LUAs that are duplicated ",
                unique() %>% sort() %>% paste0(collapse = ", "))) # print LUA duplicates
 
 cell_line_meta %<>% 
-  dplyr::filter(!duplicated(cell_line_meta$LUA, fromLast = TRUE)) 
+  dplyr::filter(!duplicated(cell_line_meta$LUA, fromLast = TRUE)) %>%
   dplyr::select(-LUA.duplicity)
 
 print("creating filtered count file")
