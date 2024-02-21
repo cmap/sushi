@@ -1,7 +1,4 @@
 suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-
-#source("../src/load_libraries.R")
 
 source("./src/cellDB_metadata.R")
 source("./src/filter_raw_reads.R")
@@ -12,7 +9,6 @@ suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
-# suppressPackageStartupMessages(library(reshape2))
 # library(prismSeqR)
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
@@ -50,7 +46,7 @@ parser$add_argument("--cell_line_meta", default="../metadata/cell_line_meta.csv"
 parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
-    help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
+                    help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--api_url", default="https://dev-api.clue.io/api/", help = "Default API URL to CellDB is DEV")
@@ -104,7 +100,7 @@ if (args$db_flag) {
     print(failed_cell_sets)
     stop("The sample_meta contains the above cell sets which are not registered in CellDB:")
   }
-
+  
   # Writing out cell_line_meta - may be necessary for downstream SUSHI?
   cell_line_out_file = paste(args$out, 'cell_line_meta.csv', sep='/')
   print(paste("writing cell_line_meta to: ", cell_line_out_file))
@@ -114,11 +110,11 @@ if (args$db_flag) {
   cell_set_out_file = paste(args$out, 'cell_set_meta.csv', sep='/')
   print(paste("writing cell_set_meta to: ", cell_set_out_file))
   write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
-  } else {
-    print("Using static cell set information files to locate cell information.")
-    cell_line_meta = read.csv(args$cell_line_meta)
-    cell_set_meta = read.csv(args$cell_set_meta)
-  }
+} else {
+  print("Using static cell set information files to locate cell information.")
+  cell_line_meta = read.csv(args$cell_line_meta)
+  cell_set_meta = read.csv(args$cell_set_meta)
+}
 
 #split id_cols args
 id_cols = unlist(strsplit(args$id_cols, ","))
@@ -136,14 +132,15 @@ count_threshold = as.numeric(count_threshold_arg)
 cell_line_meta %<>% 
   dplyr::group_by(LUA) %>% 
   dplyr::mutate(LUA.duplicity = n()) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::filter(duplicated(cell_line_meta$LUA, fromLast = TRUE)) 
+  dplyr::ungroup()
 
 print(paste0("LUAs that are duplicated ", 
-              dplyr::filter(cell_line_meta, LUA.duplicity > 1)$LUA %>% 
-              unique() %>% sort() %>% paste0(collapse = ", "))) # print LUA duplicates
+             dplyr::filter(cell_line_meta, LUA.duplicity > 1)$LUA %>% 
+               unique() %>% sort() %>% paste0(collapse = ", "))) # print LUA duplicates
 
-cell_line_meta %<>% dplyr::select(-LUA.duplicity)
+cell_line_meta %<>% 
+  dplyr::filter(!duplicated(cell_line_meta$LUA, fromLast = TRUE)) 
+  dplyr::select(-LUA.duplicity)
 
 print("creating filtered count file")
 filtered_counts = filter_raw_reads(
@@ -167,7 +164,7 @@ if (args$db_flag) {
     merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
   
   filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
-   merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
+    merge(assay_pools_df, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
 }
 
 # Write out module outputs
