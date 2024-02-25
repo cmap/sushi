@@ -25,6 +25,8 @@ Please contact prism@broadinsitute.org for access, if needed.
 
 In contrast to the conventional MTS assay which uses Luminex detection, the Extended Assay (EPS) uses sequencing-based detection. 
 
+![EPS Pipeline (1)](https://github.com/cmap/sushi/assets/125501149/0d783769-1e6a-4077-8c4a-e61fb40ebbd1)
+
 Raw data for EPS is thus first processed using SUSHI (yellow), the PRISM sequencing data processing pipeline, to obtain normalized counts and log fold-change data. 
 
 This data is then passed to the MTS pipeline (orange) for downstream processing such as dose-response fitting and biomarker analysis via the EPS conversion modules (green). Documentation for the MTS pipeline can be found [here](https://github.com/cmap/dockerized_mts/tree/master). 
@@ -204,6 +206,8 @@ Rscript filteredCounts_QC.R --sample_meta sample_meta.csv --annotated_counts ann
 ```
 
 ## Running the EPS conversion modules
+
+![EPS Pipeline (1)](https://github.com/cmap/sushi/assets/125501149/728ca2b7-8304-44cc-8aef-304dea9c396b)
 
 When processing data from the Extended Day assay, the EPS conversion modules are also run. The 2 EPS conversion modules (green) perform separate tasks:
 
