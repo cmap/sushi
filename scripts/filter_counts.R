@@ -53,7 +53,8 @@ parser$add_argument("--api_url", default="https://dev-api.clue.io/api/", help = 
 parser$add_argument("--api_key", default="", help = "Clue API key")
 parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
-############# add a remove data flag
+parser$add_argument("--pool_id", action="store_true", default=FALSE, help = "Pull pool IDs from CellDB. --db_flag must also be passed in order to pull pool IDs.")
+
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -80,6 +81,7 @@ if (args$db_flag) {
   }
   
   print("Using CellDB to locate cell information.")
+  print(api_url)
   cell_sets_df <- get_cell_api_info(paste(api_url,"cell_sets", sep = "/"), api_key)
   cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_key)
   cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
@@ -156,8 +158,8 @@ filtered_counts = filter_raw_reads(
   reverse_index2=args$reverse_index2
 )
 
-# Pulling pool_id and culture when db_flag is passed
-if (args$db_flag) {
+# Pulling pool_id when db_flag and pool_id flags are passed
+if (args$db_flag & args$pool_id) {
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   assay_pools_df <- assay_pools_df[assay_pools_df$davepool_id %in% unique_cell_sets,] %>% 
     select(pool_id, ccle_name, davepool_id, depmap_id)
