@@ -79,6 +79,7 @@ if (args$db_flag) {
   }
   
   print("Using CellDB to locate cell information.")
+  print(api_url)
   cell_sets_df <- get_cell_api_info(paste(api_url,"cell_sets", sep = "/"), api_key)
   cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_key)
   cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
