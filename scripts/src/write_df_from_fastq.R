@@ -174,6 +174,7 @@ write_df_from_fastq_DRAGEN <- function(
   }
   
   print('saving final cumulative_count_df ')
+  ## cumulative counts separate across different flowcells and flowcell lanes.
   cumulative_count_df_uncollapsed = cumulative_count_df_uncollapsed %>%
     dplyr::bind_rows() %>%
     dplyr::group_by(indeces, forward_read_cl_barcode, flowcell_name, flowcell_lane) %>% 
@@ -183,7 +184,7 @@ write_df_from_fastq_DRAGEN <- function(
                   index_2 = word(indeces, 2, sep = fixed("+"))) %>% 
     dplyr::select(-indeces)
   
-  ## get counts summed across different flow cells and lanes
+  ## get counts summed across different flow cells and lanes. Summing across lanes was implicit before and implicit in other sequencer formats
   cumulative_count_collapsed_across_flowcells_df <- cumulative_count_df_uncollapsed %>% 
     dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
     dplyr::summarise(n = sum(n, na.rm = T)) %>% 
