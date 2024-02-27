@@ -52,6 +52,8 @@ parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help
 parser$add_argument("--api_url", default="https://dev-api.clue.io/api/", help = "Default API URL to CellDB is DEV")
 parser$add_argument("--api_key", default="", help = "Clue API key")
 parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
+parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
+############# add a remove data flag
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -179,6 +181,19 @@ print(paste("writing annotated counts to: ", annot_out_file))
 write.csv(annotated_counts, annot_out_file, row.names=F)
 
 filtered_counts = filtered_counts$filtered_counts
+
+# Remove data if needed
+if(args$rm_data == T){
+  data_to_remove <- read.csv(paste(args$out, 'data_to_remove.csv', sep='/'))
+  filt_rm <- remove_data(filtered_counts, data_to_remove)
+  
+  # keep the full filtered counts with the data that needs to be removed
+  filtered_counts_original <- filtered_counts
+  write.csv(filtered_counts_original, paste(args$out, 'filtered_counts_original.csv', sep='/'), row.names=F, quote=F)
+  # re-point to what filtered_counts should be
+  filtered_counts <- filt_rm
+}
+  
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
 print(paste("writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)

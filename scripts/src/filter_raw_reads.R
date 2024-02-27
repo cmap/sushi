@@ -103,3 +103,81 @@ filter_raw_reads = function(
   return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts,
               qc_table= qc_table))
 }
+
+# checks is a string can be numeric
+is_numeric_string <- function(string){
+  # tries converting the string to a number
+  numeric_value <- suppressWarnings(as.numeric(string))
+  
+  # if the conversion was successful and if the input is not NA
+  if (!sum(is.na(numeric_value))) {
+    return(TRUE)  # String can be converted to a number
+  } else {
+    return(FALSE) # String cannot be converted to a number
+  }
+}
+
+# checks if a string can be numeric and then converts it to numeric
+convert_string_num_to_numeric <- function(df){
+  # if a string can be a number, make it a number because it will be a number in filtered counts
+  to_num <- sapply(df, is_numeric_string) # checks if can be numeric
+  if(sum(to_num) != 0){ # make into number
+    can_number <- which(to_num == T)
+    for(ind in can_number){
+      df[,ind] <- as.numeric(df[,ind])
+    }
+  }
+  return(df)
+}
+
+remove_data = function(filtered_counts, data_to_remove) {
+  filt_rm <- filtered_counts
+  num_col_rm <- length(colnames(data_to_remove))
+  
+  # remove data_to_remove has any NAs, throw error
+  if(sum(is.na(data_to_remove)) != 0){
+    print("ERROR: NAs or empty cells detected. Please fix this and try again.")
+  }
+  
+  # make sure column names are in filtered_counts
+  if(sum(colnames(data_to_remove) %in% colnames(filtered_counts)) != num_col_rm){
+    print("ERROR: data_to_remove.csv columns names are not in filtered_counts.csv")
+  }
+  
+  print("Removing data...")
+  
+  # split data_to_remove into two df: wild_df (with wild string), full_df (no wild string in any row)
+  wild_string <- "EVERY"
+  wild_df <- data_to_remove %>%
+    filter(rowSums(sapply(., function(x) grepl(wild_string, x))) > 0)
+  full_df <- anti_join(data_to_remove, wild_df)
+  
+  # anti_join the full data
+  if(nrow(full_df) != 0){
+    # if a string can be a number, make it a number because it will be a number in filtered counts
+    full_df <- convert_string_num_to_numeric(full_df)
+    filt_rm <- anti_join(filt_rm, full_df)
+  }
+  
+  # anti_join the data with the wild string
+  if(nrow(wild_df) != 0){
+    # row-wise anti_join
+    for(r in 1:dim(wild_df)[1]){
+      crit_to_rm <- wild_df[r,]
+      #print(crit_to_rm)
+      
+      # if there is an "EVERY", remove that column
+      crit_to_rm <- crit_to_rm %>% 
+        select(which(colSums(crit_to_rm == wild_string) == 0))
+      
+      # if a string can be a number, make it a number because it will be a number in filtered counts
+      crit_to_rm <- convert_string_num_to_numeric(crit_to_rm)
+      filt_rm <- anti_join(filt_rm, crit_to_rm) 
+    } 
+  }
+  
+  return(filt_rm)
+}
+
+
+
