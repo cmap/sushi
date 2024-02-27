@@ -126,13 +126,17 @@ write_df_from_fastq_DRAGEN <- function(
   require(tidyverse)
   require(magrittr)
 
-  cumulative_count_df <- list()
+  cumulative_count_df_uncollapsed <- list()
   
   lp = 1
   for (i in 1:length(forward_read_fastq_files)) {
     forward_stream <- ShortRead::FastqStreamer(forward_read_fastq_files[i])
     
     print(paste0("forward read file is: ", forward_read_fastq_files[i]))
+    
+    file_name_without_path <- word(forward_read_fastq_files[i],-1,sep=fixed("/")) ## extract file name without directoryname
+    flow_cell <- word(file_name_without_path,1,sep=fixed("_")) ## get flow_cell 
+    flow_lane <- word(file_name_without_path,2,sep=fixed("_")) ## get flow_lane
     
     j <- 0
     repeat{
@@ -156,11 +160,13 @@ write_df_from_fastq_DRAGEN <- function(
       read_header_len <- nchar(read_header_str)
       
       print("Return the counts for each barcode and index pair in the chunk")
-      cumulative_count_df[[lp]] <- data.frame(indeces = substr(x = read_header_str, 
+      cumulative_count_df_uncollapsed[[lp]] <- data.frame(indeces = substr(x = read_header_str, 
                                                                (read_header_len)-(PLATE_BC_LENGTH+WELL_BC_LENGTH),
                                                                read_header_len),
-                                              forward_read_cl_barcode = forward_reads_cl_barcode)  %>%
-        dplyr::count(indeces, forward_read_cl_barcode) 
+                                              forward_read_cl_barcode = forward_reads_cl_barcode,
+                                              flowcell_name=flow_cell,
+                                              flowcell_lane=flow_lane)  %>%
+        dplyr::count(indeces, forward_read_cl_barcode, flowcell_name, flowcell_lane) 
       
       lp <- lp + 1
     }
@@ -168,17 +174,24 @@ write_df_from_fastq_DRAGEN <- function(
   }
   
   print('saving final cumulative_count_df ')
-  cumulative_count_df = cumulative_count_df %>%
+  cumulative_count_df_uncollapsed = cumulative_count_df_uncollapsed %>%
     dplyr::bind_rows() %>%
-    dplyr::group_by(indeces, forward_read_cl_barcode) %>% 
+    dplyr::group_by(indeces, forward_read_cl_barcode, flowcell_name, flowcell_lane) %>% 
     dplyr::summarise(n = sum(n, na.rm = T)) %>% 
     dplyr::ungroup() %>% 
     dplyr::mutate(index_1 = word(indeces, 1, sep = fixed("+")),
                   index_2 = word(indeces, 2, sep = fixed("+"))) %>% 
     dplyr::select(-indeces)
   
+  ## get counts summed across different flow cells and lanes
+  cumulative_count_collapsed_across_flowcells_df <- cumulative_count_df_uncollapsed %>% 
+    dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
+    dplyr::summarise(n = sum(n, na.rm = T)) %>% 
+    dplyr::ungroup()
+  print (paste("collapsed across", length(cumulative_count_df_uncollapsed$flowcell_name %>% unique()), "flowcells"))
   if(!is.null(save_loc)){
-    write_csv(cumulative_count_df, file =  paste0(save_loc, '/cumulative_count_df.csv')) 
+    write_csv(cumulative_count_df_uncollapsed, file =  paste0(save_loc, '/raw_counts_uncollapsed.csv')) 
+
   }
-  return(cumulative_count_df)
+  return(cumulative_count_collapsed_across_flowcells_df) ## we want the collapsed data  
 }
