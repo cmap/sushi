@@ -9,7 +9,6 @@ suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
-# library(prismSeqR)
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 suppressPackageStartupMessages(library(httr))
@@ -145,6 +144,11 @@ print(paste0("LUAs that are duplicated ",
 cell_line_meta %<>% 
   dplyr::filter(!duplicated(cell_line_meta$LUA, fromLast = TRUE)) %>%
   dplyr::select(-LUA.duplicity)
+
+# Remove flowcell_name and lane columns from sample_meta because
+# there is a profile_id duplicate when there are more than 1 seq runs
+sample_meta %<>% select(-flowcell_name, -flowcell_lane) %>%
+  distinct()
 
 print("creating filtered count file")
 filtered_counts = filter_raw_reads(
