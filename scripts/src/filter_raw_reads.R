@@ -137,7 +137,7 @@ remove_data = function(filtered_counts, data_to_remove) {
   # remove data_to_remove has any NAs, NULL or empty spaces, throw error
   if(sum(is.na(data_to_remove)) != 0){
     print("ERROR: NAs in removal data. Please fix this and try again.")
-  }else if(any(sapply(data_to_remove, function(x) any(x == "")))){
+  }else if(any(sapply(data_to_remove, function(x) any(x == ""))) | any(sapply(data_to_remove, function(x) any(x == " ")))){
     print("ERROR: Empty spaces in removal data. Please fix this and try again.")
   }else if(any(sapply(data_to_remove, is.null))){
     print("ERROR: NULL spaces in removal data. Please fix this and try again.")
