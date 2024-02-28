@@ -134,9 +134,13 @@ remove_data = function(filtered_counts, data_to_remove) {
   filt_rm <- filtered_counts
   num_col_rm <- length(colnames(data_to_remove))
   
-  # remove data_to_remove has any NAs, throw error
+  # remove data_to_remove has any NAs, NULL or empty spaces, throw error
   if(sum(is.na(data_to_remove)) != 0){
-    print("ERROR: NAs or empty cells detected. Please fix this and try again.")
+    print("ERROR: NAs in removal data. Please fix this and try again.")
+  }else if(any(sapply(data_to_remove, function(x) any(x == "")))){
+    print("ERROR: Empty spaces in removal data. Please fix this and try again.")
+  }else if(any(sapply(data_to_remove, is.null))){
+    print("ERROR: NULL spaces in removal data. Please fix this and try again.")
   }
   
   # make sure column names are in filtered_counts
