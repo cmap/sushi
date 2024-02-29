@@ -29,6 +29,7 @@ Imports:
     dplyr,
     tidyr,
     reshape2,
+    sets,
     cdsrbiomarker
 Suggests: 
     testthat (>= 3.0.0)

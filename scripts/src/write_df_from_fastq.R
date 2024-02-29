@@ -113,3 +113,86 @@ write_df_from_fastq <- function(
   
   return(cumulative_count_df)
 }
+
+# this function is for DRAGEN-formatted files
+write_df_from_fastq_DRAGEN <- function(
+    forward_read_fastq_files,
+    CL_BC_LENGTH = 24,
+    PLATE_BC_LENGTH = 8,
+    WELL_BC_LENGTH = 8,
+    save_loc = NULL
+) 
+  {
+  require(tidyverse)
+  require(magrittr)
+
+  cumulative_count_df_uncollapsed <- list()
+  
+  lp = 1
+  for (i in 1:length(forward_read_fastq_files)) {
+    forward_stream <- ShortRead::FastqStreamer(forward_read_fastq_files[i])
+    
+    print(paste0("forward read file is: ", forward_read_fastq_files[i]))
+    
+    file_name_without_path <- word(forward_read_fastq_files[i],-1,sep=fixed("/")) ## extract file name without directoryname
+    flow_cell <- word(file_name_without_path,1,sep=fixed("_")) ## get flow_cell 
+    flow_lane <- word(file_name_without_path,2,sep=fixed("_")) ## get flow_lane
+    
+    j <- 0
+    repeat{
+      forward_reads_chunk <- ShortRead::yield(forward_stream)
+      
+      if (length(forward_reads_chunk) == 0) {break}
+      
+      print(paste0('Processing read ', j * 1e6, ' to ', 
+                   j*1e6 + length(forward_reads_chunk), 
+                   ' from file ', i)) #(ShortRead)The default size for both streams and samples is 1M records;
+      j <- j + 1
+      
+      forward_reads_string_set <- forward_reads_chunk %>%
+        ShortRead::sread() %>%
+        Biostrings::DNAStringSet()
+      
+      forward_reads_cl_barcode <- XVector::subseq(forward_reads_string_set, 1, CL_BC_LENGTH) %>%
+        as.character()
+      
+      read_header_str <- as.character(forward_reads_chunk@id)
+      read_header_len <- nchar(read_header_str)
+      
+      print("Return the counts for each barcode and index pair in the chunk")
+      cumulative_count_df_uncollapsed[[lp]] <- data.frame(indeces = substr(x = read_header_str, 
+                                                               (read_header_len)-(PLATE_BC_LENGTH+WELL_BC_LENGTH),
+                                                               read_header_len),
+                                              forward_read_cl_barcode = forward_reads_cl_barcode,
+                                              flowcell_name=flow_cell,
+                                              flowcell_lane=flow_lane)  %>%
+        dplyr::count(indeces, forward_read_cl_barcode, flowcell_name, flowcell_lane) 
+      
+      lp <- lp + 1
+    }
+    close(forward_stream)
+  }
+  
+  print('saving final cumulative_count_df ')
+  ## cumulative counts separate across different flowcells and flowcell lanes.
+  cumulative_count_df_uncollapsed = cumulative_count_df_uncollapsed %>%
+    dplyr::bind_rows() %>%
+    dplyr::group_by(indeces, forward_read_cl_barcode, flowcell_name, flowcell_lane) %>% 
+    dplyr::summarise(n = sum(n, na.rm = T)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(index_1 = word(indeces, 1, sep = fixed("+")),
+                  index_2 = word(indeces, 2, sep = fixed("+"))) %>% 
+    dplyr::select(-indeces)
+  
+  ## get counts summed across different flow cells and lanes. Summing across lanes was implicit before and implicit in other sequencer formats
+  cumulative_count_collapsed_across_flowcells_df <- cumulative_count_df_uncollapsed %>% 
+    dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
+    dplyr::summarise(n = sum(n, na.rm = T)) %>% 
+    dplyr::ungroup()
+  print (paste("collapsed across", length(cumulative_count_df_uncollapsed$flowcell_name %>% unique()), "flowcells"))
+  if(!is.null(save_loc)){
+    write_csv(cumulative_count_df_uncollapsed, file =  paste0(save_loc, '/raw_counts_uncollapsed.csv')) 
+
+  }
+  return(cumulative_count_collapsed_across_flowcells_df) ## we want the collapsed data  
+}
