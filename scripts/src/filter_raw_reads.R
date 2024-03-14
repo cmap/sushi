@@ -13,49 +13,40 @@ suppressPackageStartupMessages(library(sets))
 #' @param CB_meta - master metdata of control barcodes, their sequences, and their doses
 #' @param id_cols - vector of column names used to generate unique profile_id for each sample. 
 #'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
-#' @return - list with the following elements
+#' @return list with the following elements
 #' #' \itemize{
 #'   \item filtered_table df of annotated readcounts
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
 #' }
 #' @export 
-
 filter_raw_reads = function(
   raw_counts, sample_meta, cell_line_meta, 
   cell_set_meta, CB_meta,
   id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
   reverse_index2= FALSE, count_threshold= 40) {
   
-  # New: convert CB_meta from log10 to log2
+  # Processing meta data ---- 
+  print("Converting CB_meta from log10 to log2 ...")
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
-  print("Converting CB_meta from log10 to log2")
   
   if (reverse_index2) {
+    print("Reverse-complementing index 2 barcode ...")
     sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
-    print("Reverse-complementing index 2 barcode.")
   }
   
-  print("Filtering raw counts")
+  # Filtering by index barcodes ----
+  print("Filtering raw counts ...")
   index_filtered = raw_counts %>%
-    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2)
-  print("Computing index purity")
+    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
+    dplyr::group_by(index_1, index_2) %>% dplyr::mutate(pair_total= sum(n)) %>% dplyr::ungroup()
+  #print("Computing index purity")
   index_purity = sum(index_filtered$n) / sum(raw_counts$n)
+  
+  unmmaped_reads = raw_counts %>%
+    dplyr::filter(!index_1 %in% sample_meta$IndexBarcode1 | !index_2 %in% sample_meta$IndexBarcode2)
 
-  print("Filtering cell lines")
-  cell_line_filtered = index_filtered %>%
-    merge(sample_meta, by.x=c("index_1", "index_2"), by.y=c("IndexBarcode1", "IndexBarcode2")) %>%
-    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% # NEW
-    merge(cell_set_meta, by="cell_set", all.x=T) %>%
-    dplyr::filter(mapply(grepl, LUA, members) | # NEW
-                    (mapply(grepl, LUA, cell_set) & is.na(members)) | # NEW
-                    (forward_read_cl_barcode %in% CB_meta$Sequence))
-  cell_line_purity = sum(cell_line_filtered$n)/ sum(index_filtered$n)
-
-  print("Generating QC table ...")
-  qc_table = data.frame(cell_line_purity=cell_line_purity, index_purity = index_purity)
-
+  # Annotating index filtered reads ----
   # make template of expected reads
-  #index_to_well= sample_meta %>% dplyr::distinct(pick(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well')))
   sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
   
   template= sample_meta %>% merge(cell_set_meta, by='cell_set', all.x=T) %>%
@@ -64,18 +55,18 @@ filter_raw_reads = function(
     merge(cell_line_meta, by.x= 'members', by.y= 'LUA', all.x= T) # NEW
   
   # check for control barcodes and add them to the template
-  if ('Y' %in% sample_meta$control_barcodes | T %in% sample_meta$control_barcodes) {
+  if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
     cb_template= sample_meta %>% dplyr::filter(control_barcodes %in% c('Y', 'T', T)) %>%
       dplyr::mutate(joiner= 'temp') %>%
       merge(CB_meta %>% dplyr::mutate(joiner= 'temp'), by='joiner') %>% dplyr::select(-joiner)
     template= plyr::rbind.fill(template, cb_template)
   }
   
-  # annotating reads now takes much longer
   print("Annotating reads ...")
-  annotated_counts= raw_counts %>% dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
-    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>% # NEW
+  annotated_counts= index_filtered %>%
+    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
     merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
+    dplyr::filter(!is.na(CCLE_name) | !is.na(Name) | n > 5) %>% # New: drop unmapped entries with very low reads
     merge(sample_meta, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
     merge(template %>% dplyr::mutate(expected_read= T), 
           by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
@@ -84,7 +75,7 @@ filter_raw_reads = function(
     dplyr::mutate(n= replace_na(n, 0),
                   expected_read= replace_na(expected_read, F))
   
-  # filtered counts
+  # Generating filtered reads ----
   print("Filtering reads ...")
   filt_cols= c('project_code', 'DepMap_ID', 'CCLE_name', 'pcr_plate', 'pcr_well', 'ccle_name', 'depmap_id',
                'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type','pool_id', 'x_project_id', 'pert_plate')
@@ -92,16 +83,13 @@ filter_raw_reads = function(
     dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
+  cell_line_purity = sum(filtered_counts$n)/ sum(index_filtered$n)
   
+  # Generating QC table ----
+  qc_table = data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
 
-  # excluded counts
-  #excluded_counts= annotated_counts %>% dplyr::filter(is.na(project_code)) %>%
-  #  dplyr::select_if(function(col) sum(is.na(col)) < length(col)) # ignore columns with all NAs
-  
-  # return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts))
-  
-  return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts,
-              qc_table= qc_table))
+  return(list(unmapped_reads= unmapped_reads, annotated_counts= annotated_counts, 
+              filtered_counts= filtered_counts, qc_table= qc_table))
 }
 
 # checks is a string can be numeric
