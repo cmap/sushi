@@ -176,10 +176,10 @@ if (args$db_flag & args$pool_id) {
 }
 
 # Write out module outputs
-unmapped_reads = filtered_counts$unmapped_reads
-unmapped_out_file = paste(args$out, 'unmapped_reads.csv', sep='/')
-print(paste("writing unmapped reads to: ", unmapped_out_file))
-write.csv(unmapped_reads, unmapped_out_file, row.names=F, quote=F)
+unknown_index_reads = filtered_counts$unknown_index_reads
+unknown_out_file = paste(args$out, 'unknown_index_reads.csv', sep='/')
+print(paste("writing unknown index reads to: ", unknown_out_file))
+write.csv(unknown_index_reads, unmapped_out_file, row.names=F, quote=F)
 
 qc_table = filtered_counts$qc_table
 qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
