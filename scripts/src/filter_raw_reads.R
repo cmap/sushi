@@ -39,10 +39,12 @@ filter_raw_reads = function(
   index_filtered = raw_counts %>%
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
     dplyr::group_by(index_1, index_2) %>% dplyr::mutate(pair_total= sum(n)) %>% dplyr::ungroup()
-  #print("Computing index purity")
+  
+  # index purity for QC table
   index_purity = sum(index_filtered$n) / sum(raw_counts$n)
   
-  unmmaped_reads = raw_counts %>%
+  # reads that do not match to indices in the sample meta.
+  unknown_index_reads = raw_counts %>%
     dplyr::filter(!index_1 %in% sample_meta$IndexBarcode1 | !index_2 %in% sample_meta$IndexBarcode2)
 
   # Annotating index filtered reads ----
@@ -72,8 +74,11 @@ filter_raw_reads = function(
           by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
           by.y= c('IndexBarcode1', 'IndexBarcode2', 'Sequence', intersect(colnames(template), colnames(.))), # NEW
           all.x=T, all.y=T) %>% 
-    dplyr::mutate(n= replace_na(n, 0),
-                  expected_read= replace_na(expected_read, F))
+    # fill in any new NAs from the merge
+    dplyr::group_by(index_1, index_2) %>%
+    dplyr::mutate(n= replace_na(n, 0), pair_total= median(pair_total, na.rm=T),
+                  expected_read= replace_na(expected_read, F)) %>%
+    dplyr::ungroup()
   
   # Generating filtered reads ----
   print("Filtering reads ...")
@@ -83,12 +88,14 @@ filter_raw_reads = function(
     dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
+  
+  # cell line purity for QC table
   cell_line_purity = sum(filtered_counts$n)/ sum(index_filtered$n)
   
   # Generating QC table ----
   qc_table = data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
 
-  return(list(unmapped_reads= unmapped_reads, annotated_counts= annotated_counts, 
+  return(list(unknown_index_reads= unknown_index_reads, annotated_counts= annotated_counts, 
               filtered_counts= filtered_counts, qc_table= qc_table))
 }
 
