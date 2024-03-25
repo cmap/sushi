@@ -9,15 +9,27 @@
 #'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", and "n"
 #' @returns Returns a dataframe with the following columns - "index_1", "index_2", and "n"
 collate_fastq_reads= function(sample_meta, fastq_reads) {
-  # expects flowcell_lanes to be a string of numbers
-  unique_flowcells= sample_meta %>% dplyr::distinct(flowcell_name, flowcell_lane) %>%
-    tidyr::separate_longer_position(flowcell_lane, width=1) # read_csv and read.csv does NOT put commas between numbers!
-  print(paste0('Identified ', nrow(unique_flowcells), ' unique flowcell + lane combos in the sample meta ...'))
-  print(unique_flowcells)
+  # determine which flowcell names + lanes are expected
+  meta_flowcells= sample_meta %>% dplyr::distinct(flowcell_name, flowcell_lane) %>%
+    tidyr::separate_longer_delim(flowcell_lane, delim=',') %>% # fread and read.csv keeps commas, read_csv DROPS commas
+    dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
+  
+  print(paste0('Identified ', nrow(meta_flowcells), ' unique flowcell + lane combos in the sample meta ...'))
+  print(meta_flowcells)
+  
+  # check that expected flowcells are detected
+  missing_flowcells= fastq_reads %>% dplyr::distinct(flowcell_name, flowcell_lane) %>% dplyr::mutate(present=T) %>%
+    dplyr::right_join(meta_flowcells, by=c('flowcell_name', 'flowcell_lane')) %>%
+    dplyr::filter(is.na(present))
+  if(nrow(missing_flowcells)!= 0) {
+    print('The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
+    print(missing_flowcells)
+    print('Check that the sample meta is correct or that all fastq files are in the correct directory.')
+    stop()
+  }
   
   # use an inner join to collect reads with valid flowcell name/lane combinations, then sum using index pairs
-  # merge might take a long time ...
-  raw_counts= fastq_reads %>% base::merge(unique_flowcells, by=c('flowcell_name', 'flowcell_lane')) %>%
+  raw_counts= fastq_reads %>% dplyr::inner_join(meta_flowcells, by=c('flowcell_name', 'flowcell_lane')) %>%
     dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>% 
     dplyr::summarize(n= sum(n)) %>% dplyr::ungroup()
   
