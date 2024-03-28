@@ -9,6 +9,7 @@ suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
+# library(prismSeqR)
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 suppressPackageStartupMessages(library(httr))
@@ -54,7 +55,6 @@ parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use
 parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
 parser$add_argument("--pool_id", action="store_true", default=FALSE, help = "Pull pool IDs from CellDB. --db_flag must also be passed in order to pull pool IDs.")
 
-
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
@@ -94,7 +94,7 @@ if (args$db_flag) {
            "DepMap_ID" = "depmap_id",
            "CCLE_name" = "ccle_name") %>% dplyr::select(any_of(c(cell_line_cols)))
   
-  cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df)
+  cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta)
   cell_set_meta <- cell_sets[[1]]
   failed_cell_sets <- cell_sets[[2]]
   
@@ -103,7 +103,7 @@ if (args$db_flag) {
     print(failed_cell_sets)
     stop("The sample_meta contains the above cell sets which are not registered in CellDB:")
   }
-  
+
   # Writing out cell_line_meta - may be necessary for downstream SUSHI?
   cell_line_out_file = paste(args$out, 'cell_line_meta.csv', sep='/')
   print(paste("writing cell_line_meta to: ", cell_line_out_file))
@@ -199,7 +199,7 @@ if(args$rm_data == T){
   # re-point to what filtered_counts should be
   filtered_counts <- filt_rm
 }
-  
+
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
 print(paste("writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
