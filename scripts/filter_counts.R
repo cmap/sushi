@@ -11,7 +11,6 @@ suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 # library(prismSeqR)
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
-# suppressPackageStartupMessages(library(httr))
 
 
 ## writes configuration to file
@@ -64,7 +63,6 @@ if (args$out == ""){
 cell_set_meta = read.csv(args$cell_set_meta)
 cell_line_meta = read.csv(args$cell_line_meta)
 CB_meta = read.csv(args$CB_meta)
-assay_pool_meta = read.csv(args$assay_pool_meta)
 sample_meta = read.csv(args$sample_meta)
 raw_counts = read.csv(args$raw_counts)
 
@@ -113,6 +111,7 @@ filtered_counts = filter_raw_reads(
 
 # Pulling pool_id when db_flag and pool_id flags are passed
 if (args$pool_id) {
+  assay_pool_meta = read.csv(args$assay_pool_meta)
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   assay_pool_meta <- assay_pool_meta[assay_pool_meta$davepool_id %in% unique_cell_sets,] %>% 
     select(pool_id, ccle_name, davepool_id, depmap_id)
