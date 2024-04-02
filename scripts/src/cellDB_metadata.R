@@ -122,7 +122,8 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
       # Should duplicates be removed before adding to cell_set_meta?
       if (length(all_LUAs) > 0) {
         known_cell_sets <- paste(known_cell_sets, collapse = ";")
-        all_LUAs <- paste(all_LUAs[[1]], collapse = ";")
+        joined_LUAs <- sapply(all_LUAs, function(row) paste(row, collapse = ";"))
+        all_LUAs <- paste(joined_LUAs, collapse = ";")
         cell_set_meta$cell_set[insert_index] <- known_cell_sets
         cell_set_meta$members[insert_index] <- all_LUAs   
       }
