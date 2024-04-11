@@ -22,11 +22,13 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
-if (file.exists(args$uncollapsed_raw_counts)) {
+expected_file_path <- paste(args$out, "raw_counts_uncollapsed.csv", sep='/')
+
+if (file.exists(expected_file_path)) {
   sample_meta = read.csv(args$sample_meta)
-  uncollapsed_raw_counts = read.csv(args$uncollapsed_raw_counts)
+  uncollapsed_raw_counts = read.csv(expected_file_path)
   print("Collating fastq reads")
-  raw_counts <- collate_fastq_reads(sample_meta,uncollapsed_raw_counts) 
+  raw_counts <- collate_fastq_reads(sample_meta, uncollapsed_raw_counts) 
   
   rc_out_file = paste(
     args$out,
