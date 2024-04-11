@@ -35,7 +35,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
-parser$add_argument("--api_url", default="https://dev-api.clue.io/api/", help = "Default API URL to CellDB is DEV")
+parser$add_argument("--api_url", default="https://api.clue.io/api/", help = "Default API URL to CellDB is DEV")
 parser$add_argument("--api_key", default="", help = "Clue API key")
 
 # get command line options, if help option encountered print help and exit
