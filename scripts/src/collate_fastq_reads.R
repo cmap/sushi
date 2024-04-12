@@ -8,10 +8,15 @@
 #' @param uncollapsed_raw_counts Data frame of reads from all the fastq files with the following columns - \cr
 #'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", and "n"
 #' @returns Returns a dataframe with the following columns - "index_1", "index_2", and "n"
+#' @import tidyverse
 collate_fastq_reads= function(sample_meta, uncollapsed_raw_counts) {
-  # determine which flowcell names + lanes are expected
+  require(tidyverse)
+  
+  # Determine which flowcell names + lanes are expected
+  # fread and read.csv keeps commas, read_csv DROPS commas
   meta_flowcells= sample_meta %>% dplyr::distinct(flowcell_name, flowcell_lane) %>%
-    tidyr::separate_longer_delim(flowcell_lane, delim=',') %>% # fread and read.csv keeps commas, read_csv DROPS commas
+    dplyr::mutate(flowcell_lane= base::strsplit(flowcell_lane, split=',', fixed=T)) %>% 
+    tidyr::unnest(cols= flowcell_lane) %>%
     dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
   
   print(paste0('Identified ', nrow(meta_flowcells), ' unique flowcell + lane combos in the sample meta ...'))
@@ -25,7 +30,7 @@ collate_fastq_reads= function(sample_meta, uncollapsed_raw_counts) {
     print('The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
     print(missing_flowcells)
     print('Check that the sample meta is correct or that all fastq files are in the correct directory.')
-    stop()
+    stop('ERROR: One or more flowcell specified in the sample meta was not detected.')
   }
   
   # use an inner join to collect reads with valid flowcell name/lane combinations, then sum using index pairs
