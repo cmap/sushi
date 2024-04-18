@@ -56,7 +56,7 @@ get_LUAs_from_sets <- function(cell_set_name) {
 
 get_LUAs_from_pools <- function(cell_pool_name) {
   v_assay_pool_api_url <- "https://api.clue.io/api/v_assay_pools"
-  filter <- list(where = list(name = cell_pool_name), fields = c("name","barcode_id"))
+  filter <- list(where = list(assay_pool = cell_pool_name), fields = c("assay_pool","barcode_id"))
   cell_pool_lua_df <- get_cell_api_info(v_assay_pool_api_url, api_key, filter)
   LUAs <- list(cell_pool_lua_df$barcode_id)
   return(LUAs)
@@ -104,6 +104,7 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
         # Collecting pool LUA members
         pool_members = get_LUAs_from_pools(cs[j])
         all_LUAs = append(all_LUAs, pool_members)
+        print(paste(cs[j], "has an LUA length of:", length(pool_members[[1]])))
         
       } else if (cs[j] %in% cell_line_meta$LUA){
         print(paste(cs[j], "is a cell line")) 
@@ -121,7 +122,8 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
       # Should duplicates be removed before adding to cell_set_meta?
       if (length(all_LUAs) > 0) {
         known_cell_sets <- paste(known_cell_sets, collapse = ";")
-        all_LUAs <- paste(all_LUAs[[1]], collapse = ";")
+        joined_LUAs <- sapply(all_LUAs, function(row) paste(row, collapse = ";"))
+        all_LUAs <- paste(joined_LUAs, collapse = ";")
         cell_set_meta$cell_set[insert_index] <- known_cell_sets
         cell_set_meta$members[insert_index] <- all_LUAs   
       }

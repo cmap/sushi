@@ -15,6 +15,7 @@ def build_parser():
     parser.add_argument('--out', '-o', help='Output for project level folders', required=True)
     parser.add_argument("--verbose", '-v', help="Whether to print a bunch of output", action="store_true", default=False)
     parser.add_argument('--build_name', '-n', help='Build name.', required=True)
+    parser.add_argument('--days', '-d', help='Day timepoints to drop from output data separated by commas.')
     return parser
 
 def read_build_file(search_pattern, args):
@@ -45,13 +46,13 @@ def main(args):
         os.makedirs(args.out)
 
     try:
-        fstr = os.path.join(args.build_path, '*l2fc*.csv')
+        fstr = os.path.join(args.build_path, 'l2fc.csv')
         fmatch = glob.glob(fstr)
         assert (len(fmatch) == 1) , "Too many files found"
         print("Reading in data")
         sample_meta = read_build_file("*sample_meta*.csv", args)
         level_3 = read_build_file("*normalized_counts*.csv", args)
-        level_4 = read_build_file("*l2fc*.csv", args)
+        level_4 = read_build_file("l2fc.csv", args)
         level_5 = read_build_file("*collapsed_values*.csv", args)
 
     except IndexError as err:
@@ -74,7 +75,7 @@ def main(args):
         "dose": "pert_dose",
         "dose_unit": "pert_dose_unit",
         "l2fc": "LFC",
-        "median_l2fc": "LFC"  # Add the mapping for level_5 dataset
+        "median_l2fc": "LFC"
     }
 
 
@@ -97,10 +98,11 @@ def main(args):
         dataset["culture"] = "PR500"
 
     # Define the pert_time values to drop
-    pert_time_to_drop = [0, 6]
-
-    for dataset in datasets:
-        dataset.drop(dataset[dataset['pert_time'].isin(pert_time_to_drop)].index, inplace=True)
+    if args.days:
+        pert_time_to_drop = [int(day) for day in args.days.split(",")]
+        print(pert_time_to_drop)
+        for dataset in datasets:
+            dataset.drop(dataset[dataset['pert_time'].isin(pert_time_to_drop)].index, inplace=True)
 
 
     # Setting columns
@@ -142,16 +144,13 @@ def main(args):
     # Sorting columns to resemble MTS style
     level_4.sort_index(axis=1, inplace=True)
     profile_col = level_4.pop('profile_id')
-    # pool_col = level_4.pop('pool_id')
     level_4.insert(1, profile_col.name, profile_col)
-    # level_4.insert(2, pool_col.name, pool_col)
     level_4 = level_4[[col for col in level_4.columns if col != 'LFC'] + ['LFC']]
 
     level_5.sort_index(axis=1, inplace=True)
     level_5 = level_5[[col for col in level_5.columns if col != 'LFC'] + ['LFC']]
 
     # Writing out modified dataframes
-    # project = level_4["screen"].unique()[0]
     project = args.build_name
 
     print("Creating compound key...")
@@ -162,11 +161,11 @@ def main(args):
 
     # Saving modified data
     # Add number of cell lines and unique pert_plate/well combinations
-    level_3.to_csv(args.out + project + "_inst_info.txt", sep="\t", index=None)
-    level_3.to_csv(args.out + project + "_LEVEL3_NORMALIZED_COUNTS.csv", index=0)
-    level_4.to_csv(args.out + project + "_LEVEL4_LFC.csv", index=0)
+    level_3.to_csv(args.out + "/" + project + "_inst_info.txt", sep="\t", index=None)
+    level_3.to_csv(args.out + "/" + project + "_LEVEL3_NORMALIZED_COUNTS.csv", index=0)
+    level_4.to_csv(args.out + "/" + project + "_LEVEL4_LFC.csv", index=0)
     level_5.to_csv(args.out + "/" + project + "_LEVEL5_LFC.csv", index=0)
-    project_key.to_csv(args.out + project + "_compound_key.csv", index=False)
+    project_key.to_csv(args.out + "/" + project + "_compound_key.csv", index=False)
     return level_3, project_key, level_4, level_5
 
 
