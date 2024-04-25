@@ -38,6 +38,7 @@ parser$add_argument("--count_col_name", default="normalized_n",
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default=40, 
                     help = "Low counts threshold")
+parser$add_argument("--reverse_index2", default=T, help = "Reverse index 2")
 # parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
@@ -81,4 +82,5 @@ QC_images(sample_meta= sample_meta,
           normalized_counts= normalized_counts,
           CB_meta= CB_meta, cell_set_meta= cell_set_meta, 
           out= args$out, 
-          sig_cols= sig_cols, count_col_name= count_col_name, count_threshold= count_threshold)
+          sig_cols= sig_cols, count_col_name= count_col_name, count_threshold= count_threshold,
+          reverse_index2= args$reverse_index2)
