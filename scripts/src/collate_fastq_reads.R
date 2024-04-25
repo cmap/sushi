@@ -13,9 +13,10 @@ collate_fastq_reads= function(sample_meta, uncollapsed_raw_counts) {
   require(tidyverse)
   
   # Determine which flowcell names + lanes are expected
-  # fread and read.csv keeps commas, read_csv DROPS commas
+  # Parse flowcell_lane by splitting on the chars , ; :
+  # Note: fread and read.csv keeps commas, read_csv DROPS commas
   meta_flowcells= sample_meta %>% dplyr::distinct(flowcell_name, flowcell_lane) %>%
-    dplyr::mutate(flowcell_lane= base::strsplit(flowcell_lane, split=',', fixed=T)) %>% 
+    dplyr::mutate(flowcell_lane= base::strsplit(flowcell_lane, split='[,;:]', fixed=F)) %>%
     tidyr::unnest(cols= flowcell_lane) %>%
     dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
   
