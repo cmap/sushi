@@ -38,7 +38,7 @@ parser$add_argument("--count_col_name", default="normalized_n",
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default=40, 
                     help = "Low counts threshold")
-parser$add_argument("--reverse_index2", default=T, help = "Reverse index 2")
+parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
 # parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
