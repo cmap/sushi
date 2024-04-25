@@ -21,18 +21,26 @@
 #' @param sig_cols - 
 #' @param count_col_names -
 #' @param count_threshold - threshold for low counts
+#' @param reverse_index2 reverse index 2 if newer sequencers are used.
 #' @return - NA, QC images are written out to the specified folder
 #' @export
 
 QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_counts= NA,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
-                     count_threshold= 40) {
+                     count_threshold= 40,
+                     reverse_index2= FALSE) {
   if(is.na(out)) {
     out = getwd()
   }
   num_profiles = filtered_counts$profile_id %>% unique() %>% length()
   
-  # Control barcode check ----
+  # Some preprocessing ----
+  # Reverse index 2 barcodes
+  if(reverse_index2) {
+    print("Reverse-complementing index 2 barcode.")
+    sample_meta$IndexBarcode2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
+  }
+  
   cb_check= filtered_counts %>%
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
@@ -42,27 +50,27 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
   # Sequencing QCs ____________________ ----
   ## Index count summaries ----
   print("generating index counts tables")
-  expected_index1= sample_meta %>% dplyr::distinct(IndexBarcode1) %>% unlist() %>% unname()
-  expected_index2= sample_meta %>% dplyr::distinct(IndexBarcode2) %>% unlist() %>% unname()
+  # pull unique indices.
+  expected_index1= unique(sample_meta$IndexBarcode1)
+  expected_index2= unique(sample_meta$IndexBarcode2)
   
   index1_counts= annotated_counts %>% dplyr::group_by(index_1) %>%
-    dplyr::summarise(n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
-    dplyr::mutate(fraction_n= n/sum(n),
+    dplyr::summarise(idx_n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
+    dplyr::mutate(fraction= idx_n/sum(idx_n),
                   expected= ifelse(index_1 %in% expected_index1, T, F),
                   contains_n= ifelse(grepl('N', index_1), T, F),
                   lv_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="lv"), 1, min),
-                  ham_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="hamming"), 
-                                  1, min)) %>%
-    dplyr::arrange(desc(fraction_n))
+                  ham_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="hamming"), 1, min)) %>%
+    dplyr::arrange(desc(fraction))
   index2_counts= annotated_counts %>% dplyr::group_by(index_2) %>%
-    dplyr::summarise(n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
-    dplyr::mutate(fraction_n= n/sum(n),
+    dplyr::summarise(n= sum(idx_n, na.rm= T)) %>% dplyr::ungroup() %>%
+    dplyr::mutate(fraction= idx_n/sum(idx_n),
                   expected= ifelse(index_2 %in% expected_index2, T, F),
                   contains_n= ifelse(grepl('N', index_2), T, F),
                   lv_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="lv"), 1, min),
-                  ham_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="hamming"), 
-                                  1, min)) %>%
-    dplyr::arrange(desc(fraction_n))
+                  ham_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="hamming"), 1, min)) %>%
+    dplyr::arrange(desc(fraction))
+  
   # export
   index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
   index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
