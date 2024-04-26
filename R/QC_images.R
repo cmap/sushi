@@ -63,7 +63,7 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
                   ham_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="hamming"), 1, min)) %>%
     dplyr::arrange(desc(fraction))
   index2_counts= annotated_counts %>% dplyr::group_by(index_2) %>%
-    dplyr::summarise(n= sum(idx_n, na.rm= T)) %>% dplyr::ungroup() %>%
+    dplyr::summarise(idx_n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
     dplyr::mutate(fraction= idx_n/sum(idx_n),
                   expected= ifelse(index_2 %in% expected_index2, T, F),
                   contains_n= ifelse(grepl('N', index_2), T, F),
