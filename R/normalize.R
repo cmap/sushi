@@ -53,13 +53,24 @@ normalize <- function(X, barcodes, pseudocount) {
   }
   
   # Calculate fit intercept for valid profiles using median intercept
-  valid_profiles %<>% dplyr::group_by(profile_id, log2_dose) %>%
+  fit_intercepts= valid_profiles %>% dplyr::group_by(profile_id, log2_dose) %>%
     dplyr::summarize(dose_intercept= mean(log2_dose) - mean(log2_n)) %>%
     dplyr::group_by(profile_id) %>%
     dplyr::summarize(cb_intercept= median(dose_intercept)) %>% dplyr::ungroup()
   
+  # Calculate fit statistics - MAE and R2
+  fit_stats= valid_profiles %>% dplyr::inner_join(fit_intercepts, by='profile_id') %>% 
+    dplyr::group_by(profile_id) %>%
+    dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
+                  mae= median(abs(log2_dose- log2_normalized_n)),
+                  mean_y= mean(log2_dose),
+                  residual2= (log2_dose- log2_normalized_n)^2,
+                  squares2= (log2_dose- mean_y)^2,
+                  r2= 1- sum(residual2)/sum(squares2)) %>% dplyr::ungroup() %>%
+    dplyr::distinct(profile_id, cb_intercept, mae, r2)
+  
   # Normalize entries
-  normalized= X %>% dplyr::inner_join(valid_profiles, by='profile_id') %>%
+  normalized= X %>% dplyr::inner_join(fit_stats, by='profile_id') %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
                   normalized_n = 2^log2_normalized_n)
   
