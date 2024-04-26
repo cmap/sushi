@@ -29,7 +29,7 @@ compute_l2fc = function(normalized_counts,
   normalized_counts$sig_id= do.call(paste,c(normalized_counts[sig_cols], sep=':'))
   
   # ignore these columns when collapsing tech reps
-  candidate_excluded_columns= c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
+  candidate_excluded_columns= c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept', 'mae', 'r2',
                                 'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 'log2_normalized_n',
                                 'flag', count_col_name)
   tech_rep_excluded_columns= candidate_excluded_columns[!candidate_excluded_columns %in% sig_cols]
