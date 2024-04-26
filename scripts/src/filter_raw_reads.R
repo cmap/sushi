@@ -27,6 +27,8 @@ filter_raw_reads = function(
   id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
   reverse_index2= FALSE, count_threshold= 40) {
   
+  require(tidyverse)
+  
   # Processing metadata ---- 
   print("Converting CB_meta from log10 to log2 ...")
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
@@ -60,14 +62,6 @@ filter_raw_reads = function(
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     unnest(cols=c(members)) %>%
     dplyr::left_join(cell_line_meta, by= join_by('members'=='LUA')) # NEW
-  
-  # check for unknown LUAs
-  no_cell_barcode= template %>% dplyr::filter(is.na(Sequence))
-  if(nrow(no_cell_barcode)!=0) {
-    print('The following LUA(s) were specified in the cell set(s), but are not in the cell line meta.')
-    print(dplyr::distinct(no_cell_barcode, members, cell_set))
-    stop('ERROR: A cell set contains at least one LUA that is not present in cell line meta.')
-  }
   
   # check for control barcodes and add them to the template
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
