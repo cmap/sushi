@@ -22,6 +22,7 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
+#build trigger
 expected_file_path <- paste(args$out, "raw_counts_uncollapsed.csv", sep='/')
 
 if (file.exists(expected_file_path)) {
