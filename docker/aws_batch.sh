@@ -7,9 +7,9 @@ case "$1" in
     shift
     Rscript fastq2readcount.R "${@}"
     ;;
-  create_cellDB_metadata)
+  create_celldb_metadata)
     shift
-    Rscript create_cellDB_metadata.R "${@}"
+    Rscript create_celldb_metadata.R "${@}"
     ;;
   collate_fastq_reads)
     shift
