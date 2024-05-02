@@ -5,6 +5,7 @@
 #'  @param l2fc - l2fc table with MAD/sqrt(n) metric for control condition
 #'  @return - collapsed_counts 
 #'  @export 
+
 collapse_counts = function(l2fc) {
   collapsed_counts = l2fc %>% 
     dplyr::filter(is.na(counts_flag)) %>% 
@@ -21,3 +22,5 @@ collapse_counts = function(l2fc) {
   
   return(collapsed_counts)
 }
+
+# test comment
