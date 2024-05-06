@@ -56,7 +56,7 @@ med_cell_counts_qc <- cell_counts_negcon %>%
 ## in log2 space, the threshold should be at log2(40+threshold)
 
 ## save the output along with build name? or without ?
-write_csv(med_cell_counts_qc, paste0(out_dir, "/", build_name, "_QC_TABLE.csv"))
+write_csv(med_cell_counts_qc, paste0(out_dir, "/", build_name, "EPS_QC_TABLE.csv"))
 
 
 
