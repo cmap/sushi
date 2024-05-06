@@ -46,6 +46,7 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
+#build trigger
 sample_meta = read.csv(args$sample_meta)
 api_url <- args$api_url
 

@@ -31,9 +31,9 @@ case "$1" in
     shift
     Rscript collapse_replicates.R "${@}"
     ;;
-  replicate_QC)
+  eps_qc)
     shift
-    Rscript replicate_QC.R "${@}"
+    Rscript EPS_QC.R "${@}"
     ;;
   seq_to_mts)
     shift
