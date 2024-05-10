@@ -7,17 +7,32 @@ suppressPackageStartupMessages(library(sets))
 #'
 #' @param raw_counts - an unfiltered counts table
 #' @param sample_meta - the sample metadata for the particular experiment. Must follow the given set of 
-#'                      guidelines for metadata
-#' @param cell_line_meta - master metadata of cell lines
-#' @param cell_set_meta - master metdata of cell sets and their contents
-#' @param CB_meta - master metdata of control barcodes, their sequences, and their doses
+#'                      guidelines for metadata. Required columns include:
+#'                      - IndexBarcode1
+#'                      - IndexBarcode2
+#'                      - cell_set
+#' @param cell_line_meta - master metadata of cell lines with the following required columns:
+#'                       - CCLE_name
+#'                       - DepMap_ID
+#'                       - LUA
+#'                       - Sequence
+#' @param cell_set_meta - master metdata of cell sets and their contents with the following required columns:
+#'                      - cell_set
+#'                      - members
+#' @param CB_meta - master metdata of control barcodes, their sequences, and their doses. 
+#'                The file should contain the columns:
+#'                - Sequence
+#'                - Name
+#'                - log_dose
 #' @param id_cols - vector of column names used to generate unique profile_id for each sample. 
 #'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
 #' @param reverse_index2 Reverses index2 for certain sequencers
 #' @param count_threshold Threshold to call low counts. 
 #' @return - list with the following elements
 #' #' \itemize{
-#'   \item filtered_table df of annotated readcounts
+#'   \item unmapped_reads: table of reads with valid index pairs but did not map to any known barcode
+#'   \item annotated_counts: table of reads and the associated well and well conditions
+#'   \item filtered_counts: table of all expected reads for the project
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
 #' }
 #' @export 
@@ -42,8 +57,7 @@ filter_raw_reads = function(
   print("Filtering raw counts ...")
   index_filtered= raw_counts %>% 
     dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
-    dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% cell_line_meta$Sequence |
-                                   forward_read_cl_barcode %in% CB_meta$Sequence, T, F))
+    dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
   
   # index purity for QC table
   index_purity= sum(index_filtered$n)/ sum(raw_counts$n)
@@ -56,21 +70,22 @@ filter_raw_reads = function(
   
   # make template of expected reads
   print('Creating template of expected reads ...')
-  sample_meta$profile_id= do.call(paste,c(sample_meta[id_cols], sep=':'))
-  
-  template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
+  template= sample_meta %>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F) %>%
+    dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
-    unnest(cols=c(members)) %>%
-    dplyr::left_join(cell_line_meta, by= join_by('members'=='LUA')) # NEW
+    tidyr::unnest(cols=c(members)) %>%
+    dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA')) # NEW
   
   # check for control barcodes and add them to the template
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
     cb_template= sample_meta %>% dplyr::filter(control_barcodes %in% c('Y', 'T', T)) %>%
       dplyr::mutate(joiner= 'temp') %>%
-      merge(CB_meta %>% dplyr::mutate(joiner= 'temp'), by='joiner') %>% dplyr::select(-joiner)
-    template= plyr::rbind.fill(template, cb_template)
+      dplyr::inner_join(CB_meta %>% dplyr::mutate(joiner= 'temp'), by='joiner', relationship= 'many-to-many') %>% 
+      dplyr::select(-joiner)
+    template= dplyr::bind_rows(template, cb_template)
   }
   
+  # Annotating reads ----
   print("Annotating reads ...")
   annotated_counts= index_filtered %>% dplyr::filter(mapped) %>% # New: drop unmapped reads
     dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence')) %>%
@@ -80,16 +95,14 @@ filter_raw_reads = function(
           by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
           by.y= c('IndexBarcode1', 'IndexBarcode2', 'Sequence', intersect(colnames(template), colnames(.))), 
           all.x=T, all.y=T) %>% 
-    # drop unneeded columns nd and fill in any new NAs from the merge
-    dplyr::select(-mapped, -members) %>%
+    # drop unneeded columns and fill in any new NAs from the merge
+    dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>%
     dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
   
   # Generating filtered reads ----
   print("Filtering reads ...")
-  filt_cols= c('project_code', 'DepMap_ID', 'CCLE_name', 'pcr_plate', 'pcr_well', 'ccle_name', 'depmap_id',
-               'control_barcodes', 'Name', 'log2_dose','profile_id', 'trt_type','pool_id', 'x_project_id', 'pert_plate')
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
-    dplyr::select(any_of(c(filt_cols, id_cols, 'n'))) %>%
+    dplyr::select(!any_of(c('index_1', 'index_2', 'forward_read_cl_barcode', 'LUA', 'expected_read'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
