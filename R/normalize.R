@@ -62,12 +62,12 @@ normalize <- function(X, barcodes, pseudocount) {
   fit_stats= valid_profiles %>% dplyr::inner_join(fit_intercepts, by='profile_id') %>% 
     dplyr::group_by(profile_id) %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
-                  mae= median(abs(log2_dose- log2_normalized_n)),
+                  norm_mae= median(abs(log2_dose- log2_normalized_n)),
                   mean_y= mean(log2_dose),
                   residual2= (log2_dose- log2_normalized_n)^2,
                   squares2= (log2_dose- mean_y)^2,
-                  r2= 1- sum(residual2)/sum(squares2)) %>% dplyr::ungroup() %>%
-    dplyr::distinct(profile_id, cb_intercept, mae, r2)
+                  norm_r2= 1- sum(residual2)/sum(squares2)) %>% dplyr::ungroup() %>%
+    dplyr::distinct(profile_id, cb_intercept, norm_mae, norm_r2)
   
   # Normalize entries
   normalized= X %>% dplyr::inner_join(fit_stats, by='profile_id') %>%
