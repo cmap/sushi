@@ -30,9 +30,10 @@ suppressPackageStartupMessages(library(sets))
 #' @param count_threshold Threshold to call low counts. 
 #' @return - list with the following elements
 #' #' \itemize{
-#'   \item unmapped_reads: table of reads with valid index pairs but did not map to any known barcode
+#'   \item unmapped_reads: table of reads with valid index pairs but did not map to any known barcode.
+#'         The table contains the following columns - index_1, index_2, forward_read_cl_barcode, and n
 #'   \item annotated_counts: table of reads and the associated well and well conditions
-#'   \item filtered_counts: table of all expected reads for the project
+#'   \item filtered_counts: table of all expected reads for the project, this is a subset of annotated counts.
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
 #' }
 #' @export 
