@@ -33,8 +33,8 @@ normalize <- function(X, barcodes, pseudocount) {
   # Identify valid profiles and valid control barcodes to determine intercept
   # dropping invalid trt_type, wells without control barcodes, cell line entries or other CBs, cbs with zero reads,
   # and profiles with fewer than 4 CBs.
-  valid_profiles= X %>% dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), 
-                                      control_barcodes==T, Name %in% barcodes, n!= 0) %>%
+  valid_profiles= X %>% dplyr::filter(!trt_type %in% c("empty", "", "CB_only"), !is.na(trt_type), 
+                                      control_barcodes %in% c('Y', 'T', T), Name %in% barcodes, n!= 0) %>%
     dplyr::group_by(profile_id) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
   
   # Which profiles were dropped out?
