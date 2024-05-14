@@ -71,8 +71,8 @@ filter_raw_reads = function(
   
   # make template of expected reads
   print('Creating template of expected reads ...')
-  template= sample_meta %>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F) %>%
-    dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
+  sample_meta %<>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F)
+  template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     tidyr::unnest(cols=c(members)) %>%
     dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA')) # NEW
