@@ -23,10 +23,11 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
+parser$add_argument("--raw_counts", default= "raw_counts.csv", help="path to file containing raw counts")
 parser$add_argument("--annotated_counts", default="annotated_counts.csv",
                     help="path to file containing annotated counts")
-parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
-                    help="path to file containing filtered counts")
+# parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
+#                     help="path to file containing filtered counts")
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "control barcode metadata")
@@ -49,8 +50,8 @@ if (args$out == ""){
 }
 
 sample_meta = read.csv(args$sample_meta)
+raw_counts = read.csv(args$raw_counts)
 annotated_counts= read.csv(args$annotated_counts)
-filtered_counts = read.csv(args$filtered_counts)
 if(file.exists(args$normalized_counts)) {
   normalized_counts= read.csv(args$normalized_counts)
 } else {
@@ -78,7 +79,7 @@ print("generating filtered counts QC images")
 #          CB_meta, cell_set_meta, args$out, sig_cols, count_col_name)
 QC_images(sample_meta= sample_meta,
           annotated_counts= annotated_counts, 
-          filtered_counts= filtered_counts,
+          raw_counts= raw_counts,
           normalized_counts= normalized_counts,
           CB_meta= CB_meta, cell_set_meta= cell_set_meta, 
           out= args$out, 

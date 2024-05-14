@@ -1,11 +1,9 @@
 #'  QC_images
 #'
-#'  takes a filtered dataframe of raw read counts and generates and writes out QC images to assess
-#'  overall quality of project data
+#'  Takes in the metadata, raw counts, annotated counts, and normalized counts to generate some QC images.
 #'  
 #' @param sample_meta - sample metadata
-#' @param annotated_counts -
-#' @param filtered_counts - dataframe of annotated readcounts that must include the following columns:
+#' @param annotated_counts - dataframe of annotated readcounts that must include the following columns:
 #'           n: raw readcounts
 #'           profile_id: string unique to each sample as defined by filter_counts method
 #'           Name: name of the control barcode that the read corresponds to, or NA (if read is cell line)
@@ -25,14 +23,14 @@
 #' @return - NA, QC images are written out to the specified folder
 #' @export
 
-QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_counts= NA,
+QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_counts= NA,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
                      count_threshold= 40,
                      reverse_index2= FALSE) {
   if(is.na(out)) {
     out = getwd()
   }
-  num_profiles = filtered_counts$profile_id %>% unique() %>% length()
+  num_profiles = annotated_counts$profile_id %>% unique() %>% length()
   
   # Some preprocessing ----
   # Reverse index 2 barcodes
@@ -41,7 +39,8 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
     sample_meta$IndexBarcode2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
   }
   
-  cb_check= filtered_counts %>%
+  # Detect control barcodes
+  cb_check= sample_meta %>%
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   contains_cbs= ifelse(nrow(cb_check)!= 0, T, F)
@@ -54,30 +53,31 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
   expected_index1= unique(sample_meta$IndexBarcode1)
   expected_index2= unique(sample_meta$IndexBarcode2)
   
-  index1_counts= annotated_counts %>% dplyr::group_by(index_1) %>%
+  index1_counts= raw_counts %>% dplyr::group_by(index_1) %>%
     dplyr::summarise(idx_n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
-    dplyr::mutate(fraction= idx_n/sum(idx_n),
+    dplyr::mutate(fraction= round(idx_n/sum(idx_n), 5),
                   expected= ifelse(index_1 %in% expected_index1, T, F),
                   contains_n= ifelse(grepl('N', index_1), T, F),
                   lv_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="lv"), 1, min),
                   ham_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="hamming"), 1, min)) %>%
     dplyr::arrange(desc(fraction))
-  index2_counts= annotated_counts %>% dplyr::group_by(index_2) %>%
+  index2_counts= raw_counts %>% dplyr::group_by(index_2) %>%
     dplyr::summarise(idx_n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
-    dplyr::mutate(fraction= idx_n/sum(idx_n),
+    dplyr::mutate(fraction= round(idx_n/sum(idx_n), 5),
                   expected= ifelse(index_2 %in% expected_index2, T, F),
                   contains_n= ifelse(grepl('N', index_2), T, F),
                   lv_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="lv"), 1, min),
                   ham_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="hamming"), 1, min)) %>%
     dplyr::arrange(desc(fraction))
   
-  # export
+  # export and remove
   index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
   index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
+  rm(expected_index1, index1_counts, expected_index2, index2_counts)
   
   ## Total counts ----
   print("generating total_counts image")
-  total_counts= filtered_counts %>% ungroup() %>% 
+  total_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
     mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
            sample_id= paste(pcr_plate, pcr_well, sep='_')) %>%
     group_by(pcr_plate, pcr_well, sample_id, profile_id, type) %>% 
@@ -87,85 +87,19 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
     geom_col(aes(x=sample_id, y=total_counts, fill=type), alpha=0.75, position='identity') +
     geom_hline(yintercept= 10^4, linetype=2) + 
     facet_wrap(~pcr_plate, scale= 'free_x') +
-    labs(x="", y="total counts", fill="") + theme_bw() +
+    labs(x="", y="total counts", fill="", title= 'Raw counts - unstacked') + theme_bw() +
     theme(axis.text.x = element_text(angle=70, hjust=1, size=5)) 
   
   pdf(file=paste(out, "total_counts.pdf", sep="/"),
       width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
   print(tc)
   dev.off()
-  
-  ## Control barcode counts ----
-  if(contains_cbs) { 
-    print('generating control barcode counts')
-    idx_pairs_cbs= annotated_counts %>% dplyr::filter(!is.na(Name), expected_read) %>%
-      dplyr::group_by(index_1, index_2, pcr_plate, pcr_well) %>%
-      dplyr::summarise(total_well_cbs= sum(n)) %>%
-      dplyr::mutate(rpm= total_well_cbs/10^6,
-                    p_row= str_extract(pcr_well, '^[a-z,A-Z]'),
-                    p_col= str_extract(pcr_well,'\\d+') %>% as.numeric()) %>% ungroup() %>%
-      dplyr::arrange(pcr_plate, p_row, p_col) %>% dplyr::select(-p_row, -p_col)
-    
-    idx_pairs_cbs %>% write.csv(file= paste(out, 'cbs_counts.csv', sep='/'), row.names=F)
-  }
-  
-  ## Distribution of included and excluded reads ----
-  distrib_fc= annotated_counts %>% dplyr::filter(n > 1, !is.na(pcr_plate), !is.na(pcr_well)) %>%
-    ggplot(aes(x= log10(n), fill= expected_read)) +
-    geom_histogram(position='identity', alpha=0.5) +
-    geom_vline(xintercept= log10(count_threshold), linetype=2) +
-    facet_wrap(~pcr_plate, scales='free') +
-    labs(x= 'log10(n)', title= 'Distribution of excluded and included reads') +
-    theme_bw()
-  pdf(file=paste(out, "count_distribution.pdf", sep="/"),
-      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
-  print(distrib_fc)
-  dev.off()
-  
-  ## In set/out set reads by well ----
-  print('generating in set/out set figures')
-  idx_pairs= annotated_counts %>% dplyr::mutate(in_set= ifelse(expected_read, T, F)) %>%
-    dplyr::group_by(index_1, index_2, pcr_plate, pcr_well, in_set) %>% 
-    dplyr::summarise(sum_n= sum(n, na.rm=T)) %>% dplyr::ungroup() %>%
-    dplyr::group_by(index_1, index_2) %>% 
-    dplyr::mutate(fraction= sum_n/ sum(sum_n),
-                  rpm= sum_n/10^6,
-                  p_row= substr(pcr_well, 1, 1),
-                  p_col= str_extract(pcr_well, '\\d+') %>% as.numeric()) %>% ungroup()
-  
-  in_set_percent= idx_pairs %>% dplyr::filter(!is.na(pcr_well), in_set) %>%
-    ggplot(aes(x= as.factor(p_col), y=reorder(p_row, desc(p_row)), fill=fraction, label= round(fraction, 2))) + 
-    geom_tile(color= 'white') + geom_text(size=3) +
-    scale_fill_gradientn(breaks= c(0.5, 0.75, 1), 
-                         colours= c('white','yellow','red'),
-                         limits=c(0.5,1), oob=squish)+
-    coord_fixed(1) + facet_wrap(pcr_plate~.) +
-    labs(x= 'plate column', y= 'plate row', title= 'Fraction of \'in set\' reads') +
-    theme_bw() #+ theme(legend.position = "bottom")
-  
-  pdf(file=paste(out, "in_set_percent.pdf", sep="/"), 
-      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
-  print(in_set_percent)
-  dev.off()
-  
-  out_set_rpm= idx_pairs %>% dplyr::filter(!is.na(pcr_well), !in_set) %>%
-    ggplot(aes(x= as.factor(p_col), y=reorder(p_row, desc(p_row)), fill= rpm, label= round(rpm, 2))) + 
-    geom_tile(color='white') + geom_text(size=3) +
-    scale_fill_gradient2(low= 'white', high='red') +
-    coord_fixed(1) + facet_wrap(pcr_plate~.) +
-    labs(x= 'plate column', y= 'plate row', title= 'Out of set reads (RPM)') +
-    theme_bw() #+ theme(legend.position= 'bottom')
-  
-  pdf(file=paste(out, "out_set_rpm.pdf", sep="/"), 
-      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
-  print(out_set_rpm)
-  dev.off()
+  rm(total_counts, tc)
   
   # Assay QCs _________________________ ----
   ## Cell lines recovered ----
   print("generating cell_lines_present image")
-  recovery= filtered_counts %>% ungroup() %>% 
-    dplyr::filter(!is.na(CCLE_name)) %>%
+  recovery= annotated_counts %>% dplyr::filter(expected_read, !is.na(CCLE_name)) %>%
     merge(cell_set_meta, by="cell_set", all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), cell_set, members), # for custom cell sets
                   expected_num_cl = as.character(members) %>% purrr::map(strsplit, ";") %>% 
@@ -187,55 +121,22 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
       width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
   print(cl_rec)
   dev.off()
+  rm(recovery, cl_rec)
   
-  ## Fraction of cell lines with low counts ----
-  low_cls= filtered_counts %>% dplyr::filter(n < count_threshold, is.na(Name)) %>%
-    dplyr::group_by(project_code, pcr_plate, pcr_well, cell_set) %>%
-    dplyr::summarize(num_low_cl= length(unique(DepMap_ID))) %>% dplyr::ungroup() %>%
-    merge(cell_set_meta, by="cell_set", all.x=T) %>%
-    dplyr::mutate(members= ifelse(is.na(members), cell_set, members), # for custom cell sets
-                  expected_num_cl = as.character(members) %>% purrr::map(strsplit, ";") %>% 
-                    purrr::map(`[[`, 1) %>% purrr::map(length) %>% as.numeric(),
-                  fraction= num_low_cl/expected_num_cl,
-                  p_row= substr(pcr_well, 1, 1),
-                  p_col= str_extract(pcr_well, '\\d+') %>% as.numeric())
-  
-  low_cl_percent= low_cls %>% ggplot(aes(x= as.factor(p_col), y= reorder(p_row, desc(p_row)), 
-                                         fill= fraction, label= round(fraction,2))) +
-    geom_tile(color ='white') + geom_text(size=3) +
-    scale_fill_gradientn(breaks= c(0, 1), 
-                         colours= c('white', 'red'),
-                         limits= c(0, 1), oob=squish) +
-    coord_fixed(1) + facet_wrap(pcr_plate~.) +
-    labs(x= 'plate column', y= 'plate row', fill= 'Fraction of \nlow lines',
-         title= 'Fraction of cell lines with low counts') +
-    theme_bw()
-  
-  pdf(file=paste(out, "low_cl_percent.pdf", sep="/"),
-      width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
-  print(low_cl_percent)
-  dev.off()
-  
-  recurring_low_cl= filtered_counts %>% dplyr::filter(n < count_threshold, is.na(Name), trt_type=='negcon') %>%
-    dplyr::group_by(project_code, CCLE_name, DepMap_ID, cell_set) %>%
-    dplyr::summarize(num_negcon_profiles= n(),
-                     median_n= median(n), max_n= max(n)) %>% dplyr::ungroup() %>%
-    dplyr::arrange(desc(num_negcon_profiles))
-  recurring_low_cl %>% write.csv(file= paste(out, 'recurring_low_cl.csv', sep='/'), row.names=F)
-  #
   ## Contaminants ----
-  contams= annotated_counts %>% 
-    dplyr::filter(!is.na(pcr_plate), !is.na(pcr_well), expected_read==F, !is.na(CCLE_name) | !is.na(Name)) %>%
+  contams= annotated_counts %>% dplyr::filter(expected_read==F) %>%
     dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
     dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
     dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
     dplyr::arrange(desc(num_wells))
+  
   contams %>% write.csv(file= paste(out, 'contams.csv', sep='/'), row.names=F)
+  rm(contams)
   #
   
   ## Cumulative counts by lines in negcons ----
   print("generating cummulative image")
-  cdf= filtered_counts %>% ungroup() %>% 
+  cdf= annotated_counts %>% dplyr::filter(expected_read) %>% 
     dplyr::filter(trt_type=='negcon') %>% # filter for only negative controls
     merge(cell_set_meta, by="cell_set", all.x=T) %>%
     dplyr::mutate(members= ifelse(is.na(members), cell_set, members), # for custom cell cets
@@ -284,24 +185,33 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
       width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
   print(cdf_plot)
   dev.off()
+  rm(cdf, mark50, mark95, cdf_plot)
   
   ## Control barcode trends ----
   if(contains_cbs & is.data.frame(normalized_counts)) {
     print("generating control_barcode_trend image")
-    cb_trend= normalized_counts %>% 
-      dplyr::filter(control_barcodes %in% c("Y", "T", T),
-                    !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type),
-                    !is.na(Name)) %>%
-      dplyr::group_by(profile_id) %>%
-      dplyr::mutate(mean_y= mean(log2_dose),
-                    residual2= (log2_dose - log2_normalized_n)^2,
-                    squares2= (log2_dose - mean_y)^2,
-                    r2= 1 - sum(residual2)/sum(squares2)) %>% ungroup()
     
-    trend_sc= cb_trend %>% dplyr::mutate(profile_id= reorder(profile_id, r2)) %>%
+    # calculate r2 and mae if columns do not exist
+    if (!'r2' %in% colnames(normalized_counts) | !'r2' %in% colnames(normalized_counts)) {
+      cb_trend= normalized_counts %>%
+        dplyr::filter(control_barcodes %in% c("Y", "T", T),
+                      !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type),
+                      !is.na(Name)) %>%
+        dplyr::group_by(profile_id) %>%
+        dplyr::mutate(mean_y= mean(log2_dose),
+                      residual2= (log2_dose - log2_normalized_n)^2,
+                      squares2= (log2_dose - mean_y)^2,
+                      r2= 1 - sum(residual2)/sum(squares2),
+                      mae= median(abs(log2_dose- log2_normalized_n))) %>% ungroup()
+    } else {
+      cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name))
+    }
+    
+    trend_sc= cb_trend %>% dplyr::mutate(profile_id= reorder(profile_id, desc(mae))) %>%
       ggplot(aes(x=log2_n, y=log2_dose)) + geom_point() +
       geom_abline(aes(slope=1, intercept= cb_intercept) , color='blue') +
-      geom_text(aes(x= min(log2_n), y= desc(sort(unique(log2_dose)))[1], label= paste('r2=', round(r2, 4), sep='')), 
+      geom_text(aes(x= min(log2_n), y= desc(sort(unique(log2_dose)))[1], 
+                    label= paste('r2=', round(r2, 4), '\nmae=', round(mae, 4), sep='')), 
                 hjust='inward', vjust='inward') +
       facet_wrap(~profile_id, scales= 'free_x') +
       labs(x= 'log2(n)', y= 'log2(dose)') + theme_bw()
@@ -310,24 +220,12 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
         width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
     print(trend_sc)
     dev.off()
-    
-    trend_hist= cb_trend %>% 
-      dplyr::distinct(project_code, profile_id, pcr_plate, pcr_well, cb_intercept, r2) %>%
-      ggplot(aes(x=r2, fill= as.factor(pcr_plate))) +
-      geom_histogram(binwidth=0.01, color='black', alpha=0.5) +
-      labs(x= 'Sample R2', y= 'Frequency', fill= 'Plate', 
-           title= 'Distribution of control barcode trend R2 values') + 
-      theme_bw()
-    
-    pdf(file=paste(out, "control_barcode_trend_histogram.pdf", sep="/"),
-        width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
-    print(trend_hist)
-    dev.off()
+    rm(cb_trend, trend_sc)
   }
   
   ## Sample correlation -----
   print("generating sample_cor image")
-  correlation_matrix= filtered_counts %>% dplyr::ungroup() %>% 
+  correlation_matrix= annotated_counts %>% dplyr::filter(expected_read) %>% 
     dplyr::filter(!is.na(CCLE_name),
            (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
     dplyr::mutate(log2_n = log2(n +1)) %>% 
@@ -345,28 +243,11 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
       width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
   print(cp)
   dev.off()
+  rm(correlation_matrix, cp)
   
   ## Tech rep correlations ----
   # assumes that tech reps are the last component of profile_id
   if('tech_rep' %in% colnames(normalized_counts)) {
-    tech_rep_cors= normalized_counts %>% reshape2::acast(DepMap_ID+Name~profile_id, value.var= 'log2_n') %>%
-      cor(method='pearson', use='pair') %>% melt() %>%
-      dplyr::mutate(bio_rep_id1= str_replace(Var1, ':\\d+$', ''),
-                    tech_rep_val1= str_extract(Var1, '\\d+$') %>% as.numeric(),
-                    bio_rep_id2= str_replace(Var2, ':\\d+$', ''),
-                    tech_rep_val2= str_extract(Var2, '\\d+$') %>% as.numeric()) %>%
-      dplyr::filter(bio_rep_id1 == bio_rep_id2, tech_rep_val2 > tech_rep_val1)
-    
-    tech_rep_hist= tech_rep_cors %>% ggplot(aes(x= value)) + geom_histogram() + 
-      labs(x= 'Tech rep correlations', y= 'Frequency',
-           title= 'Histogram of Tech rep corrleations') + 
-      theme_bw()
-    
-    pdf(file=paste(out, "tech_rep_hist.pdf", sep="/"),
-        width=sqrt(num_profiles), height=sqrt(num_profiles))
-    print(tech_rep_hist)
-    dev.off()
-    
     if(max(unique(normalized_counts$tech_rep)) == 2) {
       print("generating tech rep correlations image")
    
@@ -432,24 +313,6 @@ QC_images = function(sample_meta, annotated_counts, filtered_counts, normalized_
       pdf(file=paste(out, "bio_corr_hm.pdf", sep="/"),
           width=sqrt(num_profiles), height=sqrt(num_profiles))
       print(bio_corr_hm)
-      dev.off()
-      
-      # bio cor histogram
-      bio_rep_cor_long= bio_corr %>% melt() %>%
-        dplyr::mutate(id1= str_replace(Var1, ':\\d+$', ''),
-                      br1= str_extract(Var1, '\\d+$') %>% as.numeric(),
-                      id2= str_replace(Var2, ':\\d+$', ''),
-                      br2= str_extract(Var2, '\\d+$') %>% as.numeric()) %>%
-        dplyr::filter(id1==id2, br2>br1)
-      
-      bio_rep_hist= bio_rep_cor_long %>% ggplot(aes(x= value)) + geom_histogram() + 
-        labs(x= 'Bio rep correlations', y= 'Frequency',
-             title= 'Histogram of bio rep corrleations') + 
-        theme_bw()
-      
-      pdf(file=paste(out, "bio_rep_hist.pdf", sep="/"),
-          width=sqrt(num_profiles), height=sqrt(num_profiles))
-      print(bio_rep_hist)
       dev.off()
     }
   }
