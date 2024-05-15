@@ -49,6 +49,7 @@ parser$add_argument("--count_threshold", default= 40, help = "Low counts thresho
 parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
 parser$add_argument("--pool_id", action="store_true", default=FALSE, help = "Pull pool IDs from CellDB.")
+parser$add_argument("--control type", default="negcon", help = "negative control wells in trt_type column in sample metadata")
 
 
 # get command line options, if help option encountered print help and exit
