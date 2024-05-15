@@ -40,6 +40,7 @@ parser$add_argument("--count_col_name", default="normalized_n",
 parser$add_argument("--count_threshold", default=40, 
                     help = "Low counts threshold")
 parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
+parser$add_argument("--control_type", default = "negcon", help = "how negative control wells are distinguished in the trt_type column")
 # parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
@@ -63,6 +64,7 @@ count_col_name = args$count_col_name
 count_threshold_arg= args$count_threshold
 count_threshold = as.numeric(count_threshold_arg)
 cell_set_meta = read.csv(args$cell_set_meta)
+control_type = args$control_type
 
 # # If flag passed, use cell_set_meta file generated for the project via CellDB
 # if (args$db_flag) {
@@ -81,7 +83,11 @@ QC_images(sample_meta= sample_meta,
           annotated_counts= annotated_counts, 
           raw_counts= raw_counts,
           normalized_counts= normalized_counts,
-          CB_meta= CB_meta, cell_set_meta= cell_set_meta, 
+          CB_meta= CB_meta, 
+          cell_set_meta= cell_set_meta, 
+          control_type = control_type,
           out= args$out, 
-          sig_cols= sig_cols, count_col_name= count_col_name, count_threshold= count_threshold,
+          sig_cols= sig_cols, 
+          count_col_name= count_col_name, 
+          count_threshold= count_threshold,
           reverse_index2= args$reverse_index2)
