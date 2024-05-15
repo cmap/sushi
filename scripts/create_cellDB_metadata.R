@@ -96,5 +96,4 @@ write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
 # Writing out assay_pool_df
 assay_pool_out_file = paste(args$out, 'assay_pool_meta.csv', sep='/')
 print(paste("writing assay_pools to: ", assay_pool_out_file))
-write.csv(assay_pools_df, assay_pool_out_file, row.names=F, quote=F)
-
+write.table(assay_pools_df, assay_pool_out_file, row.names=F, quote=F, sep="\t")
