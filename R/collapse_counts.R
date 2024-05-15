@@ -22,5 +22,3 @@ collapse_counts = function(l2fc) {
   
   return(collapsed_counts)
 }
-
-# test comment
