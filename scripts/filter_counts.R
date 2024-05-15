@@ -129,6 +129,11 @@ qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
 print(paste("writing QC_table to: ", qc_out_file))
 write.csv(qc_table, qc_out_file, row.names=F, quote=F)
 
+unmapped_reads= filtered_counts$unmapped_reads
+unmapped_out = paste(args$out, 'unmapped_reads.csv', sep='/')
+print(paste("writing unmapped reads to: ", unmapped_out))
+write.csv(unmapped_reads, unmapped_out, row.names=F)
+
 annotated_counts = filtered_counts$annotated_counts
 annot_out_file = paste(args$out, 'annotated_counts.csv', sep='/')
 print(paste("writing annotated counts to: ", annot_out_file))
