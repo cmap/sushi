@@ -42,7 +42,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   # Detect control barcodes
   cb_check= sample_meta %>%
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
-                  !(trt_type %in% c("empty", "", "CB_only", "ctl_untrt")) & !is.na(trt_type))
+                  !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   contains_cbs= ifelse(nrow(cb_check)!= 0, T, F)
   #
   
@@ -197,7 +197,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
     if (!'r2' %in% colnames(normalized_counts) | !'r2' %in% colnames(normalized_counts)) {
       cb_trend= normalized_counts %>%
         dplyr::filter(control_barcodes %in% c("Y", "T", T),
-                      !(trt_type %in% c("empty", "", "CB_only", "ctl_untrt")) & !is.na(trt_type),
+                      !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type),
                       !is.na(Name)) %>%
         dplyr::group_by(profile_id) %>%
         dplyr::mutate(mean_y= mean(log2_dose),
@@ -229,7 +229,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   print("generating sample_cor image")
   correlation_matrix= annotated_counts %>% dplyr::filter(expected_read) %>% 
     dplyr::filter(!is.na(CCLE_name),
-           (!trt_type %in% c("empty", "", "CB_only", "ctl_untrt")) & !is.na(trt_type)) %>% 
+           (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
     dplyr::mutate(log2_n = log2(n +1)) %>% 
     reshape2::dcast(CCLE_name~profile_id, value.var="log2_n") %>% 
     column_to_rownames("CCLE_name") %>% 
@@ -280,14 +280,14 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   ## Bio rep correlations ----
   if('bio_rep' %in% colnames(normalized_counts)) {
     num_bio_reps= normalized_counts %>% 
-      dplyr::filter((!trt_type %in% c("empty", "", "CB_only", "ctl_untrt")) & !is.na(trt_type)) %>% 
+      dplyr::filter((!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
       pull(bio_rep) %>% unique() %>% length()
     
     if(num_bio_reps > 1) {
       print("generating bio rep correlations image")
       # collapse tech reps taken from 'compute_l2fc'
       collapsed_tech_rep= normalized_counts %>%
-        dplyr::filter(!(trt_type %in% c("empty", "", "CB_only", "ctl_untrt")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
+        dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
         dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
                                                'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 
                                                'log2_normalized_n', 'flag', count_col_name))) %>% 
@@ -297,7 +297,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
       
       bio_corr= collapsed_tech_rep %>% ungroup() %>% 
         filter(!is.na(CCLE_name),
-               (!trt_type %in% c("empty", "", "CB_only", "ctl_untrt")) & !is.na(trt_type)) %>% 
+               (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
         mutate(plt_id= paste(sig_id, bio_rep, sep=':')) %>% 
         dcast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
         column_to_rownames("CCLE_name") %>% 
