@@ -28,6 +28,7 @@ suppressPackageStartupMessages(library(sets))
 #'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
 #' @param reverse_index2 Reverses index2 for certain sequencers
 #' @param count_threshold Threshold to call low counts. 
+#' @param control_type - how the negative controls are designated in the trt_type column in the sample metadata
 #' @return - list with the following elements
 #' #' \itemize{
 #'   \item unmapped_reads: table of reads with valid index pairs but did not map to any known barcode.
