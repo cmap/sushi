@@ -41,7 +41,7 @@ parser$add_argument("-o", "--out", default="", help = "Output path. Default is w
 parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
 parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
-parser$add_argument("--assay_pool_meta", default="assay_pool_meta.csv", help = "Assay pool metadata")
+parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
                     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
@@ -112,7 +112,7 @@ filtered_counts = filter_raw_reads(
 
 # Pulling pool_id when db_flag and pool_id flags are passed
 if (args$pool_id) {
-  assay_pool_meta = read.csv(args$assay_pool_meta)
+  assay_pool_meta = read.delim(args$assay_pool_meta)
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   assay_pool_meta <- assay_pool_meta[assay_pool_meta$davepool_id %in% unique_cell_sets,] %>% 
     select(pool_id, ccle_name, davepool_id, depmap_id)
