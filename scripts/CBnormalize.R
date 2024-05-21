@@ -13,6 +13,7 @@ parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 parser$add_argument("--pseudocount", default=20, help = "pseudo count for normalization")
+parser$add_argument("--control_type", default = "negcon", help = "how negative control wells are distinguished in the trt_type column")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
