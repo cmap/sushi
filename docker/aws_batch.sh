@@ -23,6 +23,10 @@ case "$1" in
     shift
     Rscript CBnormalize.R "${@}"
     ;;
+  filteredCounts_QC)
+    shift
+    Rscript filteredCounts_QC.R "${@}"
+    ;;
   compute_l2fc)
     shift
     Rscript compute_l2fc.R "${@}"
