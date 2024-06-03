@@ -15,12 +15,15 @@ parser <- ArgumentParser()
 parser$add_argument("-b", "--base_dir", default="", help="Input Directory with data from whole screen")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 parser$add_argument("-n", "--name", default="", help = "Build name. Default is none")
+parser$add_argument("--control_type", default = "ctl_vehicle", help = "how negative control wells are distinguished in the trt_type column")
+
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
 base_dir <- args$base_dir
 out_dir <- args$out
 build_name <- args$name
+control_type = args$control_type
 
 count_threshold <- 40 ## could be passed as an option in the future
 
@@ -41,7 +44,7 @@ if (length(norm_count_files) == 1) {
 cell_counts_negcon <- norm_counts %>% 
     dplyr::filter(!is.na(CCLE_name)) %>% 
     dplyr::filter(day==10) %>%
-    dplyr::filter(trt_type=="negcon")
+    dplyr::filter(trt_type==control_type)
 
 
 ## get median counts in negcon and apply count threshold to generate the QC table
