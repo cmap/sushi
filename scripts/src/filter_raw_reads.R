@@ -38,15 +38,15 @@ suppressPackageStartupMessages(library(sets))
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
 #' }
 #' @export 
-filter_raw_reads = function(
-  raw_counts, sample_meta, cell_line_meta, 
-  cell_set_meta, CB_meta,
-  id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
-  reverse_index2= FALSE, count_threshold= 40) {
+filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, 
+                            cell_set_meta, CB_meta,
+                            seq_cols= c('IndexBarcode1', 'IndexBarcode2'),
+                            id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
+                            reverse_index2= FALSE, count_threshold= 40) {
   
   require(tidyverse)
   
-  # Processing metadata ---- 
+  # Processing metadata and inputs ---- 
   print("Converting CB_meta from log10 to log2 ...")
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
@@ -54,6 +54,19 @@ filter_raw_reads = function(
     print("Reverse-complementing index 2 barcode ...")
     sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
   }
+  
+  print('Creating vector to join by ...')
+  meta_joining_vector= list()
+  for(item in seq_cols) {
+    if(item=='IndexBarcode1') {
+      meta_joining_vector[['index_1']]= item
+    } else if(item=='IndexBarcode2') {
+      meta_joining_vector[['index_2']]= item
+    } else {
+      meta_joining_vector[[item]]= item
+    }
+  }
+  meta_joining_vector= unlist(meta_joining_vector)
   
   # Filtering by index barcodes ----
   print("Filtering raw counts ...")
@@ -75,8 +88,9 @@ filter_raw_reads = function(
   sample_meta %<>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F)
   template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
-    tidyr::unnest(cols= c(members)) %>%
-    dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one')
+    tidyr::unnest(cols= members) %>%
+    dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one') %>%
+    dplyr::distinct() # to remove duplicate cell lines - cell sets sometime have the same cell line repeated.
   
   # check for control barcodes and add them to the template
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
@@ -89,19 +103,19 @@ filter_raw_reads = function(
   
   # Annotating reads ----
   print("Annotating reads ...")
-  annotated_counts= index_filtered %>% dplyr::filter(mapped) %>% # New: drop unmapped reads
+  annotated_counts= index_filtered %>% dplyr::filter(mapped) %>%
     dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
     dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
-    dplyr::left_join(sample_meta, by= join_by('index_1'=='IndexBarcode1', 'index_2'=='IndexBarcode2'),
-                     relationship= 'many-to-one') %>%
-    dplyr::full_join(template %>% dplyr::mutate(expected_read= T), 
-                     by= c(c('index_1'='IndexBarcode1', 'index_2'='IndexBarcode2', 'forward_read_cl_barcode'='Sequence'),
-                           intersect(colnames(template), colnames(.))),
+    dplyr::left_join(sample_meta, by= meta_joining_vector, relationship= 'many-to-one') %>%
+    dplyr::full_join(template %>% dplyr::mutate(expected_read= T),
+                     by= c(meta_joining_vector, 'forward_read_cl_barcode'='Sequence',
+                           intersect(colnames(template), setdiff(colnames(.), seq_cols))),
                      relationship= 'one-to-one') %>%
-    dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>% # drop unneeded columns
-    dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F)) # fill in any new NAs from merges
+    # drop unneeded columns and fill in any new NAs from the merge
+    dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>%
+    dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
   
   # Generating filtered reads ----
   print("Filtering reads ...")
