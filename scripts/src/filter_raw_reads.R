@@ -24,6 +24,9 @@ suppressPackageStartupMessages(library(sets))
 #'                - Sequence
 #'                - Name
 #'                - log_dose
+#' @param seq_cols Vector of column names from the sample meta that is used to uniquely identify where a
+#'                 sequencing read is coming from. This defaults to "IndexBarcode1" and "IndexBarcode2", but 
+#'                 it can be expanded to include "flowcell_name" and "flowcell_lane".
 #' @param id_cols - vector of column names used to generate unique profile_id for each sample. 
 #'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
 #' @param reverse_index2 Reverses index2 for certain sequencers
@@ -68,10 +71,18 @@ filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta,
   }
   meta_joining_vector= unlist(meta_joining_vector)
   
-  # Filtering by index barcodes ----
-  print("Filtering raw counts ...")
-  index_filtered= raw_counts %>% 
-    dplyr::filter(index_1 %in% unique(sample_meta$IndexBarcode1), index_2 %in% unique(sample_meta$IndexBarcode2)) %>%
+  # Filtering by sequencing columns ----
+  print("Filtering by sequencing columns ...")
+  unique_seq_col_vals= sample_meta %>% dplyr::distinct(pick(all_of(seq_cols)))
+  
+  # check that the sequencing columns can uniquely identify every well
+  if(nrow(unique_seq_col_vals) != nrow(sample_meta)) {
+    print('There may be multiple entries in the sample meta that have the same combination of sequencing columns.')
+    stop('ERROR: The specified sequencing columns do NOT uniquely identify every pcr well.')
+  }
+    
+  index_filtered= raw_counts %>% dplyr::semi_join(unique_seq_col_vals, by= meta_joining_vector) %>%
+    #dplyr::filter(index_1 %in% unique(sample_meta$IndexBarcode1), index_2 %in% unique(sample_meta$IndexBarcode2)) %>%
     dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
   
   # index purity for QC table
