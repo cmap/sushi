@@ -41,8 +41,8 @@ suppressPackageStartupMessages(library(sets))
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
 #' }
 #' @export 
-filter_raw_reads = function(raw_counts, sample_meta, cell_line_meta, 
-                            cell_set_meta, CB_meta,
+filter_raw_reads = function(raw_counts, 
+                            sample_meta, cell_line_meta, cell_set_meta, CB_meta,
                             seq_cols= c('IndexBarcode1', 'IndexBarcode2'),
                             id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
                             reverse_index2= FALSE, count_threshold= 40) {
