@@ -50,6 +50,7 @@ filter_raw_reads = function(raw_counts,
   require(tidyverse)
   
   # Processing metadata and inputs ---- 
+  # CB meta is in log10 and should be converted to log2.
   print("Converting CB_meta from log10 to log2 ...")
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
@@ -58,6 +59,10 @@ filter_raw_reads = function(raw_counts,
     sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
   }
   
+  # Creates a named vector to be used when joining the sample meta.
+  # Specifically, index barcodes have different column names between raw counts and the sample meta.
+  # If an index barcode is used as a sequencing column (from the sample meta), 
+  # then it must be matched to the correct column in raw counts.
   print('Creating vector to join by ...')
   meta_joining_vector= list()
   for(item in seq_cols) {
@@ -70,40 +75,46 @@ filter_raw_reads = function(raw_counts,
     }
   }
   meta_joining_vector= unlist(meta_joining_vector)
+  # If seq_col contains "IndexBarcode1", then meta_joining_vector contains "index_1"="IndexBarcode1"
   
-  # Filtering by sequencing columns ----
-  print("Filtering by sequencing columns ...")
+  # QC: Check that sequencing columns can uniquely identify every PCR well ----
   unique_seq_col_vals= sample_meta %>% dplyr::distinct(pick(all_of(seq_cols)))
-  
-  # check that the sequencing columns can uniquely identify every well
   if(nrow(unique_seq_col_vals) != nrow(sample_meta)) {
     print('There may be multiple entries in the sample meta that have the same combination of sequencing columns.')
     stop('ERROR: The specified sequencing columns do NOT uniquely identify every pcr well.')
   }
-    
+  
+  # Filtering by sequencing columns ----
+  # Filter raw counts using the sequencing columns. 
+  # Also create "mapped" column to identify reads that mapped to all known PRISM sequences.
+  print("Filtering by sequencing columns ...")
   index_filtered= raw_counts %>% dplyr::semi_join(unique_seq_col_vals, by= meta_joining_vector) %>%
-    #dplyr::filter(index_1 %in% unique(sample_meta$IndexBarcode1), index_2 %in% unique(sample_meta$IndexBarcode2)) %>%
     dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
   
-  # index purity for QC table
+  # Calculate index purity for QC table.
   index_purity= sum(index_filtered$n)/ sum(raw_counts$n)
   
-  # Mapping barcodes with valid indices ----
+  # Split off unmapped reads ----
+  # Unmapped reads are defined as having valid indices but do not map to barcodes in PRISM.
+  # Also sorted reads in descending order by read count.
   print('Splitting off unmapped reads ...')
-  # unmapped reads are defined as having valid indices but do not map to barcodes in PRISM
   unmapped_reads= index_filtered %>% dplyr::filter(mapped==F) %>% dplyr::select(-mapped) %>% 
     dplyr::arrange(dplyr::desc(n))
   
-  # make template of expected reads
+  # Creating a template of all expected reads in the run ----
+  # Use all 4 meta data files to create a "template" dataframe where
+  # every row is a cell line that is expected in a PCR well. 
   print('Creating template of expected reads ...')
+  # Create "profile_id" column.
   sample_meta %<>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F)
+  # Join cell_set_meta and cell_line_meta. The cell_set can be a name "P939" or a list of LUAs.
   template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     tidyr::unnest(cols= members) %>%
     dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one') %>%
     dplyr::distinct() # to remove duplicate cell lines - cell sets sometime have the same cell line repeated.
   
-  # check for control barcodes and add them to the template
+  # Check for control barcodes and add them to the template.
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
     cb_template= sample_meta %>% dplyr::filter(control_barcodes %in% c('Y', 'T', T)) %>%
       dplyr::mutate(joiner= 'temp') %>%
@@ -113,6 +124,10 @@ filter_raw_reads = function(raw_counts,
   }
   
   # Annotating reads ----
+  # From the set of reads that have the valid seq_col combinations and map to the PRISM seq library,
+  # join in metadata to give each read a name and PCR location.
+  # Reads that to not match to the template are contaminants and,
+  # reads that are only present in the template are missing/not detected by PCR.
   print("Annotating reads ...")
   annotated_counts= index_filtered %>% dplyr::filter(mapped) %>%
     dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
@@ -129,17 +144,20 @@ filter_raw_reads = function(raw_counts,
     dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
   
   # Generating filtered reads ----
+  # Get filtered counts from annotated counts. Also flag reads that are either missing,
+  # or below a count threshold.
   print("Filtering reads ...")
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
     dplyr::select(!any_of(c('index_1', 'index_2', 'forward_read_cl_barcode', 'LUA', 'expected_read'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
-  # cell line purity for QC table
-  cell_line_purity = sum(filtered_counts$n)/ sum(index_filtered$n)
+  # Calculate cell line purity for the QC table.
+  cell_line_purity= sum(filtered_counts$n)/ sum(index_filtered$n)
   
   # Generating QC table ----
-  qc_table = data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
+  print('Generating QC table ...')
+  qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
   
   return(list(unmapped_reads= unmapped_reads, annotated_counts= annotated_counts, 
               filtered_counts= filtered_counts, qc_table= qc_table))
