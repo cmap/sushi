@@ -66,7 +66,8 @@ CB_meta= data.table::fread(args$CB_meta, header= T, sep= ',', data.table= F)
 sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
 raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
 
-# convert strings into vectors
+# Convert strings to vectors ----
+# Also check that column names are present in the sample meta.
 seq_cols= unlist(strsplit(args$seq_cols, ","))
 if (!all(seq_cols %in% colnames(sample_meta))){
   stop(paste("All seq columns not found in sample_meta, check metadata or --seq_cols argument:", args$seq_cols))
@@ -99,6 +100,7 @@ cell_line_meta %<>%
 sample_meta %<>% select(-flowcell_name, -flowcell_lane) %>%
   distinct()
 
+# Run filter_raw_reads -----
 print("creating filtered count file")
 filtered_counts = filter_raw_reads(
   raw_counts,
@@ -126,6 +128,11 @@ if (args$pool_id) {
   filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
     merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
+}
+
+# QC: Basic file size check ----
+if(sum(filtered_counts$filtered_counts$n) == 0) {
+  stop('ERROR: All entries in filtered counts are missing')
 }
 
 # Write out module outputs ----
