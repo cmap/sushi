@@ -15,25 +15,31 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, seq_cols= c('
   require(tidyverse)
   
   # Change flowcell_lane to single lane in uncollapsed_raw_counts ----
-  # prevents name collision in future joins with sample meta
+  # Uncollapsed raw counts's flowcell_lane is a single value, but 
+  # sample meta's flowcell_lane is a string of numbers to parse.
+  # These should be different columns in the event that you need to collapse over different groups of lanes.
   if(!'single_lane' %in% colnames(uncollapsed_raw_counts)) {
     uncollapsed_raw_counts= dplyr::rename(uncollapsed_raw_counts, single_lane= flowcell_lane)
   }
   
   # Determine which flowcell names + lanes are expected ----
-  # flowcell_lane is a string, so parse it by splitting on the chars , ; :
+  # "flowcell_lane" is a string containing a group of lanes, to be parsed by splitting on the chars , ; :
+  # "single_lane" contains the individual lane
   # Note: fread and read.csv keeps commas, read_csv DROPS commas
   meta_flowcells= sample_meta %>% dplyr::distinct(flowcell_name, flowcell_lane) %>%
     dplyr::mutate(single_lane= base::strsplit(flowcell_lane, split='[,;:]', fixed=F)) %>%
     tidyr::unnest(cols= single_lane) %>%
     dplyr::mutate(single_lane= as.numeric(single_lane))
   
+  # Print out expected flowcells from the sample meta.
   print(paste0('Identified ', nrow(meta_flowcells), ' unique flowcell + lane combos in the sample meta ...'))
   print(meta_flowcells)
   
   # QC: Check that all expected flowcell name + lanes are detected ----
-  missing_flowcells= uncollapsed_raw_counts %>% dplyr::distinct(flowcell_name, single_lane) %>%
-    dplyr::anti_join(meta_flowcells, by= c('flowcell_name', 'single_lane'))
+  # Check that all expected flowcell name + lanes are present in uncollapsed raw counts.
+  missing_flowcells= meta_flowcells %>%
+    dplyr::anti_join(uncollapsed_raw_counts %>% dplyr::distinct(flowcell_name, single_lane),
+                     by= c('flowcell_name', 'single_lane'))
   if(nrow(missing_flowcells)!= 0) {
     print('The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
     print(missing_flowcells)
@@ -47,16 +53,26 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, seq_cols= c('
   }
   
   # QC: Check that seq_cols in the sample meta are filled out ----
-  # check for rows in seq_cols that equate to empty - NA, "NA", "", " "
+  # Check for rows in seq_cols that equate to empty - NA, "NA", "", " "
+  # Error out of the seq_cols are not filled out in the sample meta.
   missing_rows_seq_cols= sample_meta %>% dplyr::filter(if_any(all_of(seq_cols), ~ . %in% c(NA, 'NA', '', ' ')))
   if(nrow(missing_rows_seq_cols) > 0) {
     print('The following rows in the sample meta are not filled out for all of the sequencing columns.')
-    print(missing_rows_seq_cols)
+    print(missing_rows_seq_cols) # show the empty rows
     stop('ERROR: One or more seq col in the sample meta is not filled out.')
   }
   
+  # QC: Check that seq_cols uniquely identify rows of sample meta ----
+  # Find the unique combinations of seq_cols and check that it matches the number of row in the sample meta.
+  unique_seq_col_vals= sample_meta %>% dplyr::distinct(pick(all_of(seq_cols)))
+  if(nrow(unique_seq_col_vals) != nrow(sample_meta)) {
+    print('There may be multiple entries in the sample meta that have the same combination of sequencing columns.')
+    stop('ERROR: The specified sequencing columns do NOT uniquely identify every PCR well.')
+  }
+  
   # Convert seq_cols to equivalent names in uncollapsed file ----
-  # column names in uncollapsed_raw_counts are not the same as those in the sample meta
+  # Some columns that represent the same things are called different names 
+  # between the sample meta and uncollapsed raw counts. The following code converts one name to the other. 
   converted_seq_cols= c() 
   for(item in seq_cols) {
     if(item=='IndexBarcode1') {
@@ -69,7 +85,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, seq_cols= c('
   }
   
   # Create raw counts by summing over appropriate seq_cols ----
-  # use an inner join to collect reads with valid flowcell name/lane combinations, then sum using index pairs
+  # Use an inner join to collect reads with valid flowcell name/lane combinations, 
+  # then sum reads across sequencing columns
   raw_counts= uncollapsed_raw_counts %>% 
     dplyr::inner_join(meta_flowcells, by= c('flowcell_name', 'single_lane'), relationship= 'many-to-one') %>%
     dplyr::group_by(pick(all_of(c(converted_seq_cols, 'forward_read_cl_barcode')))) %>% 
