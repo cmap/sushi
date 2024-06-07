@@ -11,7 +11,8 @@ parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", hel
 parser$add_argument("-c", "--uncollapsed_raw_counts", default="raw_counts_uncollapsed.csv",
                     help="path to file containing uncollapsed raw counts file")
 parser$add_argument("--sample_meta", default="sample_meta.csv", help = "Sample metadata")
-parser$add_argument("--seq_cols", default= "IndexBarcode1,IndexBarcode2", help = "Sequencing columns in the sample meta")
+parser$add_argument("--sequencing_index_cols", default= "IndexBarcode1,IndexBarcode2", 
+                    help = "Sequencing columns in the sample meta")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -28,15 +29,16 @@ expected_file_path <- paste(args$out, "raw_counts_uncollapsed.csv", sep='/')
 if(file.exists(expected_file_path)) {
   sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
   uncollapsed_raw_counts= data.table::fread(expected_file_path, header= T, sep= ',', data.table= F)
-  seq_cols= unlist(strsplit(args$seq_cols, ","))
+  sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
   
-  # QC: Check if seq_cols is composed of sample meta column names
-  if (!all(seq_cols %in% colnames(sample_meta))) {
-    stop(paste("Colnames not found in sample_meta, check metadata or --seq_cols argument:", args$seq_cols))
+  # QC: Check if sequencing_index_cols is composed of sample meta column names
+  if (!all(sequencing_index_cols %in% colnames(sample_meta))) {
+    stop(paste("Colnames not found in sample_meta, check metadata or --sequencing_index_cols argument:", 
+               args$sequencing_index_cols))
   }
   
   print("Collating fastq reads")
-  raw_counts= collate_fastq_reads(uncollapsed_raw_counts, sample_meta, seq_cols)
+  raw_counts= collate_fastq_reads(uncollapsed_raw_counts, sample_meta, sequencing_index_cols)
   
   # QC: Basic file size check
   if(nrow(raw_counts) == 0) {
