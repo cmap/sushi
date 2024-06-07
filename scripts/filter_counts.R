@@ -39,7 +39,8 @@ parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help = "Ce
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--seq_cols", default= "IndexBarcode1,IndexBarcode2", help = "Sequencing columns in the sample meta")
+parser$add_argument("--sequencing_index_cols", default= "IndexBarcode1,IndexBarcode2", 
+                    help = "Sequencing columns in the sample meta")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
                     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
@@ -68,9 +69,10 @@ raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= 
 
 # Convert strings to vectors ----
 # Also check that column names are present in the sample meta.
-seq_cols= unlist(strsplit(args$seq_cols, ","))
-if (!all(seq_cols %in% colnames(sample_meta))){
-  stop(paste("All seq columns not found in sample_meta, check metadata or --seq_cols argument:", args$seq_cols))
+sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
+if (!all(sequencing_index_cols %in% colnames(sequencing_index_cols))){
+  stop(paste("All seq columns not found in sample_meta, check metadata or --sequencing_index_cols argument:", 
+             args$sequencing_index_cols))
 }
 
 id_cols= unlist(strsplit(args$id_cols, ","))
@@ -97,8 +99,8 @@ cell_line_meta %<>%
 
 # Remove flowcell_name and lane columns from sample_meta because
 # there is a profile_id duplicate when there are more than 1 seq runs
-sample_meta %<>% select(-flowcell_name, -flowcell_lane) %>%
-  distinct()
+#sample_meta %<>% select(-flowcell_name, -flowcell_lane) %>%
+ # distinct(). # This needs to be removed for sequencing_index_cols to work! - YL
 
 # Run filter_raw_reads -----
 print("creating filtered count file")
@@ -108,7 +110,7 @@ filtered_counts = filter_raw_reads(
   cell_line_meta,
   cell_set_meta,
   CB_meta,
-  seq_cols= seq_cols,
+  sequencing_index_cols= sequencing_index_cols,
   id_cols= id_cols,
   count_threshold= count_threshold,
   reverse_index2= args$reverse_index2
