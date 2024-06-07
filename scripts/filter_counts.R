@@ -19,16 +19,12 @@ suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 ##      args: args object from argparse
 print_args <- function(args){
   config <- data.frame(args=names(args), values=unname(unlist(args)))
-  config_path = paste(
-    args$out,
-    "config.txt",
-    sep="/"
-  )
+  config_path = paste(args$out, "config.txt", sep="/")
   print(paste("Saving config.txt file in :", config_path))
   write_delim(config, config_path, delim = ": ", col_names=F)
 }
 
-# create parser object
+# Create parser object ----
 parser <- ArgumentParser()
 # specify our desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
@@ -43,41 +39,46 @@ parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help = "Ce
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
+parser$add_argument("--seq_cols", default= "IndexBarcode1,IndexBarcode2", help = "Sequencing columns in the sample meta")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
                     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=FALSE, help = "Reverse complement of index 2 for NovaSeq and NextSeq")
+parser$add_argument("--reverse_index2", action="store_true", default=FALSE, 
+                    help = "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
 parser$add_argument("--pool_id", action="store_true", default=FALSE, help = "Pull pool IDs from CellDB.")
-parser$add_argument("--control_type", default="negcon", help = "negative control wells in trt_type column in sample metadata")
-
+parser$add_argument("--control_type", default="negcon", 
+                    help = "negative control wells in trt_type column in sample metadata")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
-#Save arguments
+# set output to working directory if none is specified
 if (args$out == ""){
   args$out = args$wkdir
 }
 #print_args(args)
 
-cell_set_meta = read.csv(args$cell_set_meta)
-cell_line_meta = read.csv(args$cell_line_meta)
-CB_meta = read.csv(args$CB_meta)
-sample_meta = read.csv(args$sample_meta)
-raw_counts = read.csv(args$raw_counts)
+# Read in files and set up parameters ----
+cell_set_meta= data.table::fread(args$cell_set_meta, header= T, sep= ',', data.table= F)
+cell_line_meta= data.table::fread(args$cell_line_meta, header= T, sep= ',', data.table= F)
+CB_meta= data.table::fread(args$CB_meta, header= T, sep= ',', data.table= F)
+sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
+raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
 
-#split id_cols args
-id_cols = unlist(strsplit(args$id_cols, ","))
-
-if (!all(id_cols %in% colnames(sample_meta))){
-  stop(paste("Colnames not found in sample_meta, check metadata or --id_cols argument:", args$id_cols))
+# convert strings into vectors
+seq_cols= unlist(strsplit(args$seq_cols, ","))
+if (!all(seq_cols %in% colnames(sample_meta))){
+  stop(paste("All seq columns not found in sample_meta, check metadata or --seq_cols argument:", args$seq_cols))
 }
 
-sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':'))
+id_cols= unlist(strsplit(args$id_cols, ","))
+if (!all(id_cols %in% colnames(sample_meta))){
+  stop(paste("All id columns not found in sample_meta, check metadata or --id_cols argument:", args$id_cols))
+}
 
-count_threshold_arg= args$count_threshold
-count_threshold = as.numeric(count_threshold_arg)
+#sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':')) # this is created in function
+count_threshold = as.numeric(args$count_threshold)
 
 # make sure LUA codes in cell line meta are unique
 cell_line_meta %<>% 
@@ -105,9 +106,10 @@ filtered_counts = filter_raw_reads(
   cell_line_meta,
   cell_set_meta,
   CB_meta,
-  id_cols=id_cols,
-  count_threshold=count_threshold,
-  reverse_index2=args$reverse_index2
+  seq_cols= seq_cols,
+  id_cols= id_cols,
+  count_threshold= count_threshold,
+  reverse_index2= args$reverse_index2
 )
 
 # Pulling pool_id when db_flag and pool_id flags are passed
@@ -118,13 +120,15 @@ if (args$pool_id) {
     select(pool_id, ccle_name, davepool_id, depmap_id)
   
   filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
-    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
+    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
+          by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
   
   filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
-    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
+    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
+          by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
 }
 
-# Write out module outputs
+# Write out module outputs ----
 qc_table = filtered_counts$qc_table
 qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
 print(paste("writing QC_table to: ", qc_out_file))
