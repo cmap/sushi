@@ -70,8 +70,8 @@ raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= 
 # Convert strings to vectors ----
 # Also check that column names are present in the sample meta.
 sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
-if (!all(sequencing_index_cols %in% colnames(sequencing_index_cols))){
-  stop(paste("All seq columns not found in sample_meta, check metadata or --sequencing_index_cols argument:", 
+if (!all(sequencing_index_cols %in% colnames(sample_meta))){
+  stop(paste("All seq columns not found in sample_meta, check metadata or --sequencing_index_cols argument:",
              args$sequencing_index_cols))
 }
 
