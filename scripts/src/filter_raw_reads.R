@@ -152,8 +152,8 @@ filter_raw_reads = function(raw_counts,
   # or below a count threshold.
   print("Filtering reads ...")
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
-    dplyr::select(!any_of(c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2', 'forward_read_cl_barcode',
-                            'LUA', 'expected_read'))) %>%
+    dplyr::select(!any_of(c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2', 'IndexBarcode1', 'IndexBarcode2',
+                            'forward_read_cl_barcode', 'LUA', 'expected_read'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
