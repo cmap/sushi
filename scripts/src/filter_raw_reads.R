@@ -58,7 +58,7 @@ filter_raw_reads = function(
   # Filtering by index barcodes ----
   print("Filtering raw counts ...")
   index_filtered= raw_counts %>% 
-    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
+    dplyr::filter(index_1 %in% unique(sample_meta$IndexBarcode1), index_2 %in% unique(sample_meta$IndexBarcode2)) %>%
     dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
   
   # index purity for QC table
@@ -75,8 +75,8 @@ filter_raw_reads = function(
   sample_meta %<>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F)
   template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
-    tidyr::unnest(cols=c(members)) %>%
-    dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA')) # NEW
+    tidyr::unnest(cols= c(members)) %>%
+    dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one')
   
   # check for control barcodes and add them to the template
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
@@ -90,16 +90,18 @@ filter_raw_reads = function(
   # Annotating reads ----
   print("Annotating reads ...")
   annotated_counts= index_filtered %>% dplyr::filter(mapped) %>% # New: drop unmapped reads
-    dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence')) %>%
-    dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence')) %>%
-    dplyr::left_join(sample_meta, by= join_by('index_1'=='IndexBarcode1', 'index_2'=='IndexBarcode2')) %>%
-    merge(template %>% dplyr::mutate(expected_read= T),
-          by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
-          by.y= c('IndexBarcode1', 'IndexBarcode2', 'Sequence', intersect(colnames(template), colnames(.))), 
-          all.x=T, all.y=T) %>% 
-    # drop unneeded columns and fill in any new NAs from the merge
-    dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>%
-    dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
+    dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
+                     relationship= 'many-to-one') %>%
+    dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
+                     relationship= 'many-to-one') %>%
+    dplyr::left_join(sample_meta, by= join_by('index_1'=='IndexBarcode1', 'index_2'=='IndexBarcode2'),
+                     relationship= 'many-to-one') %>%
+    dplyr::full_join(template %>% dplyr::mutate(expected_read= T), 
+                     by= c(c('index_1'='IndexBarcode1', 'index_2'='IndexBarcode2', 'forward_read_cl_barcode'='Sequence'),
+                           intersect(colnames(template), colnames(.))),
+                     relationship= 'one-to-one') %>%
+    dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>% # drop unneeded columns
+    dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F)) # fill in any new NAs from merges
   
   # Generating filtered reads ----
   print("Filtering reads ...")
