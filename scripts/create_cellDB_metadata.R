@@ -50,6 +50,7 @@ if (args$out == ""){
 # Fail if control barcode ladder not provided 
 if (args$cb_ladder != ""){
   cb_ladder <- args$cb_ladder
+  print(paste("Selected cb_ladder:", cb_ladder))
 } else {
   stop("Control barcode ladder not specified in arguments.")
 }
@@ -81,8 +82,12 @@ cell_line_meta <- cell_lines_df %>%
          "DepMap_ID" = "depmap_id",
          "CCLE_name" = "ccle_name") %>% dplyr::select(any_of(c(cell_line_cols)))
 
-# Adjusting case sensitivity of the headers in the control_bc_df to match those in the original CB_meta static file
-CB_meta <- control_bc_df %>% rename("Sequence" = "sequence", "Name" = "name")
+# Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
+if (nrow(control_bc_df) > 0) {
+  CB_meta <- control_bc_df %>% rename("Sequence" = "sequence", "Name" = "name")
+} else {
+  print(paste("Since the cb_ladder selected was '", cb_ladder, "', no CB_meta.csv file will be outputted."))
+}
 
 cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta)
 cell_set_meta <- cell_sets[[1]]
@@ -109,8 +114,9 @@ assay_pool_out_file = paste(args$out, 'assay_pool_meta.txt', sep='/')
 print(paste("writing assay_pools to: ", assay_pool_out_file))
 write.table(assay_pools_df, assay_pool_out_file, row.names=F, quote=F, sep="\t")
 
-# Writing out control_barcode_df
-control_barcode_out_file = paste(args$out, 'CB_meta.csv', sep='/')
-print(paste("writing CB_meta to: ", control_barcode_out_file))
-write.csv(CB_meta, control_barcode_out_file, row.names=F, quote=F)
-
+# Writing out control_barcode_df if cb_ladder returned data in control_bc_df
+if (nrow(control_bc_df) > 0) {
+  control_barcode_out_file = paste(args$out, 'CB_meta.csv', sep='/')
+  print(paste("writing CB_meta to: ", control_barcode_out_file))
+  write.csv(CB_meta, control_barcode_out_file, row.names=F, quote=F)
+} 
