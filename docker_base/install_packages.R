@@ -1,7 +1,6 @@
 options(repos = c(
   "https://iwww.broadinstitute.org/~datasci/R-packages",
   "https://cran.rstudio.com/"))
-install.packages('taigr')
 
 options(repos=structure(c(CRAN="http://cran.r-project.org")))
 

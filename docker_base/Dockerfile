@@ -24,9 +24,5 @@ RUN mkdir -p /clue/bin && Rscript /src/install_packages.R
 COPY ./install_sushi_packages.R /src/install_sushi_packages.R
 RUN Rscript /src/install_sushi_packages.R
 RUN apt-get -y update; apt-get -y install curl
-RUN curl -L -o taigr.zip https://github.com/broadinstitute/taigr/archive/master.zip && \
-    unzip taigr.zip && \
-    cd taigr-master && \
-    R CMD INSTALL .
 COPY ./install_sushi_packages2.R /src/install_sushi_packages2.R
 RUN Rscript /src/install_sushi_packages2.R
