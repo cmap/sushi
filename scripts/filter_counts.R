@@ -39,7 +39,7 @@ parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help = "Ce
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--sequencing_index_cols", default= "IndexBarcode1,IndexBarcode2", 
+parser$add_argument("--sequencing_index_cols", default= "index_1,index_2", 
                     help = "Sequencing columns in the sample meta")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
                     help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
@@ -132,10 +132,16 @@ if (args$pool_id) {
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
 }
 
-# QC: Basic file size check ----
+# Validation: Basic file size check ----
 if(sum(filtered_counts$filtered_counts$n) == 0) {
-  stop('ERROR: All entries in filtered counts are missing')
+  stop('All entries in filtered counts are missing!')
 }
+
+cl_entries= filtered_counts %>% dplyr::filter(!is.na(CCLE_name))
+if(sum(cl_entries$n) == 0) {
+  stop('All cell line counts are zero!')
+}
+
 
 # Write out module outputs ----
 qc_table = filtered_counts$qc_table
