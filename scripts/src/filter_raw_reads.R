@@ -1,5 +1,37 @@
 suppressPackageStartupMessages(library(sets))
 
+#' validate_columns_exist
+#' 
+#' This function checks that a list of columns are present in a dataframe.
+#' 
+#' @param selected_columns A vector of strings each representing a column name
+#' @param df A dataframe to check against
+#' @return Boolean
+validate_columns_exist= function(selected_columns, df) {
+  # Check that all of selected_columns are in df
+  if(any(!selected_columns %in% colnames(df))) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+#' validate_unique_samples
+#' 
+#' This function checks that a list of columns uniquely identifies all entries of a dataframe.
+#' 
+#' @param selected_columns A vector of strings each representing a column name
+#' @param df A dataframe to check against
+#' @return Boolean
+validate_unique_samples= function(selected_columns, df) {
+  unique_column_values= df %>% dplyr::distinct(pick(all_of(selected_columns)))
+  if(nrow(unique_column_values) != nrow(df)) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
 #' filter raw reads
 #' 
 #' takes the raw readcount table and filters for expected indices and cell lines
@@ -8,8 +40,8 @@ suppressPackageStartupMessages(library(sets))
 #' @param raw_counts - an unfiltered counts table
 #' @param sample_meta - the sample metadata for the particular experiment. Must follow the given set of 
 #'                      guidelines for metadata. Required columns include:
-#'                      - IndexBarcode1
-#'                      - IndexBarcode2
+#'                      - index_1
+#'                      - index_2
 #'                      - cell_set
 #' @param cell_line_meta - master metadata of cell lines with the following required columns:
 #'                       - CCLE_name
@@ -25,8 +57,8 @@ suppressPackageStartupMessages(library(sets))
 #'                - Name
 #'                - log_dose
 #' @param sequencing_index_cols Vector of column names from the sample meta that is used to uniquely identify where a
-#'                              sequencing read is coming from. This defaults to "IndexBarcode1" and "IndexBarcode2", but 
-#'                              it can be expanded to include "flowcell_name" and "flowcell_lane".
+#'                              sequencing read is coming from. This defaults to "index_1" and "index_2", but 
+#'                              it can be expanded to include "flowcell_names" and "flowcell_lanes".
 #' @param id_cols - vector of column names used to generate unique profile_id for each sample. 
 #'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
 #' @param reverse_index2 Reverses index2 for certain sequencers
@@ -43,7 +75,7 @@ suppressPackageStartupMessages(library(sets))
 #' @export 
 filter_raw_reads = function(raw_counts, 
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
-                            sequencing_index_cols= c('IndexBarcode1', 'IndexBarcode2'),
+                            sequencing_index_cols= c('index_1', 'index_2'),
                             id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
                             reverse_index2= FALSE, count_threshold= 40) {
   
@@ -56,45 +88,37 @@ filter_raw_reads = function(raw_counts,
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
   if (reverse_index2) {
-    if ('IndexBarcode2' %in% colnames(sample_meta)) {
+    if ('index_2' %in% colnames(sample_meta)) {
       print("Reverse-complementing index 2 barcode ...")
-      sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
+      sample_meta$index_2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
     } else {
-      stop('ERROR: Reverse index 2 is set to TRUE, but IndexBarcode2 does nto exists.')
+      stop('ERROR: Reverse index 2 is set to TRUE, but index_2 does nto exists.')
     }
   }
   
-  # Creates a named vector to be used when joining the sample meta.
-  # Specifically, index barcodes have different column names between raw counts and the sample meta.
-  # If an index barcode is used as a sequencing column (from the sample meta), 
-  # then it must be matched to the correct column in raw counts.
-  print('Creating vector to join by ...')
-  meta_joining_vector= list()
-  for(item in sequencing_index_cols) {
-    if(item=='IndexBarcode1') {
-      meta_joining_vector[['index_1']]= item
-    } else if(item=='IndexBarcode2') {
-      meta_joining_vector[['index_2']]= item
-    } else {
-      meta_joining_vector[[item]]= item
-    }
+  # Validation: Check that sequencing_index_cols exist in the sample meta ----
+  if(!validate_columns_exist(sequencing_index_cols, sample_meta)) {
+    stop('One or more sequencing_index_cols is NOT present in the sample meta.')
   }
-  meta_joining_vector= unlist(meta_joining_vector)
-  # If sequencing_index_cols contains "IndexBarcode1", then meta_joining_vector contains "index_1"="IndexBarcode1"
   
-  # QC: Check that sequencing columns can uniquely identify every PCR well ----
-  unique_sequencing_index_vals= sample_meta %>% dplyr::distinct(pick(all_of(sequencing_index_cols)))
-  if(nrow(unique_sequencing_index_vals) != nrow(sample_meta)) {
+  # Validation: Check that id_cols exist in the sample meta ----
+  if(!validate_columns_exist(id_cols, sample_meta)) {
+    stop('One or more id_cols is NOT present in the sample meta.')
+  }
+  
+  # Validation: Check that sequencing_index_cols uniquely identify every rows of sample meta ----
+  if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
     print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
-    stop('ERROR: The specified sequencing index columns do NOT uniquely identify every PCR well.')
+    stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
   }
   
   # Filtering by sequencing columns ----
   # Filter raw counts using the sequencing columns. 
   # Also create "mapped" column to identify reads that mapped to all known PRISM sequences.
   print("Filtering by sequencing columns ...")
-  index_filtered= raw_counts %>% dplyr::semi_join(unique_sequencing_index_vals, by= meta_joining_vector) %>%
-    dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
+  unique_sequencing_index_vals= sample_meta %>% dplyr::distinct(pick(all_of(sequencing_index_cols)))
+  index_filtered= raw_counts %>% dplyr::semi_join(unique_sequencing_index_vals, by= sequencing_index_cols) %>%
+    dplyr::mutate(mapped= forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence))
   
   # Calculate index purity for QC table.
   index_purity= sum(index_filtered$n)/ sum(raw_counts$n)
@@ -139,10 +163,9 @@ filter_raw_reads = function(raw_counts,
                      relationship= 'many-to-one') %>%
     dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
-    dplyr::left_join(sample_meta, by= meta_joining_vector, relationship= 'many-to-one') %>%
+    dplyr::left_join(sample_meta, by= sequencing_index_cols, relationship= 'many-to-one') %>%
     dplyr::full_join(template %>% dplyr::mutate(expected_read= T),
-                     by= c(meta_joining_vector, 'forward_read_cl_barcode'='Sequence',
-                           intersect(colnames(template), setdiff(colnames(.), sequencing_index_cols))),
+                     by= c('forward_read_cl_barcode'='Sequence', intersect(colnames(template), colnames(.))),
                      relationship= 'one-to-one') %>%
     # drop unneeded columns and fill in any new NAs from the merge
     dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>%
@@ -153,7 +176,7 @@ filter_raw_reads = function(raw_counts,
   # or below a count threshold.
   print("Filtering reads ...")
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
-    dplyr::select(!any_of(c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2', 'IndexBarcode1', 'IndexBarcode2',
+    dplyr::select(!any_of(c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2', 
                             'forward_read_cl_barcode', 'LUA', 'expected_read'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
