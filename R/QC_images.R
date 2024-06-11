@@ -80,21 +80,21 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   print("Generating index counts tables")
   # Check that "IndexBarcode1" and "index_1" columns are present.
   # If so, calculate index summary and write out.
-  if('IndexBarcode1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts)) {
-    expected_index1= unique(sample_meta$IndexBarcode1)
+  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts)) {
+    expected_index1= unique(sample_meta$index_1)
     index1_counts= get_index_summary(raw_counts, 'index_1', expected_index1)
     index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
   } else {
-    print('Columns IndexBarcode1 and/or index_1 are not detected. Skipping index 1 summaries ...')
+    print('Column "index_1" not detected. Skipping index 1 summaries ...')
   }
   
   # Do the same for index 2.
-  if('IndexBarcode2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts)) {
-    expected_index2= unique(sample_meta$IndexBarcode2)
+  if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts)) {
+    expected_index2= unique(sample_meta$index_2)
     index2_counts= get_index_summary(raw_counts, 'index_2', expected_index2)
     index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
   } else {
-    print('Columns IndexBarcode2 and/or index_2 are not detected. Skipping index 2 summaries ...')
+    print('Column "index_2" not detected. Skipping index 2 summaries ...')
   }
   
   ## Total counts ----
