@@ -9,7 +9,7 @@
 #' @param sample_meta Sample metadata generate for the project  
 #' @param sequencing_index_cols Sequencing columns from the sample meta that the counts should be collapsed on. \cr
 #'                              This defaults onto the following columns: "IndexBarcode1", "IndexBarcode2"
-#' @returns Returns a dataframe with the following columns - "index_1", "index_2", and "n"
+#' @returns Returns a dataframe with columns specified by the sequencing_index_cols, "forward_read_cl_barcode", and "n".
 #' @import tidyverse
 collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, 
                               sequencing_index_cols= c('IndexBarcode1', 'IndexBarcode2')) {
@@ -25,10 +25,10 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   
   # Determine which flowcell names + lanes are expected ----
   # "flowcell_lane" is a string containing a group of lanes, to be parsed by splitting on the chars , ; :
-  # "single_lane" contains the individual lane
+  # "single_lane" contains the individual lane as a number.
   # Note: fread and read.csv keeps commas, read_csv DROPS commas
   meta_flowcells= sample_meta %>% dplyr::distinct(flowcell_name, flowcell_lane) %>%
-    dplyr::mutate(single_lane= base::strsplit(flowcell_lane, split='[,;:]', fixed=F)) %>%
+    dplyr::mutate(single_lane= base::strsplit(flowcell_lane, split='[,;:]', fixed=F)) %>% 
     tidyr::unnest(cols= single_lane) %>%
     dplyr::mutate(single_lane= as.numeric(single_lane))
   
