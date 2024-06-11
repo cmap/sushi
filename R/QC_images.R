@@ -405,7 +405,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
         filter(!is.na(CCLE_name),
                (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
         mutate(plt_id= paste(sig_id, bio_rep, sep=':')) %>% 
-        dcast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
+        reshape2::dcast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
         column_to_rownames("CCLE_name") %>% 
         cor(use="pairwise.complete.obs")
       
