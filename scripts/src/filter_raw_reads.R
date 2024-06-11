@@ -48,6 +48,7 @@ filter_raw_reads = function(raw_counts,
                             reverse_index2= FALSE, count_threshold= 40) {
   
   require(tidyverse)
+  require(magrittr)
   
   # Processing metadata and inputs ---- 
   # CB meta is in log10 and should be converted to log2.
