@@ -56,6 +56,11 @@ get_index_summary= function(df, index_col, valid_indices) {
 QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_counts= NA,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
                      control_type, count_threshold= 40, reverse_index2= FALSE) {
+  require(tidyverse)
+  require(magrittr)
+  require(reshape2)
+  require(scales)
+  
   if(is.na(out)) {
     out = getwd()
   }
@@ -65,7 +70,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   # Reverse index 2 barcodes
   if(reverse_index2) {
     print("Reverse-complementing index 2 barcode.")
-    sample_meta$IndexBarcode2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
+    sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
   }
   
   # Detect control barcodes
