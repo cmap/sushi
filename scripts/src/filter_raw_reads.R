@@ -32,6 +32,26 @@ validate_unique_samples= function(selected_columns, df) {
   }
 }
 
+#' validate_cell_set_luas
+#' 
+#' This function checks that every cell set in the sample meta does not contain duplicate members.
+#' If a cell set has duplicate LUAs, a warning is printed.
+#' 
+#' @param sample_meta The sample_meta df with the column "cell_set".
+#' @param cell_set_meta The cell_set_meta df with the columns "cell_set" and "members".
+validate_cell_set_luas= function(sample_meta, cell_set_meta) {
+  duplicate_luas= cell_set_meta %>% dplyr::filter(cell_set %in% unique(sample_meta$cell_set)) %>%
+    dplyr::mutate(members= str_split(members, ';')) %>%
+    tidyr::unnest(cols= 'members') %>%
+    dplyr::count(cell_set, members, name= 'count') %>% dplyr::filter(count > 1)
+  
+  if(nrow(duplicate_luas) > 0) {
+    print('WARNING: The following LUAs appear more than once in a cell set!!!')
+    print(duplicate_luas)
+    print('The module will continue, but check the cell_set meta!!!')
+  }
+}
+
 #' filter raw reads
 #' 
 #' takes the raw readcount table and filters for expected indices and cell lines
@@ -92,7 +112,7 @@ filter_raw_reads = function(raw_counts,
       print("Reverse-complementing index 2 barcode ...")
       sample_meta$index_2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
     } else {
-      stop('ERROR: Reverse index 2 is set to TRUE, but index_2 does nto exists.')
+      stop('ERROR: Reverse index 2 is set to TRUE, but index_2 does not exists.')
     }
   }
   
@@ -111,6 +131,11 @@ filter_raw_reads = function(raw_counts,
     print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
     stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
   }
+  
+  # Validation: Check that cell sets do not contain duplicate LUAs ----
+  # This will produce a warning if a LUA appears in a cell set more than once!
+  # This currently does NOT result in an error. Error avoided using a distinct later in line 169
+  validate_cell_set_luas(sample_meta, cell_set_meta)
   
   # Filtering by sequencing columns ----
   # Filter raw counts using the sequencing columns. 
@@ -141,7 +166,8 @@ filter_raw_reads = function(raw_counts,
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     tidyr::unnest(cols= members) %>%
     dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one') %>%
-    dplyr::distinct() # to remove duplicate cell lines - cell sets sometime have the same cell line repeated.
+    dplyr::distinct() # To remove duplicate cell lines - cell sets sometimes have the same cell line repeated.
+  # May need to replace distinct with an error later!
   
   # Check for control barcodes and add them to the template.
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
