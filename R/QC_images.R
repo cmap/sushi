@@ -134,8 +134,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
                     purrr::map(`[[`, 1) %>% purrr::map(length) %>% as.numeric(),
                   count_type= ifelse(n > count_threshold, 'Detected', 'Low'),
                   count_type= ifelse(n==0, 'Missing', count_type)) %>%
-    group_by(profile_id, pcr_plate, pcr_well, count_type, expected_num_cl) %>% 
-    dplyr::summarise(count= dplyr::n()) %>% 
+    dplyr::count(profile_id, pcr_plate, pcr_well, count_type, expected_num_cl, name= 'count') %>%
     dplyr::mutate(frac_type= count/expected_num_cl)
   
   cl_rec= recovery %>% ggplot() +
@@ -410,8 +409,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
         filter(!is.na(CCLE_name),
                (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
         mutate(plt_id= paste(sig_id, bio_rep, sep=':')) %>% 
-        reshape2::dcast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
-        column_to_rownames("CCLE_name") %>% 
+        reshape2::acast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
         cor(use="pairwise.complete.obs")
       
       bio_corr_hm= bio_corr %>% melt() %>% ggplot() +
