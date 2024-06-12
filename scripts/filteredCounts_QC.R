@@ -15,14 +15,13 @@ suppressPackageStartupMessages(library(prismSeqR))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
 suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add fit line and labels
 
+# Parser ----
 parser <- ArgumentParser()
 # specify our desired options 
-parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
-                    help="Print extra output [default]")
-parser$add_argument("-q", "--quietly", action="store_false", 
-                    dest="verbose", help="Print little output")
+parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
+parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
+parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help= "Sample metadata")
 parser$add_argument("--raw_counts", default= "raw_counts.csv", help="path to file containing raw counts")
 parser$add_argument("--annotated_counts", default="annotated_counts.csv",
                     help="path to file containing annotated counts")
@@ -40,7 +39,8 @@ parser$add_argument("--count_col_name", default="normalized_n",
 parser$add_argument("--count_threshold", default=40, 
                     help = "Low counts threshold")
 parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
-parser$add_argument("--control_type", default = "negcon", help = "how negative control wells are distinguished in the trt_type column")
+parser$add_argument("--control_type", default = "negcon",
+                    help = "how negative control wells are distinguished in the trt_type column")
 # parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
 
 # get command line options, if help option encountered print help and exit
@@ -50,11 +50,12 @@ if (args$out == ""){
   args$out = args$wkdir
 }
 
-sample_meta = read.csv(args$sample_meta)
-raw_counts = read.csv(args$raw_counts)
-annotated_counts= read.csv(args$annotated_counts)
+# Read in files and pull out parameters ----
+sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
+raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
+annotated_counts= data.table::fread(args$annotated_counts, header= T, sep= ',', data.table= F)
 if(file.exists(args$normalized_counts)) {
-  normalized_counts= read.csv(args$normalized_counts)
+  normalized_counts= data.table::fread(args$normalized_counts, header= T, sep= ',', data.table= F)
 } else {
   normalized_counts= NA
 }
