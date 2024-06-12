@@ -100,7 +100,7 @@ cell_line_meta %<>%
 # Remove flowcell_name and lane columns from sample_meta because
 # there is a profile_id duplicate when there are more than 1 seq runs
 #sample_meta %<>% select(-flowcell_name, -flowcell_lane) %>%
- # distinct(). # This needs to be removed for sequencing_index_cols to work! - YL
+ # distinct() # This needs to be removed for sequencing_index_cols to work! - YL
 
 # Run filter_raw_reads -----
 print("creating filtered count file")
