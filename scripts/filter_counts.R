@@ -137,7 +137,7 @@ if(sum(filtered_counts$filtered_counts$n) == 0) {
   stop('All entries in filtered counts are missing!')
 }
 
-cl_entries= filtered_counts %>% dplyr::filter(!is.na(CCLE_name))
+cl_entries= filtered_counts$filtered_counts %>% dplyr::filter(!is.na(CCLE_name))
 if(sum(cl_entries$n) == 0) {
   stop('All cell line counts are zero!')
 }
