@@ -1,3 +1,32 @@
+#' Calculate index summaries
+#' 
+#' Generates some simple summaries for each unique index.
+#' 
+#' @param df A dataframe which must contain the column "n" which represents the count of a read.
+#' @param index_col The name of the column contain the index barcodes as a string. This column must be present in "df".
+#' @param valid_indices. A vector of all the valid indices for "index_col".
+#' @return A dataframe with the follow columns:
+#'         - index_col: String, The column containing the index barcodes.
+#'         - idx_n: Numeric, Number of reads associated with a specific index barcode.
+#'         - fraction: Numeric, "idx_n" divided by the total number of reads in the run.
+#'         - expected: Boolean, True if the index barcode is in "valid_indices" otherwise False.
+#'         - contains_n: Boolean, True if the index barcode contains "N" in its sequence, otherwise False.
+#'         - lv_dist: Numeric, Edit distance from a valid index barcode.
+#'         - ham_dist: Numeric, Hamming distance from a valid index barcode.
+get_index_summary= function(df, index_col, valid_indices) {
+  output_summary= df %>% dplyr::group_by(pick(all_of(index_col))) %>% 
+    dplyr::summarise(idx_n= sum(n)) %>% dplyr::ungroup() %>%
+    dplyr::mutate(fraction= round(idx_n/sum(idx_n), 5),
+                  expected= ifelse(.[[index_col]] %in% valid_indices, T, F),
+                  contains_n= ifelse(grepl('N', .[[index_col]]), T, F),
+                  lv_dist= apply(stringdist::stringdistmatrix(.[[index_col]], valid_indices, method="lv"), 
+                                 1, min),
+                  ham_dist= apply(stringdist::stringdistmatrix(.[[index_col]], valid_indices, method="hamming"), 
+                                  1, min)) %>%
+    dplyr::arrange(desc(fraction))
+  return(output_summary)
+}
+
 #'  QC_images
 #'
 #'  Takes in the metadata, raw counts, annotated counts, and normalized counts to generate some QC images.
@@ -27,6 +56,11 @@
 QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_counts= NA,
                      CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
                      control_type, count_threshold= 40, reverse_index2= FALSE) {
+  require(tidyverse)
+  require(magrittr)
+  require(reshape2)
+  require(scales)
+  
   if(is.na(out)) {
     out = getwd()
   }
@@ -36,7 +70,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   # Reverse index 2 barcodes
   if(reverse_index2) {
     print("Reverse-complementing index 2 barcode.")
-    sample_meta$IndexBarcode2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
+    sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
   }
   
   # Detect control barcodes
@@ -48,32 +82,25 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   
   # Sequencing QCs ____________________ ----
   ## Index count summaries ----
-  print("generating index counts tables")
-  # pull unique indices.
-  expected_index1= unique(sample_meta$IndexBarcode1)
-  expected_index2= unique(sample_meta$IndexBarcode2)
+  print("Generating index counts tables")
+  # Check that "IndexBarcode1" and "index_1" columns are present.
+  # If so, calculate index summary and write out.
+  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts)) {
+    expected_index1= unique(sample_meta$index_1)
+    index1_counts= get_index_summary(raw_counts, 'index_1', expected_index1)
+    index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
+  } else {
+    print('Column "index_1" not detected. Skipping index 1 summaries ...')
+  }
   
-  index1_counts= raw_counts %>% dplyr::group_by(index_1) %>%
-    dplyr::summarise(idx_n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
-    dplyr::mutate(fraction= round(idx_n/sum(idx_n), 5),
-                  expected= ifelse(index_1 %in% expected_index1, T, F),
-                  contains_n= ifelse(grepl('N', index_1), T, F),
-                  lv_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="lv"), 1, min),
-                  ham_dist= apply(stringdist::stringdistmatrix(index_1, expected_index1, method="hamming"), 1, min)) %>%
-    dplyr::arrange(desc(fraction))
-  index2_counts= raw_counts %>% dplyr::group_by(index_2) %>%
-    dplyr::summarise(idx_n= sum(n, na.rm= T)) %>% dplyr::ungroup() %>%
-    dplyr::mutate(fraction= round(idx_n/sum(idx_n), 5),
-                  expected= ifelse(index_2 %in% expected_index2, T, F),
-                  contains_n= ifelse(grepl('N', index_2), T, F),
-                  lv_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="lv"), 1, min),
-                  ham_dist= apply(stringdist::stringdistmatrix(index_2, expected_index2, method="hamming"), 1, min)) %>%
-    dplyr::arrange(desc(fraction))
-  
-  # export and remove
-  index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
-  index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
-  rm(expected_index1, index1_counts, expected_index2, index2_counts)
+  # Do the same for index 2.
+  if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts)) {
+    expected_index2= unique(sample_meta$index_2)
+    index2_counts= get_index_summary(raw_counts, 'index_2', expected_index2)
+    index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
+  } else {
+    print('Column "index_2" not detected. Skipping index 2 summaries ...')
+  }
   
   ## Total counts ----
   print("generating total_counts image")
@@ -87,7 +114,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
     geom_col(aes(x=sample_id, y=total_counts, fill=type), alpha=0.75, position='identity') +
     geom_hline(yintercept= 10^4, linetype=2) + 
     facet_wrap(~pcr_plate, scale= 'free_x') +
-    labs(x="", y="total counts", fill="", title= 'Raw counts - unstacked') + theme_bw() +
+    labs(x="PCR location", y="total counts", fill="", title= 'Raw counts - unstacked') + theme_bw() +
     theme(axis.text.x = element_text(angle=70, hjust=1, size=5)) 
   
   pdf(file=paste(out, "total_counts.pdf", sep="/"),
@@ -101,14 +128,13 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   print("generating cell_lines_present image")
   recovery= annotated_counts %>% dplyr::filter(expected_read, !is.na(CCLE_name)) %>%
     dplyr::select(!any_of(c('members'))) %>%
-    merge(cell_set_meta, by="cell_set", all.x=T) %>%
-    dplyr::mutate(members= ifelse(is.na(members), cell_set, members), # for custom cell sets
-                  expected_num_cl = as.character(members) %>% purrr::map(strsplit, ";") %>% 
+    dplyr::left_join(cell_set_meta, by="cell_set", relationship= 'many-to-one') %>%
+    dplyr::mutate(members= if_else(is.na(members), cell_set, members), # for custom cell sets
+                  expected_num_cl= as.character(members) %>% purrr::map(strsplit, ";") %>% 
                     purrr::map(`[[`, 1) %>% purrr::map(length) %>% as.numeric(),
                   count_type= ifelse(n > count_threshold, 'Detected', 'Low'),
                   count_type= ifelse(n==0, 'Missing', count_type)) %>%
-    group_by(profile_id, pcr_plate, pcr_well, count_type, expected_num_cl) %>% 
-    dplyr::summarise(count= n()) %>% 
+    dplyr::count(profile_id, pcr_plate, pcr_well, count_type, expected_num_cl, name= 'count') %>%
     dplyr::mutate(frac_type= count/expected_num_cl)
   
   cl_rec= recovery %>% ggplot() +
@@ -133,7 +159,91 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   
   contams %>% write.csv(file= paste(out, 'contams.csv', sep='/'), row.names=F)
   rm(contams)
-  #
+  
+  # Work in progress - Updating contaminant output with new filtered counts
+  run_below= F
+  if(run_below) {
+    # Determine which seq cols are present.
+    # sample_meta sequencing columns
+    sm_seq_cols= c('flowcell_name', 'flowcell_lane', 'IndexBarcode1', 'IndexBarcode2')
+    # raw_counts sequencing columns
+    rc_seq_cols= c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2')
+    
+    mapped_reads= annotated_counts %>% 
+      dplyr::distinct(pick(any_of(c(sm_seq_cols, 'forward_read_cl_barcode', 'expected')))) %>%
+      dplyr::mutate(mapped=T)
+    
+    meta_joining_vector= list()
+    for(item in seq_cols) {
+      if(item=='IndexBarcode1') {
+        meta_joining_vector[['index_1']]= item
+      } else if(item=='IndexBarcode2') {
+        meta_joining_vector[['index_2']]= item
+      } else {
+        meta_joining_vector[[item]]= item
+      }
+    }
+    meta_joining_vector= unlist(meta_joining_vector)
+    
+    # unique combos of seq_cols
+    unique_seq_col_vals= sample_meta %>% dplyr::distinct(pick(any_of(sm_seq_cols)))
+    
+    # get unmapped reads
+    unmapped_read= raw_counts %>% 
+      dplyr::semi_join(unique_seq_col_vals, by= meta_joining_vector) %>%
+      dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
+    
+    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
+      dplyr::left_join(mapped_reads, by= c('index_1', 'index_2', 'forward_read_cl_barcode')) %>%
+      tidyr::replace_na(list(mapped= F)) %>% dplyr::filter(mapped== F) %>% dplyr::select(-mapped)
+    
+    # map of index barcodes to pcr_plate location
+    pcr_plate_map= sample_meta %>%
+      dplyr::distinct(pick(any_of(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well', 'cell_set')))) %>%
+      dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
+      dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
+    
+    # total counts per well - used to calculate fractions
+    counts_per_well= raw_counts %>%
+      dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
+      dplyr::group_by(index_1, index_2) %>% dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
+    
+    # mapped contaminates to bind
+    mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
+      dplyr::mutate(barcode_name= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
+      dplyr::select(index_1, index_2, forward_read_cl_barcode, barcode_name, n)
+    
+    # put everything together
+    contam_reads= unmapped_read %>% dplyr::bind_rows(mapped_contams) %>%
+      dplyr::left_join(counts_per_well, by= c('index_1', 'index_2')) %>%
+      dplyr::left_join(pcr_plate_map, by= join_by('index_1'=='IndexBarcode1', 'index_2'=='IndexBarcode2')) %>%
+      # filter out barcodes that only appear in one well
+      dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
+      # number of wells in a pcr plate a barcode is detected in
+      dplyr::group_by(forward_read_cl_barcode, pcr_plate) %>%
+      dplyr::mutate(num_wells_detected_plate= n()) %>% dplyr::ungroup() %>%
+      # number of wells in a cell set a barcode is detected in
+      dplyr::group_by(forward_read_cl_barcode, cell_set) %>%
+      dplyr::mutate(num_wells_detected_set= n()) %>% dplyr::ungroup() %>%
+      # determine if contamination is project, plate, or set
+      dplyr::group_by(forward_read_cl_barcode) %>%
+      dplyr::mutate(num_wells_detected= dplyr::n(),
+                    project_code= unique(sample_meta$project_code),
+                    fraction= n/well_total_n,
+                    type1= ifelse(sum(num_wells_detected== nrow(pcr_plate_map))>1, 'project_contam', NA),
+                    type2= ifelse(sum(num_wells_detected== num_wells_detected_plate & 
+                                        num_wells_detected_plate == num_wells_in_plate)>1, 'plate_contam', NA),
+                    type3= ifelse(sum(num_wells_detected == num_wells_detected_set &
+                                        num_wells_detected_set== num_wells_in_set)>1, 'set_contam', NA)) %>%
+      dplyr::ungroup() %>%
+      tidyr::unite(scope, all_of(c('type1', 'type2', 'type3')), sep=',', remove = T, na.rm = T) %>%
+      dplyr::group_by(project_code, forward_read_cl_barcode, barcode_name, scope, num_wells_detected) %>%
+      dplyr::summarise(min_n= min(n), med_n= median(n), max_n= max(n),
+                       min_fraction= min(fraction), med_fraction= median(fraction), max_fraction=max(fraction)) %>%
+      dplyr::arrange(desc(max_fraction))
+    # GCCTATTAATCATTACTACTAATC
+    contam_reads %>% write.csv(paste0(folder_path, 'contam_reads.csv'), row.names=F)
+  }
   
   ## Cumulative counts by lines in negcons ----
   print("generating cummulative image")
@@ -299,8 +409,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
         filter(!is.na(CCLE_name),
                (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
         mutate(plt_id= paste(sig_id, bio_rep, sep=':')) %>% 
-        dcast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
-        column_to_rownames("CCLE_name") %>% 
+        reshape2::acast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
         cor(use="pairwise.complete.obs")
       
       bio_corr_hm= bio_corr %>% melt() %>% ggplot() +
