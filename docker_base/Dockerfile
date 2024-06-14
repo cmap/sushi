@@ -3,6 +3,10 @@ MAINTAINER Anup Jonchhe <cmap-soft@broadinstitute.org>
 LABEL base.mts.pipeline.clue.io.version="0.0.1"
 LABEL base.mts.pipeline.clue.io.vendor="PRISM"
 
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+ENV LANGUAGE=C.UTF-8
+
 RUN apt-get update -qq && \
   apt-get -y upgrade
 RUN mkdir -p /src && apt-get -y --no-install-recommends install \
