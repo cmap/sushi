@@ -3,13 +3,14 @@ MAINTAINER Anup Jonchhe <cmap-soft@broadinstitute.org>
 LABEL base.mts.pipeline.clue.io.version="0.0.1"
 LABEL base.mts.pipeline.clue.io.vendor="PRISM"
 
-USER root
+# Set environment variables for non-interactive installs
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Update and install dependencies
+# Update and install dependencies in a single RUN command to ensure proper order
 RUN apt-get update -qq && \
     apt-get -y upgrade && \
-    apt-get install -y sudo && \
-    apt-get -y --no-install-recommends install \
+    apt-get install -y --no-install-recommends \
+      sudo \
       libssl-dev \
       libxml2-dev \
       libcairo2-dev \
@@ -22,7 +23,14 @@ RUN apt-get update -qq && \
       libcurl4-openssl-dev \
       jq \
       libbz2-dev \
-      liblzma-dev
+      liblzma-dev && \
+    # Ensure permissions for apt directories
+    mkdir -p /var/cache/apt/archives/partial && \
+    chown -R _apt:root /var/cache/apt/archives && \
+    chmod -R 700 /var/cache/apt/archives/partial && \
+    # Clean up apt cache to reduce image size
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create a custom library directory with appropriate permissions
 RUN mkdir -p /usr/local/lib/R/custom-library && \
@@ -43,7 +51,8 @@ COPY ./install_sushi_packages.R /src/install_sushi_packages.R
 RUN Rscript /src/install_sushi_packages.R
 
 # Install curl
-RUN apt-get -y update && apt-get -y install curl
+RUN apt-get update -qq && apt-get install -y --no-install-recommends curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy and install additional sushi packages
 COPY ./install_sushi_packages2.R /src/install_sushi_packages2.R
