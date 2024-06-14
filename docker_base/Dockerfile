@@ -6,7 +6,12 @@ LABEL base.mts.pipeline.clue.io.vendor="PRISM"
 # Set environment variables for non-interactive installs
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update and install dependencies in a single RUN command to ensure proper order
+# Ensure proper permissions for apt directories
+RUN mkdir -p /var/cache/apt/archives/partial && \
+    chown -R _apt:root /var/cache/apt/archives && \
+    chmod -R 700 /var/cache/apt/archives/partial
+
+# Update and install dependencies
 RUN apt-get update -qq && \
     apt-get -y upgrade && \
     apt-get install -y --no-install-recommends \
@@ -24,13 +29,7 @@ RUN apt-get update -qq && \
       jq \
       libbz2-dev \
       liblzma-dev && \
-    # Ensure permissions for apt directories
-    mkdir -p /var/cache/apt/archives/partial && \
-    chown -R _apt:root /var/cache/apt/archives && \
-    chmod -R 700 /var/cache/apt/archives/partial && \
-    # Clean up apt cache to reduce image size
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create a custom library directory with appropriate permissions
 RUN mkdir -p /usr/local/lib/R/custom-library && \
