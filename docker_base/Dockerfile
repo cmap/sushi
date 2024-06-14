@@ -5,13 +5,13 @@ LABEL base.mts.pipeline.clue.io.vendor="PRISM"
 
 # Set environment variables for non-interactive installs
 ENV DEBIAN_FRONTEND=noninteractive
+ENV APT_CACHE_DIR=/tmp/apt-cache
 
-# Ensure proper permissions for apt directories
-RUN mkdir -p /var/cache/apt/archives/partial && \
-    chown -R _apt:root /var/cache/apt/archives && \
-    chmod -R 700 /var/cache/apt/archives/partial
+# Create a user-specific APT cache directory
+RUN mkdir -p $APT_CACHE_DIR/archives/partial && \
+    ln -sf $APT_CACHE_DIR /var/cache/apt
 
-# Update and install dependencies
+# Update and install dependencies using the user-specific APT cache
 RUN apt-get update -qq && \
     apt-get -y upgrade && \
     apt-get install -y --no-install-recommends \
