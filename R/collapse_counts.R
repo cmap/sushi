@@ -34,17 +34,21 @@ validate_num_bio_reps= function(max_bio_rep_id, max_bio_rep_count) {
 
 #' collapse_counts
 #' 
-#' collapses l2fc values and computes MAD/sqrt(n) metrics for treatment conditions
+#' Collapses the l2fc values of biological replicates for treatment condtions and
+#' computes the MAD/sqrt(n).
 #'
-#'  @param l2fc - l2fc table with MAD/sqrt(n) metric for control condition
+#'  @param l2fc Dataframe of l2fc values The following columns are required -
+#'              DepMap_ID, CCLE_name, counts_flag, mean_n, mean_normalized_n, and l2fc.
+#'  @param sig_cols List of columns that define an individual condition. This should not include any replicates.
+#'                  The columns in this list should be present in the l2fc dataframe.
 #'  @return - collapsed_counts 
 #'  @export 
 collapse_counts = function(l2fc, sig_cols) {
   # Potentially static columns?
-  static_cols= c('project_code', 'CCLE_name', 'DepMap_ID', 'sig_id')
+  static_cols= c('project_code', 'DepMap_ID', 'CCLE_name', 'sig_id')
   
   # Validation: Check that sig_cols are present in l2fc.
-  if(validate_columns_exist== FALSE) {
+  if(validate_columns_exist(sig_cols, l2fc)== FALSE) {
     print(sig_cols)
     stop('Not all sig_cols (printed above) are present in the l2fc file.')
   }
@@ -56,7 +60,7 @@ collapse_counts = function(l2fc, sig_cols) {
     dplyr::summarise(trt_median_n= median(mean_n), trt_median_normalized_n= median(mean_normalized_n),
                      trt_mad_sqrtN= mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
                      median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup() %>% 
-    dplyr::mutate(trt_MAD_QC= ifelse(trt_mad_sqrtN > 0.5/log10(2), F, T)) %>% # New: adjusted cut off to log2
+    dplyr::mutate(trt_MAD_QC= ifelse(trt_mad_sqrtN > 0.5/log10(2), F, T)) %>% # Adjusted cut off from log10 to log2
     dplyr::relocate(trt_median_n, trt_median_normalized_n, trt_mad_sqrtN, 
                     num_bio_reps, median_l2fc, trt_MAD_QC, .after=last_col())
     
