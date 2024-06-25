@@ -48,7 +48,7 @@ collapse_counts = function(l2fc, sig_cols) {
   static_cols= c('project_code', 'DepMap_ID', 'CCLE_name', 'sig_id')
   
   # Validation: Check that sig_cols are present in l2fc.
-  if(validate_columns_exist(sig_cols, l2fc)== FALSE) {
+  if(validate_columns_exist(sig_cols, l2fc) == FALSE) {
     print(sig_cols)
     stop('Not all sig_cols (printed above) are present in the l2fc file.')
   }
@@ -56,20 +56,21 @@ collapse_counts = function(l2fc, sig_cols) {
   # Median collapsing bio replicates.
   collapsed_counts = l2fc %>% 
     dplyr::filter(is.na(counts_flag)) %>% 
-    dplyr::group_by(pick(any_of(c(static_cols, sig_cols))) %>%
+    dplyr::group_by(pick(any_of(c(static_cols, sig_cols)))) %>%
     dplyr::summarise(trt_median_n= median(mean_n), trt_median_normalized_n= median(mean_normalized_n),
                      trt_mad_sqrtN= mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
                      median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup() %>% 
     dplyr::mutate(trt_MAD_QC= ifelse(trt_mad_sqrtN > 0.5/log10(2), F, T)) %>% # Adjusted cut off from log10 to log2
     dplyr::relocate(trt_median_n, trt_median_normalized_n, trt_mad_sqrtN, 
                     num_bio_reps, median_l2fc, trt_MAD_QC, .after=last_col())
-    
-    # Validation: Check that replicates were collapsed.
-    if('bio_rep' %in% colnames(l2fc)) {
-      max_bio_rep_id= max(unique(l2fc$bio_rep))
-      max_bio_rep_count= max(unique(collapsed_counts$num_bio_reps))
-      validate_num_bio_reps(max_bio_rep_id, max_bio_rep_count)
-    }
-    
+  
+  # Validation: Check that replicates were collapsed.
+  if('bio_rep' %in% colnames(l2fc)) {
+    max_bio_rep_id= max(unique(l2fc$bio_rep))
+    max_bio_rep_count= max(unique(collapsed_counts$num_bio_reps))
+    validate_num_bio_reps(max_bio_rep_id, max_bio_rep_count)
+  }
+  
   return(collapsed_counts)
 }
+
