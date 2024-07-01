@@ -297,5 +297,3 @@ remove_data = function(filtered_counts, data_to_remove) {
   return(filt_rm)
 }
 
-
-
