@@ -41,30 +41,48 @@ validate_num_bio_reps= function(max_bio_rep_id, max_bio_rep_count) {
 #'              DepMap_ID, CCLE_name, counts_flag, mean_n, mean_normalized_n, and l2fc.
 #'  @param sig_cols List of columns that define an individual condition. This should not include any replicates.
 #'                  The columns in this list should be present in the l2fc dataframe.
-#'  @return - collapsed_counts 
+#'  @return - collapsed_counts
 #'  @export 
-collapse_counts = function(l2fc, sig_cols) {
-  # Potentially static columns?
-  static_cols= c('project_code', 'DepMap_ID', 'CCLE_name', 'sig_id')
-  
-  # Validation: Check that sig_cols are present in l2fc.
+collapse_counts = function(l2fc, sample_meta, sig_cols) {
+  # Validation: Check that sig_cols are present in l2fc ----
   if(validate_columns_exist(sig_cols, l2fc) == FALSE) {
     print(sig_cols)
     stop('Not all sig_cols (printed above) are present in the l2fc file.')
   }
   
-  # Median collapsing bio replicates.
-  collapsed_counts = l2fc %>% 
-    dplyr::filter(is.na(counts_flag)) %>% 
-    dplyr::group_by(pick(any_of(c(static_cols, sig_cols)))) %>%
+  # Validation: Check that sig_cols are present in sample meta ----
+  if(validate_columns_exist(sig_cols, sample_meta) == FALSE) {
+    print(sig_cols)
+    stop('Not all sig_cols (printed above) are present in the sample meta.')
+  }
+  
+  # Create sample meta annotations for each unique sig_id ----
+  # Select ONLY columns in the sample meta that describe the sig_cols and are not sequencing related columns
+  sig_id_metadata= sample_meta %>% tidyr::unite(col='sig_id', all_of(sig_cols), sep=':', remove=F) %>%
+    dplyr::group_by(sig_id) %>% 
+    dplyr::summarise(across(everything(), function(x) list(unique(x)))) %>% dplyr::ungroup() %>%
+    dplyr::select(where(function(x) max(lengths(x)) == 1) & 
+                    !any_of(c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2'))) %>% 
+    tidyr::unnest(cols= colnames(.))
+  
+  # Median collapsing bio replicates ----
+  # Potentially parameter? 
+  cell_line_cols= c('DepMap_ID', 'CCLE_name')
+  
+  collapsed_counts= l2fc %>% dplyr::filter(is.na(counts_flag)) %>% 
+    tidyr::unite(col='sig_id', all_of(sig_cols), sep=':', remove=T) %>%
+    dplyr::group_by(pick(all_of(c('project_code', cell_line_cols, 'sig_id')))) %>%
     dplyr::summarise(trt_median_n= median(mean_n), trt_median_normalized_n= median(mean_normalized_n),
                      trt_mad_sqrtN= mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
                      median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup() %>% 
     dplyr::mutate(trt_MAD_QC= ifelse(trt_mad_sqrtN > 0.5/log10(2), F, T)) %>% # Adjusted cut off from log10 to log2
+    dplyr::left_join(sig_id_metadata, by= intersect(colnames(.), colnames(sig_id_metadata)), relationship='many-to-one') %>%
     dplyr::relocate(trt_median_n, trt_median_normalized_n, trt_mad_sqrtN, 
                     num_bio_reps, median_l2fc, trt_MAD_QC, .after=last_col())
+  # Metadata joined on potentially project_code and sig_id so that equality is assessed on strings.
+  # Joining with sig_cols could result in rounding/floating point equality issues like 0.1 + 0.2 != 0.3
   
-  # Validation: Check that replicates were collapsed.
+  # Validation: Check that replicates were collapsed ----
   if('bio_rep' %in% colnames(l2fc)) {
     max_bio_rep_id= max(unique(l2fc$bio_rep))
     max_bio_rep_count= max(unique(collapsed_counts$num_bio_reps))
@@ -73,4 +91,3 @@ collapse_counts = function(l2fc, sig_cols) {
   
   return(collapsed_counts)
 }
-
