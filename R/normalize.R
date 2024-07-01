@@ -24,20 +24,20 @@ normalize <- function(X, barcodes, pseudocount) {
   require(tidyverse)
   require(magrittr)
   
-  # Create log2_n if it does not exist
+  # Create log2_n if it does not exist ----
   if (!('log2_n' %in% colnames(X)) & 
       ('n' %in% colnames(X))) {
     X %<>% dplyr::mutate(log2_n = log2(n + pseudocount))
   }
   
-  # Identify valid profiles and valid control barcodes to determine intercept
+  # Identify valid profiles and valid control barcodes to determine intercept ----
   # dropping invalid trt_type, wells without control barcodes, cell line entries or other CBs, cbs with zero reads,
   # and profiles with fewer than 4 CBs.
   valid_profiles= X %>% dplyr::filter(!trt_type %in% c("empty", "", "CB_only"), !is.na(trt_type), 
                                       control_barcodes %in% c('Y', 'T', T), Name %in% barcodes, n!= 0) %>%
     dplyr::group_by(profile_id) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
   
-  # Which profiles were dropped out?
+  # Validation: Check which profile_ids were dropped ----
   if(length(unique(valid_profiles$profile_id)) != length(unique(X$profile_id))) {
     # Print error if all profiles were dropped
     if(nrow(valid_profiles) == 0) {
@@ -56,7 +56,7 @@ normalize <- function(X, barcodes, pseudocount) {
     print(profiles_dropped_at_norm)
   }
   
-  # Calculate fit intercept for valid profiles using median intercept
+  # Calculate fit intercept for valid profiles using median intercept ----
   fit_intercepts= valid_profiles %>% dplyr::group_by(profile_id, log2_dose) %>%
     dplyr::summarize(dose_intercept= mean(log2_dose) - mean(log2_n)) %>%
     dplyr::group_by(profile_id) %>%
@@ -73,7 +73,7 @@ normalize <- function(X, barcodes, pseudocount) {
                   norm_r2= 1- sum(residual2)/sum(squares2)) %>% dplyr::ungroup() %>%
     dplyr::distinct(profile_id, cb_intercept, norm_mae, norm_r2)
   
-  # Normalize entries
+  # Normalize entries ----
   normalized= X %>% dplyr::inner_join(fit_stats, by='profile_id') %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
                   normalized_n = 2^log2_normalized_n)
