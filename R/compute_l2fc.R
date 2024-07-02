@@ -1,3 +1,19 @@
+#' validate_columns_exist
+#' 
+#' This function checks that a list of columns are present in a dataframe.
+#' 
+#' @param selected_columns A vector of strings each representing a column name
+#' @param df A dataframe to check against
+#' @return Boolean
+validate_columns_exist= function(selected_columns, df) {
+  # Check that all of selected_columns are in df
+  if(any(!selected_columns %in% colnames(df))) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
 #' compute_l2fc
 #' 
 #' takes normalized counts and computes log-fold change values as compared to the designated control condition
@@ -13,56 +29,76 @@
 #' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. 
 #'          Generally normalized_n if running on normalied_counts or n if running on filtered_counts
 #' @param count_threshold - threshold for determining low counts, defaults to 40.
+#' @param cell_line_cols - Vector of columns that define a cell line. Defaults to project_code, DepMap_ID, and CCLE_name
 #' @return - l2fc data.frame with l2fc column
 #' @export
-compute_l2fc = function(normalized_counts, 
-                        control_type = "negcon",
-                        sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
-                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
-                        count_col_name="normalized_n", count_threshold= 40) {
+compute_l2fc= function(normalized_counts,
+                       control_type = "negcon",
+                       sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
+                       ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
+                       count_col_name="normalized_n", count_threshold= 40,
+                       cell_line_cols= c('project_code', 'DepMap_ID', 'CCLE_name')) {
   
-  if(!all(ctrl_cols %in% sig_cols)) {
-    print("Control columns are not a subset of sig columns.") # new
-    stop()
+  # Validation: Check that sig_cols are normalized_counts ----
+  if(validate_columns_exist(sig_cols, normalized_counts) == FALSE) {
+    print(sig_cols)
+    stop('Not all sig_cols (printed above) are present in normalized_counts.')
   }
   
-  # ignore these columns when collapsing tech reps
-  candidate_excluded_columns= c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept', 'norm_mae', 'norm_r2',
-                                'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 'log2_normalized_n',
-                                'flag', count_col_name)
-  tech_rep_excluded_columns= candidate_excluded_columns[!candidate_excluded_columns %in% sig_cols]
+  # Validation: Check that cell_line_cols are normalized_counts ----
+  if(validate_columns_exist(cell_line_cols, normalized_counts) == FALSE) {
+    print(cell_line_cols)
+    stop('Not all cell_line_cols (printed above) are present in normalized_counts.')
+  }
+  
+  # Validation: Check that ctrl_cols are in sig_cols ----
+  if(!all(ctrl_cols %in% sig_cols)) {
+    stop('Control columns are not a subset of sig columns.')
+  }
+  
+  # Collapsing technical replicates ----
+  # Detect bio_rep column to be used to collapse technical replicates
+  if('bio_rep' %in% colnames(normalized_counts)) {
+    bio_rep_id_cols= c(sig_cols, 'bio_rep')
+  } else {
+    bio_rep_id_cols= sig_cols
+    print('WARNING: bio_rep column not detected. Assuming that there are NO biological replicates.') 
+    print('Technical replicate collapse will be performed across the sig_cols.')
+  }
   
   # collapse tech reps
+  print('Collapsing technical replicates ...')
   collapsed_tech_rep= normalized_counts %>%
-    tidyr::unite(sig_id, all_of(sig_cols), sep= ':', remove=F, na.rm=F) %>%
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
-    dplyr::group_by_at(setdiff(names(.), tech_rep_excluded_columns)) %>% 
+    dplyr::group_by(pick(all_of(c(cell_line_cols, 'trt_type', bio_rep_id_cols)))) %>%
     dplyr::summarise(mean_n= mean(n),
                      mean_normalized_n = mean(!!rlang::sym(count_col_name)), 
-                     num_tech_reps= dplyr::n()) %>% 
-    dplyr::ungroup()
+                     num_tech_reps= dplyr::n()) %>% dplyr::ungroup()
   
-  # collapse controls
-  controls= collapsed_tech_rep %>% 
-    dplyr::filter(trt_type==control_type) %>% 
-    dplyr::group_by_at(c('project_code', 'CCLE_name', 'DepMap_ID', ctrl_cols)) %>% 
+  # Print out the occurrence of each count of tech_reps
+  print('Number of technical replicate collapsed across all cell lines and biological replicates:')
+  print(collapsed_tech_rep %>% dplyr::group_by(num_tech_reps) %>% 
+          dplyr::summarise(count= dplyr::n()) %>% dplyr::ungroup())
+    
+  # Pull out negative controls and collapse any biological replicates ----
+  controls= collapsed_tech_rep %>% dplyr::filter(trt_type== control_type) %>% 
+    dplyr::group_by(pick(all_of(c(cell_line_cols, ctrl_cols)))) %>%
     dplyr::summarise(control_median_n= median(mean_n),
                      control_median_normalized_n = median(mean_normalized_n),
                      control_mad_sqrtN = mad(log2(mean_normalized_n))/sqrt(dplyr::n()),
-                     num_ctrl_bio_reps = dplyr::n()) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::mutate(control_MAD_QC = ifelse(control_mad_sqrtN > 0.5/log10(2), F, T)) # New: adjusted cut off to log2
+                     num_ctrl_bio_reps = dplyr::n()) %>% dplyr::ungroup() %>% 
+    dplyr::mutate(control_MAD_QC = (control_mad_sqrtN <= 0.5/log10(2))) #%>% # New: adjusted cut off to log2
   
+  # Validation: Check negative controls ----
   if(nrow(controls)==0) {
-    print("No samples found for indicated control type.")
-    stop()
+    stop("No samples found for the indicated control_type.")
   }
   
+  # Join neg_cons and compute l2fc ----
   l2fc= collapsed_tech_rep %>% dplyr::filter(!trt_type %in% c(control_type, 'day_0')) %>% 
-    merge(controls, by= c('project_code',"CCLE_name", "DepMap_ID", ctrl_cols), all.x=T, all.y=T) %>%
+    dplyr::inner_join(controls, by= c(cell_line_cols, ctrl_cols), relationship='many-to-one') %>%
     dplyr::mutate(l2fc= log2(mean_normalized_n/control_median_normalized_n),
-                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
-    dplyr::relocate(project_code, CCLE_name, DepMap_ID, trt_type, control_barcodes, sig_id, bio_rep)
+                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA))
   
   return(l2fc)
 }

@@ -5,7 +5,7 @@ suppressPackageStartupMessages(library(dplyr)) #n()
 #suppressPackageStartupMessages(library(magrittr))
 #suppressPackageStartupMessages(library(tidyverse))
 #suppressPackageStartupMessages(library(reshape2))
-library(prismSeqR)
+library(prismSeqR) # Is the package up to data?
 
 #Need Arguments
 parser <- ArgumentParser()
@@ -21,6 +21,8 @@ parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day
                     help = "columns used to generate signature ids")
 parser$add_argument("--ctrl_cols", default="cell_set,day", 
                     help = "columns used to collapse controls to generate l2fc")
+parser$add_argument("--cell_line_cols", default="project_code,DepMap_ID,CCLE_name", 
+                    help = "Columns that can describe a cell line")
 parser$add_argument("-ccn", "--count_col_name", default="normalized_n", 
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
@@ -30,15 +32,16 @@ parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default 
 args <- parser$parse_args()
 
 control_type = args$control_type
-normalized_counts = read.csv(args$normalized_counts)
+normalized_counts= data.table::fread(args$normalized_counts, header=T, sep=',', data.table=F)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
+cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 count_col_name = args$count_col_name
-count_threshold_arg= args$count_threshold
-count_threshold = as.numeric(count_threshold_arg)
+count_threshold = as.numeric(args$count_threshold)
 
 print("computing log-fold change")
-l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, ctrl_cols, count_col_name, count_threshold)
+l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, ctrl_cols, count_col_name, count_threshold,
+                    cell_line_cols)
 
 l2fc_out = paste(args$out, "l2fc.csv", sep="/")
 write.csv(l2fc, l2fc_out, row.names=F, quote=F)
