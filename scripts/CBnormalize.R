@@ -2,7 +2,7 @@ library(argparse)
 library(prismSeqR) # Is the package updated?
 library(magrittr)
 
-# Parse command line ----
+# Argument parser ----
 parser <- ArgumentParser()
 # specify our desired options 
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
@@ -25,7 +25,7 @@ args <- parser$parse_args()
 # Set up inputs ----
 filtered_counts = data.table::fread(args$filtered_counts, header=TRUE, sep=',', data.table=F)
 CB_meta = data.table::fread(args$CB_meta, header=TRUE, sep=',', data.table=F)
-input_pseudocount = as.numeric(rgs$pseudocount)
+input_pseudocount = as.numeric(args$pseudocount)
 input_id_cols= unlist(strsplit(args$id_cols, ","))
 
 # Run normalize ----

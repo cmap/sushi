@@ -1,9 +1,9 @@
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(magrittr))
-library(prismSeqR)
+library(prismSeqR) # Correct sourcing?
 
+# Parser object ----
 parser <- ArgumentParser()
-# specify our desired options 
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", 
@@ -19,13 +19,14 @@ parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
-lfc_values= data.table::fread(args$lfc, header=T, sep=',')
-
-print("Collapsing biological replicates ...")
+# Collapse biological replicates ----
+lfc_values= data.table::fread(args$lfc, header=T, sep=',', data.table=F)
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
-collapsed_l2fc= collapse_bio_reps(lfc_values, sig_cols, cell_line_cols)
 
-# Write out file
+print("Collapsing biological replicates ...")
+collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values, sig_cols= sig_cols, cell_line_cols= cell_line_cols)
+
+# Write out file ----
 collapsed_l2fc_path= paste(args$out, "collapsed_l2fc.csv", sep='/')
-write.csv(collapsed_l2fc, collapsed_l2fc_path, row.names=F, quote=F)
+write.csv(x= collapsed_l2fc, file= collapsed_l2fc_path, row.names= F, quote= F)

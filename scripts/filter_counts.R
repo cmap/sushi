@@ -24,7 +24,7 @@ print_args <- function(args){
   write_delim(config, config_path, delim = ": ", col_names=F)
 }
 
-# Create parser object ----
+# Arguement parser ----
 parser <- ArgumentParser()
 # specify our desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
@@ -132,7 +132,6 @@ cl_entries= filtered_counts$filtered_counts %>% dplyr::filter(!is.na(CCLE_name))
 if(sum(cl_entries$n) == 0) {
   stop('All cell line counts are zero!')
 }
-
 
 # Write out module outputs ----
 qc_table = filtered_counts$qc_table
