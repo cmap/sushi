@@ -49,5 +49,5 @@ join_sample_meta= function(df, sample_meta, key_cols) {
     print('The columns(s) thus appear twice in the output dataframe.')
   }
   
-  return(collapsed_counts)
+  return(expanded_df)
 }
