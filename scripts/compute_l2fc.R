@@ -5,7 +5,7 @@ suppressPackageStartupMessages(library(dplyr)) #n()
 #suppressPackageStartupMessages(library(magrittr))
 #suppressPackageStartupMessages(library(tidyverse))
 #suppressPackageStartupMessages(library(reshape2))
-library(prismSeqR) # Is the package up to data?
+library(prismSeqR) # Is the package up to date?
 
 # Argument parser ----
 parser <- ArgumentParser()
