@@ -181,7 +181,7 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   print('generating contaminate reads for Ursula')
   # Determine which seq cols are present.
   rc_seq_cols= c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2')
-  present_seq_cols= intersect(rc_seq_cols, colnames(sample_meta))
+  present_seq_cols= intersect(rc_seq_cols, colnames(raw_counts))
   
   # map of seq_cols to PCR locations
   pcr_plate_map= sample_meta %>%
@@ -384,12 +384,19 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
     
     if(num_bio_reps > 1) {
       print("generating bio rep correlations image")
+      
+      if('bio_rep' %in% colnames(normalized_counts)) {
+        bio_rep_id_cols= c(sig_cols, 'bio_rep')
+      } else {
+        bio_rep_id_cols= sig_cols
+        print('WARNING: bio_rep column not detected. Assuming that there are NO biological replicates.') 
+        print('Technical replicate collapse will be performed across the sig_cols.')
+      }
+      
       # collapse tech reps taken from 'compute_l2fc'
       collapsed_tech_rep= normalized_counts %>%
         dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
-        dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
-                                               'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 
-                                               'log2_normalized_n', 'flag', count_col_name))) %>% 
+        dplyr::group_by(pick(all_of(c('CCLE_name', 'trt_type', bio_rep_id_cols)))) %>%
         dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name)), 
                          num_tech_reps= n()) %>% dplyr::ungroup()
       collapsed_tech_rep$sig_id= do.call(paste,c(collapsed_tech_rep[sig_cols], sep=':'))
