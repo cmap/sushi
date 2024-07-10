@@ -36,11 +36,8 @@ normalize <- function(X, id_cols, barcodes, pseudocount) {
   require(tidyverse)
   require(magrittr)
   
-  # Create log2_n if it does not exist ----
-  if (!('log2_n' %in% colnames(X)) & 
-      ('n' %in% colnames(X))) {
-    X %<>% dplyr::mutate(log2_n = log2(n + pseudocount))
-  }
+  # Create log2_n with pseudocount ----
+  X %<>% dplyr::mutate(log2_n = log2(n + pseudocount))
   
   # Validation: Check that id_cols are present in the dataframe ----
   if(validate_columns_exist(id_cols, X) == FALSE) {
