@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /scripts/
+#cd /scripts/
 
 #eval `/broad/software/dotkit/init -b`
 #use R-4.0
