@@ -95,6 +95,7 @@ echo $R_LIBS
 args=(
 --sample_meta "$SAMPLE_META"
 --out "$BUILD_DIR"
+--sequencing_index_cols="$SEQUENCING_INDEX_COLS"
 )
 
 echo Rscript collate_fastq_reads.R "${args[@]}"
