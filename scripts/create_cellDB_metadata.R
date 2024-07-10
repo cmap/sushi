@@ -64,7 +64,8 @@ cell_sets_df <- get_cell_api_info(paste(api_url,"cell_sets", sep = "/"), api_key
 cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_key)
 cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
 assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
-
+assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
+  
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
 cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence', 'LUA')
 cell_line_meta <- cell_lines_df %>%
@@ -96,4 +97,4 @@ write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
 # Writing out assay_pool_df
 assay_pool_out_file = paste(args$out, 'assay_pool_meta.txt', sep='/')
 print(paste("writing assay_pools to: ", assay_pool_out_file))
-write.table(assay_pools_df, assay_pool_out_file, row.names=F, quote=F, sep="\t")
+write.table(assay_pools_meta, assay_pool_out_file, row.names=F, quote=F, sep="\t")
