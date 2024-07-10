@@ -1,15 +1,36 @@
-install.packages("argparse")
-install.packages("magrittr")
-install.packages("tidyverse")
-install.packages("BiocManager")
-install.packages("scam")
-install.packages("readr")
-install.packages("stringr")
-install.packages("dplyr")
-install.packages("tidyr")
-install.packages("sets")
-install.packages("devtools")
+# Set CRAN mirror
+options(repos = c(CRAN = Sys.getenv("R_CRAN_MIRROR")))
+
+# Install CRAN packages
+install.packages("argparse", dependencies = TRUE)
+install.packages("magrittr", dependencies = TRUE)
+install.packages("tidyverse", dependencies = TRUE)
+install.packages("BiocManager", dependencies = TRUE)
+install.packages("scam", dependencies = TRUE)
+install.packages("readr", dependencies = TRUE)
+install.packages("stringr", dependencies = TRUE)
+install.packages("dplyr", dependencies = TRUE)
+install.packages("tidyr", dependencies = TRUE)
+install.packages("sets", dependencies = TRUE)
+install.packages("devtools", dependencies = TRUE)
+
+# Install other necessary Bioconductor packages explicitly
+BiocManager::install("S4Vectors")
+BiocManager::install("IRanges")
+BiocManager::install("GenomeInfoDb")
+BiocManager::install("XVector")
+BiocManager::install("Biostrings")
+BiocManager::install("KEGGREST")
+BiocManager::install("AnnotationDbi")
+BiocManager::install("GO.db")
+BiocManager::install("WGCNA")
+
+# Load devtools library
 library(devtools)
-devtools::install_github("broadinstitute/cdsr_models", dependencies=TRUE)
-devtools::install_github("broadinstitute/cdsr_biomarker", dependencies=TRUE)
+
+# Install GitHub packages
+devtools::install_github("broadinstitute/cdsr_models", dependencies = TRUE)
+devtools::install_github("broadinstitute/cdsr_biomarker", dependencies = TRUE)
+
+# Install Bioconductor package
 BiocManager::install("cmapR")
