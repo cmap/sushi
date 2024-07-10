@@ -1,7 +1,6 @@
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(magrittr))
-library(prismSeqR)
-
+source("/workspace/R/collapse_counts.R")
 parser <- ArgumentParser()
 # specify our desired options 
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
