@@ -37,12 +37,12 @@ COPY ./install_packages.R /src/install_packages.R
 RUN Rscript /src/install_packages.R
 
 # Second set of R dependencies
-COPY ./install_sushi_packages.R /src/install_sushi_packages.R
-RUN Rscript /src/install_sushi_packages.R
+#COPY ./install_sushi_packages.R /src/install_sushi_packages.R
+#RUN Rscript /src/install_sushi_packages.R
 
 # Third set of R dependencies
-COPY ./install_sushi_packages2.R /src/install_sushi_packages2.R
-RUN Rscript /src/install_sushi_packages2.R
+#COPY ./install_sushi_packages2.R /src/install_sushi_packages2.R
+#RUN Rscript /src/install_sushi_packages2.R
 
 # Install curl (why post update?)
 RUN apt-get update -qq && \
@@ -51,4 +51,4 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Drop back to the regular jenkins user - good practice
-USER jenkins
+#USER jenkins
