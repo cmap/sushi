@@ -1,4 +1,5 @@
-FROM rocker/r-ver:4.1.0
+FROM rocker/r-ver:4.4
+
 MAINTAINER John Davis <cmap-soft@broadinstitute.org>
 
 # Set environment variables
