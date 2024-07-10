@@ -1,11 +1,6 @@
 suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-suppressPackageStartupMessages(library(dplyr)) #n()
-#suppressPackageStartupMessages(library(scam))
-#suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
-#suppressPackageStartupMessages(library(reshape2))
-library(prismSeqR)
+suppressPackageStartupMessages(library(dplyr))
+source("/workspace/R/compute_l2fc.R")
 
 #Need Arguments
 parser <- ArgumentParser()
