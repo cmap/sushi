@@ -8,5 +8,7 @@ install.packages("stringr")
 install.packages("dplyr")
 install.packages("tidyr")
 install.packages("sets")
-
+install.packages("devtools")
+devtools::install_github("broadinstitute/cdsr_models")
+devtools::install_github("broadinstitute/cdsr_biomarker")
 BiocManager::install("cmapR")
