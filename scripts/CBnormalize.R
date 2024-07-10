@@ -1,5 +1,5 @@
 library(argparse)
-#library(prismSeqR)
+source("/workplace/R/normalize.R")
 library(magrittr)
 
 parser <- ArgumentParser()
