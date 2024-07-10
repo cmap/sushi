@@ -1,6 +1,3 @@
-# Set CRAN mirror
-options(repos = c(CRAN = Sys.getenv("R_CRAN_MIRROR")))
-
 # Install CRAN packages
 install.packages("argparse", dependencies = TRUE)
 install.packages("magrittr", dependencies = TRUE)
