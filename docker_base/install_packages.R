@@ -1,5 +1,4 @@
 options(repos = c(
-  "https://iwww.broadinstitute.org/~datasci/R-packages",
   "https://cran.rstudio.com/"))
 
 options(repos=structure(c(CRAN="http://cran.r-project.org")))
@@ -27,39 +26,30 @@ bioc_install_and_log <- function(pkg) {
     }
   )
 }
-
-# Install dependencies for tidyverse
-install_and_log("googledrive")
-install_and_log("googlesheets4")
-install_and_log("haven")
-install_and_log("httr")
-install_and_log("ragg")
-install_and_log("rvest")
-install_and_log("xml2")
-
 # Install tidyverse
+install_and_log("argparse")
+install_and_log("magrittr")
 install_and_log("tidyverse")
 
-install_and_log("hdf5r")
-install_and_log("reshape2")
-install_and_log("readr")
-install_and_log("magrittr")
-install_and_log("dr4pl")
-install_and_log("data.table")
-install_and_log("scam")
-install_and_log("argparse")
-install_and_log("splitstackshape")
-install_and_log("BiocManager")
-BiocManager::install()
+#install_and_log("hdf5r")
+#install_and_log("reshape2")
+#install_and_log("readr")
+#install_and_log("dr4pl")
+#install_and_log("data.table")
+#install_and_log("scam")
+#install_and_log("argparse")
+#install_and_log("splitstackshape")
+#install_and_log("BiocManager")
+#BiocManager::install()
 
-bioc_install_and_log("sva")
-bioc_install_and_log("limma")
-bioc_install_and_log("apeglm")
-bioc_install_and_log("ShortRead")
+#bioc_install_and_log("sva")
+#bioc_install_and_log("limma")
+#bioc_install_and_log("apeglm")
+#bioc_install_and_log("ShortRead")
 
-install_and_log("PRROC")
-install_and_log("gmodels")
-install_and_log("R.utils")
+#install_and_log("PRROC")
+#install_and_log("gmodels")
+#install_and_log("R.utils")
 
 # Uncomment these lines if you need the devtools packages
 #install_and_log("devtools")
