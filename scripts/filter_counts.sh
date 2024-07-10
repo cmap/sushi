@@ -76,6 +76,7 @@ args=(
 --cell_set_meta "$CELL_SET_META"
 --out "$BUILD_DIR"
 --count_threshold "$COUNT_THRESHOLD"
+--sequencing_index_cols "$SEQUENCING_INDEX_COLS"
 )
 
 if [[ "$REVERSE_INDEX2" == "true" ]]
