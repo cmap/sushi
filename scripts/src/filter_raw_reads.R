@@ -24,6 +24,9 @@ validate_columns_exist= function(selected_columns, df) {
 #' @param df A dataframe to check against
 #' @return Boolean
 validate_unique_samples= function(selected_columns, df) {
+  message= paste0('The following columns do not uniquely identify every row of the dataframe: ',
+                  paste(selected_columns, collapse=', '))
+  print(message)
   unique_column_values= df %>% dplyr::distinct(pick(all_of(selected_columns)))
   if(nrow(unique_column_values) != nrow(df)) {
     return(FALSE)
@@ -96,7 +99,7 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 filter_raw_reads = function(raw_counts, 
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
                             sequencing_index_cols, id_cols,
-                            reverse_index2= FALSE, count_threshold= 40) {
+                            reverse_index2, count_threshold) {
   
   require(tidyverse)
   require(magrittr)
