@@ -8,10 +8,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 USER root
 
 # Update and upgrade packages
-RUN apt-get update -qq && \
-    apt-get -y upgrade && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+#RUN apt-get update -qq && \
+#    apt-get -y upgrade && \
+#    apt-get clean && \
+#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install required packages
 RUN apt-get update -qq && \
