@@ -34,7 +34,7 @@ USER root
 
 # First set of R dependencies
 COPY ./install_packages.R /src/install_packages.R
-RUN mkdir -p /clue/bin && Rscript /src/install_packages.R
+RUN Rscript /src/install_packages.R
 
 # Second set of R dependencies
 COPY ./install_sushi_packages.R /src/install_sushi_packages.R
