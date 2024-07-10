@@ -1,10 +1,5 @@
 #!/bin/bash
 
-#cd /scripts/
-
-#eval `/broad/software/dotkit/init -b`
-#use R-4.0
-
 echo Checkig whether to collate fastq reads...
 
 export API_KEY=$(cat /local/jenkins/.clue_api_key)
