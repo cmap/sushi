@@ -117,6 +117,7 @@ parameters=(
   "REMOVE_DATA:$REMOVE_DATA"
   "PULL_POOL_ID:$PULL_POOL_ID"
   "BUILD_NAME:$BUILD_NAME"
+  "SEQUENCING_INDEX_COLS:$SEQUENCING_INDEX_COLS"
 )
 
 # Overwrite the CSV file with parameters each time a new build is kicked off
