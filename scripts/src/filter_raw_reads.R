@@ -95,8 +95,7 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' @export 
 filter_raw_reads = function(raw_counts, 
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
-                            sequencing_index_cols= c('index_1', 'index_2'),
-                            id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
+                            sequencing_index_cols, id_cols,
                             reverse_index2= FALSE, count_threshold= 40) {
   
   require(tidyverse)
