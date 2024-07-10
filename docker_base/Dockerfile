@@ -33,8 +33,8 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # First set of R dependencies
-#COPY ./install_packages.R /src/install_packages.R
-#RUN Rscript /src/install_packages.R
+COPY ./install_packages.R /src/install_packages.R
+RUN Rscript /src/install_packages.R
 
 # Second set of R dependencies
 #COPY ./install_sushi_packages.R /src/install_sushi_packages.R
