@@ -17,7 +17,7 @@ RUN apt-get update -qq && \
     libcairo2-dev \
     libsqlite-dev \
     libmariadbd-dev \
-    libmariadbclient-dev \
+    libmariadb-dev-compat \
     libpq-dev \
     libssh2-1-dev \
     libhdf5-dev \
