@@ -39,13 +39,13 @@ compute_l2fc= function(normalized_counts,
                        count_col_name="normalized_n", count_threshold= 40,
                        cell_line_cols= c('project_code', 'DepMap_ID', 'CCLE_name')) {
   
-  # Validation: Check that sig_cols are normalized_counts ----
+  # Validation: Check that sig_cols are in normalized_counts ----
   if(validate_columns_exist(sig_cols, normalized_counts) == FALSE) {
     print(sig_cols)
     stop('Not all sig_cols (printed above) are present in normalized_counts.')
   }
   
-  # Validation: Check that cell_line_cols are normalized_counts ----
+  # Validation: Check that cell_line_cols are in normalized_counts ----
   if(validate_columns_exist(cell_line_cols, normalized_counts) == FALSE) {
     print(cell_line_cols)
     stop('Not all cell_line_cols (printed above) are present in normalized_counts.')
@@ -89,7 +89,7 @@ compute_l2fc= function(normalized_counts,
                      num_ctrl_bio_reps = dplyr::n()) %>% dplyr::ungroup() %>% 
     dplyr::mutate(control_MAD_QC = (control_mad_sqrtN <= 0.5/log10(2))) #%>% # New: adjusted cut off to log2
   
-  # Validation: Check negative controls ----
+  # Validation: Check that negative controls were extracted ----
   if(nrow(controls)==0) {
     stop("No samples found for the indicated control_type.")
   }
