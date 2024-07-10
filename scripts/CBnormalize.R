@@ -1,5 +1,5 @@
 library(argparse)
-source("/workplace/R/normalize.R")
+source(paste0(Sys.getenv("WORKSPACE"), "/R/normalize.R"))
 library(magrittr)
 
 parser <- ArgumentParser()

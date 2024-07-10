@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo Starting fastq2readcounts...
+echo Starting CBnormalize...
 
 if [ -z "$BUILD_DIR" ]
 then
