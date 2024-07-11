@@ -31,11 +31,11 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$READ_COUNTS" = /* ]]
+if [[ "$FILTERED_COUNTS" = /* ]]
 then
-	READ_COUNTS=$(ls $READ_COUNTS)
+	READ_COUNTS=$(ls $FILTERED_COUNTS)
 else
-	READ_COUNTS=$BUILD_DIR/$READ_COUNTS
+	READ_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
 fi
 
 
@@ -50,12 +50,12 @@ if [[ "$RUN_NORM" == "true" ]]
 then
 	echo "Running module"
 
-	echo Rscript CBnormalize.R -c $READ_COUNTS	\
+	echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
     --CB_meta $CONTROL_BARCODE_META \
     --pseudocount $PSEUDOCOUNT \
     --out $BUILD_DIR
 
-	Rscript CBnormalize.R -c $READ_COUNTS	\
+	Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 	--CB_meta $CONTROL_BARCODE_META \
     --pseudocount $PSEUDOCOUNT \
 	--out $BUILD_DIR
@@ -64,7 +64,7 @@ then
 #    COUNT_COL_NAME="normalized_n"
 else
 	echo "Not running module"
-    COUNTS=$READ_COUNTS
+    COUNTS=$FILTERED_COUNTS
     COUNT_COL_NAME="n"
     echo $COUNTS
 fi
