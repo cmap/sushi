@@ -15,9 +15,9 @@ then
     exit -1
 fi
 
-if [ -z "$COUNTS" ]
+if [ -z "$NORMALIZED_COUNTS" ]
 then
-	echo COUNTS parameter empty
+	echo NORMALIZED_COUNTS parameter empty
     exit -1
 fi
 
@@ -58,11 +58,11 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$COUNTS" = /* ]]
+if [[ "$NORMALIZED_COUNTS" = /* ]]
 then
-	COUNTS=$(ls $COUNTS)
+	COUNTS=$(ls $NORMALIZED_COUNTS)
 else
-	COUNTS=$BUILD_DIR/$COUNTS
+	COUNTS=$BUILD_DIR/$NORMALIZED_COUNTS
 fi
 
 #Enforces abs paths
@@ -84,7 +84,7 @@ fi
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo ANNOTATED_COUNTS is: $ANNOTATED_COUNTS
-echo NORMALIZED_COUNTS is: $COUNTS
+echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
 echo CELL_SET_META is: $CELL_SET_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
@@ -94,7 +94,7 @@ echo RAW_COUNTS is: $RAW_COUNTS
 args=(
 --sample_meta "$SAMPLE_META"
 --annotated_counts "$ANNOTATED_COUNTS"
---normalized_counts "$COUNTS"
+--normalized_counts "$NORMALIZED_COUNTS"
 --sig_cols "$SIG_COLS"
 --cell_set_meta "$CELL_SET_META"
 --CB_meta "$CONTROL_BARCODE_META"
@@ -112,7 +112,7 @@ fi
 
 echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --annotated_counts $ANNOTATED_COUNTS \
---normalized_counts $COUNTS \
+--normalized_counts $NORMALIZED_COUNTS \
 --cell_set_meta $CELL_SET_META \
 --CB_meta $CONTROL_BARCODE_META \
 --sig_cols $SIG_COLS \
