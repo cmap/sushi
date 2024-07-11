@@ -20,7 +20,7 @@ then
     exit -1
 fi
 
-if [ -z "$NORMALIZED_COUNTS" ]
+if [ -z "$COUNTS" ]
 then
 	echo COUNTS parameter empty
     exit -1
@@ -82,7 +82,7 @@ echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo FILTERED_COUNTS is: $FILTERED_COUNTS
 echo ANNOTATED_COUNTS is: $ANNOTATED_COUNTS
-echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
+echo NORMALIZED_COUNTS is: $COUNTS
 echo CELL_SET_META is: $CELL_SET_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
@@ -91,7 +91,7 @@ echo COUNT_COL_NAME is: $COUNT_COL_NAME
 args=(
 --sample_meta "$SAMPLE_META"
 --annotated_counts "$ANNOTATED_COUNTS"
---normalized_counts "$NORMALIZED_COUNTS"
+--normalized_counts "$COUNTS"
 -c "$FILTERED_COUNTS"
 --sig_cols "$SIG_COLS"
 --cell_set_meta "$CELL_SET_META"
@@ -109,7 +109,7 @@ fi
 
 echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --annotated_counts $ANNOTATED_COUNTS \
---normalized_counts $NORMALIZED_COUNTS \
+--normalized_counts $COUNTS \
 -c $FILTERED_COUNTS \
 --cell_set_meta $CELL_SET_META \
 --CB_meta $CONTROL_BARCODE_META \
