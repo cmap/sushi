@@ -65,6 +65,14 @@ else
 	COUNTS=$BUILD_DIR/$COUNTS
 fi
 
+#Enforces abs paths
+if [[ "$RAW_COUNTS" = /* ]]
+then
+	COUNTS=$(ls $RAW_COUNTS)
+else
+	COUNTS=$BUILD_DIR/$RAW_COUNTS
+fi
+
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo ANNOTATED_COUNTS is: $ANNOTATED_COUNTS
