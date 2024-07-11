@@ -10,6 +10,7 @@ install.packages("dplyr", dependencies = TRUE)
 install.packages("tidyr", dependencies = TRUE)
 install.packages("sets", dependencies = TRUE)
 install.packages("devtools", dependencies = TRUE)
+devtools::install_github("https://github.com/broadinstitute/taigr")
 
 # Install other necessary Bioconductor packages explicitly
 BiocManager::install("S4Vectors")
