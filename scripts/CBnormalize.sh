@@ -20,8 +20,6 @@ then
     exit -1
 fi
 
-
-
 #Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
 then
@@ -36,6 +34,14 @@ then
 	FILTERED_COUNTS=$(ls $FILTERED_COUNTS)
 else
 	FILTERED_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
+fi
+
+#Enforces abs paths
+if [[ "$CONTROL_BARCODE_META" = /* ]]
+then
+	CONTROL_BARCODE_META=$(ls $CONTROL_BARCODE_META)
+else
+	CONTROL_BARCODE_META=/data/$CONTROL_BARCODE_META
 fi
 
 
