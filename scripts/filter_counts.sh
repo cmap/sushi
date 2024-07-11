@@ -56,6 +56,14 @@ else
 	CELL_SET_META=$BUILD_DIR/$CELL_SET_META
 fi
 
+#Enforces abs paths
+if [[ "$CONTROL_BARCODE_META" = /* ]]
+then
+	CELL_SET_META=$(ls $CONTROL_BARCODE_META)
+else
+	CELL_SET_META=/data/$CONTROL_BARCODE_META
+fi
+
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
