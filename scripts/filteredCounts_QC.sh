@@ -2,8 +2,6 @@
 
 echo Starting filteredCounts_QC...
 
-echo SAMPLE META is $SAMPLE_META
-
 if [ -z "$BUILD_DIR" ]
 then
 	echo BUILD_DIR not specified
@@ -36,7 +34,7 @@ fi
 
 if [ -z "$CELL_SET_META" ]
 then
-	echo SAMPLE_META parameter empty
+	echo CELL_SET_META parameter empty
     exit -1
 fi
 

@@ -29,8 +29,8 @@ parser$add_argument("--annotated_counts", default="annotated_counts.csv",
 #                     help="path to file containing filtered counts")
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "control barcode metadata")
-parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
+parser$add_argument("--CB_meta", default="/data/CB_meta.csv", help = "control barcode metadata")
+parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day", 
                     help = "columns used to generate signature ids")
