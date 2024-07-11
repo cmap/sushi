@@ -33,9 +33,9 @@ fi
 #Enforces abs paths
 if [[ "$FILTERED_COUNTS" = /* ]]
 then
-	READ_COUNTS=$(ls $FILTERED_COUNTS)
+	FILTERED_COUNTS=$(ls $FILTERED_COUNTS)
 else
-	READ_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
+	FILTERED_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
 fi
 
 
@@ -61,7 +61,7 @@ then
 	--out $BUILD_DIR
 
 	COUNTS="normalized_counts.csv"
-#    COUNT_COL_NAME="normalized_n"
+
 else
 	echo "Not running module"
     COUNTS=$FILTERED_COUNTS
