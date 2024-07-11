@@ -1,9 +1,7 @@
 suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-suppressPackageStartupMessages(library(dplyr)) #n()
+suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
@@ -11,9 +9,9 @@ suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(grDevices))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(ggpubr))
-suppressPackageStartupMessages(library(prismSeqR))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
 suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add fit line and labels
+source("/workspace/R/QC_images.R")
 
 # Parser ----
 parser <- ArgumentParser()
