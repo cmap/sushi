@@ -8,11 +8,6 @@ then
     exit -1
 fi
 
-if [ -z "$FILTERED_COUNTS" ]
-then
-	echo FILTERED_COUNTS parameter empty
-    exit -1
-fi
 
 if [ -z "$ANNOTATED_COUNTS" ]
 then
@@ -47,14 +42,6 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$FILTERED_COUNTS" = /* ]]
-then
-	FILTERED_COUNTS=$(ls $FILTERED_COUNTS)
-else
-	FILTERED_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
-fi
-
-#Enforces abs paths
 if [[ "$ANNOTATED_COUNTS" = /* ]]
 then
 	ANNOTATED_COUNTS=$(ls $ANNOTATED_COUNTS)
@@ -80,7 +67,6 @@ fi
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
-echo FILTERED_COUNTS is: $FILTERED_COUNTS
 echo ANNOTATED_COUNTS is: $ANNOTATED_COUNTS
 echo NORMALIZED_COUNTS is: $COUNTS
 echo CELL_SET_META is: $CELL_SET_META
@@ -92,7 +78,6 @@ args=(
 --sample_meta "$SAMPLE_META"
 --annotated_counts "$ANNOTATED_COUNTS"
 --normalized_counts "$COUNTS"
--c "$FILTERED_COUNTS"
 --sig_cols "$SIG_COLS"
 --cell_set_meta "$CELL_SET_META"
 --CB_meta "$CONTROL_BARCODE_META"
@@ -110,7 +95,6 @@ fi
 echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --annotated_counts $ANNOTATED_COUNTS \
 --normalized_counts $COUNTS \
--c $FILTERED_COUNTS \
 --cell_set_meta $CELL_SET_META \
 --CB_meta $CONTROL_BARCODE_META \
 --sig_cols $SIG_COLS \

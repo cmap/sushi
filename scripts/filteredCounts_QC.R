@@ -23,8 +23,6 @@ parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help= "Sam
 parser$add_argument("--raw_counts", default= "raw_counts.csv", help="path to file containing raw counts")
 parser$add_argument("--annotated_counts", default="annotated_counts.csv",
                     help="path to file containing annotated counts")
-# parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
-#                     help="path to file containing filtered counts")
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--CB_meta", default="/data/CB_meta.csv", help = "control barcode metadata")
@@ -39,9 +37,6 @@ parser$add_argument("--count_threshold", default=40,
 parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
 parser$add_argument("--control_type", default = "negcon",
                     help = "how negative control wells are distinguished in the trt_type column")
-# parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
-
-# get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
 if (args$out == ""){
