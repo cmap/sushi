@@ -20,8 +20,6 @@ then
     exit -1
 fi
 
-
-
 #Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
 then
@@ -45,7 +43,7 @@ if [[ "$CELL_LINE_META" = /* ]]
 then
 	CELL_LINE_META=$(ls $CELL_LINE_META)
 else
-	CELL_LINE_META=$BUILD_DIR/$CELL_LINE_META
+	CELL_LINE_META=/data/$CELL_LINE_META
 fi
 
 echo $CELL_SET_META
