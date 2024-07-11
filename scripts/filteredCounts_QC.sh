@@ -68,9 +68,9 @@ fi
 #Enforces abs paths
 if [[ "$RAW_COUNTS" = /* ]]
 then
-	COUNTS=$(ls $RAW_COUNTS)
+	RAW_COUNTS=$(ls $RAW_COUNTS)
 else
-	COUNTS=$BUILD_DIR/$RAW_COUNTS
+	RAW_COUNTS=$BUILD_DIR/$RAW_COUNTS
 fi
 
 echo Build dir is: $BUILD_DIR
