@@ -2,6 +2,8 @@
 
 echo Starting filteredCounts_QC...
 
+echo SAMPLE META is $SAMPLE_META
+
 if [ -z "$BUILD_DIR" ]
 then
 	echo BUILD_DIR not specified
