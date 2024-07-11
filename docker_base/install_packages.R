@@ -23,12 +23,7 @@ BiocManager::install("AnnotationDbi")
 BiocManager::install("GO.db")
 BiocManager::install("WGCNA")
 
-# Load devtools library
-library(devtools)
-
 # Install GitHub packages
 devtools::install_github("broadinstitute/cdsr_models", dependencies = TRUE)
 devtools::install_github("broadinstitute/cdsr_biomarker", dependencies = TRUE)
-
-# Install Bioconductor package
 BiocManager::install("cmapR")
