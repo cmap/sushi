@@ -8,9 +8,9 @@ then
     exit -1
 fi
 
-if [ -z "$READ_COUNTS" ]
+if [ -z "$FILTERED_COUNTS" ]
 then
-	echo READ_COUNTS parameter empty
+	echo FILTERED_COUNTS parameter empty
     exit -1
 fi
 
