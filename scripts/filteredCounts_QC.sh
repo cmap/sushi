@@ -73,6 +73,7 @@ echo CELL_SET_META is: $CELL_SET_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
 echo COUNT_COL_NAME is: $COUNT_COL_NAME
+echo RAW_COUNTS is: $RAW_COUNTS
 
 args=(
 --sample_meta "$SAMPLE_META"
@@ -85,6 +86,7 @@ args=(
 --count_threshold "$COUNT_THRESHOLD"
 --count_col_name "$COUNT_COL_NAME"
 --control_type "$CTL_TYPES"
+--raw_counts "$RAW_COUNTS"
 )
 
 if [[ "$REVERSE_INDEX2" == "true" ]]
@@ -102,7 +104,8 @@ echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --count_threshold $COUNT_THRESHOLD \
 --count_col_name $COUNT_COL_NAME \
 --reverse_index2 $REVERSE_INDEX2 \
---control_type $CTL_TYPES
+--control_type $CTL_TYPES \
+--raw_counts $RAW_COUNTS
 
 
 Rscript -e "library(cmapR);packageVersion('cmapR')"
