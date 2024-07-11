@@ -21,10 +21,8 @@ generate_biomarkers = function(collapsed_values) {
       reshape2::dcast(DepMap_ID~sig_id, value.var="median_l2fc") %>%
       tibble::column_to_rownames("DepMap_ID")
   }
-  return(bio_in)
-}
-  
+
   bio_out = cdsrbiomarker::get_biomarkers(bio_in)
-  
+
   return(bio_out)
 }
