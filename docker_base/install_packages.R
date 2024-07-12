@@ -27,6 +27,6 @@ BiocManager::install("GO.db")
 BiocManager::install("WGCNA")
 
 # Install GitHub packages
-devtools::install_github("broadinstitute/cdsr_models", dependencies = TRUE)
-devtools::install_github("broadinstitute/cdsr_biomarker", dependencies = TRUE)
-BiocManager::install("cmapR")
+#devtools::install_github("broadinstitute/cdsr_models", dependencies = TRUE)
+#devtools::install_github("broadinstitute/cdsr_biomarker", dependencies = TRUE)
+BiocManager::install("cmapR") #TODO: Remove this once dependency is no longer needed
