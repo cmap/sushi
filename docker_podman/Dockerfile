@@ -31,14 +31,6 @@ RUN apt-get update -qq && \
 COPY ./install_packages.R /src/install_packages.R
 RUN Rscript /src/install_packages.R
 
-# Second set of R dependencies
-#COPY ./install_sushi_packages.R /src/install_sushi_packages.R
-#RUN Rscript /src/install_sushi_packages.R
-
-# Third set of R dependencies
-#COPY ./install_sushi_packages2.R /src/install_sushi_packages2.R
-#RUN Rscript /src/install_sushi_packages2.R
-
 # Install curl (why post update?)
 RUN apt-get update -qq && \
     apt-get -y install --no-install-recommends curl && \

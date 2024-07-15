@@ -10,7 +10,7 @@ echo "Current working directory: $(pwd)"
 ls -la
 
 # Specify the directory containing the Dockerfile
-BUILD_CONTEXT_DIR="./docker_base"
+BUILD_CONTEXT_DIR="./docker_podman"
 
 # Ensure the build context directory exists
 if [ ! -d "$BUILD_CONTEXT_DIR" ]; then

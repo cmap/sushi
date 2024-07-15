@@ -74,9 +74,3 @@ else
     COUNT_COL_NAME="n"
     echo $COUNTS
 fi
-
-#curl "http://suffix:8889/view/sushi/job/filteredCounts_QC/buildWithParameters?token=cIJQNoc7aL&BUILD_DIR=${BUILD_DIR}&CELL_SET_META=${CELL_SET_META}&CONTROL_BARCODE_META=${CONTROL_BARCODE_META}&COUNT_THRESHOLD=${COUNT_THRESHOLD}&COUNT_COL_NAME=${COUNT_COL_NAME}&SIG_COLS=${SIG_COLS}"
-#curl "http://vercingetorix-r8:8889/view/sushi-podman/job/compute_LFC-podman/buildWithParameters?token=jjrDRMJ8Yh&BUILD_DIR=${BUILD_DIR}&BUILD_NAME=${BUILD_NAME}&CTL_TYPES=${CTL_TYPES}&COUNTS=${COUNTS}&COUNT_COL_NAME=${COUNT_COL_NAME}&SIG_COLS=${SIG_COLS}&SAMPLE_COLS=${SAMPLE_COLS}&CONTROL_COLS=${CONTROL_COLS}&COUNT_THRESHOLD=${COUNT_THRESHOLD}&DAYS=${DAYS}&CONVERT_SUSHI=${CONVERT_SUSHI}"
-
-#Rscript -e "library(cmapR);packageVersion('cmapR')"
-
