@@ -42,6 +42,7 @@ pipeline {
             steps {
                 script {
                     def config = [
+                        GIT_BRANCH: params.GIT_BRANCH,
                         BUILD_DIR: params.BUILD_DIR,
                         BUILD_NAME: params.BUILD_NAME,
                         SEQ_TYPE: params.SEQ_TYPE,
@@ -86,7 +87,6 @@ pipeline {
             script {
                 if (params.TRIGGER_BUILD) {
                     def nextJobParams = [
-                        string(name: 'GIT_BRANCH', value: params.GIT_BRANCH),
                         string(name: 'BUILD_DIR', value: params.BUILD_DIR),
                         string(name: 'BUILD_NAME', value: params.BUILD_NAME),
                         string(name: 'SEQ_TYPE', value: params.SEQ_TYPE),
