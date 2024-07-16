@@ -3,38 +3,38 @@ pipeline {
 
     // Define parameters that can be edited via the Jenkins UI
     parameters {
-        string(name: 'BUILD_DIR', defaultValue: '/default/path', description: 'Build directory')
+        booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
+        string(name: 'GIT_BRANCH', defaultValue: 'podman_dev', description: 'Pipeline branch to use')
+        string(name: 'BUILD_DIR', defaultValue: '/default/path', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
-        string(name: 'SEQ_TYPE', defaultValue: 'HiSeq', description: 'Sequencing type')
-        string(name: 'CTL_TYPES', defaultValue: '', description: 'Control types')
+        choice(name: 'SEQ_TYPE', choices: ['DRAGEN', 'MiSeq', 'HiSeq', 'NovaSeq'], description: 'MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
+        string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'Type to mark as control in compute_LFC')
+        string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
         string(name: 'CELL_SET_META', defaultValue: '', description: 'Cell set metadata')
-        string(name: 'ID_COLS', defaultValue: '', description: 'ID columns')
-        string(name: 'SAMPLE_COLS', defaultValue: '', description: 'Sample columns')
-        string(name: 'SIG_COLS', defaultValue: '', description: 'Signature columns')
-        string(name: 'SEQUENCING_INDEX_COLS', defaultValue: '', description: 'Sequencing index columns')
-        string(name: 'CONTROL_BARCODE_META', defaultValue: '', description: 'Control barcode metadata')
-        string(name: 'CONTROL_COLS', defaultValue: '', description: 'Control columns')
-        string(name: 'COUNT_COL_NAME', defaultValue: '', description: 'Count column name')
-        string(name: 'REMOVE_DATA', defaultValue: '', description: 'Remove data')
-        string(name: 'RUN_NORM', defaultValue: '', description: 'Run normalization')
-        string(name: 'CONVERT_SUSHI', defaultValue: '', description: 'Convert to sushi')
-        string(name: 'DAYS', defaultValue: '', description: 'Days')
-        string(name: 'BARCODE_SUFFIX', defaultValue: '', description: 'Barcode suffix')
-        string(name: 'REVERSE_INDEX2', defaultValue: '', description: 'Reverse Index 2')
-        string(name: 'SAMPLE_META', defaultValue: '', description: 'Sample metadata')
-        string(name: 'COUNT_THRESHOLD', defaultValue: '', description: 'Count threshold')
-        string(name: 'PULL_POOL_ID', defaultValue: '', description: 'Pull pool ID')
-        string(name: 'RUN_EPS_QC', defaultValue: '', description: 'Run EPS QC')
-        string(name: 'PSEUDOCOUNT', defaultValue: '', description: 'Pseudocount')
-        string(name: 'RAW_COUNTS', defaultValue: '', description: 'Raw counts')
-        string(name: 'CELL_LINE_META', defaultValue: '', description: 'Cell line metadata')
-        string(name: 'FILTERED_COUNTS', defaultValue: '', description: 'Filtered counts')
-        string(name: 'LFC', defaultValue: '', description: 'LFC')
-        string(name: 'ANNOTATED_COUNTS', defaultValue: '', description: 'Annotated counts')
-        string(name: 'NORMALIZED_COUNTS', defaultValue: '', description: 'Normalized counts')
-        string(name: 'COLLAPSED_VALUES', defaultValue: '', description: 'Collapsed values')
+        string(name: 'ID_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep', description: 'Columns to concat to create unique ID for each sample-replicate')
+        string(name: 'SAMPLE_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day,bio_rep', description: 'Sample columns')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day', description: 'Signature columns')
+        string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'index_1,index_2,flowcell_names', description: 'Sequencing index columns')
+        string(name: 'CONTROL_BARCODE_META', defaultValue: '/data/vdb/prismSeq/CB_meta.csv', description: 'Metadata for control barcodes.')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'Set of columns that define individual controls')
+        booleanParam(name: 'REMOVE_DATA', defaultValue: true, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
+        string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Field used to calculate L2FC')
+        booleanParam(name: 'RUN_NORM', defaultValue: true, description: 'Run normalization module on data.')
+        booleanParam(name: 'PULL_POOL_ID', defaultValue: false, description: 'Flag indicating whether to pull pool IDs from CellDB - only applicable to cell sets (i.e. EXT.PR500.CS01.1.A, EXT.PR500.CS01.1.B, etc).')
+        booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline.')
+        booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
+        string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell Set Metadata. Static cell_line_meta location: /data/vdb/prismSeq/cell_set_meta.csv')
+        string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name of sample metadata within the BUILD_DIR directory.')
+        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Minimum threshold to filter cell line counts by.')
+        string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Pseudocount for normalization.')
+        string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
+        string(name: 'RAW_COUNTS', defaultValue: 'raw_counts.csv', description: 'Filename in BUILD_DIR containing raw counts')
+        string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'File in BUILD_DIR containing filtered counts')
+        string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'File containing log2 fold change values')
+        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'File in BUILD_DIR containing annotated counts')
+        string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'File in BUILD_DIR containing normalized counts')
+        string(name: 'COLLAPSED_VALUES', defaultValue: 'collapsed_values.csv', description: 'File in BUILD_DIR containing replicate collapsed l2fc values')
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
-        booleanParam(name: 'TRIGGER_BUILD', defaultValue: false, description: 'Check this to trigger the next build')
     }
 
     stages {
@@ -46,6 +46,7 @@ pipeline {
                         BUILD_NAME: params.BUILD_NAME,
                         SEQ_TYPE: params.SEQ_TYPE,
                         CTL_TYPES: params.CTL_TYPES,
+                        DAYS: params.DAYS,
                         CELL_SET_META: params.CELL_SET_META,
                         ID_COLS: params.ID_COLS,
                         SAMPLE_COLS: params.SAMPLE_COLS,
@@ -53,20 +54,17 @@ pipeline {
                         SEQUENCING_INDEX_COLS: params.SEQUENCING_INDEX_COLS,
                         CONTROL_BARCODE_META: params.CONTROL_BARCODE_META,
                         CONTROL_COLS: params.CONTROL_COLS,
-                        COUNT_COL_NAME: params.COUNT_COL_NAME,
                         REMOVE_DATA: params.REMOVE_DATA,
+                        COUNT_COL_NAME: params.COUNT_COL_NAME,
                         RUN_NORM: params.RUN_NORM,
+                        PULL_POOL_ID: params.PULL_POOL_ID,
                         CONVERT_SUSHI: params.CONVERT_SUSHI,
-                        DAYS: params.DAYS,
-                        BARCODE_SUFFIX: params.BARCODE_SUFFIX,
-                        REVERSE_INDEX2: params.REVERSE_INDEX2,
+                        RUN_EPS_QC: params.RUN_EPS_QC,
                         SAMPLE_META: params.SAMPLE_META,
                         COUNT_THRESHOLD: params.COUNT_THRESHOLD,
-                        PULL_POOL_ID: params.PULL_POOL_ID,
-                        RUN_EPS_QC: params.RUN_EPS_QC,
                         PSEUDOCOUNT: params.PSEUDOCOUNT,
-                        RAW_COUNTS: params.RAW_COUNTS,
                         CELL_LINE_META: params.CELL_LINE_META,
+                        RAW_COUNTS: params.RAW_COUNTS,
                         FILTERED_COUNTS: params.FILTERED_COUNTS,
                         LFC: params.LFC,
                         ANNOTATED_COUNTS: params.ANNOTATED_COUNTS,
@@ -74,6 +72,7 @@ pipeline {
                         COLLAPSED_VALUES: params.COLLAPSED_VALUES,
                         API_URL: params.API_URL,
                         API_KEY: sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
+                        GIT_BRANCH: params.GIT_BRANCH
                     ]
                     writeFile file: "${params.BUILD_DIR}/config.json", text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                     echo "Generated config.json: ${config}"
@@ -87,10 +86,12 @@ pipeline {
             script {
                 if (params.TRIGGER_BUILD) {
                     def nextJobParams = [
+                        string(name: 'GIT_BRANCH', value: params.GIT_BRANCH),
                         string(name: 'BUILD_DIR', value: params.BUILD_DIR),
                         string(name: 'BUILD_NAME', value: params.BUILD_NAME),
                         string(name: 'SEQ_TYPE', value: params.SEQ_TYPE),
                         string(name: 'CTL_TYPES', value: params.CTL_TYPES),
+                        string(name: 'DAYS', value: params.DAYS),
                         string(name: 'CELL_SET_META', value: params.CELL_SET_META),
                         string(name: 'ID_COLS', value: params.ID_COLS),
                         string(name: 'SAMPLE_COLS', value: params.SAMPLE_COLS),
@@ -98,20 +99,17 @@ pipeline {
                         string(name: 'SEQUENCING_INDEX_COLS', value: params.SEQUENCING_INDEX_COLS),
                         string(name: 'CONTROL_BARCODE_META', value: params.CONTROL_BARCODE_META),
                         string(name: 'CONTROL_COLS', value: params.CONTROL_COLS),
+                        booleanParam(name: 'REMOVE_DATA', value: params.REMOVE_DATA),
                         string(name: 'COUNT_COL_NAME', value: params.COUNT_COL_NAME),
-                        string(name: 'REMOVE_DATA', value: params.REMOVE_DATA),
-                        string(name: 'RUN_NORM', value: params.RUN_NORM),
-                        string(name: 'CONVERT_SUSHI', value: params.CONVERT_SUSHI),
-                        string(name: 'DAYS', value: params.DAYS),
-                        string(name: 'BARCODE_SUFFIX', value: params.BARCODE_SUFFIX),
-                        string(name: 'REVERSE_INDEX2', value: params.REVERSE_INDEX2),
+                        booleanParam(name: 'RUN_NORM', value: params.RUN_NORM),
+                        booleanParam(name: 'PULL_POOL_ID', value: params.PULL_POOL_ID),
+                        booleanParam(name: 'CONVERT_SUSHI', value: params.CONVERT_SUSHI),
+                        booleanParam(name: 'RUN_EPS_QC', value: params.RUN_EPS_QC),
                         string(name: 'SAMPLE_META', value: params.SAMPLE_META),
                         string(name: 'COUNT_THRESHOLD', value: params.COUNT_THRESHOLD),
-                        string(name: 'PULL_POOL_ID', value: params.PULL_POOL_ID),
-                        string(name: 'RUN_EPS_QC', value: params.RUN_EPS_QC),
                         string(name: 'PSEUDOCOUNT', value: params.PSEUDOCOUNT),
-                        string(name: 'RAW_COUNTS', value: params.RAW_COUNTS),
                         string(name: 'CELL_LINE_META', value: params.CELL_LINE_META),
+                        string(name: 'RAW_COUNTS', value: params.RAW_COUNTS),
                         string(name: 'FILTERED_COUNTS', value: params.FILTERED_COUNTS),
                         string(name: 'LFC', value: params.LFC),
                         string(name: 'ANNOTATED_COUNTS', value: params.ANNOTATED_COUNTS),
