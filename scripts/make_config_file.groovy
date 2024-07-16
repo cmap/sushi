@@ -137,4 +137,32 @@ pipeline {
                     def commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
                     def configFilePath = env.CONFIG_FILE_PATH
                     sh """
-                        jq --arg commit "$commitHash
+                        jq --arg commit "$commitHash" '. + {COMMIT: \$commit}' $configFilePath > ${configFilePath}.tmp && mv ${configFilePath}.tmp $configFilePath
+                    """
+                    echo "Added commit hash to config.json: $commitHash"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                if (params.TRIGGER_BUILD) {
+                    def configText = readFile(file: env.CONFIG_FILE_PATH)
+                    def config = new HashMap(new JsonSlurper().parseText(configText))
+                    def nextJobParams = config.collect { key, value ->
+                        if (value == 'true' || value == 'false') {
+                            booleanParam(name: key, value: value.toBoolean())
+                        } else {
+                            string(name: key, value: value.toString())
+                        }
+                    }
+                    build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
+                } else {
+                    echo 'Next build not triggered because TRIGGER_BUILD is false.'
+                }
+            }
+        }
+    }
+}
