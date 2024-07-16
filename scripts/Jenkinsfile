@@ -30,7 +30,6 @@ pipeline {
         string(name: 'CELL_LINE_META', defaultValue: '', description: 'Cell line metadata')
         string(name: 'FILTERED_COUNTS', defaultValue: '', description: 'Filtered counts')
         string(name: 'LFC', defaultValue: '', description: 'LFC')
-        string(name: 'COUNTS', defaultValue: '', description: 'Counts')
         string(name: 'ANNOTATED_COUNTS', defaultValue: '', description: 'Annotated counts')
         string(name: 'NORMALIZED_COUNTS', defaultValue: '', description: 'Normalized counts')
         string(name: 'COLLAPSED_VALUES', defaultValue: '', description: 'Collapsed values')
@@ -70,7 +69,6 @@ pipeline {
                         CELL_LINE_META: params.CELL_LINE_META,
                         FILTERED_COUNTS: params.FILTERED_COUNTS,
                         LFC: params.LFC,
-                        COUNTS: params.COUNTS,
                         ANNOTATED_COUNTS: params.ANNOTATED_COUNTS,
                         NORMALIZED_COUNTS: params.NORMALIZED_COUNTS,
                         COLLAPSED_VALUES: params.COLLAPSED_VALUES,
@@ -116,7 +114,6 @@ pipeline {
                         string(name: 'CELL_LINE_META', value: params.CELL_LINE_META),
                         string(name: 'FILTERED_COUNTS', value: params.FILTERED_COUNTS),
                         string(name: 'LFC', value: params.LFC),
-                        string(name: 'COUNTS', value: params.COUNTS),
                         string(name: 'ANNOTATED_COUNTS', value: params.ANNOTATED_COUNTS),
                         string(name: 'NORMALIZED_COUNTS', value: params.NORMALIZED_COUNTS),
                         string(name: 'COLLAPSED_VALUES', value: params.COLLAPSED_VALUES),
