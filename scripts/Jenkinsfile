@@ -49,7 +49,7 @@ pipeline {
                                   doGenerateSubmoduleConfigurations: false,
                                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: '']],
                                   submoduleCfg: [],
-                                  userRemoteConfigs: [[credentialsId: '<your-credentials-id>', url: '<your-git-repo-url>']]
+                                  userRemoteConfigs: scm.userRemoteConfigs
                         ])
                     } else {
                         // Checkout the branch
