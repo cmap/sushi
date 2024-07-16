@@ -1,6 +1,3 @@
-import hudson.model.*
-import jenkins.model.*
-
 pipeline {
     agent any
 
@@ -70,7 +67,16 @@ pipeline {
         success {
             script {
                 if (params.TRIGGER_BUILD) {
-                    def nextJobParams = params.keySet().findAll { it != 'TRIGGER_BUILD' }.collect { string(name: it, value: params[it]) } + [booleanParam(name: 'TRIGGER_BUILD', value: params.TRIGGER_BUILD)]
+                    def nextJobParams = params.keySet().collect {
+                        def param = params[it]
+                        if (param instanceof Boolean) {
+                            booleanParam(name: it, value: param)
+                        } else if (param in ['DRAGEN', 'MiSeq', 'HiSeq', 'NovaSeq']) {
+                            choice(name: it, choices: param)
+                        } else {
+                            string(name: it, value: param)
+                        }
+                    }
                     build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
                 } else {
                     echo 'Next build not triggered because TRIGGER_BUILD is false.'
