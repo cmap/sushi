@@ -71,7 +71,7 @@ pipeline {
                         NORMALIZED_COUNTS: params.NORMALIZED_COUNTS,
                         COLLAPSED_VALUES: params.COLLAPSED_VALUES,
                         API_URL: params.API_URL,
-                        API_KEY: sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
+                        API_KEY: sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim(),
                         GIT_BRANCH: params.GIT_BRANCH
                     ]
                     writeFile file: "${params.BUILD_DIR}/config.json", text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
