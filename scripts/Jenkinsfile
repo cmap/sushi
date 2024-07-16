@@ -1,0 +1,188 @@
+pipeline {
+    agent any
+
+    // Define parameters that can be edited via the Jenkins UI
+    parameters {
+        string(name: 'BUILD_DIR', defaultValue: '/default/path', description: 'Build directory')
+        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
+        string(name: 'SEQ_TYPE', defaultValue: 'HiSeq', description: 'Sequencing type')
+        string(name: 'CTL_TYPES', defaultValue: '', description: 'Control types')
+        string(name: 'CELL_SET_META', defaultValue: '', description: 'Cell set metadata')
+        string(name: 'ID_COLS', defaultValue: '', description: 'ID columns')
+        string(name: 'SAMPLE_COLS', defaultValue: '', description: 'Sample columns')
+        string(name: 'SIG_COLS', defaultValue: '', description: 'Signature columns')
+        string(name: 'SEQUENCING_INDEX_COLS', defaultValue: '', description: 'Sequencing index columns')
+        string(name: 'CONTROL_BARCODE_META', defaultValue: '', description: 'Control barcode metadata')
+        string(name: 'CONTROL_COLS', defaultValue: '', description: 'Control columns')
+        string(name: 'COUNT_COL_NAME', defaultValue: '', description: 'Count column name')
+        string(name: 'REMOVE_DATA', defaultValue: '', description: 'Remove data')
+        string(name: 'RUN_NORM', defaultValue: '', description: 'Run normalization')
+        string(name: 'CONVERT_SUSHI', defaultValue: '', description: 'Convert to sushi')
+        string(name: 'DAYS', defaultValue: '', description: 'Days')
+        string(name: 'BARCODE_SUFFIX', defaultValue: '', description: 'Barcode suffix')
+        string(name: 'REVERSE_INDEX2', defaultValue: '', description: 'Reverse Index 2')
+        string(name: 'SAMPLE_META', defaultValue: '', description: 'Sample metadata')
+        string(name: 'COUNT_THRESHOLD', defaultValue: '', description: 'Count threshold')
+        string(name: 'PULL_POOL_ID', defaultValue: '', description: 'Pull pool ID')
+        string(name: 'RUN_EPS_QC', defaultValue: '', description: 'Run EPS QC')
+        string(name: 'PSEUDOCOUNT', defaultValue: '', description: 'Pseudocount')
+        string(name: 'RAW_COUNTS', defaultValue: '', description: 'Raw counts')
+        string(name: 'CELL_LINE_META', defaultValue: '', description: 'Cell line metadata')
+        string(name: 'FILTERED_COUNTS', defaultValue: '', description: 'Filtered counts')
+        string(name: 'LFC', defaultValue: '', description: 'LFC')
+        string(name: 'COUNTS', defaultValue: '', description: 'Counts')
+        string(name: 'ANNOTATED_COUNTS', defaultValue: '', description: 'Annotated counts')
+        string(name: 'NORMALIZED_COUNTS', defaultValue: '', description: 'Normalized counts')
+        string(name: 'COLLAPSED_VALUES', defaultValue: '', description: 'Collapsed values')
+        string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
+        booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Keep this checked if you would like to trigger a build. If you only want to generate the config.json file, uncheck this box.')
+        string(name: 'SCRIPT_TO_RUN', defaultValue: 'collate_fastq_reads.sh', description: 'Script to run')
+    }
+
+    stages {
+        stage('Generate JSON Config') {
+            steps {
+                script {
+                    def config = [
+                        BUILD_DIR: params.BUILD_DIR,
+                        BUILD_NAME: params.BUILD_NAME,
+                        SEQ_TYPE: params.SEQ_TYPE,
+                        CTL_TYPES: params.CTL_TYPES,
+                        CELL_SET_META: params.CELL_SET_META,
+                        ID_COLS: params.ID_COLS,
+                        SAMPLE_COLS: params.SAMPLE_COLS,
+                        SIG_COLS: params.SIG_COLS,
+                        SEQUENCING_INDEX_COLS: params.SEQUENCING_INDEX_COLS,
+                        CONTROL_BARCODE_META: params.CONTROL_BARCODE_META,
+                        CONTROL_COLS: params.CONTROL_COLS,
+                        COUNT_COL_NAME: params.COUNT_COL_NAME,
+                        REMOVE_DATA: params.REMOVE_DATA,
+                        RUN_NORM: params.RUN_NORM,
+                        CONVERT_SUSHI: params.CONVERT_SUSHI,
+                        DAYS: params.DAYS,
+                        BARCODE_SUFFIX: params.BARCODE_SUFFIX,
+                        REVERSE_INDEX2: params.REVERSE_INDEX2,
+                        SAMPLE_META: params.SAMPLE_META,
+                        COUNT_THRESHOLD: params.COUNT_THRESHOLD,
+                        PULL_POOL_ID: params.PULL_POOL_ID,
+                        RUN_EPS_QC: params.RUN_EPS_QC,
+                        PSEUDOCOUNT: params.PSEUDOCOUNT,
+                        RAW_COUNTS: params.RAW_COUNTS,
+                        CELL_LINE_META: params.CELL_LINE_META,
+                        FILTERED_COUNTS: params.FILTERED_COUNTS,
+                        LFC: params.LFC,
+                        COUNTS: params.COUNTS,
+                        ANNOTATED_COUNTS: params.ANNOTATED_COUNTS,
+                        NORMALIZED_COUNTS: params.NORMALIZED_COUNTS,
+                        COLLAPSED_VALUES: params.COLLAPSED_VALUES,
+                        API_URL: params.API_URL,
+                        API_KEY: sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
+                    ]
+                    writeFile file: "${params.BUILD_DIR}/config.json", text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
+                    echo "Generated config.json: ${config}"
+                }
+            }
+        }
+
+        stage('Run Script') {
+            steps {
+                script {
+                    sh """
+                    chmod +x $WORKSPACE/scripts/${params.SCRIPT_TO_RUN}
+                    /usr/bin/podman run --rm --user root \\
+                    --entrypoint /bin/bash \\
+                    -e SEQ_TYPE="${params.SEQ_TYPE}" \\
+                    -e API_URL="${params.API_URL}" \\
+                    -e API_KEY="${params.API_KEY}" \\
+                    -e BUILD_DIR="${params.BUILD_DIR}" \\
+                    -e INDEX_1="${params.INDEX_1}" \\
+                    -e INDEX_2="${params.INDEX_2}" \\
+                    -e BARCODE_SUFFIX="${params.BARCODE_SUFFIX}" \\
+                    -e REVERSE_INDEX2="${params.REVERSE_INDEX2}" \\
+                    -e SAMPLE_META="${params.SAMPLE_META}" \\
+                    -e CONTROL_BARCODE_META="${params.CONTROL_BARCODE_META}" \\
+                    -e CTL_TYPES="${params.CTL_TYPES}" \\
+                    -e ID_COLS="${params.ID_COLS}" \\
+                    -e SAMPLE_COLS="${params.SAMPLE_COLS}" \\
+                    -e SIG_COLS="${params.SIG_COLS}" \\
+                    -e RUN_NORM="${params.RUN_NORM}" \\
+                    -e CONTROL_COLS="${params.CONTROL_COLS}" \\
+                    -e COUNT_THRESHOLD="${params.COUNT_THRESHOLD}" \\
+                    -e COUNT_COL_NAME="${params.COUNT_COL_NAME}" \\
+                    -e BUILD_NAME="${params.BUILD_NAME}" \\
+                    -e CONVERT_SUSHI="${params.CONVERT_SUSHI}" \\
+                    -e PULL_POOL_ID="${params.PULL_POOL_ID}" \\
+                    -e RUN_EPS_QC="${params.RUN_EPS_QC}" \\
+                    -e PSEUDOCOUNT="${params.PSEUDOCOUNT}" \\
+                    -e REMOVE_DATA="${params.REMOVE_DATA}" \\
+                    -e DAYS="${params.DAYS}" \\
+                    -e SEQUENCING_INDEX_COLS="${params.SEQUENCING_INDEX_COLS}" \\
+                    -e RAW_COUNTS="${params.RAW_COUNTS}" \\
+                    -e CELL_SET_META="${params.CELL_SET_META}" \\
+                    -e CELL_LINE_META="${params.CELL_LINE_META}" \\
+                    -e FILTERED_COUNTS="${params.FILTERED_COUNTS}" \\
+                    -e LFC="${params.LFC}" \\
+                    -e COUNTS="${params.COUNTS}" \\
+                    -e ANNOTATED_COUNTS="${params.ANNOTATED_COUNTS}" \\
+                    -e NORMALIZED_COUNTS="${params.NORMALIZED_COUNTS}" \\
+                    -e COLLAPSED_VALUES="${params.COLLAPSED_VALUES}" \\
+                    -v $WORKSPACE:/workspace \\
+                    -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key \\
+                    -v /cmap/data/vdb/prismSeq:/data \\
+                    -v $BUILD_DIR:$BUILD_DIR \\
+                    -w /workspace/scripts \\
+                    localhost/sushi-podman:latest \\
+                    ./${params.SCRIPT_TO_RUN}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                if (params.TRIGGER_NEXT_BUILD) {
+                    def nextJobParams = [
+                        string(name: 'BUILD_DIR', value: params.BUILD_DIR),
+                        string(name: 'BUILD_NAME', value: params.BUILD_NAME),
+                        string(name: 'SEQ_TYPE', value: params.SEQ_TYPE),
+                        string(name: 'CTL_TYPES', value: params.CTL_TYPES),
+                        string(name: 'CELL_SET_META', value: params.CELL_SET_META),
+                        string(name: 'ID_COLS', value: params.ID_COLS),
+                        string(name: 'SAMPLE_COLS', value: params.SAMPLE_COLS),
+                        string(name: 'SIG_COLS', value: params.SIG_COLS),
+                        string(name: 'SEQUENCING_INDEX_COLS', value: params.SEQUENCING_INDEX_COLS),
+                        string(name: 'CONTROL_BARCODE_META', value: params.CONTROL_BARCODE_META),
+                        string(name: 'CONTROL_COLS', value: params.CONTROL_COLS),
+                        string(name: 'COUNT_COL_NAME', value: params.COUNT_COL_NAME),
+                        string(name: 'REMOVE_DATA', value: params.REMOVE_DATA),
+                        string(name: 'RUN_NORM', value: params.RUN_NORM),
+                        string(name: 'CONVERT_SUSHI', value: params.CONVERT_SUSHI),
+                        string(name: 'DAYS', value: params.DAYS),
+                        string(name: 'BARCODE_SUFFIX', value: params.BARCODE_SUFFIX),
+                        string(name: 'REVERSE_INDEX2', value: params.REVERSE_INDEX2),
+                        string(name: 'SAMPLE_META', value: params.SAMPLE_META),
+                        string(name: 'COUNT_THRESHOLD', value: params.COUNT_THRESHOLD),
+                        string(name: 'PULL_POOL_ID', value: params.PULL_POOL_ID),
+                        string(name: 'RUN_EPS_QC', value: params.RUN_EPS_QC),
+                        string(name: 'PSEUDOCOUNT', value: params.PSEUDOCOUNT),
+                        string(name: 'RAW_COUNTS', value: params.RAW_COUNTS),
+                        string(name: 'CELL_LINE_META', value: params.CELL_LINE_META),
+                        string(name: 'FILTERED_COUNTS', value: params.FILTERED_COUNTS),
+                        string(name: 'LFC', value: params.LFC),
+                        string(name: 'COUNTS', value: params.COUNTS),
+                        string(name: 'ANNOTATED_COUNTS', value: params.ANNOTATED_COUNTS),
+                        string(name: 'NORMALIZED_COUNTS', value: params.NORMALIZED_COUNTS),
+                        string(name: 'COLLAPSED_VALUES', value: params.COLLAPSED_VALUES),
+                        string(name: 'API_URL', value: params.API_URL)
+                    ]
+
+                    build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
+                } else {
+                    echo 'Next build not triggered because TRIGGER_NEXT_BUILD is false.'
+                }
+            }
+        }
+    }
+}
