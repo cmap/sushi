@@ -1,3 +1,6 @@
+import hudson.model.*
+import jenkins.model.*
+
 pipeline {
     agent any
 
@@ -5,6 +8,7 @@ pipeline {
     parameters {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
         string(name: 'GIT_BRANCH', defaultValue: 'podman_dev', description: 'Pipeline branch to use')
+        string(name: 'COMMIT_HASH', defaultValue: '', description: 'Specific commit hash to use (leave empty to use the latest commit in the branch)')
         string(name: 'BUILD_DIR', defaultValue: '', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
         choice(name: 'SEQ_TYPE', choices: ['DRAGEN', 'MiSeq', 'HiSeq', 'NovaSeq'], description: 'MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
@@ -38,10 +42,22 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    def branchSpec = params.COMMIT_HASH?.trim() ? params.COMMIT_HASH : "*/${params.GIT_BRANCH}"
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: branchSpec]],
+                        userRemoteConfigs: [[url: '<your-git-repo-url>']]
+                    ])
+                }
+            }
+        }
         stage('Generate JSON Config') {
             steps {
                 script {
-                    def config = params.keySet().findAll { it != 'TRIGGER_BUILD' }.collectEntries { [(it): params[it]] }
+                    def config = params.keySet().findAll { it != 'TRIGGER_BUILD' && it != 'COMMIT_HASH' }.collectEntries { [(it): params[it]] }
                     config.API_KEY = sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
                     writeFile file: "${params.BUILD_DIR}/config.json", text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                     echo "Generated config.json: ${config}"
@@ -68,10 +84,11 @@ pipeline {
             script {
                 if (params.TRIGGER_BUILD) {
                     def nextJobParams = params.keySet().collect {
-                        if (params[it] instanceof Boolean) {
-                            booleanParam(name: it, value: params[it])
+                        def param = params[it]
+                        if (param instanceof Boolean) {
+                            booleanParam(name: it, value: param)
                         } else {
-                            string(name: it, value: params[it])
+                            string(name: it, value: param.toString())
                         }
                     }
                     build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
