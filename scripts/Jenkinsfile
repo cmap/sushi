@@ -35,8 +35,7 @@ pipeline {
         string(name: 'NORMALIZED_COUNTS', defaultValue: '', description: 'Normalized counts')
         string(name: 'COLLAPSED_VALUES', defaultValue: '', description: 'Collapsed values')
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
-        booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Keep this checked if you would like to trigger a build. If you only want to generate the config.json file, uncheck this box.')
-        string(name: 'SCRIPT_TO_RUN', defaultValue: 'collate_fastq_reads.sh', description: 'Script to run')
+        booleanParam(name: 'TRIGGER_BUILD', defaultValue: false, description: 'Check this to trigger the next build')
     }
 
     stages {
@@ -83,66 +82,12 @@ pipeline {
                 }
             }
         }
-
-        stage('Run Script') {
-            steps {
-                script {
-                    sh """
-                    chmod +x $WORKSPACE/scripts/${params.SCRIPT_TO_RUN}
-                    /usr/bin/podman run --rm --user root \\
-                    --entrypoint /bin/bash \\
-                    -e SEQ_TYPE="${params.SEQ_TYPE}" \\
-                    -e API_URL="${params.API_URL}" \\
-                    -e API_KEY="${params.API_KEY}" \\
-                    -e BUILD_DIR="${params.BUILD_DIR}" \\
-                    -e INDEX_1="${params.INDEX_1}" \\
-                    -e INDEX_2="${params.INDEX_2}" \\
-                    -e BARCODE_SUFFIX="${params.BARCODE_SUFFIX}" \\
-                    -e REVERSE_INDEX2="${params.REVERSE_INDEX2}" \\
-                    -e SAMPLE_META="${params.SAMPLE_META}" \\
-                    -e CONTROL_BARCODE_META="${params.CONTROL_BARCODE_META}" \\
-                    -e CTL_TYPES="${params.CTL_TYPES}" \\
-                    -e ID_COLS="${params.ID_COLS}" \\
-                    -e SAMPLE_COLS="${params.SAMPLE_COLS}" \\
-                    -e SIG_COLS="${params.SIG_COLS}" \\
-                    -e RUN_NORM="${params.RUN_NORM}" \\
-                    -e CONTROL_COLS="${params.CONTROL_COLS}" \\
-                    -e COUNT_THRESHOLD="${params.COUNT_THRESHOLD}" \\
-                    -e COUNT_COL_NAME="${params.COUNT_COL_NAME}" \\
-                    -e BUILD_NAME="${params.BUILD_NAME}" \\
-                    -e CONVERT_SUSHI="${params.CONVERT_SUSHI}" \\
-                    -e PULL_POOL_ID="${params.PULL_POOL_ID}" \\
-                    -e RUN_EPS_QC="${params.RUN_EPS_QC}" \\
-                    -e PSEUDOCOUNT="${params.PSEUDOCOUNT}" \\
-                    -e REMOVE_DATA="${params.REMOVE_DATA}" \\
-                    -e DAYS="${params.DAYS}" \\
-                    -e SEQUENCING_INDEX_COLS="${params.SEQUENCING_INDEX_COLS}" \\
-                    -e RAW_COUNTS="${params.RAW_COUNTS}" \\
-                    -e CELL_SET_META="${params.CELL_SET_META}" \\
-                    -e CELL_LINE_META="${params.CELL_LINE_META}" \\
-                    -e FILTERED_COUNTS="${params.FILTERED_COUNTS}" \\
-                    -e LFC="${params.LFC}" \\
-                    -e COUNTS="${params.COUNTS}" \\
-                    -e ANNOTATED_COUNTS="${params.ANNOTATED_COUNTS}" \\
-                    -e NORMALIZED_COUNTS="${params.NORMALIZED_COUNTS}" \\
-                    -e COLLAPSED_VALUES="${params.COLLAPSED_VALUES}" \\
-                    -v $WORKSPACE:/workspace \\
-                    -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key \\
-                    -v /cmap/data/vdb/prismSeq:/data \\
-                    -v $BUILD_DIR:$BUILD_DIR \\
-                    -w /workspace/scripts \\
-                    localhost/sushi-podman:latest \\
-                    ./${params.SCRIPT_TO_RUN}
-                    """
-                }
-            }
-        }
     }
 
     post {
         success {
             script {
-                if (params.TRIGGER_NEXT_BUILD) {
+                if (params.TRIGGER_BUILD) {
                     def nextJobParams = [
                         string(name: 'BUILD_DIR', value: params.BUILD_DIR),
                         string(name: 'BUILD_NAME', value: params.BUILD_NAME),
@@ -180,7 +125,7 @@ pipeline {
 
                     build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
                 } else {
-                    echo 'Next build not triggered because TRIGGER_NEXT_BUILD is false.'
+                    echo 'Next build not triggered because TRIGGER_BUILD is false.'
                 }
             }
         }
