@@ -1,3 +1,6 @@
+import hudson.model.*
+import jenkins.model.*
+
 pipeline {
     agent any
 
@@ -41,40 +44,8 @@ pipeline {
         stage('Generate JSON Config') {
             steps {
                 script {
-                    def config = [
-                        GIT_BRANCH: params.GIT_BRANCH,
-                        BUILD_DIR: params.BUILD_DIR,
-                        BUILD_NAME: params.BUILD_NAME,
-                        SEQ_TYPE: params.SEQ_TYPE,
-                        CTL_TYPES: params.CTL_TYPES,
-                        DAYS: params.DAYS,
-                        CELL_SET_META: params.CELL_SET_META,
-                        ID_COLS: params.ID_COLS,
-                        SAMPLE_COLS: params.SAMPLE_COLS,
-                        SIG_COLS: params.SIG_COLS,
-                        SEQUENCING_INDEX_COLS: params.SEQUENCING_INDEX_COLS,
-                        CONTROL_BARCODE_META: params.CONTROL_BARCODE_META,
-                        CONTROL_COLS: params.CONTROL_COLS,
-                        REMOVE_DATA: params.REMOVE_DATA,
-                        COUNT_COL_NAME: params.COUNT_COL_NAME,
-                        RUN_NORM: params.RUN_NORM,
-                        PULL_POOL_ID: params.PULL_POOL_ID,
-                        CONVERT_SUSHI: params.CONVERT_SUSHI,
-                        RUN_EPS_QC: params.RUN_EPS_QC,
-                        SAMPLE_META: params.SAMPLE_META,
-                        COUNT_THRESHOLD: params.COUNT_THRESHOLD,
-                        PSEUDOCOUNT: params.PSEUDOCOUNT,
-                        CELL_LINE_META: params.CELL_LINE_META,
-                        RAW_COUNTS: params.RAW_COUNTS,
-                        FILTERED_COUNTS: params.FILTERED_COUNTS,
-                        LFC: params.LFC,
-                        ANNOTATED_COUNTS: params.ANNOTATED_COUNTS,
-                        NORMALIZED_COUNTS: params.NORMALIZED_COUNTS,
-                        COLLAPSED_VALUES: params.COLLAPSED_VALUES,
-                        API_URL: params.API_URL,
-                        API_KEY: sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim(),
-                        GIT_BRANCH: params.GIT_BRANCH
-                    ]
+                    def config = params.keySet().findAll { it != 'TRIGGER_BUILD' }.collectEntries { [(it): params[it]] }
+                    config.API_KEY = sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
                     writeFile file: "${params.BUILD_DIR}/config.json", text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                     echo "Generated config.json: ${config}"
                 }
@@ -99,38 +70,7 @@ pipeline {
         success {
             script {
                 if (params.TRIGGER_BUILD) {
-                    def nextJobParams = [
-                        string(name: 'BUILD_DIR', value: params.BUILD_DIR),
-                        string(name: 'BUILD_NAME', value: params.BUILD_NAME),
-                        string(name: 'SEQ_TYPE', value: params.SEQ_TYPE),
-                        string(name: 'CTL_TYPES', value: params.CTL_TYPES),
-                        string(name: 'DAYS', value: params.DAYS),
-                        string(name: 'CELL_SET_META', value: params.CELL_SET_META),
-                        string(name: 'ID_COLS', value: params.ID_COLS),
-                        string(name: 'SAMPLE_COLS', value: params.SAMPLE_COLS),
-                        string(name: 'SIG_COLS', value: params.SIG_COLS),
-                        string(name: 'SEQUENCING_INDEX_COLS', value: params.SEQUENCING_INDEX_COLS),
-                        string(name: 'CONTROL_BARCODE_META', value: params.CONTROL_BARCODE_META),
-                        string(name: 'CONTROL_COLS', value: params.CONTROL_COLS),
-                        booleanParam(name: 'REMOVE_DATA', value: params.REMOVE_DATA),
-                        string(name: 'COUNT_COL_NAME', value: params.COUNT_COL_NAME),
-                        booleanParam(name: 'RUN_NORM', value: params.RUN_NORM),
-                        booleanParam(name: 'PULL_POOL_ID', value: params.PULL_POOL_ID),
-                        booleanParam(name: 'CONVERT_SUSHI', value: params.CONVERT_SUSHI),
-                        booleanParam(name: 'RUN_EPS_QC', value: params.RUN_EPS_QC),
-                        string(name: 'SAMPLE_META', value: params.SAMPLE_META),
-                        string(name: 'COUNT_THRESHOLD', value: params.COUNT_THRESHOLD),
-                        string(name: 'PSEUDOCOUNT', value: params.PSEUDOCOUNT),
-                        string(name: 'CELL_LINE_META', value: params.CELL_LINE_META),
-                        string(name: 'RAW_COUNTS', value: params.RAW_COUNTS),
-                        string(name: 'FILTERED_COUNTS', value: params.FILTERED_COUNTS),
-                        string(name: 'LFC', value: params.LFC),
-                        string(name: 'ANNOTATED_COUNTS', value: params.ANNOTATED_COUNTS),
-                        string(name: 'NORMALIZED_COUNTS', value: params.NORMALIZED_COUNTS),
-                        string(name: 'COLLAPSED_VALUES', value: params.COLLAPSED_VALUES),
-                        string(name: 'API_URL', value: params.API_URL)
-                    ]
-
+                    def nextJobParams = params.keySet().findAll { it != 'TRIGGER_BUILD' }.collect { string(name: it, value: params[it]) } + [booleanParam(name: 'TRIGGER_BUILD', value: params.TRIGGER_BUILD)]
                     build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
                 } else {
                     echo 'Next build not triggered because TRIGGER_BUILD is false.'
