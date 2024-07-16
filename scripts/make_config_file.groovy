@@ -23,7 +23,7 @@ pipeline {
                         def configText = readFile(file: env.CONFIG_FILE_PATH)
                         def config = new JsonSlurper().parseText(configText)
                         config.each { key, value ->
-                            env[key] = value.toString()
+                            env.setProperty(key, value.toString())
                         }
                         echo "Loaded config from ${env.CONFIG_FILE_PATH}"
                     } else {
