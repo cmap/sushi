@@ -1,6 +1,3 @@
-import hudson.model.*
-import jenkins.model.*
-
 pipeline {
     agent any
 
@@ -80,6 +77,19 @@ pipeline {
                     ]
                     writeFile file: "${params.BUILD_DIR}/config.json", text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                     echo "Generated config.json: ${config}"
+                }
+            }
+        }
+
+        stage('Add Commit Hash to Config') {
+            steps {
+                script {
+                    def commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                    def configFilePath = "${params.BUILD_DIR}/config.json"
+                    sh """
+                        jq --arg commit "$commitHash" '. + {COMMIT: \$commit}' $configFilePath > ${configFilePath}.tmp && mv ${configFilePath}.tmp $configFilePath
+                    """
+                    echo "Added commit hash to config.json: $commitHash"
                 }
             }
         }
