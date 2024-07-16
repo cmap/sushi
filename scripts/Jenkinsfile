@@ -121,10 +121,7 @@ pipeline {
                         string(name: 'API_URL', value: params.API_URL)
                     ]
 
-                    def job = Jenkins.instance.getItemByFullName('create_celldb_metadata_podman', Job)
-                    def paramsAction = new ParametersAction(nextJobParams)
-                    def cause = new Cause.UpstreamCause(currentBuild.rawBuild)
-                    job.scheduleBuild2(0, cause, paramsAction)
+                    build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
                 } else {
                     echo 'Next build not triggered because TRIGGER_BUILD is false.'
                 }
