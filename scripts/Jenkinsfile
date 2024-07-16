@@ -68,13 +68,10 @@ pipeline {
             script {
                 if (params.TRIGGER_BUILD) {
                     def nextJobParams = params.keySet().collect {
-                        def param = params[it]
-                        if (param instanceof Boolean) {
-                            booleanParam(name: it, value: param)
-                        } else if (param in ['DRAGEN', 'MiSeq', 'HiSeq', 'NovaSeq']) {
-                            choice(name: it, choices: param)
+                        if (params[it] instanceof Boolean) {
+                            booleanParam(name: it, value: params[it])
                         } else {
-                            string(name: it, value: param)
+                            string(name: it, value: params[it])
                         }
                     }
                     build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
