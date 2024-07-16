@@ -41,16 +41,30 @@ pipeline {
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
     }
 
+    environment {
+        GIT_REPO_URL = '<your-git-repo-url>'
+        GIT_CREDENTIALS_ID = '<your-credentials-id>'
+    }
+
     stages {
         stage('Checkout') {
             steps {
                 script {
-                    def branchSpec = params.COMMIT_HASH?.trim() ? params.COMMIT_HASH : "*/${params.GIT_BRANCH}"
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: branchSpec]],
-                        userRemoteConfigs: [[url: '<your-git-repo-url>']]
-                    ])
+                    if (params.COMMIT_HASH?.trim()) {
+                        // Checkout the specific commit
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: params.COMMIT_HASH]],
+                            userRemoteConfigs: [[url: env.GIT_REPO_URL, credentialsId: env.GIT_CREDENTIALS_ID]]
+                        ])
+                    } else {
+                        // Checkout the latest version of the branch
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: "*/${params.GIT_BRANCH}"]],
+                            userRemoteConfigs: [[url: env.GIT_REPO_URL, credentialsId: env.GIT_CREDENTIALS_ID]]
+                        ])
+                    }
                 }
             }
         }
