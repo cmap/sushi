@@ -18,7 +18,7 @@ pipeline {
         string(name: 'SAMPLE_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day,bio_rep', description: 'Sample columns')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day', description: 'Signature columns')
         string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'index_1,index_2,flowcell_names', description: 'Sequencing index columns')
-        string(name: 'CONTROL_BARCODE_META', defaultValue: '/data/vdb/prismSeq/CB_meta.csv', description: 'Metadata for control barcodes.')
+        string(name: 'CONTROL_BARCODE_META', defaultValue: '/data/CB_meta.csv', description: 'Metadata for control barcodes.')
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'Set of columns that define individual controls')
         booleanParam(name: 'REMOVE_DATA', defaultValue: true, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Field used to calculate L2FC')
