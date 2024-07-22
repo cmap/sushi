@@ -36,7 +36,7 @@ parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
 parser$add_argument("--cb_ladder", default="", help = "Control barcode ladder")
-parser$add_argument("--api_url", default="https://api.clue.io/api/", help = "Default API URL to CellDB is DEV")
+parser$add_argument("--api_url", default="https://dev-api.clue.io/api/", help = "Default API URL to CellDB is DEV")
 parser$add_argument("--api_key", default="", help = "Clue API key")
 
 # get command line options, if help option encountered print help and exit
@@ -72,7 +72,13 @@ cell_sets_df <- get_cell_api_info(paste(api_url,"cell_sets", sep = "/"), api_key
 cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_key)
 cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
 assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
-control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, filter = list(where = list(set = cb_ladder), fields = c("sequence", "name", "log_dose")))
+
+# Handling custom control barcode sets 
+if (cb_ladder != "Custom") {
+  control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, filter = list(where = list(set = cb_ladder), fields = c("sequence", "name", "log_dose")))
+} else {
+  control_bc_df <- data.frame(sequence = character(), name = character(), log_dose = numeric(), stringsAsFactors = FALSE)
+}
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
 cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence', 'LUA')
@@ -86,7 +92,7 @@ cell_line_meta <- cell_lines_df %>%
 if (nrow(control_bc_df) > 0) {
   CB_meta <- control_bc_df %>% rename("Sequence" = "sequence", "Name" = "name")
 } else {
-  print(paste("Since the cb_ladder selected was '", cb_ladder, "', no CB_meta.csv file will be outputted."))
+  print(paste("The provided cb_ladder is '", cb_ladder, "', which is a custom CB set. A CB_meta.csv file will not be generated."))
 }
 
 cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta)
