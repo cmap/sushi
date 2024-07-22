@@ -68,7 +68,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   
   # Some preprocessing ----
   # Reverse index 2 barcodes
-  if(reverse_index2) {
+  if(reverse_index2 & ("index_2" %in% colnames(sample_meta))) {
     print("Reverse-complementing index 2 barcode.")
     sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
   }
@@ -83,7 +83,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   # Sequencing QCs ____________________ ----
   ## Index count summaries ----
   print("Generating index counts tables")
-  # Check that "IndexBarcode1" and "index_1" columns are present.
+  # Check that "index_1" and "index_1" columns are present.
   # If so, calculate index summary and write out.
   if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts)) {
     expected_index1= unique(sample_meta$index_1)
@@ -165,7 +165,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   if(run_below) {
     # Determine which seq cols are present.
     # sample_meta sequencing columns
-    sm_seq_cols= c('flowcell_name', 'flowcell_lane', 'IndexBarcode1', 'IndexBarcode2')
+    sm_seq_cols= c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2')
     # raw_counts sequencing columns
     rc_seq_cols= c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2')
     
@@ -175,9 +175,9 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
     
     meta_joining_vector= list()
     for(item in seq_cols) {
-      if(item=='IndexBarcode1') {
+      if(item=='index_1') {
         meta_joining_vector[['index_1']]= item
-      } else if(item=='IndexBarcode2') {
+      } else if(item=='index_2') {
         meta_joining_vector[['index_2']]= item
       } else {
         meta_joining_vector[[item]]= item
@@ -193,19 +193,19 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
       dplyr::semi_join(unique_seq_col_vals, by= meta_joining_vector) %>%
       dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
     
-    dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
+    dplyr::filter(index_1 %in% sample_meta$index_1, index_2 %in% sample_meta$index_2) %>%
       dplyr::left_join(mapped_reads, by= c('index_1', 'index_2', 'forward_read_cl_barcode')) %>%
       tidyr::replace_na(list(mapped= F)) %>% dplyr::filter(mapped== F) %>% dplyr::select(-mapped)
     
     # map of index barcodes to pcr_plate location
     pcr_plate_map= sample_meta %>%
-      dplyr::distinct(pick(any_of(c('IndexBarcode1', 'IndexBarcode2', 'pcr_plate', 'pcr_well', 'cell_set')))) %>%
+      dplyr::distinct(pick(any_of(c('index_1', 'index_2', 'pcr_plate', 'pcr_well', 'cell_set')))) %>%
       dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
       dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
     
     # total counts per well - used to calculate fractions
     counts_per_well= raw_counts %>%
-      dplyr::filter(index_1 %in% sample_meta$IndexBarcode1, index_2 %in% sample_meta$IndexBarcode2) %>%
+      dplyr::filter(index_1 %in% sample_meta$index_1, index_2 %in% sample_meta$index_2) %>%
       dplyr::group_by(index_1, index_2) %>% dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
     
     # mapped contaminates to bind
@@ -216,7 +216,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
     # put everything together
     contam_reads= unmapped_read %>% dplyr::bind_rows(mapped_contams) %>%
       dplyr::left_join(counts_per_well, by= c('index_1', 'index_2')) %>%
-      dplyr::left_join(pcr_plate_map, by= join_by('index_1'=='IndexBarcode1', 'index_2'=='IndexBarcode2')) %>%
+      dplyr::left_join(pcr_plate_map, by= join_by('index_1'=='index_1', 'index_2'=='index_2')) %>%
       # filter out barcodes that only appear in one well
       dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
       # number of wells in a pcr plate a barcode is detected in
