@@ -176,9 +176,9 @@ write_df_from_fastq_DRAGEN <- function(
                                                                (read_header_len)-(PLATE_BC_LENGTH+WELL_BC_LENGTH),
                                                                read_header_len),
                                               forward_read_cl_barcode = forward_reads_cl_barcode,
-                                              flowcell_name=flow_cell,
-                                              flowcell_lane=flow_lane)  %>%
-        dplyr::count(indeces, forward_read_cl_barcode, flowcell_name, flowcell_lane) 
+                                              flowcell_names=flow_cell,
+                                              flowcell_lanes=flow_lane)  %>%
+        dplyr::count(indeces, forward_read_cl_barcode, flowcell_names, flowcell_lanes) 
       
       lp <- lp + 1
     }
@@ -189,7 +189,7 @@ write_df_from_fastq_DRAGEN <- function(
   ## cumulative counts separate across different flowcells and flowcell lanes.
   cumulative_count_df_uncollapsed = cumulative_count_df_uncollapsed %>%
     dplyr::bind_rows() %>%
-    dplyr::group_by(indeces, forward_read_cl_barcode, flowcell_name, flowcell_lane) %>% 
+    dplyr::group_by(indeces, forward_read_cl_barcode, flowcell_names, flowcell_lanes) %>% 
     dplyr::summarise(n = sum(n, na.rm = T)) %>% 
     dplyr::ungroup() %>% 
     dplyr::mutate(index_1 = word(indeces, 1, sep = fixed("+")),
@@ -201,7 +201,7 @@ write_df_from_fastq_DRAGEN <- function(
     dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
     dplyr::summarise(n = sum(n, na.rm = T)) %>% 
     dplyr::ungroup()
-  print (paste("collapsed across", length(cumulative_count_df_uncollapsed$flowcell_name %>% unique()), "flowcells"))
+  print (paste("collapsed across", length(cumulative_count_df_uncollapsed$flowcell_names %>% unique()), "flowcells"))
   
   # remove index_2 column if it has NAs due to the experiment using single-index barcodes
   if(sum(is.na(cumulative_count_collapsed_across_flowcells_df$index_2)) == length(cumulative_count_collapsed_across_flowcells_df$index_2)){
