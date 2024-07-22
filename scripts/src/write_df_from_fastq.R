@@ -206,6 +206,7 @@ write_df_from_fastq_DRAGEN <- function(
   # remove index_2 column if it has NAs due to the experiment using single-index barcodes
   if(sum(is.na(cumulative_count_collapsed_across_flowcells_df$index_2)) == length(cumulative_count_collapsed_across_flowcells_df$index_2)){
     cumulative_count_collapsed_across_flowcells_df %<>% select(-index_2)
+    cumulative_count_df_uncollapsed %<>% select(-index_2)
   }
   
   if(!is.null(save_loc)){
