@@ -108,7 +108,7 @@ filter_raw_reads = function(raw_counts,
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
   # condition also checks for single-index barcode experiments (when index_2 is not present)
-  if (reverse_index2 & ("index_2" %in% colnames(raw_counts))) {
+  if (reverse_index2) {
     if ('index_2' %in% colnames(sample_meta)) {
       print("Reverse-complementing index 2 barcode ...")
       sample_meta$index_2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
