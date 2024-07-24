@@ -128,7 +128,10 @@ parameters=(
 )
 
 # Overwrite the CSV file with parameters each time a new build is kicked off
-> $BUILD_DIR/config_from_filtercounts.csv
+> $BUILD_DIR/config_from_filtercounts.tsv
+
+# Add headers to the TSV file
+printf "Parameter\tValue\n" >> $BUILD_DIR/config_from_filtercounts.tsv
 
 for param in "${parameters[@]}"; do
   # Split the parameter and value using ':'
@@ -136,8 +139,9 @@ for param in "${parameters[@]}"; do
   parameter="${parts[0]}"
   value="${parts[1]}"
   echo "$parameter: $value"
-  echo "$parameter,$value" >> $BUILD_DIR/config_from_filtercounts.csv
+  printf "%s\t%s\n" "$parameter" "$value" >> $BUILD_DIR/config_from_filtercounts.tsv
 done
+
 
 
 Rscript -e "library(cmapR);packageVersion('cmapR')"
