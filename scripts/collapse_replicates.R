@@ -1,6 +1,6 @@
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(magrittr))
-library(prismSeqR) # Correct sourcing?
+source("./src/collapse_bio_reps.R") # source function
 
 # Parser object ----
 parser <- ArgumentParser()

@@ -11,9 +11,9 @@ suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(grDevices))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(ggpubr))
-suppressPackageStartupMessages(library(prismSeqR))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
 suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add fit line and labels
+source("./src/QC_images.R") # source function
 
 # Argument parser ----
 parser <- ArgumentParser()

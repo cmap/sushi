@@ -1,11 +1,7 @@
 suppressPackageStartupMessages(library(argparse))
 #suppressMessages(library(cmapR))
 suppressPackageStartupMessages(library(dplyr)) #n()
-#suppressPackageStartupMessages(library(scam))
-#suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
-#suppressPackageStartupMessages(library(reshape2))
-library(prismSeqR) # Is the package up to date?
+source("./src/compute_l2fc.R") # source function
 
 # Argument parser ----
 parser <- ArgumentParser()

@@ -1,6 +1,6 @@
 library(argparse)
-library(prismSeqR) # Is the package updated?
-library(magrittr)
+library(magrittr) # for %>% and %<>%
+source("./src/normalize.R") # source function
 
 # Argument parser ----
 parser <- ArgumentParser()
