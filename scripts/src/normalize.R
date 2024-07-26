@@ -33,8 +33,8 @@ validate_columns_exist= function(selected_columns, df) {
 #' @import magrittr
 normalize <- function(X, id_cols, barcodes, pseudocount) {
   # Required functions
-  require(tidyverse)
   require(magrittr)
+  require(tidyverse)
   
   # Create log2_n with pseudocount ----
   X %<>% dplyr::mutate(log2_n = log2(n + pseudocount))

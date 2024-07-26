@@ -77,7 +77,7 @@ control_type = args$control_type
 #   cell_set_meta = read.csv(args$cell_set_meta)
 # }
 
-print("generating filtered counts QC images")
+print("Generating QC images ...")
 QC_images(raw_counts= raw_counts,
           annotated_counts= annotated_counts, 
           normalized_counts= normalized_counts,

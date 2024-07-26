@@ -1,16 +1,13 @@
 suppressPackageStartupMessages(library(argparse))
-
-source("./src/filter_raw_reads.R")
-
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
-# library(prismSeqR)
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
+source("./src/filter_raw_reads.R")
 
 
 ## writes configuration to file
@@ -96,16 +93,14 @@ cell_line_meta %<>%
 
 # Run filter_raw_reads -----
 print("creating filtered count file")
-filtered_counts = filter_raw_reads(
-  raw_counts,
-  sample_meta,
-  cell_line_meta,
-  cell_set_meta,
-  CB_meta,
-  sequencing_index_cols= sequencing_index_cols,
-  count_threshold= count_threshold,
-  reverse_index2= args$reverse_index2
-)
+filtered_counts = filter_raw_reads(raw_counts,
+                                   sample_meta,
+                                   cell_line_meta,
+                                   cell_set_meta,
+                                   CB_meta,
+                                   sequencing_index_cols= sequencing_index_cols,
+                                   count_threshold= as.numeric(args$count_threshold),
+                                   reverse_index2= args$reverse_index2)
 
 # Pulling pool_id when db_flag and pool_id flags are passed
 if (args$pool_id) {

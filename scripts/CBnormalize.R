@@ -23,22 +23,18 @@ parser$add_argument("--control_type", default = "negcon",
 args <- parser$parse_args()
 
 # Set up inputs ----
-filtered_counts = data.table::fread(args$filtered_counts, header=TRUE, sep=',', data.table=F)
-CB_meta = data.table::fread(args$CB_meta, header=TRUE, sep=',', data.table=F)
-input_pseudocount = as.numeric(args$pseudocount)
+filtered_counts= data.table::fread(args$filtered_counts, header= TRUE, sep= ',', data.table= FALSE)
+CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',', data.table= FALSE)
+input_pseudocount= as.numeric(args$pseudocount)
 input_id_cols= unlist(strsplit(args$id_cols, ","))
 
 # Run normalize ----
-print("Creating normalized count file")
+print("Creating normalized count file ...")
 normalized_counts = normalize(X= filtered_counts, id_cols= input_id_cols,
                               barcodes= CB_meta$Name, 
                               pseudocount= input_pseudocount)
 
 # Write out file ----
-normcounts_out_path = paste(args$out, "normalized_counts.csv", sep='/')
-
-if(args$verbose) {
-  print(paste("Writing normalized count file", normcounts_out_path))
-}
-
-write.csv(normalized_counts, normcounts_out_path, row.names=F, quote=F)
+normcounts_outpath = paste(args$out, "normalized_counts.csv", sep='/')
+print(paste("Writing normalized count file to ", normcounts_outpath))
+write.csv(normalized_counts, normcounts_outpath, row.names= FALSE, quote= FALSE)

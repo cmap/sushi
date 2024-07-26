@@ -1,6 +1,6 @@
-suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-suppressPackageStartupMessages(library(dplyr)) #n()
+library(argparse)
+library(magrittr) # for %>% and %<>%
+library(tidyverse)
 source("./src/compute_l2fc.R") # source function
 
 # Argument parser ----
@@ -26,19 +26,25 @@ parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
-# Set up parameters and compute l2fc ----
+# Set up parameters and run compute_l2fc ----
 control_type = args$control_type
-normalized_counts= data.table::fread(args$normalized_counts, header=T, sep=',', data.table=F)
+normalized_counts= data.table::fread(args$normalized_counts, header= TRUE, sep= ',', data.table= FALSE)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 count_col_name = args$count_col_name
 count_threshold = as.numeric(args$count_threshold)
 
-print("computing log-fold change")
-l2fc = compute_l2fc(normalized_counts, control_type, sig_cols, ctrl_cols, count_col_name, count_threshold,
-                    cell_line_cols)
+print("Collapsing tech reps and computing log-fold change ...")
+l2fc= compute_l2fc(normalized_counts= normalized_counts, 
+                   control_type= control_type, 
+                   sig_cols= sig_cols, 
+                   ctrl_cols= ctrl_cols, 
+                   count_col_name= count_col_name, 
+                   count_threshold = count_threshold,
+                   cell_line_cols= cell_line_cols)
 
 # Write out file ----
-l2fc_out = paste(args$out, "l2fc.csv", sep="/")
-write.csv(l2fc, l2fc_out, row.names=F, quote=F)
+l2fc_outpath= paste(args$out, "l2fc.csv", sep= "/")
+print(paste0('Writing out l2fc file to ', l2fc_outpath))
+write.csv(l2fc, l2fc_outpath, row.names= FALSE, quote= FALSE)
