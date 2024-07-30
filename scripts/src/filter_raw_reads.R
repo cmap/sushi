@@ -1,5 +1,57 @@
 suppressPackageStartupMessages(library(sets))
 
+#' validate_columns_exist
+#' 
+#' This function checks that a list of columns are present in a dataframe.
+#' 
+#' @param selected_columns A vector of strings each representing a column name
+#' @param df A dataframe to check against
+#' @return Boolean
+validate_columns_exist= function(selected_columns, df) {
+  # Check that all of selected_columns are in df
+  if(any(!selected_columns %in% colnames(df))) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+#' validate_unique_samples
+#' 
+#' This function checks that a list of columns uniquely identifies all entries of a dataframe.
+#' 
+#' @param selected_columns A vector of strings each representing a column name
+#' @param df A dataframe to check against
+#' @return Boolean
+validate_unique_samples= function(selected_columns, df) {
+  unique_column_values= df %>% dplyr::distinct(pick(all_of(selected_columns)))
+  if(nrow(unique_column_values) != nrow(df)) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+#' validate_cell_set_luas
+#' 
+#' This function checks that every cell set in the sample meta does not contain duplicate members.
+#' If a cell set has duplicate LUAs, a warning is printed.
+#' 
+#' @param sample_meta The sample_meta df with the column "cell_set".
+#' @param cell_set_meta The cell_set_meta df with the columns "cell_set" and "members".
+validate_cell_set_luas= function(sample_meta, cell_set_meta) {
+  duplicate_luas= cell_set_meta %>% dplyr::filter(cell_set %in% unique(sample_meta$cell_set)) %>%
+    dplyr::mutate(members= str_split(members, ';')) %>%
+    tidyr::unnest(cols= 'members') %>%
+    dplyr::count(cell_set, members, name= 'count') %>% dplyr::filter(count > 1)
+  
+  if(nrow(duplicate_luas) > 0) {
+    print('WARNING: The following LUAs appear more than once in a cell set!!!')
+    print(duplicate_luas)
+    print('The module will continue, but check the cell_set meta!!!')
+  }
+}
+
 #' filter raw reads
 #' 
 #' takes the raw readcount table and filters for expected indices and cell lines
@@ -8,8 +60,8 @@ suppressPackageStartupMessages(library(sets))
 #' @param raw_counts - an unfiltered counts table
 #' @param sample_meta - the sample metadata for the particular experiment. Must follow the given set of 
 #'                      guidelines for metadata. Required columns include:
-#'                      - IndexBarcode1
-#'                      - IndexBarcode2
+#'                      - index_1
+#'                      - index_2
 #'                      - cell_set
 #' @param cell_line_meta - master metadata of cell lines with the following required columns:
 #'                       - CCLE_name
@@ -24,6 +76,9 @@ suppressPackageStartupMessages(library(sets))
 #'                - Sequence
 #'                - Name
 #'                - log_dose
+#' @param sequencing_index_cols Vector of column names from the sample meta that is used to uniquely identify where a
+#'                              sequencing read is coming from. This defaults to "index_1" and "index_2", but 
+#'                              it can be expanded to include "flowcell_names" and "flowcell_lanes".
 #' @param id_cols - vector of column names used to generate unique profile_id for each sample. 
 #'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
 #' @param reverse_index2 Reverses index2 for certain sequencers
@@ -38,47 +93,83 @@ suppressPackageStartupMessages(library(sets))
 #'   \item qc_table: QC table of index_purity and cell_line_purity 
 #' }
 #' @export 
-filter_raw_reads = function(
-  raw_counts, sample_meta, cell_line_meta, 
-  cell_set_meta, CB_meta,
-  id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
-  reverse_index2= FALSE, count_threshold= 40) {
+filter_raw_reads = function(raw_counts, 
+                            sample_meta, cell_line_meta, cell_set_meta, CB_meta,
+                            sequencing_index_cols= c('index_1', 'index_2'),
+                            id_cols=c('cell_set','treatment','dose','dose_unit','day','bio_rep','tech_rep'),
+                            reverse_index2= FALSE, count_threshold= 40) {
   
   require(tidyverse)
+  require(magrittr)
   
-  # Processing metadata ---- 
+  # Processing metadata and inputs ---- 
+  # CB meta is in log10 and should be converted to log2.
   print("Converting CB_meta from log10 to log2 ...")
   CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
   if (reverse_index2) {
-    print("Reverse-complementing index 2 barcode ...")
-    sample_meta$IndexBarcode2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$IndexBarcode2))
+    if ('index_2' %in% colnames(sample_meta)) {
+      print("Reverse-complementing index 2 barcode ...")
+      sample_meta$index_2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
+    } else {
+      stop('ERROR: Reverse index 2 is set to TRUE, but index_2 does not exists.')
+    }
   }
   
-  # Filtering by index barcodes ----
-  print("Filtering raw counts ...")
-  index_filtered= raw_counts %>% 
-    dplyr::filter(index_1 %in% unique(sample_meta$IndexBarcode1), index_2 %in% unique(sample_meta$IndexBarcode2)) %>%
-    dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
+  # Validation: Check that sequencing_index_cols exist in the sample meta ----
+  if(!validate_columns_exist(sequencing_index_cols, sample_meta)) {
+    stop('One or more sequencing_index_cols is NOT present in the sample meta.')
+  }
   
-  # index purity for QC table
+  # Validation: Check that id_cols exist in the sample meta ----
+  if(!validate_columns_exist(id_cols, sample_meta)) {
+    stop('One or more id_cols is NOT present in the sample meta.')
+  }
+  
+  # Validation: Check that sequencing_index_cols uniquely identify every rows of sample meta ----
+  if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
+    print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
+    stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
+  }
+  
+  # Validation: Check that cell sets do not contain duplicate LUAs ----
+  # This will produce a warning if a LUA appears in a cell set more than once!
+  # This currently does NOT result in an error. Error avoided using a distinct later in line 169
+  validate_cell_set_luas(sample_meta, cell_set_meta)
+  
+  # Filtering by sequencing columns ----
+  # Filter raw counts using the sequencing columns. 
+  # Also create "mapped" column to identify reads that mapped to all known PRISM sequences.
+  print("Filtering by sequencing columns ...")
+  unique_sequencing_index_vals= sample_meta %>% dplyr::distinct(pick(all_of(sequencing_index_cols)))
+  index_filtered= raw_counts %>% dplyr::semi_join(unique_sequencing_index_vals, by= sequencing_index_cols) %>%
+    dplyr::mutate(mapped= forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence))
+  
+  # Calculate index purity for QC table.
   index_purity= sum(index_filtered$n)/ sum(raw_counts$n)
   
-  # Mapping barcodes with valid indices ----
+  # Split off unmapped reads ----
+  # Unmapped reads are defined as having valid indices but do not map to barcodes in PRISM.
+  # Also sorted reads in descending order by read count.
   print('Splitting off unmapped reads ...')
-  # unmapped reads are defined as having valid indices but do not map to barcodes in PRISM
   unmapped_reads= index_filtered %>% dplyr::filter(mapped==F) %>% dplyr::select(-mapped) %>% 
     dplyr::arrange(dplyr::desc(n))
   
-  # make template of expected reads
+  # Creating a template of all expected reads in the run ----
+  # Use all 4 meta data files to create a "template" dataframe where
+  # every row is a cell line that is expected in a PCR well. 
   print('Creating template of expected reads ...')
+  # Create "profile_id" column.
   sample_meta %<>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F)
+  # Join cell_set_meta and cell_line_meta. The cell_set can be a name "P939" or a list of LUAs.
   template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
-    tidyr::unnest(cols= c(members)) %>%
-    dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one')
+    tidyr::unnest(cols= members) %>%
+    dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one') %>%
+    dplyr::distinct() # To remove duplicate cell lines - cell sets sometimes have the same cell line repeated.
+  # May need to replace distinct with an error later!
   
-  # check for control barcodes and add them to the template
+  # Check for control barcodes and add them to the template.
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
     cb_template= sample_meta %>% dplyr::filter(control_barcodes %in% c('Y', 'T', T)) %>%
       dplyr::mutate(joiner= 'temp') %>%
@@ -88,33 +179,40 @@ filter_raw_reads = function(
   }
   
   # Annotating reads ----
+  # From the set of reads that have the valid sequencing_index_cols combinations and map to the PRISM seq library,
+  # join in metadata to give each read a name and PCR location.
+  # Reads that to not match to the template are contaminants and,
+  # reads that are only present in the template are missing/not detected by PCR.
   print("Annotating reads ...")
-  annotated_counts= index_filtered %>% dplyr::filter(mapped) %>% # New: drop unmapped reads
+  annotated_counts= index_filtered %>% dplyr::filter(mapped) %>%
     dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
     dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
-    dplyr::left_join(sample_meta, by= join_by('index_1'=='IndexBarcode1', 'index_2'=='IndexBarcode2'),
-                     relationship= 'many-to-one') %>%
-    dplyr::full_join(template %>% dplyr::mutate(expected_read= T), 
-                     by= c(c('index_1'='IndexBarcode1', 'index_2'='IndexBarcode2', 'forward_read_cl_barcode'='Sequence'),
-                           intersect(colnames(template), colnames(.))),
+    dplyr::left_join(sample_meta, by= sequencing_index_cols, relationship= 'many-to-one') %>%
+    dplyr::full_join(template %>% dplyr::mutate(expected_read= T),
+                     by= c('forward_read_cl_barcode'='Sequence', intersect(colnames(template), colnames(.))),
                      relationship= 'one-to-one') %>%
-    dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>% # drop unneeded columns
-    dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F)) # fill in any new NAs from merges
+    # drop unneeded columns and fill in any new NAs from the merge
+    dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>%
+    dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
   
   # Generating filtered reads ----
+  # Get filtered counts from annotated counts. Also flag reads that are either missing,
+  # or below a count threshold.
   print("Filtering reads ...")
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
-    dplyr::select(!any_of(c('index_1', 'index_2', 'forward_read_cl_barcode', 'LUA', 'expected_read'))) %>%
+    dplyr::select(!any_of(c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2', 
+                            'forward_read_cl_barcode', 'LUA', 'expected_read'))) %>%
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
-  # cell line purity for QC table
-  cell_line_purity = sum(filtered_counts$n)/ sum(index_filtered$n)
+  # Calculate cell line purity for the QC table.
+  cell_line_purity= sum(filtered_counts$n)/ sum(index_filtered$n)
   
   # Generating QC table ----
-  qc_table = data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
+  print('Generating QC table ...')
+  qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
   
   return(list(unmapped_reads= unmapped_reads, annotated_counts= annotated_counts, 
               filtered_counts= filtered_counts, qc_table= qc_table))
