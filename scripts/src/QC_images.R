@@ -92,7 +92,9 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
     sets_to_add_df= data_frame(cell_set= sets_not_in_meta, members= sets_not_in_meta)
     num_cls_in_set= dplyr::bind_rows(num_cls_in_set, sets_to_add_df)
   }
-  num_cls_in_set %<>% dplyr::mutate(expected_num_cl= lengths(str_split(members, ';')))
+  num_cls_in_set %<>% dplyr::mutate(expected_num_cl= str_split(members, ';')) %>%
+    tidyr::unnest(cols= expected_num_cl) %>% dplyr::group_by(cell_set) %>% 
+    dplyr::summarize(expected_num_cl= length(unique(expected_num_cl))) %>% dplyr::ungroup()
   #
   
   # Sequencing QCs ____________________ ----
