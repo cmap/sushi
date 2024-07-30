@@ -8,6 +8,12 @@ pipeline {
     // Define parameters that can be edited via the Jenkins UI
     parameters {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
+        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata_podman job.')
+        booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads_podman job.')
+        booleanParam(name: 'FILTERED_COUNTS', defaultValue: true, description: 'Check this to trigger the filtered_counts_podman job.')
+        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Check this to trigger the CBnormalize_podman job.')
+        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Check this to trigger the compute_l2fc_podman job.')
+        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse_podman job.')
         string(name: 'GIT_BRANCH', defaultValue: 'podman_dev', description: 'Pipeline branch to use')
         string(name: 'COMMIT_HASH', defaultValue: '', description: 'Specific commit hash to use (leave empty to use the latest commit in the branch)')
         string(name: 'BUILD_DIR', defaultValue: '', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
@@ -148,19 +154,44 @@ pipeline {
     post {
         success {
             script {
-                if (params.TRIGGER_BUILD) {
-                    def configText = readFile(file: env.CONFIG_FILE_PATH)
-                    def config = new HashMap(new JsonSlurper().parseText(configText))
-                    def nextJobParams = config.collect { key, value ->
+                def configText = readFile(file: env.CONFIG_FILE_PATH)
+                def config = new HashMap(new JsonSlurper().parseText(configText))
+                def nextJobParams = config.collect { key, value ->
                         if (value == 'true' || value == 'false') {
                             booleanParam(name: key, value: value.toBoolean())
                         } else {
                             string(name: key, value: value.toString())
                         }
                     }
-                    build job: 'create_celldb_metadata_podman', wait: false, parameters: nextJobParams
+                if (params.CREATE_CELLDB_METADATA) {
+                    build job: 'create_celldb_metadata_podman', wait: true, parameters: nextJobParams
                 } else {
-                    echo 'Next build not triggered because TRIGGER_BUILD is false.'
+                    echo 'CREATE_CELLDB_METADATA not triggered.'
+                }
+                if (params.COLLATE_FASTQ_READS) {
+                    build job: 'collate_fastq_reads_podman', wait: true, parameters: nextJobParams
+                } else {
+                    echo 'COLLATE_FASTQ_READS not triggered.'
+                }
+                if (params.FILTERED_COUNTS) {
+                    build job: 'filtered_counts_podman', wait: true, parameters: nextJobParams
+                } else {
+                    echo 'FILTERED_COUNTS not triggered.'
+                }
+                if (params.CBNORMALIZE) {
+                    build job: 'CBnormalize_podman', wait: true, parameters: nextJobParams
+                } else {
+                    echo 'CBNORMALIZE not triggered.'
+                }
+                if (params.COMPUTE_LFC) {
+                    build job: 'compute_l2fc_podman', wait: true, parameters: nextJobParams
+                } else {
+                    echo 'COMPUTE_LFC not triggered.'
+                }
+                if (params.COLLAPSE) {
+                    build job: 'collapse_podman', wait: true, parameters: nextJobParams
+                } else {
+                    echo 'COLLAPSE not triggered.'
                 }
             }
         }
