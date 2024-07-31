@@ -149,7 +149,8 @@ pipeline {
                 }
             }
         }
-        stage('Add timestamp to Config') {
+
+        stage('Add Timestamp to Config') {
             steps {
                 script {
                     def buildtime = sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
@@ -161,55 +162,79 @@ pipeline {
                 }
             }
         }
+
+        stage('Run Scripts in Container') {
+            steps {
+                script {
+                    def scriptsToRun = []
+                    if (params.CREATE_CELLDB_METADATA) {
+                        scriptsToRun.add('create_celldb_metadata.sh')
+                    }
+                    if (params.COLLATE_FASTQ_READS) {
+                        scriptsToRun.add('collate_fastq_reads.sh')
+                    }
+                    if (params.FILTER_COUNTS) {
+                        scriptsToRun.add('filter_counts.sh')
+                    }
+                    if (params.CBNORMALIZE) {
+                        scriptsToRun.add('CBnormalize.sh')
+                    }
+                    if (params.COMPUTE_LFC) {
+                        scriptsToRun.add('compute_l2fc.sh')
+                    }
+                    if (params.COLLAPSE) {
+                        scriptsToRun.add('collapse_replicates.sh')
+                    }
+
+                    scriptsToRun.each { scriptName ->
+                        sh """
+                            chmod +x $WORKSPACE/scripts/launch_job.sh
+                            $WORKSPACE/scripts/launch_job.sh $scriptName \\
+                                SEQ_TYPE=${params.SEQ_TYPE} \\
+                                API_URL=${params.API_URL} \\
+                                BUILD_DIR=${params.BUILD_DIR} \\
+                                INDEX_1=${params.INDEX_1} \\
+                                INDEX_2=${params.INDEX_2} \\
+                                BARCODE_SUFFIX=${params.BARCODE_SUFFIX} \\
+                                REVERSE_INDEX2=${params.REVERSE_INDEX2} \\
+                                SAMPLE_META=${params.SAMPLE_META} \\
+                                CONTROL_BARCODE_META=${params.CONTROL_BARCODE_META} \\
+                                CTL_TYPES=${params.CTL_TYPES} \\
+                                ID_COLS=${params.ID_COLS} \\
+                                SAMPLE_COLS=${params.SAMPLE_COLS} \\
+                                SIG_COLS=${params.SIG_COLS} \\
+                                RUN_NORM=${params.RUN_NORM} \\
+                                CONTROL_COLS=${params.CONTROL_COLS} \\
+                                COUNT_THRESHOLD=${params.COUNT_THRESHOLD} \\
+                                COUNT_COL_NAME=${params.COUNT_COL_NAME} \\
+                                BUILD_NAME=${params.BUILD_NAME} \\
+                                CONVERT_SUSHI=${params.CONVERT_SUSHI} \\
+                                PULL_POOL_ID=${params.PULL_POOL_ID} \\
+                                RUN_EPS_QC=${params.RUN_EPS_QC} \\
+                                PSEUDOCOUNT=${params.PSEUDOCOUNT} \\
+                                REMOVE_DATA=${params.REMOVE_DATA} \\
+                                DAYS=${params.DAYS} \\
+                                SEQUENCING_INDEX_COLS=${params.SEQUENCING_INDEX_COLS} \\
+                                RAW_COUNTS=${params.RAW_COUNTS} \\
+                                CELL_SET_META=${params.CELL_SET_META} \\
+                                CELL_LINE_META=${params.CELL_LINE_META} \\
+                                FILTERED_COUNTS=${params.FILTERED_COUNTS} \\
+                                LFC=${params.LFC} \\
+                                COUNTS=${params.COUNTS} \\
+                                ANNOTATED_COUNTS=${params.ANNOTATED_COUNTS} \\
+                                COLLAPSED_VALUES=${params.COLLAPSED_VALUES} \\
+                                NORMALIZED_COUNTS=${params.NORMALIZED_COUNTS}
+                        """
+                    }
+                }
+            }
+        }
     }
 
     post {
         success {
             script {
-                def configText = readFile(file: env.CONFIG_FILE_PATH)
-                def config = new HashMap(new JsonSlurper().parseText(configText))
-                def nextJobParams = config.collect { key, value ->
-                        if (value == 'true' || value == 'false') {
-                            booleanParam(name: key, value: value.toBoolean())
-                        } else {
-                            string(name: key, value: value.toString())
-                        }
-                    }
-                if (params.TRIGGER_BUILD) {
-                    echo 'Triggering build with selected jobs...'
-                    if (params.CREATE_CELLDB_METADATA) {
-                        build job: 'create_celldb_metadata_podman', wait: true, parameters: nextJobParams
-                    } else {
-                        echo 'CREATE_CELLDB_METADATA not triggered.'
-                    }
-                    if (params.COLLATE_FASTQ_READS) {
-                        build job: 'collate_fastq_reads_podman', wait: true, parameters: nextJobParams
-                    } else {
-                        echo 'COLLATE_FASTQ_READS not triggered.'
-                    }
-                    if (params.FILTER_COUNTS) {
-                        build job: 'filter_counts_podman', wait: true, parameters: nextJobParams
-                    } else {
-                        echo 'FILTER_COUNTS not triggered.'
-                    }
-                    if (params.CBNORMALIZE) {
-                        build job: 'CBnormalize_podman', wait: true, parameters: nextJobParams
-                    } else {
-                        echo 'CBNORMALIZE not triggered.'
-                    }
-                    if (params.COMPUTE_LFC) {
-                        build job: 'compute_l2fc_podman', wait: true, parameters: nextJobParams
-                    } else {
-                        echo 'COMPUTE_LFC not triggered.'
-                    }
-                    if (params.COLLAPSE) {
-                        build job: 'collapse_podman', wait: true, parameters: nextJobParams
-                    } else {
-                        echo 'COLLAPSE not triggered.'
-                    }
-                } else {
-                    echo 'Build not triggered.'
-                }
+                echo 'Build completed successfully.'
             }
         }
     }
