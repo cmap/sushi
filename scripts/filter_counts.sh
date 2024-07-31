@@ -94,7 +94,7 @@ echo Checking whether pool ID flag was passed...
 
 if [[ "$PULL_POOL_ID" == "true" ]]; then
     args+=(--pool_id)
-    ASSAY_POOL_META="$BUILD_DIR/assay_pool_meta.csv"
+    ASSAY_POOL_META="$BUILD_DIR/assay_pool_meta.txt"
     args+=(--assay_pool_meta "$ASSAY_POOL_META")
 fi
 
