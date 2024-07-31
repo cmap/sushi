@@ -1,16 +1,13 @@
 suppressPackageStartupMessages(library(argparse))
-
-source("./src/filter_raw_reads.R")
-
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(readr)) #write_delim
 suppressPackageStartupMessages(library(stringr)) #str_detect
 suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
-# library(prismSeqR)
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
+source("./src/filter_raw_reads.R")
 
 
 ## writes configuration to file
@@ -24,7 +21,7 @@ print_args <- function(args){
   write_delim(config, config_path, delim = ": ", col_names=F)
 }
 
-# Create parser object ----
+# Arguement parser ----
 parser <- ArgumentParser()
 # specify our desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
@@ -41,8 +38,6 @@ parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("--sequencing_index_cols", default= "index_1,index_2", 
                     help = "Sequencing columns in the sample meta")
-parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
-                    help = "Columns used to generate profile ids, comma-separated colnames from --sample_meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("--reverse_index2", action="store_true", default=FALSE, 
                     help = "Reverse complement of index 2 for NovaSeq and NextSeq")
@@ -75,12 +70,6 @@ if (!all(sequencing_index_cols %in% colnames(sample_meta))){
              args$sequencing_index_cols))
 }
 
-id_cols= unlist(strsplit(args$id_cols, ","))
-if (!all(id_cols %in% colnames(sample_meta))){
-  stop(paste("All id columns not found in sample_meta, check metadata or --id_cols argument:", args$id_cols))
-}
-
-#sample_meta$profile_id = do.call(paste,c(sample_meta[id_cols], sep=':')) # this is created in function
 count_threshold = as.numeric(args$count_threshold)
 
 # make sure LUA codes in cell line meta are unique
@@ -104,17 +93,14 @@ cell_line_meta %<>%
 
 # Run filter_raw_reads -----
 print("creating filtered count file")
-filtered_counts = filter_raw_reads(
-  raw_counts,
-  sample_meta,
-  cell_line_meta,
-  cell_set_meta,
-  CB_meta,
-  sequencing_index_cols= sequencing_index_cols,
-  id_cols= id_cols,
-  count_threshold= count_threshold,
-  reverse_index2= args$reverse_index2
-)
+filtered_counts = filter_raw_reads(raw_counts,
+                                   sample_meta,
+                                   cell_line_meta,
+                                   cell_set_meta,
+                                   CB_meta,
+                                   sequencing_index_cols= sequencing_index_cols,
+                                   count_threshold= as.numeric(args$count_threshold),
+                                   reverse_index2= args$reverse_index2)
 
 # Pulling pool_id when db_flag and pool_id flags are passed
 if (args$pool_id) {
@@ -141,7 +127,6 @@ cl_entries= filtered_counts$filtered_counts %>% dplyr::filter(!is.na(CCLE_name))
 if(sum(cl_entries$n) == 0) {
   stop('All cell line counts are zero!')
 }
-
 
 # Write out module outputs ----
 qc_table = filtered_counts$qc_table

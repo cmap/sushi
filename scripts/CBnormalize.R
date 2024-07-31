@@ -1,7 +1,8 @@
 library(argparse)
-library(prismSeqR)
-library(magrittr)
+library(magrittr) # for %>% and %<>%
+source("./src/normalize.R") # source function
 
+# Argument parser ----
 parser <- ArgumentParser()
 # specify our desired options 
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
@@ -10,32 +11,30 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing filtered counts")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
-parser$add_argument("--pseudocount", default=20, help = "pseudo count for normalization")
-parser$add_argument("--control_type", default = "negcon", help = "how negative control wells are distinguished in the trt_type column")
+parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
+                    help = "Columns to identify each PCR well")
+parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help= "Control Barcode metadata")
+parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults to working directory")
+parser$add_argument("--pseudocount", default=20, help = "pseudocount for normalization")
+parser$add_argument("--control_type", default = "negcon", 
+                    help = "how negative control wells are distinguished in the trt_type column")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
-filtered_counts = read.csv(args$filtered_counts)
-CB_meta = read.csv(args$CB_meta)
-pseudocount_arg= args$pseudocount
-pseudocount = as.numeric(pseudocount_arg)
-print("creating normalized count file")
-normalized_counts = filtered_counts %>% 
-  normalize(CB_meta$Name,pseudocount) 
+# Set up inputs ----
+filtered_counts= data.table::fread(args$filtered_counts, header= TRUE, sep= ',', data.table= FALSE)
+CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',', data.table= FALSE)
+input_pseudocount= as.numeric(args$pseudocount)
+input_id_cols= unlist(strsplit(args$id_cols, ","))
 
-normcounts_out_file = paste(
-  args$out,
-  "normalized_counts.csv",
-  sep='/'
-)
+# Run normalize ----
+print("Creating normalized count file ...")
+normalized_counts = normalize(X= filtered_counts, id_cols= input_id_cols,
+                              barcodes= CB_meta$Name, 
+                              pseudocount= input_pseudocount)
 
-if (args$verbose){
-  print(paste("Writing normalized count file", normcounts_out_file))
-}
-
-write.csv(normalized_counts, normcounts_out_file, row.names=F, quote=F)
-
-
+# Write out file ----
+normcounts_outpath = paste(args$out, "normalized_counts.csv", sep='/')
+print(paste0("Writing normalized count file to ", normcounts_outpath))
+write.csv(normalized_counts, normcounts_outpath, row.names= FALSE, quote= FALSE)
