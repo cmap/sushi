@@ -77,11 +77,11 @@ pipeline {
                         ])
                     } else {
                         // Checkout the branch
-                        checkout scm: [$class: 'GitSCM',
-                                       branches: [[name: "*/${params.GIT_BRANCH}"]],
-                                       doGenerateSubmoduleConfigurations: false,
-                                       extensions: [],
-                                       userRemoteConfigs: scm.userRemoteConfigs
+                        checkout([$class: 'GitSCM',
+                                  branches: [[name: "*/${params.GIT_BRANCH}"]],
+                                  doGenerateSubmoduleConfigurations: false,
+                                  extensions: [],
+                                  userRemoteConfigs: scm.userRemoteConfigs
                         ])
                     }
                 }
