@@ -59,11 +59,13 @@ then
 	echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
     --CB_meta $CONTROL_BARCODE_META \
     --pseudocount $PSEUDOCOUNT \
+    --id_cols $ID_COLS \
     --out $BUILD_DIR
 
 	Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 	--CB_meta $CONTROL_BARCODE_META \
-    --pseudocount $PSEUDOCOUNT \
+	--pseudocount $PSEUDOCOUNT \
+	--id_cols $ID_COLS \
 	--out $BUILD_DIR
 
 	COUNTS="normalized_counts.csv"
