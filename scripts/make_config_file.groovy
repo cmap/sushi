@@ -149,6 +149,18 @@ pipeline {
                 }
             }
         }
+        stage('Add timestamp to Config') {
+            steps {
+                script {
+                    def buildtime = sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
+                    def configFilePath = env.CONFIG_FILE_PATH
+                    sh """
+                        jq --arg buildtime "$buildtime" '. + {TIMESTAMP: \$buildtime}' $configFilePath > ${configFilePath}.tmp && mv ${configFilePath}.tmp $configFilePath
+                    """
+                    echo "Added build timestamp to config.json: $buildtime"
+                }
+            }
+        }
     }
 
     post {
