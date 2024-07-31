@@ -174,6 +174,9 @@ pipeline {
 
                     scriptsToRun.each { scriptName ->
                         def paramsString = paramList.collect { "${it}=${params[it]}" }.join(' \\ \n')
+
+                        echo "Running script: ${scriptName} with parameters: ${paramsString}"
+
                         sh """
                             chmod +x $WORKSPACE/scripts/launch_job.sh
                             $WORKSPACE/scripts/launch_job.sh $scriptName \\
