@@ -103,6 +103,7 @@ args=(
 --count_col_name "$COUNT_COL_NAME"
 --control_type "$CTL_TYPES"
 --raw_counts "$RAW_COUNTS"
+--id_cols "$ID_COLS"
 )
 
 if [[ "$REVERSE_INDEX2" == "true" ]]
@@ -121,7 +122,8 @@ echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --count_col_name $COUNT_COL_NAME \
 --reverse_index2 $REVERSE_INDEX2 \
 --control_type $CTL_TYPES \
---raw_counts $RAW_COUNTS
+--raw_counts $RAW_COUNTS \
+--id_cols $ID_COLS
 
 
 Rscript -e "library(cmapR);packageVersion('cmapR')"
