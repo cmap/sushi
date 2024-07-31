@@ -1,4 +1,4 @@
-suppressPackageStartupMessages(library(sets))
+#suppressPackageStartupMessages(library(sets))
 
 #' validate_columns_exist
 #' 
@@ -82,8 +82,6 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' @param sequencing_index_cols Vector of column names from the sample meta that is used to uniquely identify where a
 #'                              sequencing read is coming from. This defaults to "index_1" and "index_2", but 
 #'                              it can be expanded to include "flowcell_names" and "flowcell_lanes".
-#' @param id_cols - vector of column names used to generate unique profile_id for each sample. 
-#'                  cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep by default
 #' @param reverse_index2 Reverses index2 for certain sequencers
 #' @param count_threshold Threshold to call low counts. 
 #' @param control_type - how the negative controls are designated in the trt_type column in the sample metadata
@@ -98,9 +96,8 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' @export 
 filter_raw_reads = function(raw_counts, 
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
-                            sequencing_index_cols, id_cols,
-                            reverse_index2, count_threshold) {
-  
+                            sequencing_index_cols= c('index_1', 'index_2'),
+                            reverse_index2= FALSE, count_threshold= 40) {  
   require(tidyverse)
   require(magrittr)
   
@@ -123,11 +120,6 @@ filter_raw_reads = function(raw_counts,
     stop('One or more sequencing_index_cols is NOT present in the sample meta.')
   }
   
-  # Validation: Check that id_cols exist in the sample meta ----
-  if(!validate_columns_exist(id_cols, sample_meta)) {
-    stop('One or more id_cols is NOT present in the sample meta.')
-  }
-  
   # Validation: Check that sequencing_index_cols uniquely identify every rows of sample meta ----
   if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
     print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
@@ -136,7 +128,7 @@ filter_raw_reads = function(raw_counts,
   
   # Validation: Check that cell sets do not contain duplicate LUAs ----
   # This will produce a warning if a LUA appears in a cell set more than once!
-  # This currently does NOT result in an error. Error avoided using a distinct later in line 169
+  # This currently does NOT result in an error. Error avoided using a distinct later in line 162
   validate_cell_set_luas(sample_meta, cell_set_meta)
   
   # Filtering by sequencing columns ----
@@ -161,8 +153,6 @@ filter_raw_reads = function(raw_counts,
   # Use all 4 meta data files to create a "template" dataframe where
   # every row is a cell line that is expected in a PCR well. 
   print('Creating template of expected reads ...')
-  # Create "profile_id" column.
-  sample_meta %<>% tidyr::unite('profile_id', all_of(id_cols), sep=':', remove=F, na.rm=F)
   # Join cell_set_meta and cell_line_meta. The cell_set can be a name "P939" or a list of LUAs.
   template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
@@ -298,6 +288,4 @@ remove_data = function(filtered_counts, data_to_remove) {
   
   return(filt_rm)
 }
-
-
 

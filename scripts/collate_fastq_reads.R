@@ -3,7 +3,7 @@ library(magrittr)
 library(tidyverse)
 source("./src/collate_fastq_reads.R")
 
-# Parser ----
+# Argument parser ----
 parser <- ArgumentParser()
 # specify our desired options 
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
@@ -47,7 +47,7 @@ if(file.exists(expected_file_path)) {
   
   rc_out_file = paste(args$out, 'raw_counts.csv', sep='/')
   print(paste("Writing to file: ", rc_out_file))
-  write.csv(raw_counts, rc_out_file, row.names=F, quote=F)
+  write.csv(raw_counts, rc_out_file, row.names=F, quote=T)
 } else {
   print("Uncollapsed raw counts file not detected. Proceeding with generating filtered counts file.")
 }
