@@ -5,6 +5,16 @@ import groovy.json.JsonSlurper
 pipeline {
     agent any
 
+    // List of parameters
+    def paramList = [
+        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'REVERSE_INDEX2',
+        'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SAMPLE_COLS', 'SIG_COLS',
+        'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
+        'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
+        'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
+        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL'
+    ]
+
     // Define parameters that can be edited via the Jenkins UI
     parameters {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
@@ -72,7 +82,7 @@ pipeline {
                                        doGenerateSubmoduleConfigurations: false,
                                        extensions: [],
                                        userRemoteConfigs: scm.userRemoteConfigs
-                        ]
+                        ])
                     }
                 }
             }
@@ -87,39 +97,7 @@ pipeline {
                         config = new HashMap(new JsonSlurper().parseText(configText))
                     }
 
-                    def paramsMap = [
-                        GIT_BRANCH: params.GIT_BRANCH,
-                        COMMIT_HASH: params.COMMIT_HASH,
-                        BUILD_DIR: params.BUILD_DIR,
-                        BUILD_NAME: params.BUILD_NAME,
-                        SEQ_TYPE: params.SEQ_TYPE,
-                        CTL_TYPES: params.CTL_TYPES,
-                        DAYS: params.DAYS,
-                        CELL_SET_META: params.CELL_SET_META,
-                        ID_COLS: params.ID_COLS,
-                        SAMPLE_COLS: params.SAMPLE_COLS,
-                        SIG_COLS: params.SIG_COLS,
-                        SEQUENCING_INDEX_COLS: params.SEQUENCING_INDEX_COLS,
-                        CONTROL_BARCODE_META: params.CONTROL_BARCODE_META,
-                        CONTROL_COLS: params.CONTROL_COLS,
-                        REMOVE_DATA: params.REMOVE_DATA,
-                        COUNT_COL_NAME: params.COUNT_COL_NAME,
-                        RUN_NORM: params.RUN_NORM,
-                        PULL_POOL_ID: params.PULL_POOL_ID,
-                        CONVERT_SUSHI: params.CONVERT_SUSHI,
-                        RUN_EPS_QC: params.RUN_EPS_QC,
-                        SAMPLE_META: params.SAMPLE_META,
-                        COUNT_THRESHOLD: params.COUNT_THRESHOLD,
-                        PSEUDOCOUNT: params.PSEUDOCOUNT,
-                        CELL_LINE_META: params.CELL_LINE_META,
-                        RAW_COUNTS: params.RAW_COUNTS,
-                        FILTERED_COUNTS: params.FILTERED_COUNTS,
-                        LFC: params.LFC,
-                        ANNOTATED_COUNTS: params.ANNOTATED_COUNTS,
-                        NORMALIZED_COUNTS: params.NORMALIZED_COUNTS,
-                        COLLAPSED_VALUES: params.COLLAPSED_VALUES,
-                        API_URL: params.API_URL
-                    ]
+                    def paramsMap = paramList.collectEntries { [(it): params[it]] }
 
                     paramsMap.each { key, value ->
                         if (value) {
@@ -187,43 +165,11 @@ pipeline {
                     }
 
                     scriptsToRun.each { scriptName ->
+                        def paramsString = paramList.collect { "${it}=${params[it]}" }.join(' \\ \n')
                         sh """
                             chmod +x $WORKSPACE/scripts/launch_job.sh
                             $WORKSPACE/scripts/launch_job.sh $scriptName \\
-                                SEQ_TYPE=${params.SEQ_TYPE} \\
-                                API_URL=${params.API_URL} \\
-                                BUILD_DIR=${params.BUILD_DIR} \\
-                                INDEX_1=${params.INDEX_1} \\
-                                INDEX_2=${params.INDEX_2} \\
-                                BARCODE_SUFFIX=${params.BARCODE_SUFFIX} \\
-                                REVERSE_INDEX2=${params.REVERSE_INDEX2} \\
-                                SAMPLE_META=${params.SAMPLE_META} \\
-                                CONTROL_BARCODE_META=${params.CONTROL_BARCODE_META} \\
-                                CTL_TYPES=${params.CTL_TYPES} \\
-                                ID_COLS=${params.ID_COLS} \\
-                                SAMPLE_COLS=${params.SAMPLE_COLS} \\
-                                SIG_COLS=${params.SIG_COLS} \\
-                                RUN_NORM=${params.RUN_NORM} \\
-                                CONTROL_COLS=${params.CONTROL_COLS} \\
-                                COUNT_THRESHOLD=${params.COUNT_THRESHOLD} \\
-                                COUNT_COL_NAME=${params.COUNT_COL_NAME} \\
-                                BUILD_NAME=${params.BUILD_NAME} \\
-                                CONVERT_SUSHI=${params.CONVERT_SUSHI} \\
-                                PULL_POOL_ID=${params.PULL_POOL_ID} \\
-                                RUN_EPS_QC=${params.RUN_EPS_QC} \\
-                                PSEUDOCOUNT=${params.PSEUDOCOUNT} \\
-                                REMOVE_DATA=${params.REMOVE_DATA} \\
-                                DAYS=${params.DAYS} \\
-                                SEQUENCING_INDEX_COLS=${params.SEQUENCING_INDEX_COLS} \\
-                                RAW_COUNTS=${params.RAW_COUNTS} \\
-                                CELL_SET_META=${params.CELL_SET_META} \\
-                                CELL_LINE_META=${params.CELL_LINE_META} \\
-                                FILTERED_COUNTS=${params.FILTERED_COUNTS} \\
-                                LFC=${params.LFC} \\
-                                COUNTS=${params.COUNTS} \\
-                                ANNOTATED_COUNTS=${params.ANNOTATED_COUNTS} \\
-                                COLLAPSED_VALUES=${params.COLLAPSED_VALUES} \\
-                                NORMALIZED_COUNTS=${params.NORMALIZED_COUNTS}
+                                ${paramsString}
                         """
                     }
                 }
