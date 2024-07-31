@@ -76,7 +76,6 @@ echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 args=(
 -c "$RAW_COUNTS"
 --sample_meta "$SAMPLE_META"
---id_cols "$ID_COLS"
 --cell_line_meta "$CELL_LINE_META"
 --CB_meta "$CONTROL_BARCODE_META"
 --cell_set_meta "$CELL_SET_META"
