@@ -28,8 +28,10 @@ echo Build dir is: $BUILD_DIR
 echo LFC is: $LFC
 
 echo Rscript collapse_replicates.R -c $LFC	\
---out $BUILD_DIR
+--out $BUILD_DIR \
+--sig_cols $SIG_COLS
 
 
 Rscript collapse_replicates.R -c $LFC	\
---out $BUILD_DIR
+--out $BUILD_DIR \
+--sig_cols $SIG_COLS
