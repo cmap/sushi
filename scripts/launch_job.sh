@@ -1,6 +1,6 @@
 #!/bin/bash -xe
 
-# Either get parameter from JSON or fallback to Jenkins parameter
+# Function to get parameter from JSON or fallback to Jenkins parameter
 get_param() {
   local param_name="$1"
   local json_value=$(jq -r ".$param_name // empty" "$CONFIG_FILE")
@@ -55,6 +55,20 @@ else
   exit 1
 fi
 
+# Get the script name from the argument
+SCRIPT_NAME="$1"
+if [ -z "$SCRIPT_NAME" ]; then
+  echo "Error: No script name provided."
+  exit 1
+fi
+
+# Debugging: Verify the script exists in the Jenkins workspace
+echo "Verifying the script location in the Jenkins workspace:"
+ls -l "$WORKSPACE/scripts/$SCRIPT_NAME"
+
+# Ensure the script has execute permissions
+chmod +x "$WORKSPACE/scripts/$SCRIPT_NAME"
+
 # Run the Podman command using the image tag
 echo "Running in container:"
 /usr/bin/podman run --rm --user root \
@@ -100,5 +114,4 @@ echo "Running in container:"
   -v "$BUILD_DIR:$BUILD_DIR" \
   -w /workspace/scripts \
   localhost/sushi-podman:latest \
-  ./"$1".sh
-
+  ./"$SCRIPT_NAME"
