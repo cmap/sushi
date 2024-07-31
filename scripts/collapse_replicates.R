@@ -1,9 +1,10 @@
 library(argparse)
-library(magrittr) # for %>% and %<>%
+library(magrittr)
 library(tidyverse)
-source("./src/collapse_bio_reps.R") # source function
+suppressPackageStartupMessages(library(argparse))
+suppressPackageStartupMessages(library(magrittr))
+source("/workspace/scripts/src/collapse_counts.R")
 
-# Parser object ----
 parser <- ArgumentParser()
 parser$add_argument("-v", "--verbose", action= "store_true", default= TRUE,
                     help= "Print extra output [default]")

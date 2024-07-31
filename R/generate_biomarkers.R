@@ -9,12 +9,12 @@
 #' @return Biomarker object containing lin_out, rf_out and disc_out tables
 #' @export
 generate_biomarkers = function(collapsed_values) {
-  bio_in = collapsed_values %>% 
-    dplyr::filter(trt_pass_QC) %>% 
-    reshape2::dcast(DepMap_ID~sig_id, value.var="median_l2fc") %>% 
+  bio_in = collapsed_values %>%
+    dplyr::filter(trt_pass_QC) %>%
+    reshape2::dcast(DepMap_ID~sig_id, value.var="median_l2fc") %>%
     tibble::column_to_rownames("DepMap_ID")
-  
+
   bio_out = cdsrbiomarker::get_biomarkers(bio_in)
-  
+
   return(bio_out)
 }

@@ -1,0 +1,32 @@
+# Install CRAN packages
+install.packages("argparse", dependencies = TRUE)
+install.packages("magrittr", dependencies = TRUE)
+install.packages("tidyverse", dependencies = TRUE)
+install.packages("BiocManager", dependencies = TRUE)
+install.packages("scam", dependencies = TRUE)
+install.packages("readr", dependencies = TRUE)
+install.packages("stringr", dependencies = TRUE)
+install.packages("dplyr", dependencies = TRUE)
+install.packages("tidyr", dependencies = TRUE)
+install.packages("sets", dependencies = TRUE)
+install.packages("ggpubr", dependencies = TRUE)
+install.packages("ggpmisc", dependencies = TRUE)
+install.packages("stringdist", dependencies = TRUE)
+install.packages("devtools", dependencies = TRUE)
+devtools::install_github("https://github.com/broadinstitute/taigr")
+
+# Install other necessary Bioconductor packages explicitly
+BiocManager::install("S4Vectors")
+BiocManager::install("IRanges")
+BiocManager::install("GenomeInfoDb")
+BiocManager::install("XVector")
+BiocManager::install("Biostrings")
+BiocManager::install("KEGGREST")
+BiocManager::install("AnnotationDbi")
+BiocManager::install("GO.db")
+BiocManager::install("WGCNA")
+
+# Install GitHub packages
+#devtools::install_github("broadinstitute/cdsr_models", dependencies = TRUE)
+#devtools::install_github("broadinstitute/cdsr_biomarker", dependencies = TRUE)
+BiocManager::install("cmapR") #TODO: Remove this once dependency is no longer needed

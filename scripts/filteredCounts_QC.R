@@ -1,9 +1,7 @@
 suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-suppressPackageStartupMessages(library(dplyr)) #n()
+suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
@@ -13,7 +11,7 @@ suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
 suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add fit line and labels
-source("./src/QC_images.R") # source function
+source("/workspace/scripts/src/QC_images.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
@@ -27,8 +25,8 @@ parser$add_argument("--annotated_counts", default="annotated_counts.csv",
                     help="path to file containing annotated counts")
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "control barcode metadata")
-parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
+parser$add_argument("--CB_meta", default="/data/CB_meta.csv", help = "control barcode metadata")
+parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
                     help = "Columns to identify each PCR well")
@@ -41,9 +39,6 @@ parser$add_argument("--count_threshold", default=40,
 parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
 parser$add_argument("--control_type", default = "negcon",
                     help = "how negative control wells are distinguished in the trt_type column")
-# parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
-
-# get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
 if (args$out == ""){
