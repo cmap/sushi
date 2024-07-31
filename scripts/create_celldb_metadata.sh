@@ -1,10 +1,5 @@
 #!/bin/bash
 
-cd /cmap/tools/jenkins/job_repos/sushi/scripts/
-
-eval `/broad/software/dotkit/init -b`
-use R-4.0
-
 echo Starting create_celldb_metadata...
 
 export API_KEY=$(cat /local/jenkins/.clue_api_key)
