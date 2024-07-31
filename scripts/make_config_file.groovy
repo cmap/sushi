@@ -144,45 +144,47 @@ pipeline {
         stage('Run Scripts in Container') {
             steps {
                 script {
-                    def paramList = [
-                        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'REVERSE_INDEX2',
-                        'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SAMPLE_COLS', 'SIG_COLS',
-                        'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
-                        'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
-                        'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
-                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL'
-                    ]
+                    if (params.TRIGGER_BUILD) {
+                        def paramList = [
+                            'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'REVERSE_INDEX2',
+                            'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SAMPLE_COLS', 'SIG_COLS',
+                            'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
+                            'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
+                            'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
+                            'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL'
+                        ]
 
-                    def scriptsToRun = []
-                    if (params.CREATE_CELLDB_METADATA) {
-                        scriptsToRun.add('create_celldb_metadata.sh')
-                    }
-                    if (params.COLLATE_FASTQ_READS) {
-                        scriptsToRun.add('collate_fastq_reads.sh')
-                    }
-                    if (params.FILTER_COUNTS) {
-                        scriptsToRun.add('filter_counts.sh')
-                    }
-                    if (params.FILTER_COUNTS_QC) {
-                        scriptsToRun.add('filteredCounts_QC.sh')
-                    }
-                    if (params.CBNORMALIZE) {
-                        scriptsToRun.add('CBnormalize.sh')
-                    }
-                    if (params.COMPUTE_LFC) {
-                        scriptsToRun.add('compute_l2fc.sh')
-                    }
-                    if (params.COLLAPSE) {
-                        scriptsToRun.add('collapse_replicates.sh')
-                    }
+                        def scriptsToRun = []
+                        if (params.CREATE_CELLDB_METADATA) {
+                            scriptsToRun.add('create_celldb_metadata.sh')
+                        }
+                        if (params.COLLATE_FASTQ_READS) {
+                            scriptsToRun.add('collate_fastq_reads.sh')
+                        }
+                        if (params.FILTER_COUNTS) {
+                            scriptsToRun.add('filter_counts.sh')
+                        }
+                        if (params.FILTER_COUNTS_QC) {
+                            scriptsToRun.add('filteredCounts_QC.sh')
+                        }
+                        if (params.CBNORMALIZE) {
+                            scriptsToRun.add('CBnormalize.sh')
+                        }
+                        if (params.COMPUTE_LFC) {
+                            scriptsToRun.add('compute_l2fc.sh')
+                        }
+                        if (params.COLLAPSE) {
+                            scriptsToRun.add('collapse_replicates.sh')
+                        }
 
-                    scriptsToRun.each { scriptName ->
-                        echo "Running script: ${scriptName}" // Added for debugging
+                        scriptsToRun.each { scriptName ->
+                            echo "Running script: ${scriptName}" // Added for debugging
 
-                        sh """
-                            chmod +x $WORKSPACE/scripts/launch_job.sh
-                            $WORKSPACE/scripts/launch_job.sh $scriptName
-                        """
+                            sh """
+                                chmod +x $WORKSPACE/scripts/launch_job.sh
+                                $WORKSPACE/scripts/launch_job.sh $scriptName
+                            """
+                        }
                     }
                 }
             }
