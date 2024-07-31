@@ -3,7 +3,7 @@ library(magrittr)
 library(tidyverse)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(magrittr))
-source("/workspace/scripts/src/collapse_counts.R")
+source("/workspace/scripts/src/collapse_bio_reps.R")
 
 parser <- ArgumentParser()
 parser$add_argument("-v", "--verbose", action= "store_true", default= TRUE,
