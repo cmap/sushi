@@ -106,22 +106,6 @@ parameters=(
   "BUILD_NAME:$BUILD_NAME"
 )
 
-# Overwrite the CSV file with parameters each time a new build is kicked off
-> $BUILD_DIR/config.tsv
-
-# Add headers to the TSV file
-printf "Parameter\tValue\n" >> $BUILD_DIR/config.tsv
-
-for param in "${parameters[@]}"; do
-  # Split the parameter and value using ':'
-  IFS=':' read -ra parts <<< "$param"
-  parameter="${parts[0]}"
-  value="${parts[1]}"
-  echo "$parameter: $value"
-  printf "%s\t%s\n" "$parameter" "$value" >> $BUILD_DIR/config.tsv
-done
-
-
 Rscript -e ".libPaths()"
 
 Rscript -e "library(cmapR);packageVersion('cmapR')"
