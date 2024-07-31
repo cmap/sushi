@@ -5,16 +5,6 @@ import groovy.json.JsonSlurper
 pipeline {
     agent any
 
-    // List of parameters
-    def paramList = [
-        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'REVERSE_INDEX2',
-        'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SAMPLE_COLS', 'SIG_COLS',
-        'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
-        'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
-        'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
-        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL'
-    ]
-
     // Define parameters that can be edited via the Jenkins UI
     parameters {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
@@ -91,6 +81,15 @@ pipeline {
         stage('Generate JSON Config') {
             steps {
                 script {
+                    def paramList = [
+                        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'REVERSE_INDEX2',
+                        'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SAMPLE_COLS', 'SIG_COLS',
+                        'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
+                        'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
+                        'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
+                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL'
+                    ]
+
                     def config = [:]
                     if (fileExists(env.CONFIG_FILE_PATH)) {
                         def configText = readFile(file: env.CONFIG_FILE_PATH)
@@ -144,6 +143,15 @@ pipeline {
         stage('Run Scripts in Container') {
             steps {
                 script {
+                    def paramList = [
+                        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'REVERSE_INDEX2',
+                        'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SAMPLE_COLS', 'SIG_COLS',
+                        'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
+                        'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
+                        'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
+                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL'
+                    ]
+
                     def scriptsToRun = []
                     if (params.CREATE_CELLDB_METADATA) {
                         scriptsToRun.add('create_celldb_metadata.sh')
