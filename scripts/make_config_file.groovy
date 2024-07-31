@@ -176,6 +176,9 @@ pipeline {
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates.sh')
                         }
+                        if (params.RUN_EPS_QC) {
+                            scriptsToRun.add('eps_qc.sh')
+                        }
 
                         scriptsToRun.each { scriptName ->
                             echo "Running script: ${scriptName}" // Added for debugging
