@@ -100,7 +100,7 @@ pipeline {
                     def paramsMap = paramList.collectEntries { [(it): params[it]] }
 
                     paramsMap.each { key, value ->
-                        if (value) {
+                        if (value && !key.equals("TIMESTAMP")) {
                             config[key] = value
                         }
                     }
