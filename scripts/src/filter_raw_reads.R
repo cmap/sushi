@@ -104,7 +104,7 @@ filter_raw_reads = function(raw_counts,
   # Processing metadata and inputs ---- 
   # CB meta is in log10 and should be converted to log2.
   print("Converting CB_meta from log10 to log2 ...")
-  #CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
+  CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   
   if (reverse_index2) {
     if ('index_2' %in% colnames(sample_meta)) {
