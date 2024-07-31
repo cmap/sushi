@@ -130,6 +130,7 @@ echo $R_LIBS
 args=(
 --sample_meta "$SAMPLE_META"
 --out "$BUILD_DIR"
+--cb_ladder "$CONTROL_BARCODE_META"
 )
 
 echo Rscript create_cellDB_metadata.R "${args[@]}"
