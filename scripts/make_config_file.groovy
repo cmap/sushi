@@ -88,7 +88,7 @@ pipeline {
                         'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
                         'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
                         'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
-                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL'
+                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL', 'FILTER_COUNTS_QC'
                     ]
 
                     def config = [:]
