@@ -90,6 +90,7 @@ echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
 echo COUNT_COL_NAME is: $COUNT_COL_NAME
 echo RAW_COUNTS is: $RAW_COUNTS
+echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
 args=(
 --sample_meta "$SAMPLE_META"
@@ -104,12 +105,8 @@ args=(
 --control_type "$CTL_TYPES"
 --raw_counts "$RAW_COUNTS"
 --id_cols "$ID_COLS"
+--reverse_index2 "$REVERSE_INDEX2"
 )
-
-if [[ "$REVERSE_INDEX2" == "true" ]]
-then
-	args+=(--reverse_index2)
-fi
 
 echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --annotated_counts $ANNOTATED_COUNTS \
