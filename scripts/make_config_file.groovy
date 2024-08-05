@@ -109,6 +109,8 @@ pipeline {
                         }
                     }
 
+                    config.REVERSE_INDEX2 = config.SEQ_TYPE == 'DRAGEN'
+
                     writeFile file: env.CONFIG_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                     echo "Generated config.json: ${config}"
                 }

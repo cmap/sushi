@@ -39,7 +39,7 @@ parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Cont
 parser$add_argument("--sequencing_index_cols", default= "index_1,index_2", 
                     help = "Sequencing columns in the sample meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=FALSE, 
+parser$add_argument("--reverse_index2", default=FALSE,
                     help = "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
 parser$add_argument("--pool_id", action="store_true", default=FALSE, help = "Pull pool IDs from CellDB.")
@@ -161,3 +161,4 @@ if(args$rm_data == T){
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
 print(paste("writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
+

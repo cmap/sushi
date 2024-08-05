@@ -82,12 +82,8 @@ args=(
 --out "$BUILD_DIR"
 --count_threshold "$COUNT_THRESHOLD"
 --sequencing_index_cols "$SEQUENCING_INDEX_COLS"
+--reverse_index2 "$REVERSE_INDEX2"
 )
-
-if [[ "$REVERSE_INDEX2" == "true" ]]
-then
-	args+=(--reverse_index2)
-fi
 
 echo Checking whether pool ID flag was passed...
 
