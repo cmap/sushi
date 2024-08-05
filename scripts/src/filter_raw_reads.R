@@ -96,8 +96,9 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' @export 
 filter_raw_reads = function(raw_counts, 
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
+                            reverse_index2,
                             sequencing_index_cols= c('index_1', 'index_2'),
-                            reverse_index2= FALSE, count_threshold= 40) {  
+                            count_threshold= 40) {
   require(tidyverse)
   require(magrittr)
   
