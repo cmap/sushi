@@ -156,7 +156,7 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   
   cl_rec= recovery %>% tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove=FALSE) %>%
     ggplot() +
-    geom_col(aes(x=profile_id, y=frac_type*100, fill= reorder(count_type, desc(count_type)))) +
+    geom_col(aes(x=profile_id, y=frac_type*100, fill= reorder(count_type, dplyr::desc(count_type)))) +
     facet_wrap(~pcr_plate, scales= 'free_x') +
     labs(x="", y="Percentage of expected cell lines", fill= '') +
     theme_bw() +
@@ -245,7 +245,7 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
     dplyr::left_join(num_cls_in_set, by= "cell_set") %>%
     dplyr::mutate(expected_num_cl= ifelse(control_barcodes, expected_num_cl + length(unique(CB_meta$Name)),
                                           expected_num_cl)) %>% # add CBs to expected_num_cl if there are CBs
-    tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
+    tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= FALSE) %>%
     dplyr::group_by(pcr_plate, pcr_well, profile_id, expected_num_cl) %>% 
     dplyr::mutate(total_counts= sum(n), pct_counts= n/total_counts,) %>% dplyr::arrange(-n) %>% 
     dplyr::mutate(cum_pct= cumsum(pct_counts), rank= row_number(),
@@ -309,10 +309,10 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
         tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE)
     }
     
-    trend_sc= cb_trend %>% dplyr::mutate(profile_id= reorder(profile_id, desc(norm_mae))) %>%
+    trend_sc= cb_trend %>% dplyr::mutate(profile_id= reorder(profile_id, dplyr::desc(norm_mae))) %>%
       ggplot(aes(x=log2_n, y=log2_dose)) + geom_point() +
       geom_abline(aes(slope=1, intercept= cb_intercept) , color='blue') +
-      geom_text(aes(x= min(log2_n), y= desc(sort(unique(log2_dose)))[1], 
+      geom_text(aes(x= min(log2_n), y= dplyr::desc(sort(unique(log2_dose)))[1], 
                     label= paste('r2=', round(norm_r2, 4), '\nmae=', round(norm_mae, 4), sep='')), 
                 hjust='inward', vjust='inward') +
       facet_wrap(~profile_id, scales= 'free_x') +
@@ -351,7 +351,7 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   ## Tech rep correlations ----
   # assumes that tech reps are the last component of profile_id
   if('tech_rep' %in% colnames(normalized_counts)) {
-    if(max(unique(normalized_counts$tech_rep)) == 2) {
+    if(max(unique(normalized_counts$tech_rep), na.rm= TRUE) == 2) {
       print("generating tech rep correlations image")
    
       static_cols= c('project_code', 'CCLE_name', 'DepMap_ID', 'Name', 'cell_set')
@@ -382,7 +382,7 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   if('bio_rep' %in% colnames(normalized_counts)) {
     num_bio_reps= normalized_counts %>% 
       dplyr::filter((!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
-      pull(bio_rep) %>% unique() %>% length()
+      dplyr::pull(bio_rep) %>% unique() %>% length()
     
     if(num_bio_reps > 1) {
       print("generating bio rep correlations image")
