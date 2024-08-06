@@ -23,7 +23,7 @@ pipeline {
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
         string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'Type to mark as control in compute_LFC')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
-        string(name: 'CELL_SET_META', defaultValue: '', description: 'Cell set metadata')
+        string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell set metadata')
         string(name: 'ID_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep', description: 'Columns to concat to create unique ID for each sample-replicate')
         string(name: 'SAMPLE_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day,bio_rep', description: 'Sample columns')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day', description: 'Signature columns')
