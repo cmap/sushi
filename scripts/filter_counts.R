@@ -146,6 +146,7 @@ write.csv(annotated_counts, annot_out_file, row.names=F)
 
 filtered_counts = filtered_counts$filtered_counts
 
+print(paste("rm_data:", args$rm_data))
 # Remove data if needed
 if(args$rm_data == TRUE){
   print('rm_data is TRUE, removing supplied data.')
