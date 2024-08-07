@@ -8,7 +8,6 @@ then
     exit -1
 fi
 
-
 if [ -z "$ANNOTATED_COUNTS" ]
 then
 	echo ANNOTATED_COUNTS parameter empty
@@ -121,7 +120,6 @@ echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --control_type $CTL_TYPES \
 --raw_counts $RAW_COUNTS \
 --id_cols $ID_COLS
-
 
 Rscript -e "library(cmapR);packageVersion('cmapR')"
 

@@ -54,7 +54,7 @@ echo $RUN_NORM
 
 if [[ "$RUN_NORM" == "true" ]]
 then
-	echo "Running module"
+	echo "Running normalization module"
 
 	echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
     --CB_meta $CONTROL_BARCODE_META \
@@ -71,7 +71,7 @@ then
 	COUNTS="normalized_counts.csv"
 
 else
-	echo "Not running module"
+	echo "Not running normalization module"
     COUNTS=$FILTERED_COUNTS
     COUNT_COL_NAME="n"
     echo $COUNTS

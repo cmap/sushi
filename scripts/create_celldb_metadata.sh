@@ -11,7 +11,6 @@ then
     exit -1
 fi
 
-
 case "$SEQ_TYPE" in
   HiSeq|NovaSeq)
     INDEX_1="barcode_1"
@@ -71,8 +70,7 @@ then
 	SAMPLE_META=$(ls $SAMPLE_META)
 else
 	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
-fi
-
+f
 
 echo Build dir is: $BUILD_DIR
 

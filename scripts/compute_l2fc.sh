@@ -14,7 +14,6 @@ then
     exit -1
 fi
 
-
 #Enforces abs paths
 if [[ "$NORMALIZED_COUNTS" = /* ]]
 then
@@ -23,10 +22,8 @@ else
 	NORMALIZED_COUNTS=$BUILD_DIR/$NORMALIZED_COUNTS
 fi
 
-
 echo Build dir is: $BUILD_DIR
 echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
-
 
 echo Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
 --out $BUILD_DIR \
@@ -36,7 +33,6 @@ echo Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
 --ctrl_cols $CONTROL_COLS \
 --count_threshold $COUNT_THRESHOLD \
 --normalized_counts $NORMALIZED_COUNTS
-
 
 Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
 --out $BUILD_DIR \

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo Checkig whether to collate fastq reads...
+echo Starting collate_fastq_reads...
 
 export API_KEY=$(cat /local/jenkins/.clue_api_key)
 export API_URL="https://api.clue.io/api/"
@@ -63,7 +63,6 @@ then
     exit -1
 fi
 
-
 #Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
 then
@@ -72,15 +71,12 @@ else
 	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
 fi
 
-
 echo Build dir is: $BUILD_DIR
 
 PROJECT_DIR=$(dirname "$BUILD_DIR")
 PROJECT_CODE=$(basename "$PROJECT_DIR")
 
 echo Project Code: $PROJECT_CODE
-
-echo uncollapsed_raw_counts.R "${args[@]}"
 
 args=(
 --sample_meta "$SAMPLE_META"
