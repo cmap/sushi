@@ -43,10 +43,6 @@ API_KEY=$(cat /local/jenkins/.clue_api_key)
 echo "Current Git branch:"
 git -C "$WORKSPACE" rev-parse --abbrev-ref HEAD
 
-# List local images
-echo "Listing local Podman images:"
-/usr/bin/podman images
-
 # Check if the image exists locally
 if /usr/bin/podman images | grep -qE '^localhost/sushi-podman\s+latest\s'; then
   echo "The image 'localhost/sushi-podman:latest' exists locally."

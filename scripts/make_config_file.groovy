@@ -144,6 +144,14 @@ pipeline {
             }
         }
 
+        stage('Show available podman containers') {
+            steps {
+                script {
+                    sh '/usr/bin/podman images'
+                }
+            }
+        }
+
         stage('Run Scripts in Container') {
             steps {
                 script {
