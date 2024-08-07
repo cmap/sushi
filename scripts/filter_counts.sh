@@ -83,45 +83,10 @@ args=(
 --count_threshold "$COUNT_THRESHOLD"
 --sequencing_index_cols "$SEQUENCING_INDEX_COLS"
 --reverse_index2 "$REVERSE_INDEX2"
+--pool_id "$PULL_POOL_ID"
+--rm_data "$REMOVE_DATA"
 )
-
-echo Checking whether pool ID flag was passed...
-
-if [[ "$PULL_POOL_ID" == "true" ]]; then
-    args+=(--pool_id)
-    ASSAY_POOL_META="$BUILD_DIR/assay_pool_meta.txt"
-    args+=(--assay_pool_meta "$ASSAY_POOL_META")
-fi
-
-
-if [[ "$REMOVE_DATA" == "true" ]]
-then
-	args+=(--rm_data)
-fi
 
 echo Rscript filter_counts.R "${args[@]}"
-
-# Define an array of parameters and their corresponding values
-parameters=(
-  "BUILD_DIR:$BUILD_DIR"
-  "SAMPLE_META:$SAMPLE_META"
-  "SEQ_TYPE:$SEQ_TYPE"
-  "ID_COLS:$ID_COLS"
-  "SIG_COLS:$SIG_COLS"
-  "CONTROL_COLS:$CONTROL_COLS"
-  "COUNT_THRESHOLD:$COUNT_THRESHOLD"
-  "PSEUDOCOUNT:$PSEUDOCOUNT"
-  "COUNT_COL_NAME:$COUNT_COL_NAME"
-  "CELL_SET_META:$CELL_SET_META"
-  "CONTROL_BARCODE_META:$CONTROL_BARCODE_META"
-  "CELL_LINE_META:$CELL_LINE_META"
-  "REVERSE_INDEX2:$REVERSE_INDEX2"
-  "REMOVE_DATA:$REMOVE_DATA"
-  "PULL_POOL_ID:$PULL_POOL_ID"
-  "BUILD_NAME:$BUILD_NAME"
-  "SEQUENCING_INDEX_COLS:$SEQUENCING_INDEX_COLS"
-)
-
-Rscript -e "library(cmapR);packageVersion('cmapR')"
 
 Rscript filter_counts.R "${args[@]}"
