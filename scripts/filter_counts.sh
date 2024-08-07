@@ -64,6 +64,14 @@ else
 	CONTROL_BARCODE_META=/data/$CONTROL_BARCODE_META
 fi
 
+#Enforces abs paths
+if [[ "$ASSAY_POOL_META" = /* ]]
+then
+  ASSAY_POOL_META=$(ls $ASSAY_POOL_META)
+else
+  ASSAY_POOL_META=$BUILD_DIR/$ASSAY_POOL_META
+fi
+
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
@@ -85,6 +93,7 @@ args=(
 --reverse_index2 "$REVERSE_INDEX2"
 --pool_id "$PULL_POOL_ID"
 --rm_data "$REMOVE_DATA"
+--assay_pool_meta "$ASSAY_POOL_META"
 )
 
 echo Rscript filter_counts.R "${args[@]}"
