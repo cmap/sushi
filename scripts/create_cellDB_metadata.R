@@ -10,9 +10,9 @@ suppressPackageStartupMessages(library(httr))
 suppressPackageStartupMessages(library(jsonlite))
 suppressPackageStartupMessages(library(tidyverse))
 
-# create parser object
+# Argument parser ----
 parser <- ArgumentParser()
-# specify our desired options
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false",

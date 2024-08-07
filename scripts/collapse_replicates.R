@@ -6,7 +6,9 @@ suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(magrittr))
 source("/workspace/scripts/src/collapse_bio_reps.R")
 
+# Argument parser ----
 parser <- ArgumentParser()
+# specify desired options
 parser$add_argument("-v", "--verbose", action= "store_true", default= TRUE,
                     help= "Print extra output [default]")
 parser$add_argument("-q", "--quietly", action= "store_false", dest= "verbose", 

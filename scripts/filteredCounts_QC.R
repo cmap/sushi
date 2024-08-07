@@ -16,7 +16,7 @@ source("/workspace/scripts/src/QC_images.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
-# specify our desired options 
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
@@ -40,8 +40,11 @@ parser$add_argument("--count_threshold", default=40,
 parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
 parser$add_argument("--control_type", default = "negcon",
                     help = "how negative control wells are distinguished in the trt_type column")
+
+# get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
+# set output to working directory if none is specified
 if (args$out == ""){
   args$out = args$wkdir
 }
