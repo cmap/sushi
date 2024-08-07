@@ -121,6 +121,4 @@ echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --raw_counts $RAW_COUNTS \
 --id_cols $ID_COLS
 
-Rscript -e "library(cmapR);packageVersion('cmapR')"
-
 Rscript filteredCounts_QC.R "${args[@]}"
