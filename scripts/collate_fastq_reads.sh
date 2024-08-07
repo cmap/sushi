@@ -82,11 +82,6 @@ echo Project Code: $PROJECT_CODE
 
 echo uncollapsed_raw_counts.R "${args[@]}"
 
-Rscript -e ".libPaths()"
-
-Rscript -e "library(cmapR);packageVersion('cmapR')"
-echo $R_LIBS
-
 args=(
 --sample_meta "$SAMPLE_META"
 --out "$BUILD_DIR"

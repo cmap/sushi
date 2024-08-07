@@ -1,3 +1,4 @@
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))

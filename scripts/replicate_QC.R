@@ -1,3 +1,4 @@
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
 #suppressMessages(library(cmapR))
 suppressPackageStartupMessages(library(dplyr)) #n()

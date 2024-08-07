@@ -1,3 +1,4 @@
+options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 source("/workspace/scripts/src/normalize.R")

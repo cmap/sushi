@@ -1,4 +1,5 @@
-# Generates the QC table for EPS. 
+options(cli.unicode = FALSE)
+# Generates the QC table for EPS.
 # It reads in normalized counts.csv  and uses  count_threshold and days_to_drop parameters to:
 # flag cell lines  that do not meet the count_threshold in negcon wells on the day that isn't dropped (only a single day can be presented on the portal)
 

@@ -37,13 +37,13 @@ esac
 if [[ "$SEQ_TYPE" == "NovaSeq" ]]
 then
 	export REVERSE_INDEX2=TRUE
-    echo NovaSeq
+    echo Sequencing type is NovaSeq
 fi
 
 if [[ "$SEQ_TYPE" == "DRAGEN" ]]
 then
 	export REVERSE_INDEX2=TRUE
-    echo DRAGEN
+    echo Sequencing type is DRAGEN
 fi
 
 if [ -z "$INDEX_1" ]
@@ -101,9 +101,6 @@ parameters=(
   "BUILD_NAME:$BUILD_NAME"
 )
 
-Rscript -e ".libPaths()"
-
-Rscript -e "library(cmapR);packageVersion('cmapR')"
 echo $R_LIBS
 
 args=(

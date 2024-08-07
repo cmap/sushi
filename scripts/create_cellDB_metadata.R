@@ -1,5 +1,5 @@
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
-
 source("./src/cellDB_metadata.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))

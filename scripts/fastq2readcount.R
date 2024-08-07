@@ -1,4 +1,4 @@
-#library(prismSeqR)
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(tidyverse)) ###### debug
 suppressPackageStartupMessages(library(magrittr))

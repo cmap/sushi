@@ -90,11 +90,6 @@ parameters=(
   "DAYS:$DAYS"
 )
 
-Rscript -e ".libPaths()"
-
-Rscript -e "library(cmapR);packageVersion('cmapR')"
-echo $R_LIBS
-
 args=(
 --out "$BUILD_DIR"
 --build_dir "$BUILD_DIR"
