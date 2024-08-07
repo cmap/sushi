@@ -10,18 +10,6 @@ suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 source("./src/filter_raw_reads.R")
 
-
-## writes configuration to file
-##
-## takes:
-##      args: args object from argparse
-print_args <- function(args){
-  config <- data.frame(args=names(args), values=unname(unlist(args)))
-  config_path = paste(args$out, "config.txt", sep="/")
-  print(paste("Saving config.txt file in :", config_path))
-  write_delim(config, config_path, delim = ": ", col_names=F)
-}
-
 # Arguement parser ----
 parser <- ArgumentParser()
 # specify our desired options

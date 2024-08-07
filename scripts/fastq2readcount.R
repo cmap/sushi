@@ -3,21 +3,6 @@ suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(tidyverse)) ###### debug
 suppressPackageStartupMessages(library(magrittr))
 source("./src/write_df_from_fastq.R")
-## print_args
-## writes configuration to file
-##
-## takes: 
-##      args: args object from argparse
-print_args <- function(args){
-  config <- data.frame(args=names(args), values=unname(unlist(args)))
-  config_path = paste(
-    args$out, 
-    "config.txt",
-    sep="/"
-  )
-  print(paste("Saving config.txt file in :", config_path))
-  write_delim(config, config_path, delim = ": ", col_names=F)
-}
 
 # create parser object
 parser <- argparse::ArgumentParser()
