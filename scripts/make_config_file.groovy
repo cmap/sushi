@@ -5,7 +5,7 @@ import groovy.json.JsonSlurper
 pipeline {
     agent any
     options {
-        ansiColor('xterm')
+        ansiColor('gnome-terminal')
         }
 
     // Define parameters that can be edited via the Jenkins UI
