@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -e
 
 # Function to get parameter from JSON or fallback to Jenkins parameter
 get_param() {
