@@ -39,10 +39,10 @@ parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Cont
 parser$add_argument("--sequencing_index_cols", default= "index_1,index_2", 
                     help = "Sequencing columns in the sample meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", default=FALSE,
+parser$add_argument("--reverse_index2", type="logical",
                     help = "Reverse complement of index 2 for NovaSeq and NextSeq")
-parser$add_argument("--rm_data", default=FALSE, help = "Remove bad experimental data")
-parser$add_argument("--pool_id", default=FALSE, help = "Pull pool IDs from CellDB.")
+parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
+parser$add_argument("--pool_id", type="logical", help = "Pull pool IDs from CellDB.")
 parser$add_argument("--control_type", default="negcon", 
                     help = "negative control wells in trt_type column in sample metadata")
 
