@@ -147,9 +147,11 @@ write.csv(annotated_counts, annot_out_file, row.names=F)
 filtered_counts = filtered_counts$filtered_counts
 
 # Remove data if needed
-print(args$rm_data)
 if(args$rm_data == TRUE){
+  print('rm_data is TRUE, removing supplied data.')
   data_to_remove <- read.csv(paste(args$out, 'data_to_remove.csv', sep='/'))
+  print('Data to remove:')
+  print(head(data_to_remove))
   filt_rm <- remove_data(filtered_counts, data_to_remove)
   
   # keep the full filtered counts with the data that needs to be removed
@@ -157,6 +159,8 @@ if(args$rm_data == TRUE){
   write.csv(filtered_counts_original, paste(args$out, 'filtered_counts_original.csv', sep='/'), row.names=F, quote=F)
   # re-point to what filtered_counts should be
   filtered_counts <- filt_rm
+  rows_removed = nrow(filtered_counts_original) - nrow(filtered_counts)
+  paste("Number of rows removed: ", rows_removed)
 }
 
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
