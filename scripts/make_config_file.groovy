@@ -16,8 +16,8 @@ pipeline {
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
         string(name: 'GIT_BRANCH', defaultValue: 'podman_dev', description: 'Pipeline branch to use')
-        booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date code from the specified branch. If not selected, will use the commit specified in the config.json file.')
-        string(name: 'COMMIT_HASH', defaultValue: '', description: 'Specific commit hash to use (leave empty to use the latest commit in the branch)')
+        booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
+        string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch)')
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
@@ -72,13 +72,13 @@ pipeline {
                                   extensions: [],
                                   userRemoteConfigs: scm.userRemoteConfigs
                         ])
-                        // Overwrite the commit hash in the config with the latest commit
-                        def latestCommitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
-                        config.COMMIT = latestCommitHash
+                        // Overwrite the commit ID in the config with the latest commit
+                        def latestCommitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                        config.COMMIT = latestCommitID
                         writeFile file: env.CONFIG_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
-                        echo "Using latest commit: ${latestCommitHash}"
+                        echo "Using latest commit: ${latestCommitID}"
                     } else {
-                        // Use the commit hash specified in the config.json
+                        // Use the commit ID specified in the config.json
                         if (config.COMMIT) {
                             checkout([$class: 'GitSCM',
                                       branches: [[name: config.COMMIT]],
@@ -134,15 +134,15 @@ pipeline {
             }
         }
 
-        stage('Add Commit Hash to Config') {
+        stage('Add Commit ID to Config') {
             steps {
                 script {
-                    def commitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                    def commitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                     def configFilePath = env.CONFIG_FILE_PATH
                     sh """
-                        jq --arg commit "$commitHash" '. + {COMMIT: \$commit}' $configFilePath > ${configFilePath}.tmp && mv ${configFilePath}.tmp $configFilePath
+                        jq --arg commit "$commitID" '. + {COMMIT: \$commit}' $configFilePath > ${configFilePath}.tmp && mv ${configFilePath}.tmp $configFilePath
                     """
-                    echo "Added commit hash to config.json: $commitHash"
+                    echo "Added commit ID to config.json: $commitID"
                 }
             }
         }

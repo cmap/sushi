@@ -70,7 +70,7 @@ then
 	SAMPLE_META=$(ls $SAMPLE_META)
 else
 	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
-f
+fi
 
 echo Build dir is: $BUILD_DIR
 
