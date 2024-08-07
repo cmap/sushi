@@ -1,10 +1,5 @@
 #!/bin/bash -e
 
-# Set locale to ensure UTF-8 encoding is used (should fix issues with R output)
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
-
-
 # Function to get parameter from JSON or fallback to Jenkins parameter
 get_param() {
   local param_name="$1"
