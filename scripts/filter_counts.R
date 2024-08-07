@@ -147,7 +147,8 @@ write.csv(annotated_counts, annot_out_file, row.names=F)
 filtered_counts = filtered_counts$filtered_counts
 
 # Remove data if needed
-if(args$rm_data == T){
+print(args$rm_data)
+if(args$rm_data == TRUE){
   data_to_remove <- read.csv(paste(args$out, 'data_to_remove.csv', sep='/'))
   filt_rm <- remove_data(filtered_counts, data_to_remove)
   
