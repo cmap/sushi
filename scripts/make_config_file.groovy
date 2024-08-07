@@ -16,6 +16,7 @@ pipeline {
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
         string(name: 'GIT_BRANCH', defaultValue: 'podman_dev', description: 'Pipeline branch to use')
+        booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date code from the specified branch. If not selected, will use the commit specified in the config.json file.')
         string(name: 'COMMIT_HASH', defaultValue: '', description: 'Specific commit hash to use (leave empty to use the latest commit in the branch)')
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
@@ -57,23 +58,39 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    if (params.COMMIT_HASH?.trim()) {
-                        // Checkout the specific commit
-                        checkout([$class: 'GitSCM',
-                                  branches: [[name: params.COMMIT_HASH]],
-                                  doGenerateSubmoduleConfigurations: false,
-                                  extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: '']],
-                                  submoduleCfg: [],
-                                  userRemoteConfigs: scm.userRemoteConfigs
-                        ])
-                    } else {
-                        // Checkout the branch
+                    def config = [:]
+                    if (fileExists(env.CONFIG_FILE_PATH)) {
+                        def configText = readFile(file: env.CONFIG_FILE_PATH)
+                        config = new HashMap(new JsonSlurper().parseText(configText))
+                    }
+
+                    if (params.USE_LATEST) {
+                        // Checkout the latest commit from the specified branch
                         checkout([$class: 'GitSCM',
                                   branches: [[name: "*/${params.GIT_BRANCH}"]],
                                   doGenerateSubmoduleConfigurations: false,
                                   extensions: [],
                                   userRemoteConfigs: scm.userRemoteConfigs
                         ])
+                        // Overwrite the commit hash in the config with the latest commit
+                        def latestCommitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                        config.COMMIT = latestCommitHash
+                        writeFile file: env.CONFIG_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
+                        echo "Using latest commit: ${latestCommitHash}"
+                    } else {
+                        // Use the commit hash specified in the config.json
+                        if (config.COMMIT) {
+                            checkout([$class: 'GitSCM',
+                                      branches: [[name: config.COMMIT]],
+                                      doGenerateSubmoduleConfigurations: false,
+                                      extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: '']],
+                                      submoduleCfg: [],
+                                      userRemoteConfigs: scm.userRemoteConfigs
+                            ])
+                            echo "Using commit from config.json: ${config.COMMIT}"
+                        } else {
+                            error("COMMIT not specified in config.json and USE_LATEST is false.")
+                        }
                     }
                 }
             }
