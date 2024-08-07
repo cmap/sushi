@@ -4,10 +4,6 @@ import groovy.json.JsonSlurper
 
 pipeline {
     agent any
-    options {
-        ansiColor('vga')
-        }
-
     // Define parameters that can be edited via the Jenkins UI
     parameters {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')

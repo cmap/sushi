@@ -1,4 +1,4 @@
-#suppressPackageStartupMessages(library(sets))
+options(cli.unicode = FALSE)
 
 #' validate_columns_exist
 #' 
