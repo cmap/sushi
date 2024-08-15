@@ -75,7 +75,6 @@ pipeline {
                         // Overwrite the commit ID in the config with the latest commit
                         def latestCommitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
                         config.COMMIT = latestCommitID
-                        writeFile file: env.CONFIG_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                         echo "Using latest commit: ${latestCommitID}"
                     } else {
                         // Use the commit ID specified in the config.json
@@ -109,25 +108,29 @@ pipeline {
                     ]
 
                     def config = [:]
+
+                    // Load existing config if it exists
                     if (fileExists(env.CONFIG_FILE_PATH)) {
                         def configText = readFile(file: env.CONFIG_FILE_PATH)
                         config = new HashMap(new JsonSlurper().parseText(configText))
-                    } else {
-                        def paramsMap = paramList.collectEntries { [(it): params[it]] }
+                    }
 
-                        paramsMap.each { key, value ->
-                            if (value && !key.equals("TIMESTAMP")) {
-                                config[key] = value
-                            }
-                        }
-
-                        if (!config.containsKey('API_KEY')) {
-                            config.API_KEY = sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
+                    // Add parameters from Jenkins UI only if they don't exist in the config
+                    paramList.each { paramName ->
+                        if (!config.containsKey(paramName) && params.containsKey(paramName)) {
+                            config[paramName] = params[paramName]
                         }
                     }
 
+                    // Add or overwrite specific keys
+                    if (!config.containsKey('API_KEY')) {
+                        config.API_KEY = sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
+                    }
+
+                    // Explicit settings that are programmatically derived
                     config.REVERSE_INDEX2 = config.SEQ_TYPE == 'DRAGEN'
 
+                    // Write the config back to file after all updates
                     writeFile file: env.CONFIG_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                     echo "Generated config.json: ${config}"
                 }
@@ -199,7 +202,7 @@ pipeline {
                         }
 
                         scriptsToRun.each { scriptName ->
-                            echo "Running script: ${scriptName}" // Added for debugging
+                            echo "Running script: ${scriptName}"
 
                             sh """
                                 chmod +x $WORKSPACE/scripts/launch_job.sh
