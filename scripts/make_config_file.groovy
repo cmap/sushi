@@ -215,6 +215,21 @@ pipeline {
     }
 
     post {
+        always {
+            script {
+                def buildDir = params.BUILD_DIR
+                def buildName = params.BUILD_NAME ?: "default_build_name"
+                def logFilePath = "${buildDir}/${buildName}_console_output.log"
+
+                // Capture the entire console log
+                def log = currentBuild.rawBuild.getLog(maxLines: 999999)
+
+                // Write the log to the specified file
+                writeFile file: logFilePath, text: log.join("\n")
+
+                echo "Console output has been saved to ${logFilePath}"
+            }
+        }
         success {
             script {
                 echo 'Build completed successfully.'
