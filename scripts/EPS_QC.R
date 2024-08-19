@@ -80,7 +80,9 @@ med_cell_counts_qc <- cell_counts_negcon %>%
 ## in log2 transformed counts, the pseudocount has been added
 
 ## save the output along with build name
-write_csv(med_cell_counts_qc, paste0(out_dir, "/", build_name, "_EPS_QC_TABLE.csv"))
+out_path = paste0(out_dir, "/", build_name, "_EPS_QC_TABLE.csv")
+print(paste0("Writing out EPS_QC table to ", out_path))
+write_csv(med_cell_counts_qc, out_path)
 
 
 
