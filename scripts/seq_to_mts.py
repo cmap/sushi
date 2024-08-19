@@ -53,7 +53,7 @@ def main(args):
         sample_meta = read_build_file("sample_meta.csv", args)
         level_3 = read_build_file("normalized_counts.csv", args)
         level_4 = read_build_file("l2fc.csv", args)
-        level_5 = read_build_file("collapsed_values.csv", args)
+        level_5 = read_build_file("collapsed_l2fc.csv", args)
 
     except IndexError as err:
         logger.error(err)
