@@ -222,7 +222,7 @@ pipeline {
                 def logFilePath = "${buildDir}/${buildName}_console_output.log"
 
                 // Capture the entire console log
-                def log = currentBuild.rawBuild.getLog(maxLines: 999999)
+                def log = currentBuild.rawBuild.getLog(999999)
 
                 // Write the log to the specified file
                 writeFile file: logFilePath, text: log.join("\n")
