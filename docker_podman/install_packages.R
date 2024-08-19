@@ -13,6 +13,7 @@ install.packages("ggpubr", dependencies = TRUE)
 install.packages("ggpmisc", dependencies = TRUE)
 install.packages("stringdist", dependencies = TRUE)
 install.packages("devtools", dependencies = TRUE)
+install.packages("reshape2", dependencies = TRUE)
 devtools::install_github("https://github.com/broadinstitute/taigr")
 
 # Install other necessary Bioconductor packages explicitly
