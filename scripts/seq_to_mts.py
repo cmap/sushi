@@ -86,6 +86,8 @@ def main(args):
     for ind, dataset in enumerate(datasets):
         dataset_name = ["sample_meta", "level_3", "level_4", "level_5"][ind]
         missing_columns = [col for col in ["x_project_id", "pert_plate"] if col not in dataset.columns]
+        print(f'Renaming columns for {dataset_name}...')
+        print(f"Original columns {dataset.columns}")
         if missing_columns:
             missing_cols_str = ", ".join(missing_columns)
             raise ValueError(f"Columns '{missing_cols_str}' not found in the '{dataset_name}' dataset. Cannot proceed.")
@@ -93,6 +95,7 @@ def main(args):
             for old_name, new_name in column_mapping.items():
                 if old_name in dataset.columns:
                     dataset.rename(columns={old_name: new_name}, inplace=True)
+        print(f"Renamed columns {dataset.columns}")
 
         # Seq projects are all PR500 for now
         dataset["culture"] = "PR500"
