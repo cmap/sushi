@@ -22,10 +22,15 @@ RUN apt-get update -qq && \
     libssh2-1-dev \
     libhdf5-dev \
     libcurl4-openssl-dev \
-    jq && \
+    jq \
+    python3 \
+    python3-pip && \
     apt-get -y --no-install-recommends install libbz2-dev liblzma-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Python dependencies
+RUN pip3 install pandas
 
 # First set of R dependencies
 COPY ./install_packages.R /src/install_packages.R
@@ -36,4 +41,3 @@ RUN apt-get update -qq && \
     apt-get -y install --no-install-recommends curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
