@@ -44,7 +44,7 @@ pipeline {
         string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'File containing log2 fold change values')
         string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'File in BUILD_DIR containing annotated counts')
         string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'File in BUILD_DIR containing normalized counts')
-        string(name: 'COLLAPSED_VALUES', defaultValue: 'collapsed_values.csv', description: 'File in BUILD_DIR containing replicate collapsed l2fc values')
+        string(name: 'COLLAPSED_VALUES', defaultValue: 'collapsed_l2fc.csv', description: 'File in BUILD_DIR containing replicate collapsed l2fc values')
         string(name: 'ASSAY_POOL_META', defaultValue: 'assay_pool_meta.txt', description: 'File in BUILD_DIR containing assay pool metadata')
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
     }
@@ -62,7 +62,7 @@ pipeline {
                         def configText = readFile(file: env.CONFIG_FILE_PATH)
                         config = new HashMap(new JsonSlurper().parseText(configText))
                     }
-
+s
                     if (params.USE_LATEST) {
                         // Checkout the latest commit from the specified branch
                         checkout([$class: 'GitSCM',
