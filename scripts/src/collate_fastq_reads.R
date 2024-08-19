@@ -59,8 +59,8 @@ validate_unique_samples= function(selected_columns, df) {
 #' @param detected_flowcells A dataframe with the columns "flowcell_name" and "flowcell_lane".
 #' @param expected_flowcells A dataframe with the columns "flowcell_name" and "flowcell_lane".
 validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
-  missing_flowcells= expected_flowcells %>%
-    dplyr::anti_join(detected_flowcells, by= c('flowcell_name', 'flowcell_lane'))
+  missing_flowcells= expected_flowcells %>% dplyr::anti_join(detected_flowcells, by= c('flowcell_name', 'flowcell_lane'))
+
   if(nrow(missing_flowcells) != 0) {
     print('The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
     print(missing_flowcells)
@@ -84,17 +84,40 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #'                              This defaults onto the following columns: "index_1", "index_2"
 #' @returns Returns a dataframe with columns specified by the sequencing_index_cols, "forward_read_cl_barcode", and "n".
 #' @import tidyverse
-collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, sequencing_index_cols= c('index_1', 'index_2')) {
+collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, 
+                              sequencing_index_cols= c('index_1', 'index_2'),
+                              id_cols= c('pcr_plate', 'pcr_well'),
+                              reverse_index2= FALSE,
+                              barcode_col= 'forward_read_cl_barcode') {
   require(tidyverse)
+  
+  # Reverse index 2 if specified ----
+  if(reverse_index2) {
+    if('index_2' %in% colnames(sample_meta)) {
+      print("Reverse-complementing index 2 barcode ...")
+      sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
+    } else {
+      stop('Reverse index 2 is set to TRUE, but index_2 does not exists.')
+    }
+  }
   
   # Validation: Check that flowcell_names and flowcell_lanes exist in the sample meta ----
   if(!validate_columns_exist(c('flowcell_names', 'flowcell_lanes'), sample_meta)) {
-    stop('flowcell_names and/or flowcell_lanes is NOT present in the sample meta.')
+    stop('Flowcell_names and/or flowcell_lanes is NOT present in the sample meta.')
   }
   
   # Validation: Check that sequencing_index_cols exist in the sample meta ----
   if(!validate_columns_exist(sequencing_index_cols, sample_meta)) {
+    print('The following sequencing_index_cols are not present in the sample meta.')
+    print(sequencing_index_cols[!sequencing_index_cols %in% colnames(sample_meta)])
     stop('One or more sequencing_index_cols is NOT present in the sample meta.')
+  }
+  
+  # Validation: Check that id_cols exist in the sample meta ----
+  if(!validate_columns_exist(id_cols, sample_meta)) {
+    print('The following id_cols are not present in the sample meta.')
+    print(id_cols[!id_cols %in% colnames(sample_meta)])
+    stop('One or more id_cols is NOT present in the sample meta.')
   }
   
   # Validation: Check that sequencing_index_cols in the sample meta are filled out ----
@@ -102,12 +125,6 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, sequencing_in
   # Error out of the sequencing_index_cols are not filled out in the sample meta.
   if(!validate_columns_entries(sequencing_index_cols, sample_meta)) {
     stop('One or more sequencing_index_cols in the sample meta is not filled out.')
-  }
-  
-  # Validation: Check that sequencing_index_cols uniquely identify rows of sample meta ----
-  if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
-    print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
-    stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
   }
   
   # Determine which flowcell names + lanes are expected ----
@@ -139,13 +156,49 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, sequencing_in
   print(detected_flowcells)
   validate_detected_flowcells(detected_flowcells, expected_flowcells)
   
-  # Create raw counts by summing over appropriate sequencing_index_cols ----
-  # Use an inner join to collect reads with valid flowcell name/lane combinations, 
-  # then sum reads across sequencing columns
+  # Validation: Check that sequencing_index_cols uniquely identify rows of sample meta ----
+  if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
+    print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
+    stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
+  }
+  
+  # Validation: Check that id_cols uniquely identify rows of sample meta ----
+  if(!validate_unique_samples(id_cols, sample_meta)) {
+    print('There may be multiple entries in the sample meta that have the same combination of ID columns.')
+    stop('The specified ID columns do NOT uniquely identify every PCR well.')
+  }
+  
+  # Create sequence map ----
+  sequencing_map= sample_meta %>% dplyr::distinct(pick(all_of(c(sequencing_index_cols, id_cols))))
+  
+  # Validation: Check that mapping is one to one ----
+  check_mapping= sequencing_map %>% dplyr::group_by(pick(all_of(sequencing_index_cols))) %>%
+    dplyr::filter(dplyr::n() > 1) %>% dplyr::ungroup()
+  if(nrow(check_mapping) > 0) {
+    print('The following sequening locations map to multiple conditions.')
+    print(check_mapping)
+    stop('The sequencing index columns do not map 1 to 1 to the ID columns.')
+  }
+  
+  # Create raw counts file ----
+  # Filter for the expected flowcells and summed up the reads over the ID cols.
+  print('Summing up reads ...')
   raw_counts= uncollapsed_raw_counts %>% 
-    dplyr::inner_join(expected_flowcells, by= c('flowcell_name', 'flowcell_lane'), relationship= 'many-to-one') %>%
-    dplyr::group_by(pick(all_of(c(sequencing_index_cols, 'forward_read_cl_barcode')))) %>% 
+    dplyr::semi_join(expected_flowcells, by= c('flowcell_name', 'flowcell_lane')) %>%
+    dplyr::inner_join(sequencing_map, by= intersect(colnames(.), colnames(sequencing_map)), relationship= 'many-to-one') %>%
+    dplyr::group_by(pick(all_of(c(id_cols, barcode_col)))) %>% 
     dplyr::summarize(n= sum(n)) %>% dplyr::ungroup()
   
+  # Calculate index purity ----
+  index_purity= sum(raw_counts$n) / sum(uncollapsed_raw_counts$n)
+  print(paste0('Index purity: ', round(index_purity, 4)))
+  if(index_purity > 1) {
+    stop('ERROR: Index purity is greater than 1!')
+  }
+  if(index_purity < 0.5) {
+    print('Warning: Low index purity!')
+  }
+  
+  print('Done!')
   return(raw_counts)
 }
