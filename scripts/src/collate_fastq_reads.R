@@ -1,13 +1,18 @@
 #' validate_columns_exist
 #' 
 #' This function checks that a list of columns are present in a dataframe.
+#' Columns that were not found in the dataframe are printed out.
 #' 
 #' @param selected_columns A vector of strings each representing a column name
 #' @param df A dataframe to check against
 #' @return Boolean
-validate_columns_exist= function(selected_columns, df) {
-  # Check that all of selected_columns are in df
-  if(any(!selected_columns %in% colnames(df))) {
+validate_columns_exist= function(selected_cols, df) {
+  # Check that all of selected_columns are in df - base::setdiff(A, B) = A[!A %in% B].
+  unmatched_cols= base::setdiff(selected_cols, colnames(df))
+  
+  if(length(unmatched_cols) > 0) {
+    print('The following columns are missing: ')
+    print(unmatched_cols)
     return(FALSE)
   } else {
     return(TRUE)
@@ -103,7 +108,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   
   # Validation: Check that flowcell_names and flowcell_lanes exist in the sample meta ----
   if(!validate_columns_exist(c('flowcell_names', 'flowcell_lanes'), sample_meta)) {
-    stop('Flowcell_names and/or flowcell_lanes is NOT present in the sample meta.')
+    stop('The above column(s) are NOT present in the sample meta.')
   }
   
   # Validation: Check that sequencing_index_cols exist in the sample meta ----
@@ -115,8 +120,6 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   
   # Validation: Check that id_cols exist in the sample meta ----
   if(!validate_columns_exist(id_cols, sample_meta)) {
-    print('The following id_cols are not present in the sample meta.')
-    print(id_cols[!id_cols %in% colnames(sample_meta)])
     stop('One or more id_cols is NOT present in the sample meta.')
   }
   
@@ -194,10 +197,9 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   print(paste0('Index purity: ', round(index_purity, 4)))
   if(index_purity > 1) {
     stop('ERROR: Index purity is greater than 1!')
-  }
-  if(index_purity < 0.5) {
+  } else if(index_purity < 0.5) {
     print('Warning: Low index purity!')
-  }
+  } else {}
   
   print('Done!')
   return(raw_counts)
