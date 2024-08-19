@@ -4,10 +4,18 @@ import os
 import sys
 import glob
 import logging
+import json
 
 logger = logging.getLogger('seq_to_mts')
 pert_vehicle = "DMSO"
 pert_time_unit = "d"
+
+
+class Config:
+    def __init__(self, config_dict):
+        for key, value in config_dict.items():
+            setattr(self, key, value)
+
 
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -16,13 +24,16 @@ def build_parser():
     parser.add_argument("--verbose", '-v', help="Whether to print a bunch of output", action="store_true", default=False)
     parser.add_argument('--build_name', '-n', help='Build name.', required=True)
     parser.add_argument('--days', '-d', help='Day timepoints to drop from output data separated by commas.')
+    parser.add_argument('--config', '-c', help='Config file for project.', required=True, default='config.json')
     return parser
+
 
 def read_build_file(search_pattern, args):
     fstr = os.path.join(args.build_path, search_pattern)
     fmatch = glob.glob(fstr)
     assert (len(fmatch) == 1) , "Too many files found: {}".format(fmatch)
     return pd.read_csv(fmatch[0])
+
 
 def write_key(df):
     df = df[~df['pert_type'].isin(['trt_poscon', 'ctl_vehicle'])]
@@ -38,6 +49,23 @@ def write_key(df):
     grouped_df = distinct_df.groupby([col for col in distinct_df.columns if col not in exclude_columns]).nunique().reset_index()
 
     return grouped_df
+
+
+def read_config(config_path):
+    with open(config_path, 'r') as f:
+        config_dict = json.load(f)
+    return Config(config_dict)
+
+
+def create_profile_id_column(df, config):
+    # Split the sig_cols string into a list of column names
+    sig_cols = config.SIG_COLS.split(',')
+
+    # Create the 'profile_id' by concatenating the specified columns with ':' as delimiter
+    df['profile_id'] = df[sig_cols].astype(str).agg(':'.join, axis=1)
+
+    return df
+
 
 def main(args):
     if os.path.isdir(args.out):
@@ -78,6 +106,13 @@ def main(args):
         "median_l2fc": "LFC"
     }
 
+    # Get the columns for profile_id from SIG_COLS
+    config_path = args.build_path + '/' + args.config
+    config = read_config(config_path=config_path)
+
+    # Add profile_id to levels 3,4 and 5
+    level_3 = create_profile_id_column(level_3, config)
+    level_4 = create_profile_id_column(level_4, config)
 
     # Define the list of datasets
     datasets = [sample_meta, level_3, level_4, level_5]
@@ -146,8 +181,8 @@ def main(args):
 
     # Sorting columns to resemble MTS style
     level_4.sort_index(axis=1, inplace=True)
-    #profile_col = level_4.pop('profile_id')
-    #level_4.insert(1, profile_col.name, profile_col)
+    profile_col = level_4.pop('profile_id')
+    level_4.insert(1, profile_col.name, profile_col)
     level_4 = level_4[[col for col in level_4.columns if col != 'LFC'] + ['LFC']]
 
     level_5.sort_index(axis=1, inplace=True)

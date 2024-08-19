@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo Starting create_celldb_metadata...
+echo Starting EPS_QC...
 
 export API_KEY=$(cat /local/jenkins/.clue_api_key)
 export API_URL="https://api.clue.io/api/"
