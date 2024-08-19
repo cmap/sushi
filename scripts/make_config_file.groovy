@@ -62,7 +62,7 @@ pipeline {
                         def configText = readFile(file: env.CONFIG_FILE_PATH)
                         config = new HashMap(new JsonSlurper().parseText(configText))
                     }
-s
+
                     if (params.USE_LATEST) {
                         // Checkout the latest commit from the specified branch
                         checkout([$class: 'GitSCM',
