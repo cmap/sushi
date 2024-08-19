@@ -13,7 +13,7 @@ parser$add_argument("-v", "--verbose", action= "store_true", default= TRUE,
                     help= "Print extra output [default]")
 parser$add_argument("-q", "--quietly", action= "store_false", dest= "verbose", 
                     help= "Print little output")
-parser$add_argument("-c", "--lfc", default= "collapsed_l2fc.csv",
+parser$add_argument("-c", "--lfc", default= "l2fc.csv",
                     help= "path to file containing l2fc values")
 parser$add_argument("--sig_cols", default= "cell_set,treatment,dose,dose_unit,day", 
                     help= "columns used to identify a unique condition")
