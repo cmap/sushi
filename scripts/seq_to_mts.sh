@@ -8,14 +8,14 @@ if [ -z "$BUILD_DIR" ]; then
 fi
 
 echo "Build dir is: $BUILD_DIR"
-echo "Output dir is: $BUILD_DIR/syc_to_s3"
+echo "Output dir is: $BUILD_DIR/sync_to_s3"
 
 # Create the output directory if it does not exist
 if [ ! -d "$BUILD_DIR/syc_to_s3" ]; then
-    echo "Creating output directory: $BUILD_DIR/syc_to_s3"
+    echo "Creating output directory: $BUILD_DIR/sync_to_s3"
     mkdir -p "$BUILD_DIR/sync_to_s3"
 else
-    echo "Output directory already exists: $BUILD_DIR/syc_to_s3"
+    echo "Output directory already exists: $BUILD_DIR/sync_to_s3"
 fi
 
 args=(
@@ -23,7 +23,6 @@ args=(
 --out "$BUILD_DIR/syc_to_s3"
 --build_name "$BUILD_NAME"
 --days "$DAYS"
---verbose TRUE
 )
 
 echo "python seq_to_mts.py ${args[@]}"
