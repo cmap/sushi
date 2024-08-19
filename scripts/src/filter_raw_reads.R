@@ -26,6 +26,13 @@ validate_columns_exist= function(selected_columns, df) {
 validate_unique_samples= function(selected_columns, df) {
   unique_column_values= df %>% dplyr::distinct(pick(all_of(selected_columns)))
   if(nrow(unique_column_values) != nrow(df)) {
+    print('The selected columns do not uniquely identify all rows.')
+    
+    dups= df %>% dplyr::group_by(pick(all_of(selected_columns))) %>%
+      dplyr::filter(dplyr::n() > 1) %>% dplyr::ungroup() %>% 
+      dplyr::arrange(pick(all_of(selected_columns)))
+    print(dups)
+    
     return(FALSE)
   } else {
     return(TRUE)
@@ -93,7 +100,7 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' @export 
 filter_raw_reads = function(raw_counts, 
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
-                            sequencing_index_cols= c('index_1', 'index_2'),
+                            id_cols= c('pcr_plate', 'pcr_well'),
                             reverse_index2= FALSE, count_threshold= 40) {
   
   require(tidyverse)
@@ -101,10 +108,12 @@ filter_raw_reads = function(raw_counts,
   
   # Processing metadata and inputs ---- 
   # CB meta is in log10 and should be converted to log2.
-  print("Converting CB_meta from log10 to log2 ...")
-  CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
+  if('log_dose' %in% colnames(CB_meta)) {
+    print("Converting CB_meta from log10 to log2 ...")
+    CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
+  }
   
-  if (reverse_index2) {
+  if(reverse_index2) {
     if ('index_2' %in% colnames(sample_meta)) {
       print("Reverse-complementing index 2 barcode ...")
       sample_meta$index_2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
@@ -113,39 +122,21 @@ filter_raw_reads = function(raw_counts,
     }
   }
   
-  # Validation: Check that sequencing_index_cols exist in the sample meta ----
-  if(!validate_columns_exist(sequencing_index_cols, sample_meta)) {
-    stop('One or more sequencing_index_cols is NOT present in the sample meta.')
+  # Validation: Check that id_cols exist in the sample meta ----
+  if(!validate_columns_exist(id_cols, sample_meta)) {
+    stop('One or more id_cols is NOT present in the sample meta.')
   }
   
-  # Validation: Check that sequencing_index_cols uniquely identify every rows of sample meta ----
-  if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
-    print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
-    stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
+  # Validation: Check that id_cols uniquely identify every rows of sample meta ----
+  if(!validate_unique_samples(id_cols, sample_meta)) {
+    print('There may be multiple entries in the sample meta that have the same combination of id_cols.')
+    stop('The specified ID columns do NOT uniquely identify every PCR well.')
   }
   
   # Validation: Check that cell sets do not contain duplicate LUAs ----
   # This will produce a warning if a LUA appears in a cell set more than once!
   # This currently does NOT result in an error. Error avoided using a distinct later in line 162
   validate_cell_set_luas(sample_meta, cell_set_meta)
-  
-  # Filtering by sequencing columns ----
-  # Filter raw counts using the sequencing columns. 
-  # Also create "mapped" column to identify reads that mapped to all known PRISM sequences.
-  print("Filtering by sequencing columns ...")
-  unique_sequencing_index_vals= sample_meta %>% dplyr::distinct(pick(all_of(sequencing_index_cols)))
-  index_filtered= raw_counts %>% dplyr::semi_join(unique_sequencing_index_vals, by= sequencing_index_cols) %>%
-    dplyr::mutate(mapped= forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence))
-  
-  # Calculate index purity for QC table.
-  index_purity= sum(index_filtered$n)/ sum(raw_counts$n)
-  
-  # Split off unmapped reads ----
-  # Unmapped reads are defined as having valid indices but do not map to barcodes in PRISM.
-  # Also sorted reads in descending order by read count.
-  print('Splitting off unmapped reads ...')
-  unmapped_reads= index_filtered %>% dplyr::filter(mapped==F) %>% dplyr::select(-mapped) %>% 
-    dplyr::arrange(dplyr::desc(n))
   
   # Creating a template of all expected reads in the run ----
   # Use all 4 meta data files to create a "template" dataframe where
@@ -174,12 +165,12 @@ filter_raw_reads = function(raw_counts,
   # Reads that to not match to the template are contaminants and,
   # reads that are only present in the template are missing/not detected by PCR.
   print("Annotating reads ...")
-  annotated_counts= index_filtered %>% dplyr::filter(mapped) %>%
+  annotated_counts= raw_counts %>%
     dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
     dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
-    dplyr::left_join(sample_meta, by= sequencing_index_cols, relationship= 'many-to-one') %>%
+    dplyr::left_join(sample_meta, by= id_cols, relationship= 'many-to-one') %>%
     dplyr::full_join(template %>% dplyr::mutate(expected_read= T),
                      by= c('forward_read_cl_barcode'='Sequence', intersect(colnames(template), colnames(.))),
                      relationship= 'one-to-one') %>%
@@ -197,15 +188,17 @@ filter_raw_reads = function(raw_counts,
     dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
                   flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
   
-  # Calculate cell line purity for the QC table.
-  cell_line_purity= sum(filtered_counts$n)/ sum(index_filtered$n)
+  # Calculate cell line purity ----
+  cell_line_purity= sum(filtered_counts$n)/ sum(raw_counts$n)
+  print(paste0('Cell line purity: ', round(cell_line_purity, 4)))
+  if(cell_line_purity > 1) {
+    stop('ERROR: Cell line purity is greater than 1!')
+  }
+  if(cell_line_purity < 0.5) {
+    print('Warning: Low cell line purity!')
+  }
   
-  # Generating QC table ----
-  print('Generating QC table ...')
-  qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
-  
-  return(list(unmapped_reads= unmapped_reads, annotated_counts= annotated_counts, 
-              filtered_counts= filtered_counts, qc_table= qc_table))
+  return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts))
 }
 
 # checks is a string can be numeric
