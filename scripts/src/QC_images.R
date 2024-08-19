@@ -1,3 +1,24 @@
+#' validate_columns_exist
+#' 
+#' This function checks that a list of columns are present in a dataframe.
+#' Columns that were not found in the dataframe are printed out.
+#' 
+#' @param selected_columns A vector of strings each representing a column name
+#' @param df A dataframe to check against
+#' @return Boolean
+validate_columns_exist= function(selected_columns, df) {
+  # Check that all of selected_columns are in df
+  unmatched_cols= setdiff(selected_columns, colnames(df))
+  
+  if(length(unmatched_cols) > 0) {
+    print('The following columns are missing: ')
+    print(unmatched_cols)
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
 #' Calculate index summaries
 #' 
 #' Generates some simple summaries for each unique index.
@@ -27,6 +48,232 @@ get_index_summary= function(df, index_col, valid_indices) {
   return(output_summary)
 }
 
+#' Calculate purity metrics
+#' 
+#' Create the qc table with index purity and cell line purity
+#' 
+#' @param raw_counts_uncollapsed Dataframe output from nori.
+#' @param raw_counts Raw counts dataframe outputed from collate_fastq_reads.
+#' @param filtered_counts Filtered counts dataframe outputed from filter_raw_reads.
+#' @param counts_col String name of the counts column in all three dataframes.
+#' @param file_path Location to write out the output.
+create_qc_table= function(raw_counts_uncollapsed, raw_counts, filtered_counts,
+                          counts_col= 'n', file_path) {
+  index_purity= sum(raw_counts[[counts_col]]) / sum(raw_counts_uncollapsed[[counts_col]])
+  print(paste0('Index purity: ', round(index_purity, 4)))
+  cell_line_purity= sum(filtered_counts[[counts_col]]) / sum(raw_counts[[counts_col]])
+  print(paste0('Cell line purity: ', round(cell_line_purity, 4)))
+  
+  qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
+  
+  print(paste0('Writing QC table out to ', file_path))
+  qc_table %>% write.csv(file_path, row.names= FALSE, quote= FALSE)
+}
+
+#' Total counts barplot
+#' 
+#' Creates the total counts barplot with bars colored by the barcode type,
+#' either a cell line barcode or control barcode.
+#'
+#' @param filtered_counts Filtered counts dataframe.
+#' @param id_cols Vector of columns names that identify each sample.
+#' @param facet_col String name of the column in filtered_counts to facet the plot.
+plot_total_counts= function(filtered_counts, id_cols, facet_col= NA) {
+  total_counts= filtered_counts %>%
+    dplyr::mutate(barcode_type= case_when(!is.na(CCLE_name) ~ 'cell line',
+                                          !is.na(Name) ~ 'ctrl barcode')) %>%
+    tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
+    dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
+    dplyr::summarise(total_counts= sum(n)) %>% dplyr::ungroup()
+  
+  total_counts_plot= total_counts %>% 
+    ggplot(aes(x=sample_id, y=total_counts, fill=barcode_type)) +
+    geom_col(alpha=0.75, position='identity') +
+    geom_hline(yintercept= 10^4, linetype=2) + 
+    {if(!is.na(facet_col)) facet_wrap(~.data[[facet_col]], scale= 'free_x')} +
+    labs(x= "Sample constructed using id_cols", y="Total counts", fill= 'Barcode\ntype', 
+         title= 'Filtered counts - unstacked') + 
+    theme_bw() + theme(axis.text.x = element_text(angle=70, hjust=1))
+  
+  return(total_counts_plot)
+}
+
+
+#' Cell line recover barplot
+#' 
+#' text
+#' 
+#' @param filtered_counts Filtered counts dataframe.
+#' @param id_cols Vector of column names that identify each sample.
+#' @param facet_col String name of the column in filtered_counts to facet the plot.
+#' @param counts_col String name of the column in filtered_counts that contains the counts.
+#' @param counts_threshold Threshold used to determine low counts.
+#' @param plot_type description
+#' @param include_ctrl_bcs description
+plot_cl_recovery= function(filtered_counts, id_cols, facet_col= NA, counts_col= 'n', counts_threshold, 
+                           plot_type= 'percent', include_ctrl_bcs= FALSE) {
+  
+  # Filter out control barcodes if it is specified.
+  if(include_ctrl_bcs == FALSE) {
+    filtered_counts= filtered_counts %>% dplyr::filter(is.na(Name))
+  }
+  
+  # Count number of cell lines/ barcodes for a detection group.
+  recovery= filtered_counts %>%
+    dplyr::add_count(pick(all_of(id_cols)), name= 'total_num_cls') %>%
+    dplyr::mutate(detect_type= case_when(.data[[counts_col]] == 0 ~ 'Not detected',
+                                         .data[[counts_col]] <= counts_threshold ~ 'Low counts',
+                                         .data[[counts_col]] > counts_threshold ~ 'Detected')) %>%
+    dplyr::count(pick(all_of(c(id_cols, facet_col, 'detect_type', 'total_num_cls'))), name= 'num_cls_by_type') %>%
+    tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
+    dplyr::mutate(percent= (num_cls_by_type / total_num_cls) * 100)
+  
+  # Set the y axis depending on the plot type.
+  if(plot_type == 'count') {
+    y_col= 'num_cls_by_type'
+    y_text= 'Number of cell lines'
+  } else {
+    if(plot_type != 'percent') {
+      print(paste0('Warning: ', plot_type, ' is not a valid plot type. Please use either count or percent.'))
+      print('Defaulting to percent plot.')
+    }
+    y_col= 'percent'
+    y_text= 'Percentage of cell lines recovered (%)'
+  }
+  
+  # Create recovery plot.
+  recov_plot= recovery %>%
+    ggplot(aes(x= sample_id, y= .data[[y_col]], fill= reorder(detect_type, dplyr::desc(detect_type)))) +
+    geom_col(alpha=0.75, position='stack') +
+    {if(!is.na(facet_col)) facet_wrap(~.data[[facet_col]], scale= 'free_x')} +
+    labs(x= "Sample constructed using id_cols", y= y_text, fill= '', title= 'Cell line recovery') + 
+    theme_bw() + theme(axis.text.x = element_text(angle=70, hjust=1))
+  
+  return(recov_plot)
+}
+
+#' Control barcode scatter plot
+#' 
+#' text
+#' 
+#' @param name description
+plot_ctrl_bc_trend= function(normalized_counts, id_cols, counts_col= 'log2_n') {
+  # Detect norm_r2 and norm_mae.
+  # If columns do not exist, then roughly calculate those columns.
+  if(any(!c('norm_r2', 'norm_mae') %in% colnames(normalized_counts))) {
+    print('WARNING: Columns "norm_r2" and/or "norm_mae" were not detected in normalized_counts.', quote= FALSE)
+    print('Calculating both columns - this method may not be as robust as the normalize module.')
+    
+    normalized_counts= normalized_counts %>% 
+      dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T), n != 0) %>%
+      dplyr::group_by(pick(all_of(id_cols))) %>%
+      dplyr::mutate(mean_y= mean(log2_dose),
+                    residual2= (log2_dose - log2_normalized_n)^2,
+                    squares2= (log2_dose - mean_y)^2,
+                    norm_r2= 1 - sum(residual2) / sum(squares2),
+                    norm_mae= median(abs(log2_dose- log2_normalized_n))) %>% ungroup()
+  } 
+  
+  # Filter for just the control barcodes, create a profile_id for faceting, 
+  # and determine the x and y positions for the r2 + mae label.
+  cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T)) %>%
+    tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
+    dplyr::group_by(profile_id) %>% dplyr::mutate(label_x_pos= min(.data[[counts_col]]),
+                                                  label_y_pos= max(log2_dose)) %>% dplyr::ungroup()
+  
+  # Create control barcode trend plot
+  trend_scatter_plot= cb_trend %>% ggplot(aes(x= .data[[counts_col]], y= log2_dose)) + 
+    geom_point() +
+    geom_abline(aes(slope=1, intercept= cb_intercept) , color='blue', alpha= 0.5) +
+    geom_text(aes(x= label_x_pos, y= label_y_pos,
+                  label= paste0('r2= ', round(norm_r2, 4), '\nmae= ', round(norm_mae, 4))), 
+              hjust='inward', vjust='inward', alpha= 0.5) +
+    facet_wrap(~profile_id, scales='free_x') +
+    labs(title= 'Linear fit of control barcodes across all samples') + theme_bw()
+  
+  return(trend_scatter_plot)
+}
+
+
+#' Heatmap of correlations
+#' 
+#' text
+#' 
+#' @param input_df description
+plot_cor_heatmap= function(input_df, row_id_cols, col_id_cols, counts_col,
+                           cor_method= 'pearson') {
+  
+  # Validate that specified columns are in the dataframe.
+  if(!validate_columns_exist(c(row_id_cols, col_id_cols, counts_col), input_df)) {
+    stop('Not all columns were detected in the input dataframe.')
+  }
+  
+  # Create row and column names for pivoting to a matrix
+  correlation_mx= input_df %>%
+    tidyr::unite(all_of(row_id_cols), col= 'row_id', sep= ':', remove= TRUE) %>%
+    tidyr::unite(all_of(col_id_cols), col= 'col_id', sep= ':', remove= TRUE)
+  
+  # Check that the row and column ids specify one value.
+  validate_ids= correlation_mx %>% dplyr::group_by(row_id, col_id) %>%
+    dplyr::filter(dplyr::n() > 1) %>% dplyr::ungroup()
+  if(nrow(validate_ids) != 0) {
+    print('The provide columns specify more than one value.')
+    print(head(validate_ids))
+    stop('Multiple values detected for a unique combination of "row_id_cols" and "col_id_cols".')
+  }
+  
+  # Pivot and calculate correlations
+  correlation_mx= correlation_mx %>% reshape2::acast(row_id~col_id, value.var= counts_col) %>%
+    WGCNA::cor(use= 'pairwise.complete.obs', method= cor_method)
+  
+  # Create heatmap 
+  cor_heatmap= correlation_mx %>% reshape2::melt() %>% 
+    ggplot(aes(x= Var1, y= Var2, fill= value)) + 
+    geom_tile() +
+    labs(x= '', y= '', fill= '', title= paste0('Correlations using ', counts_col)) +
+    scale_fill_gradientn(breaks= c(0, 0.5, 1), 
+                         colours= c('blue', 'white','red'),
+                         limits=c(0, 1), oob= scales::squish) +
+    theme(axis.text.x = element_text(angle=70, hjust=1))
+  
+  return(cor_heatmap)
+}
+
+#' Scatterplots of two replicates
+#' 
+#' @param input_df description
+make_replicate_scatterplots= function(input_df, cell_line_cols, replicate_group_cols, replicate_col, values_col,
+                                      x_axis_rep= '1', y_axis_rep= '2') {
+  reps_piv= input_df %>% 
+    tidyr::unite(all_of(replicate_group_cols), col= 'replicate_group', sep= ':', remove= TRUE, na.rm= FALSE) %>%
+    dplyr::group_by(pick(all_of(c(cell_line_cols, 'replicate_group')))) %>%
+    dplyr::filter(n!= 0, dplyr::n() >= 2, !is.na(.data[[replicate_col]]), .data[[replicate_col]] != '') %>% 
+    dplyr::ungroup() 
+  
+  # Retun a null object if no entries pass the filter.
+  if(nrow(reps_piv) == 0) {return(NULL)}
+  
+  reps_piv= reps_piv %>%
+    pivot_wider(id_cols= all_of(c(cell_line_cols, 'replicate_group')),
+                names_from= replicate_col, names_prefix= replicate_col, values_from= values_col) %>%
+    dplyr::mutate(type= ifelse(!is.na(CCLE_name), "cell line", "control barcode")) %>% dplyr::ungroup()
+  
+  # Create names of the columns to plot on xy axes
+  x_col_name= paste0(replicate_col, x_axis_rep)
+  y_col_name= paste0(replicate_col, y_axis_rep)
+  
+  reps_scatter= reps_piv %>% dplyr::filter(!is.na(.data[[x_col_name]]), !is.na(.data[[y_col_name]])) %>%
+    ggplot(aes(x= .data[[x_col_name]], y= .data[[y_col_name]])) +
+    geom_point(aes(color= type), alpha=0.75) +
+    geom_smooth(method='lm', se=F, color='black', linewidth=0.5, linetype=2) +
+    ggpmisc::stat_correlation(mapping = use_label(c("R2", "n")))+ 
+    facet_wrap(~replicate_group, scales= 'free') +
+    labs(x= paste0(replicate_col, '1 ', values_col), y= paste0(replicate_col, '2 ', values_col)) +
+    theme_bw()
+  
+  return(reps_scatter)
+}
+
 #'  QC_images
 #'
 #'  Takes in the metadata, raw counts, annotated counts, and normalized counts to generate some QC images.
@@ -53,7 +300,6 @@ get_index_summary= function(df, index_col, valid_indices) {
 #' @param reverse_index2 reverse index 2 if newer sequencers are used.
 #' @return - NA, QC images are written out to the specified folder
 #' @export
-
 QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
                      sample_meta, CB_meta, cell_set_meta,
                      id_cols, sig_cols, count_col_name= 'normalized_n',
@@ -98,6 +344,13 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   #
   
   # Sequencing QCs ____________________ ----
+  ## Purity metrics ----
+  # call this function
+  print('Generating QC table')
+  create_qc_table(raw_counts_uncollapsed, raw_counts, filtered_counts,
+                            counts_col= 'n', file_path)
+  #
+  
   ## Index count summaries ----
   print("Generating index counts tables")
   # Check that "IndexBarcode1" and "index_1" columns are present.
@@ -121,46 +374,21 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   
   ## Total counts ----
   print("generating total_counts image")
-  total_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
-    mutate(barcode_type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
-           sample_id= paste(pcr_plate, pcr_well, sep='_')) %>%
-    group_by(pick(all_of(c('pcr_plate', 'pcr_well', 'sample_id', id_cols, 'barcode_type')))) %>% 
-    dplyr::summarise(total_counts = sum(n))
   
-  tc= total_counts %>% ggplot() +
-    geom_col(aes(x=sample_id, y=total_counts, fill=barcode_type), alpha=0.75, position='identity') +
-    geom_hline(yintercept= 10^4, linetype=2) + 
-    facet_wrap(~pcr_plate, scale= 'free_x') +
-    labs(x="PCR location", y="total counts", fill="", title= 'Raw counts - unstacked') + theme_bw() +
-    theme(axis.text.x = element_text(angle=70, hjust=1, size=5)) 
+  tc= plot_total_counts(filtered_counts, id_cols, facet_col= 'pcr_plate')
   
   pdf(file=paste(out, "total_counts.pdf", sep="/"),
       width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
   print(tc)
   dev.off()
-  rm(total_counts, tc)
+  rm(tc)
   
   # Assay QCs _________________________ ----
   ## Cell lines recovered ----
   print("generating cell_lines_present image")
-  recovery= annotated_counts %>% dplyr::filter(expected_read, !is.na(CCLE_name)) %>%
-    dplyr::select(!any_of(c('members'))) %>%
-    dplyr::left_join(cell_set_meta, by="cell_set", relationship= 'many-to-one') %>%
-    dplyr::mutate(members= if_else(is.na(members), cell_set, members), # for custom cell sets
-                  expected_num_cl= as.character(members) %>% purrr::map(strsplit, ";") %>% 
-                    purrr::map(`[[`, 1) %>% purrr::map(length) %>% as.numeric(),
-                  count_type= ifelse(n > count_threshold, 'Detected', 'Low'),
-                  count_type= ifelse(n==0, 'Missing', count_type)) %>%
-    dplyr::count(pick(all_of(c('pcr_plate', 'pcr_well', id_cols, 'count_type', 'expected_num_cl'))), name= 'count') %>%
-    dplyr::mutate(frac_type= count/expected_num_cl)
   
-  cl_rec= recovery %>% tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove=FALSE) %>%
-    ggplot() +
-    geom_col(aes(x=profile_id, y=frac_type*100, fill= reorder(count_type, dplyr::desc(count_type)))) +
-    facet_wrap(~pcr_plate, scales= 'free_x') +
-    labs(x="", y="Percentage of expected cell lines", fill= '') +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle=70, hjust=1, size=5))
+  cl_rec= plot_cl_recovery(filtered_counts, id_cols= id_cols, facet_col= 'pcr_plate', 
+                           counts_threshold= counts_threshold, plot_type= 'percent')
   
   pdf(file=paste(out, "cell_lines_present.pdf", sep="/"),
       width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
@@ -291,32 +519,7 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   if(contains_cbs & is.data.frame(normalized_counts)) {
     print("generating control_barcode_trend image")
     
-    # calculate r2 and mae if columns do not exist
-    if (!'norm_r2' %in% colnames(normalized_counts) | !'norm_mae' %in% colnames(normalized_counts)) {
-      cb_trend= normalized_counts %>%
-        dplyr::filter(control_barcodes %in% c("Y", "T", T),
-                      !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type),
-                      !is.na(Name)) %>%
-        tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
-        dplyr::group_by(profile_id) %>%
-        dplyr::mutate(mean_y= mean(log2_dose),
-                      residual2= (log2_dose - log2_normalized_n)^2,
-                      squares2= (log2_dose - mean_y)^2,
-                      norm_r2= 1 - sum(residual2)/sum(squares2),
-                      norm_mae= median(abs(log2_dose- log2_normalized_n))) %>% ungroup()
-    } else {
-      cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name)) %>%
-        tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE)
-    }
-    
-    trend_sc= cb_trend %>% dplyr::mutate(profile_id= reorder(profile_id, dplyr::desc(norm_mae))) %>%
-      ggplot(aes(x=log2_n, y=log2_dose)) + geom_point() +
-      geom_abline(aes(slope=1, intercept= cb_intercept) , color='blue') +
-      geom_text(aes(x= min(log2_n), y= dplyr::desc(sort(unique(log2_dose)))[1], 
-                    label= paste('r2=', round(norm_r2, 4), '\nmae=', round(norm_mae, 4), sep='')), 
-                hjust='inward', vjust='inward') +
-      facet_wrap(~profile_id, scales= 'free_x') +
-      labs(x= 'log2(n)', y= 'log2(dose)') + theme_bw()
+    trend_sc= plot_ctrl_bc_trend(normalized_counts, id_cols, counts_col= 'log2_n')
     
     pdf(file=paste(out, "control_barcode_trend.pdf", sep="/"),
         width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
@@ -327,21 +530,15 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   
   ## Sample correlation -----
   print("generating sample_cor image")
-  correlation_matrix= annotated_counts %>%
-    dplyr::filter(expected_read, !is.na(CCLE_name),
-                  (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
-    tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
-    dplyr::mutate(log2_n = log2(n +1)) %>% 
-    reshape2::dcast(CCLE_name~profile_id, value.var="log2_n") %>% 
-    column_to_rownames("CCLE_name") %>% 
-    cor(use="pairwise.complete.obs") 
   
-  cp= correlation_matrix %>% reshape2::melt() %>% 
-    ggplot() + geom_tile(aes(x=Var1, y=Var2, fill=value)) +
-    labs(x="", y="", fill="correlation") +
-    scale_fill_gradient(low="yellow", high="red") +
-    theme(axis.text.x = element_text(angle=70, hjust=1, size=5),
-          axis.text.y = element_text(size=5))
+  cor_df= filtered_counts %>% 
+    dplyr::filter(!is.na(DepMap_ID), !is.na(trt_type), !trt_type %in% c("empty", "", "CB_only")) %>%
+    dplyr::mutate(log2_n= log2(n + 1))
+  cp= plot_cor_heatmap(input_df= cor_df,
+                       row_id_cols= c('DepMap_ID'),
+                       col_id_cols= c(sig_cols, id_cols),
+                       counts_col= 'log2_n')
+  
   pdf(file=paste(out, "sample_cor.pdf", sep="/"),
       width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
   print(cp)
@@ -349,35 +546,40 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   rm(correlation_matrix, cp)
   
   ## Tech rep correlations ----
-  # assumes that tech reps are the last component of profile_id
-  if('tech_rep' %in% colnames(normalized_counts)) {
-    if(max(unique(normalized_counts$tech_rep), na.rm= TRUE) == 2) {
+  if(is.data.frame(normalized_counts)) {
+    if('tech_rep' %in% colnames(normalized_counts)) {
+      # Set up replicate groups depending "bio_rep" column
+      if('bio_rep' %in% colnames(normalized_counts) & !'bio_rep' %in% sig_cols) {
+        replicate_group_cols= c(sig_cols, 'bio_rep')
+      } else {
+        replicate_group_cols= sig_cols
+      }
+      
+      # Handle cases if control barcodes are used.
+      if('Name' %in% colnames(normalized_counts)) {
+        unique_cell_line_cols= c(cell_line_cols, 'Name')
+      } else {
+        unique_cell_line_cols= cell_line_cols
+      }
+      
+      # Create replicate scatter plot
       print("generating tech rep correlations image")
-   
-      static_cols= c('project_code', 'CCLE_name', 'DepMap_ID', 'Name', 'cell_set')
-      tech_reps_piv= normalized_counts %>% dplyr::mutate(bio_rep_id= str_replace(profile_id, ':\\d+$', '')) %>%
-        dplyr::group_by_at(c(static_cols, 'bio_rep_id')) %>% dplyr::filter(n!=0, n()==2) %>% dplyr::ungroup() %>%
-        pivot_wider(id_cols= all_of(c(static_cols, 'bio_rep_id')),
-                    names_from= tech_rep, names_prefix= 'tech_rep', values_from= log2_n) %>%
-        dplyr::group_by(bio_rep_id) %>%
-        dplyr::mutate(r2= cor(tech_rep1, tech_rep2, use='p')^2,
-                      type= ifelse(!is.na(CCLE_name), "cell line", "control barcode")) %>% dplyr::ungroup()
+      tech_reps_plt= make_replicate_scatterplots(input_df= normalized_counts, 
+                                                 cell_line_cols= unique_cell_line_cols, 
+                                                 replicate_group_cols= replicate_group_cols, 
+                                                 replicate_col= 'tech_rep', 
+                                                 values_col= 'log2_n')
       
-      tech_reps_plt= tech_reps_piv %>% dplyr::mutate(bio_rep_id= reorder(bio_rep_id, r2)) %>%
-        ggplot(aes(x= tech_rep1, y= tech_rep2)) +
-        geom_point(aes(color= type), alpha=0.75) +
-        geom_smooth(method='lm', se=F, color='black', linewidth=0.5, linetype=2) +
-        stat_correlation(mapping = use_label(c("R2", "n")))+ 
-        facet_wrap(~bio_rep_id, scales= 'free') +
-        labs(x="tech rep 1 log2(n)", y="tech rep 2 log2(n)") + theme_bw()
-      
-      pdf(file=paste(out, "tech_reps_plt.pdf", sep="/"),
-          width=sqrt(num_profiles), height=sqrt(num_profiles))
-      print(tech_reps_plt)
-      dev.off()
+      if(!is.null(tech_reps_plt)) {
+        pdf(file=paste(out, "tech_reps_plt.pdf", sep="/"),
+            width=sqrt(num_profiles), height=sqrt(num_profiles))
+        print(tech_reps_plt)
+        dev.off()
+      } else {
+        print('No technical replicates detected - skipping plot.')
+      }
     }
   }
-  
   ## Bio rep correlations ----
   if('bio_rep' %in% colnames(normalized_counts)) {
     num_bio_reps= normalized_counts %>% 
