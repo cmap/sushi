@@ -146,8 +146,8 @@ def main(args):
 
     # Sorting columns to resemble MTS style
     level_4.sort_index(axis=1, inplace=True)
-    profile_col = level_4.pop('profile_id')
-    level_4.insert(1, profile_col.name, profile_col)
+    #profile_col = level_4.pop('profile_id')
+    #level_4.insert(1, profile_col.name, profile_col)
     level_4 = level_4[[col for col in level_4.columns if col != 'LFC'] + ['LFC']]
 
     level_5.sort_index(axis=1, inplace=True)
