@@ -28,4 +28,4 @@ args=(
 
 echo "python seq_to_mts.py ${args[@]}"
 
-python seq_to_mts.py "${args[@]}"
+python3 seq_to_mts.py "${args[@]}"
