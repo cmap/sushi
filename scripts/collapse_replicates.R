@@ -33,6 +33,6 @@ print("Collapsing biological replicates ...")
 collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values)
 
 # Write out file ----
-collapsed_l2fc_outpath= paste(args$out, args$lfc, sep='/')
+collapsed_l2fc_outpath= paste(args$out, 'collapsed_l2fc.csv', sep='/')
 print(paste0('Writing out collapsed l2fc file to ', collapsed_l2fc_outpath))
 write.csv(x= collapsed_l2fc, file= collapsed_l2fc_outpath, row.names= FALSE, quote= FALSE)
