@@ -77,17 +77,28 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #' collate_fastq_reads
 #' 
 #' This function takes in the fastq reads (uncollapsed_raw_counts) and
-#' filters for reads coming from flowcells specificed in the sample meta.
-#' The function then sums up the reads across specified sequencing index columns.
+#' filters for reads coming from flowcells specified in the sample meta.
+#' The function then sums up the reads across specified sequencing index columns and
+#' maps the sequencing index columns to the ID columns.
 #' 
-#' @param uncollapsed_raw_counts Data frame of reads from all the fastq files with the following columns - \cr
-#'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", and "forward_read_cl_barcode", "n"
+#' @param uncollapsed_raw_counts Dataframe of reads from all the fastq files with the following columns -
+#'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", "forward_read_cl_barcode", and "n".
 #' @param sample_meta Sample metadata generate for the project which may contain the following columns - 
-#'                    "flowcell_names", "flowcell_lanes", "index_1", "index_2". The sample meta must contain
+#'                    "flowcell_names", "flowcell_lanes", "index_1", "index_2". The sample meta MUST contain
 #'                    "flowcell_names" and "flowcell_lanes" for filtering.
-#' @param sequencing_index_cols Sequencing columns from the sample meta that the counts should be collapsed on. \cr
-#'                              This defaults onto the following columns: "index_1", "index_2"
-#' @returns Returns a dataframe with columns specified by the sequencing_index_cols, "forward_read_cl_barcode", and "n".
+#' @param sequencing_index_cols Sequencing columns from the sample meta that the counts should be collapsed on.
+#'                              These columns should be a subset of the four sequencing related columns in the
+#'                              sample meta - "flowcell_names", "flowcell_lanes", "index_1", and "index_2". They 
+#'                              should also uniquely identify every PCR well. This parameter defaults onto 
+#'                              the following columns: "index_1", "index_2".
+#' @param id_cols ID columns from the sample meta that uniquely identify every PCR well. These columns should not 
+#'                include any sequencing related columns. This parameter defaults onto "pcr_plate", "pcr_well". This 
+#'                parameter can also be a list of the sample conditions columns as long as they uniquely identify every
+#'                PCR well. For example "cell_set", "treatment", "dose", "day", "bio_rep", "tech_rep" can also be used.
+#' @param reverse_index2 Index 2 should be reversed if the sequencer uses a reverse complement workflow. 
+#'                       Defaults to FALSE.
+#' @param barcode_col String name of the column in uncollapsed_raw_counts that contains the sequences.  
+#' @returns Returns a dataframe with columns specified by the id_cols along with barcode_col, and "n".
 #' @import tidyverse
 collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, 
                               sequencing_index_cols= c('index_1', 'index_2'),
