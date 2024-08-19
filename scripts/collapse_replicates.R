@@ -30,7 +30,7 @@ sig_cols= unlist(strsplit(args$sig_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 
 print("Collapsing biological replicates ...")
-collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values, sig_cols= sig_cols, cell_line_cols= cell_line_cols)
+collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values)
 
 # Write out file ----
 collapsed_l2fc_outpath= paste(args$out, args$lfc, sep='/')

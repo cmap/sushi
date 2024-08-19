@@ -43,34 +43,19 @@ validate_num_bio_reps= function(max_bio_rep_id, max_bio_rep_count) {
 #'                  The columns in this list should be present in the l2fc dataframe.
 #' @param cell_line_cols List of columns that define a cell line. Defaults to project_code, DepMap_ID, and CCLE_name
 #' @returns - collapsed_counts
-collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'DepMap_ID', 'CCLE_name')) {
-  # Validation: Check that sig_cols are present in l2fc ----
-  if(validate_columns_exist(sig_cols, l2fc) == FALSE) {
-    print(sig_cols)
-    stop('Not all sig_cols (printed above) are present in the l2fc file.')
-  }
-  
-  # Validation: Check that cell_line_cols are present in l2fc ----
-  if(validate_columns_exist(cell_line_cols, l2fc) == FALSE) {
-    print(cell_line_cols)
-    stop('Not all cell_line_cols (printed above) are present in the l2fc file.')
-  }
-  
-  # Median collapsing bio replicates ----
-  collapsed_counts= l2fc %>% dplyr::filter(is.na(counts_flag)) %>% 
-    tidyr::unite(col= 'sig_id', all_of(sig_cols), sep= ':', na.rm= FALSE, remove= FALSE) %>%
-    dplyr::group_by(pick(all_of(c(cell_line_cols, 'sig_id', sig_cols)))) %>%
+collapse_bio_reps = function(l2fc) {
+  collapsed_counts = l2fc %>%
+    dplyr::filter(is.na(counts_flag)) %>%
+    dplyr::group_by_at(setdiff(names(.), c('bio_rep', 'mean_n','mean_normalized_n', 'num_tech_reps', 'control_median_n',
+                                           'control_median_normalized_n', 'control_mad_sqrtN', 'num_ctrl_bio_reps',
+                                           'control_MAD_QC','l2fc', 'counts_flag', 'lysate_plate', 'lysate_well', 'pert_plate','sig_id'))) %>%
     dplyr::summarise(trt_median_n= median(mean_n), trt_median_normalized_n= median(mean_normalized_n),
                      trt_mad_sqrtN= mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
-                     median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup() %>% 
-    dplyr::mutate(trt_MAD_QC= (trt_mad_sqrtN <= 0.5/log10(2))) # Adjusted cut off from log10 to log2
-  
-  # Validation: Check that replicates were collapsed ----
-  if('bio_rep' %in% colnames(l2fc)) {
-    max_bio_rep_id= max(unique(l2fc$bio_rep))
-    max_bio_rep_count= max(unique(collapsed_counts$num_bio_reps))
-    validate_num_bio_reps(max_bio_rep_id, max_bio_rep_count)
-  }
-  
-  return(collapsed_counts)
+                     median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(trt_MAD_QC= ifelse(trt_mad_sqrtN > 0.5/log10(2), F, T)) %>% # New: adjusted cut off to log2
+    dplyr::relocate(trt_median_n, trt_median_normalized_n, trt_mad_sqrtN,
+                    num_bio_reps, median_l2fc, trt_MAD_QC, .after=last_col())
+
 }
+  return(collapsed_counts)
