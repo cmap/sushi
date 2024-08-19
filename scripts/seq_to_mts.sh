@@ -23,6 +23,7 @@ args=(
 --out "$BUILD_DIR/syc_to_s3"
 --build_name "$BUILD_NAME"
 --days "$DAYS"
+--config "config.json"
 )
 
 echo "python seq_to_mts.py ${args[@]}"
