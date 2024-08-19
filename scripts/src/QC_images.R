@@ -5,7 +5,7 @@
 #' 
 #' @param selected_columns A vector of strings each representing a column name
 #' @param df A dataframe to check against
-#' @return Boolean
+#' @returns Boolean
 validate_columns_exist= function(selected_cols, df) {
   # Check that all of selected_columns are in df - base::setdiff(A, B) = A[!A %in% B].
   unmatched_cols= base::setdiff(selected_cols, colnames(df))
@@ -26,7 +26,7 @@ validate_columns_exist= function(selected_cols, df) {
 #' @param df A dataframe which must contain the column "n" which represents the count of a read.
 #' @param index_col The name of the column contain the index barcodes as a string. This column must be present in "df".
 #' @param valid_indices. A vector of all the valid indices for "index_col".
-#' @return A dataframe with the follow columns:
+#' @returns A dataframe with the follow columns:
 #'         - index_col: String, The column containing the index barcodes.
 #'         - idx_n: Numeric, Number of reads associated with a specific index barcode.
 #'         - fraction: Numeric, "idx_n" divided by the total number of reads in the run.
@@ -50,22 +50,34 @@ get_index_summary= function(df, index_col, valid_indices) {
 
 #' Calculate purity metrics
 #' 
-#' Create the qc table with index purity and cell line purity
+#' Create the qc table with index purity and cell line purity.
 #' 
 #' @param raw_counts_uncollapsed Dataframe output from nori.
 #' @param raw_counts Raw counts dataframe outputed from collate_fastq_reads.
 #' @param filtered_counts Filtered counts dataframe outputed from filter_raw_reads.
-#' @param value_col String name of the counts column in all three dataframes.
+#' @param value_col String name of the counts column present all three dataframes.
 #' @param file_path Location to write out the output.
-create_qc_table= function(raw_counts_uncollapsed, raw_counts, filtered_counts,
-                          value_col= 'n', file_path) {
+#' @returns Writes out a QC_table to the file_path.
+create_qc_table= function(raw_counts_uncollapsed, raw_counts, filtered_counts, value_col= 'n', file_path) {
+  # Validation: Check that value_col is present in the three files.
+  if(!validate_columns_exist(value_col, raw_counts_uncollapsed)) {
+    stop(paste0('The column ', value_col, " was not detected in uncollapsed raw counts."))
+  }
+  if(!validate_columns_exist(value_col, raw_counts)) {
+    stop(paste0('The column ', value_col, " was not detected in raw counts."))
+  }
+  if(!validate_columns_exist(value_col, filtered_counts)) {
+    stop(paste0('The column ', value_col, " was not detected in filtered counts."))
+  }
+  
+  # Calculate purities
   index_purity= sum(raw_counts[[value_col]]) / sum(raw_counts_uncollapsed[[value_col]])
   print(paste0('Index purity: ', round(index_purity, 4)))
   cell_line_purity= sum(filtered_counts[[value_col]]) / sum(raw_counts[[value_col]])
   print(paste0('Cell line purity: ', round(cell_line_purity, 4)))
-  
   qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
   
+  # Write out table
   print(paste0('Writing QC table out to ', file_path))
   qc_table %>% write.csv(file_path, row.names= FALSE, quote= FALSE)
 }
@@ -78,7 +90,15 @@ create_qc_table= function(raw_counts_uncollapsed, raw_counts, filtered_counts,
 #' @param filtered_counts Filtered counts dataframe.
 #' @param id_cols Vector of columns names that identify each sample.
 #' @param facet_col String name of the column in filtered_counts to facet the plot.
+#'                  This can be left as NA if there isn't a column to facet on.
+#' @returns Returns a ggplot object.
 create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
+  # Validation: Check that id_cols and facet_col exist in filtered counts.
+  if(!validate_columns_exist(na.omit(c(id_cols, facet_col)), filtered_counts)) {
+    stop('Some input columns were not detected in filtered counts.')
+  }
+  
+  # Sum up reads 
   total_counts= filtered_counts %>%
     dplyr::mutate(barcode_type= case_when(!is.na(CCLE_name) ~ 'cell line',
                                           !is.na(Name) ~ 'ctrl barcode')) %>%
@@ -101,17 +121,25 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
 
 #' Cell line recover barplot
 #' 
-#' text
+#' Creates barplots of the cell lines recovered. The parameter "plot_type" can be used to plot the percentage or
+#' the total cell line counts on teh y axis. The parameter "include_ctrl_bcs" can be used to include the control
+#' barcodes in the cell line count. 
 #' 
 #' @param filtered_counts Filtered counts dataframe.
 #' @param id_cols Vector of column names that identify each sample.
 #' @param facet_col String name of the column in filtered_counts to facet the plot.
 #' @param value_col String name of the column in filtered_counts that contains the counts.
 #' @param counts_threshold Threshold used to determine low counts.
-#' @param plot_type description
-#' @param include_ctrl_bcs description
+#' @param plot_type String of either "percent" or "count" to adjust the y axis to be either the percentage or the 
+#'                  total number of cell lines.
+#' @param include_ctrl_bcs Boolean. Set to TRUE if control barcodes are to be counted. 
+#' @returns Returns a ggplot plot.
 create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value_col= 'n', count_threshold, 
                                   plot_type= 'percent', include_ctrl_bcs= FALSE) {
+  # Validation: Check that id_cols, facet_col, or value_col exist in filtered counts.
+  if(!validate_columns_exist(na.omit(c(id_cols, facet_col, value_col)), filtered_counts)) {
+    stop('Some input columns were not detected in filtered counts.')
+  }
   
   # Filter out control barcodes if it is specified.
   if(include_ctrl_bcs == FALSE) {
@@ -154,12 +182,19 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
 
 #' Control barcode scatter plot
 #' 
-#' text
+#' Creates a scatter plot of the control barcodes.
 #' 
-#' @param name description
+#' @param normalized_counts Dataframe output from the normalize module.
+#' @param id_cols Vector of column names that identify every PCR well.
+#' @param value_col Name of the column that contains the values.
+#' @returns Returns a ggplot object.
 create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log2_n') {
-  # Detect norm_r2 and norm_mae.
-  # If columns do not exist, then roughly calculate those columns.
+  # Validation: Check that id_cols and value_col exist in filtered counts.
+  if(!validate_columns_exist(c(id_cols, value_col), normalized_counts)) {
+    stop('Some input columns were not detected in normalized counts.')
+  }
+  
+  # Detect norm_r2 and norm_mae. If columns do not exist, then roughly calculate those columns.
   if(any(!c('norm_r2', 'norm_mae') %in% colnames(normalized_counts))) {
     print('WARNING: Columns "norm_r2" and/or "norm_mae" were not detected in normalized_counts.', quote= FALSE)
     print('Calculating both columns - this method may not be as robust as the normalize module.')
@@ -194,14 +229,26 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
   return(trend_scatter_plot)
 }
 
-
 #' Heatmap of correlations
 #' 
-#' text
+#' Creates a correlation heatmap. A matrix of values is created from the input_df. The row_id_cols
+#' are used identify each row and the col_id_cols are used to identify each column. The value_col is 
+#' used to fill the matrix. Correlations are then computed.
 #' 
-#' @param input_df description
+#' @import tidyverse
+#' @import WGCNA
+#' @import reshape2
+#' @param input_df Dataframe.
+#' @param row_id_cols Vector of column names from input_df that identifies the cell lines. For example,
+#'                    this can be "DepMap_ID", "CCLE_name" if only cell lines exist. It can also be 
+#'                    "DepMap_ID", "CCLE_name", "Name" if control barcodes are also present.
+#' @param col_id_cols Vector of column names from input_df that identifies the PCR wells or conditions.
+#'                    For example, this can be "pcr_plate", "pcr_well" or a list of conditions like those in sig_cols.
+#' @param value_col String name of the column in input_df to be used as the values.
+#' @param cor_method WGCNA correlation method. This defaults to "pearson".
+#' @returns Returns a ggplot object.
 create_cor_heatmap= function(input_df, row_id_cols, col_id_cols, value_col,
-                           cor_method= 'pearson') {
+                             cor_method= 'pearson') {
   
   # Validate that specified columns are in the dataframe.
   if(!validate_columns_exist(c(row_id_cols, col_id_cols, value_col), input_df)) {
@@ -239,11 +286,31 @@ create_cor_heatmap= function(input_df, row_id_cols, col_id_cols, value_col,
   return(cor_heatmap)
 }
 
-#' Scatterplots of two replicates
+#' Scatter plots of two replicates
 #' 
-#' @param input_df description
+#' From a long table, creates scatter plots to two replicates.
+#' 
+#' @param input_df Dataframe.
+#' @param cell_line_cols List of column names used to identify each cell line or control barcode.
+#' @param replicate_group_cols List of column names that describe a group of similar conditions.
+#' @param replicate_col Name of the column that specifies the replicate. This column should not be 
+#'                      in replicate_group_cols!
+#' @param value_col Name of the column in input_df that contains the values.
+#' @param x_axis_rep String of the replicate identifier that should be on the x axis of the plot.
+#' @param y_axis_rep String of the replicate identifier that should be on the y axis of the plot.
+#' @returns Returns a ggplot object or NULL if all entries are filtered out.
 create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_group_cols, replicate_col, value_col,
-                                      x_axis_rep= '1', y_axis_rep= '2') {
+                                        x_axis_rep= '1', y_axis_rep= '2') {
+  # Validation: Check that input columns are present in the dataframe.
+  if(!validate_columns_exist(c(cell_line_cols, replicate_group_cols, replicate_col, value_col), input_df)) {
+    stop('Some input columns were not detected in normalized counts.')
+  }
+  
+  # Validation: Check that replicate_col is not in replicate_group_cols.
+  if(replicate_col %in% replicate_group_cols) {
+    stop(paste0(replicate_col, ' should not be included in replicate_group_cols!'))
+  }
+  
   reps_piv= input_df %>% 
     tidyr::unite(all_of(replicate_group_cols), col= 'replicate_group', sep= ':', remove= TRUE, na.rm= FALSE) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'replicate_group')))) %>%
@@ -276,38 +343,36 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
   return(reps_scatter)
 }
 
-#'  QC_images
+#' QC_images
 #'
-#'  Takes in the metadata, raw counts, annotated counts, and normalized counts to generate some QC images.
-#'  
-#' @param sample_meta - sample metadata
-#' @param annotated_counts - dataframe of annotated readcounts that must include the following columns:
-#'           n: raw readcounts
-#'           profile_id: string unique to each sample as defined by filter_counts method
-#'           Name: name of the control barcode that the read corresponds to, or NA (if read is cell line)
-#'           CCLE_name: name of the cell line that the read corresponds to, or NA (if read is control barcode)
-#'           cell_set: string identifier of cell set expected in a given sample, must match a cell set 
-#'           found in cell_set_meta
-#' @param normalized_counts - 
-#' @param CB_meta - control barcode metadata
-#' @param cell_set_meta - a metadata dataframe that contains a mapping from cell set names (e.g. CS5) to 
-#'           lists of LUAs in that cell set separated by semicolons
-#' @param out - the filepath to the folder in which QC images are meant to be saved, NA by default and 
-#'           images are saved in the working directory 
-#' @param id_cols 
-#' @param sig_cols - 
-#' @param count_col_names - which counts to plot
-#' @param control_type - how the negative controls are designated in the trt_type column in the sample metadata
-#' @param count_threshold - threshold for low counts
-#' @param reverse_index2 reverse index 2 if newer sequencers are used.
-#' @return - NA, QC images are written out to the specified folder
-#' @export
-QC_images = function(raw_counts_uncollapsed, raw_counts, 
-                     filtered_counts, normalized_counts= NA, l2fc, 
-                     sample_meta, CB_meta, cell_set_meta,
-                     id_cols, sig_cols, count_col_name= 'normalized_n',
-                     control_type, count_threshold= 40, 
-                     reverse_index2= FALSE, out = NA) {
+#' Takes in various pipeline outputs and generates 11 QC files.
+#'
+#' @param raw_counts_uncollapsed Dataframe output from nori. This is used to generate purity metrics and
+#'                               the index summaries.
+#' @param raw_counts Raw counts dataframe from the collate_fastq_reads modules. This is used to generate puritu metrics.
+#' @param annotated_counts Annotated counts dataframe from the filter_raw_reads module.
+#' @param filtered_counts Filtered counts dataframe from the filter_raw_reads module.
+#' @param normalized_counts Normalized counts dataframe from the normalize module. This is an optional parameter.
+#' @param l2fc L2FC dataframe from the compute_l2fc module. This is used for the bio_reps plot. 
+#' @param sample_meta Dataframe of the sample metadata for the sequencing run.
+#' @param CB_meta Dataframe of the control barcode metadata. This is only used for the CDF plot.
+#' @param cell_set_meta Dataframe of the cell set metadata. This is only used for the CDF plot.
+#' @param cell_line_cols Vector of sample meta column names used to describe a cell line or barcode.
+#' @param id_cols Vector of sample meta column names used to identify each PCR well. 
+#'                This defaults to "pcr_plate", "pcr_well".
+#' @param sig_cols Vector of sample meta column names used to identify a unique treatment condition.
+#' @param control_type String of how the negative controls are designated in the trt_type column in the sample_meta.
+#' @param count_threshold Threshold for low read counts.
+#' @param reverse_index2 Boolean set to TRUE if the sequencing involved the reverse complement workflow.
+#' @param out Path to the directory to save the QC images.
+#' @returns NA. QC images are written out to the specified folder.
+QC_images= function(raw_counts_uncollapsed, raw_counts, 
+                    annotated_counts, filtered_counts, normalized_counts= NA, l2fc, 
+                    sample_meta, CB_meta, cell_set_meta,
+                    cell_line_cols, 
+                    id_cols= c('pcr_plate', 'pcr_well'), sig_cols,
+                    control_type= 'negcon', count_threshold= 40, 
+                    reverse_index2= FALSE, out = NA) {
   require(tidyverse)
   require(magrittr)
   require(reshape2)
@@ -320,12 +385,6 @@ QC_images = function(raw_counts_uncollapsed, raw_counts,
   # Some preprocessing ----
   skipped_qcs= c() # empty vector to collect potential errors
   num_profiles = annotated_counts %>% dplyr::distinct(pick(all_of(id_cols))) %>% nrow()
-  
-  # Reverse index 2 barcodes
-  if(reverse_index2) {
-    print("Reverse-complementing index 2 barcode.")
-    sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
-  }
   
   # Detect control barcodes
   cb_check= sample_meta %>%
@@ -368,6 +427,12 @@ QC_images = function(raw_counts_uncollapsed, raw_counts,
   }
   
   # Do the same for index 2.
+  # Reverse index 2 barcodes if needed.
+  if(reverse_index2) {
+    print("Reverse-complementing index 2 barcode.")
+    sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
+  }
+  
   if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts_uncollapsed)) {
     expected_index2= unique(sample_meta$index_2)
     index2_counts= get_index_summary(raw_counts_uncollapsed, 'index_2', expected_index2)
@@ -726,7 +791,7 @@ QC_images = function(raw_counts_uncollapsed, raw_counts,
       print('11. No biological replicates detected. Skipping bio_rep heatmap.')
     }
   }
-
+  
   # End _________________________ ----
   print('QC finishing')
   if(length(na.omit(skipped_qcs)) != 0) {
