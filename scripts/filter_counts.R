@@ -36,11 +36,9 @@ parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help = "Ce
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
 parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--sequencing_index_cols", default= "index_1,index_2", 
+parser$add_argument("--id_cols", default= "pcr_plate,pcr_well", 
                     help = "Sequencing columns in the sample meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=FALSE, 
-                    help = "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
 parser$add_argument("--pool_id", action="store_true", default=FALSE, help = "Pull pool IDs from CellDB.")
 parser$add_argument("--control_type", default="negcon", 
@@ -64,7 +62,7 @@ raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= 
 
 # Convert strings to vectors ----
 # Also check that column names are present in the sample meta.
-sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
+id_cols= unlist(strsplit(args$id_cols, ","))
 if (!all(sequencing_index_cols %in% colnames(sample_meta))){
   stop(paste("All seq columns not found in sample_meta, check metadata or --sequencing_index_cols argument:",
              args$sequencing_index_cols))
@@ -93,14 +91,12 @@ cell_line_meta %<>%
 
 # Run filter_raw_reads -----
 print("creating filtered count file")
-filtered_counts = filter_raw_reads(raw_counts,
-                                   sample_meta,
-                                   cell_line_meta,
-                                   cell_set_meta,
-                                   CB_meta,
-                                   sequencing_index_cols= sequencing_index_cols,
-                                   count_threshold= as.numeric(args$count_threshold),
-                                   reverse_index2= args$reverse_index2)
+filtered_counts = filter_raw_reads(raw_counts= raw_counts, sample_meta= sample_meta,
+                                   cell_line_meta= cell_line_meta,
+                                   cell_set_meta= cell_set_meta,
+                                   CB_meta= CB_meta,
+                                   id_cols= id_cols,
+                                   count_threshold= as.numeric(args$count_threshold))
 
 # Pulling pool_id when db_flag and pool_id flags are passed
 if (args$pool_id) {
@@ -129,11 +125,6 @@ if(sum(cl_entries$n) == 0) {
 }
 
 # Write out module outputs ----
-qc_table = filtered_counts$qc_table
-qc_out_file = paste(args$out, 'QC_table.csv', sep='/')
-print(paste("writing QC_table to: ", qc_out_file))
-write.csv(qc_table, qc_out_file, row.names=F, quote=F)
-
 unmapped_reads= filtered_counts$unmapped_reads
 unmapped_out = paste(args$out, 'unmapped_reads.csv', sep='/')
 print(paste("writing unmapped reads to: ", unmapped_out))

@@ -54,8 +54,8 @@ if(file.exists(expected_file_path)) {
   
   print("Collating fastq reads ...")
   raw_counts= collate_fastq_reads(uncollapsed_raw_counts, sample_meta, 
-                                  sequencing_index_cols,
-                                  id_cols,
+                                  sequencing_index_cols= sequencing_index_cols,
+                                  id_cols= id_cols,
                                   reverse_index2= args$reverse_index2,
                                   barcode_col= args$barcode_col)
   
