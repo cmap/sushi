@@ -13,7 +13,7 @@ echo "Output dir is: $BUILD_DIR/syc_to_s3"
 # Create the output directory if it does not exist
 if [ ! -d "$BUILD_DIR/syc_to_s3" ]; then
     echo "Creating output directory: $BUILD_DIR/syc_to_s3"
-    mkdir -p "$BUILD_DIR/syc_to_s3"
+    mkdir -p "$BUILD_DIR/sync_to_s3"
 else
     echo "Output directory already exists: $BUILD_DIR/syc_to_s3"
 fi
