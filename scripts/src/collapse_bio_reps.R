@@ -55,7 +55,5 @@ collapse_bio_reps = function(l2fc) {
     dplyr::mutate(trt_MAD_QC= ifelse(trt_mad_sqrtN > 0.5/log10(2), F, T)) %>% # New: adjusted cut off to log2
     dplyr::relocate(trt_median_n, trt_median_normalized_n, trt_mad_sqrtN,
                     num_bio_reps, median_l2fc, trt_MAD_QC, .after=last_col())
-  print(collapsed_counts)
-
-}
   return(collapsed_counts)
+}
