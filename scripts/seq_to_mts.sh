@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo Starting filter_counts...
+echo Starting seq_to_mts...
 
 if [ -z "$BUILD_DIR" ]; then
     echo "BUILD_DIR not specified"
