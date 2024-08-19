@@ -200,7 +200,7 @@ pipeline {
                             scriptsToRun.add('eps_qc.sh')
                         }
                         if (params.CONVERT_SUSHI) {
-                            scriptsToRun.add('sushi_to_mts.sh')
+                            scriptsToRun.add('seq_to_mts.sh')
                         }
 
                         scriptsToRun.each { scriptName ->
