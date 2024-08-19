@@ -199,6 +199,9 @@ pipeline {
                         if (params.RUN_EPS_QC) {
                             scriptsToRun.add('eps_qc.sh')
                         }
+                        if (params.CONVERT_SUSHI) {
+                            scriptsToRun.add('sushi_to_mts.sh')
+                        }
 
                         scriptsToRun.each { scriptName ->
                             echo "Running script: ${scriptName}"
