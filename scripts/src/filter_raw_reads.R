@@ -1,15 +1,18 @@
-#suppressPackageStartupMessages(library(sets))
-
 #' validate_columns_exist
 #' 
 #' This function checks that a list of columns are present in a dataframe.
+#' Columns that were not found in the dataframe are printed out.
 #' 
 #' @param selected_columns A vector of strings each representing a column name
 #' @param df A dataframe to check against
 #' @return Boolean
-validate_columns_exist= function(selected_columns, df) {
-  # Check that all of selected_columns are in df
-  if(any(!selected_columns %in% colnames(df))) {
+validate_columns_exist= function(selected_cols, df) {
+  # Check that all of selected_columns are in df - base::setdiff(A, B) = A[!A %in% B].
+  unmatched_cols= base::setdiff(selected_cols, colnames(df))
+  
+  if(length(unmatched_cols) > 0) {
+    print('The following columns are missing: ')
+    print(unmatched_cols)
     return(FALSE)
   } else {
     return(TRUE)
@@ -113,14 +116,14 @@ filter_raw_reads = function(raw_counts,
     CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   }
   
-  if(reverse_index2) {
-    if ('index_2' %in% colnames(sample_meta)) {
-      print("Reverse-complementing index 2 barcode ...")
-      sample_meta$index_2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
-    } else {
-      stop('ERROR: Reverse index 2 is set to TRUE, but index_2 does not exists.')
-    }
-  }
+  # if(reverse_index2) {
+  #   if ('index_2' %in% colnames(sample_meta)) {
+  #     print("Reverse-complementing index 2 barcode ...")
+  #     sample_meta$index_2 <- chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
+  #   } else {
+  #     stop('ERROR: Reverse index 2 is set to TRUE, but index_2 does not exists.')
+  #   }
+  # }
   
   # Validation: Check that id_cols exist in the sample meta ----
   if(!validate_columns_exist(id_cols, sample_meta)) {
