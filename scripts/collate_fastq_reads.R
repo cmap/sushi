@@ -37,6 +37,7 @@ if(file.exists(expected_file_path)) {
   uncollapsed_raw_counts= data.table::fread(expected_file_path, header= T, sep= ',', data.table= F)
   sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
   
+  # Parse vector inputs
   sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
   id_cols= unlist(strsplit(args$id_cols, ","))
   

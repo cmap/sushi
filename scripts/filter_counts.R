@@ -61,13 +61,7 @@ sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table
 raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
 
 # Convert strings to vectors ----
-# Also check that column names are present in the sample meta.
 id_cols= unlist(strsplit(args$id_cols, ","))
-if (!all(sequencing_index_cols %in% colnames(sample_meta))){
-  stop(paste("All seq columns not found in sample_meta, check metadata or --sequencing_index_cols argument:",
-             args$sequencing_index_cols))
-}
-
 count_threshold = as.numeric(args$count_threshold)
 
 # make sure LUA codes in cell line meta are unique
