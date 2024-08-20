@@ -47,7 +47,7 @@ collapse_bio_reps = function(l2fc) {
   collapsed_counts = l2fc %>%
     dplyr::group_by_at(setdiff(names(.), c('bio_rep', 'mean_n','mean_normalized_n', 'num_tech_reps', 'control_median_n',
                                            'control_median_normalized_n', 'control_mad_sqrtN', 'num_ctrl_bio_reps',
-                                           'control_MAD_QC','l2fc', 'counts_flag', 'lysate_plate', 'lysate_well', 'pert_plate','sig_id','replicate_plate','pool_id'))) %>%
+                                           'control_MAD_QC','l2fc', 'counts_flag', 'lysate_plate', 'lysate_well', 'pert_plate','sig_id','replicate_plate'))) %>%
     dplyr::summarise(trt_median_n= median(mean_n), trt_median_normalized_n= median(mean_normalized_n),
                      trt_mad_sqrtN= mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
                      median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>%
