@@ -510,43 +510,43 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   ## Contaminates for ursula ----
   print('6. Generating contaminate reads for Ursula ...')
   potential_error= base::tryCatch({
-    # Determine which seq cols are present.
-    rc_seq_cols= c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2')
-    present_seq_cols= intersect(rc_seq_cols, colnames(raw_counts))
+    pcr_locations= c('pcr_plate', 'pcr_well')
     
-    # map of seq_cols to PCR locations
-    pcr_plate_map= sample_meta %>%
-      dplyr::distinct(pick(any_of(c(present_seq_cols, 'pcr_plate', 'pcr_well', 'cell_set')))) %>%
+    # Validation: Check that the PCR columns are present in raw_counts.
+    if(!validate_columns_exist(pcr_locations, raw_counts)) {
+      stop('pcr_plate and pcr_well are required raw_counts.csv for this to work.')
+    }
+      
+    # count number of wells a cell_set appears in.
+    pcr_plate_map= sample_meta %>% dplyr::distinct(pick(any_of(c(pcr_locations, 'cell_set')))) %>%
       dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
       dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
-    
+
     # index filter and identify reads as mapped or not
-    unique_seq_col_vals= sample_meta %>% dplyr::distinct(pick(all_of(present_seq_cols)))
-    sequencing_filter= raw_counts %>% 
-      dplyr::semi_join(unique_seq_col_vals, by= present_seq_cols) %>%
-      dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% unique(annotated_counts$forward_read_cl_barcode), T, F))
-    
+    sequencing_filter= raw_counts %>%
+      dplyr::mutate(mapped= forward_read_cl_barcode %in% unique(annotated_counts$forward_read_cl_barcode))
+
     # total counts per well - used to calculate fractions
-    counts_per_well= sequencing_filter %>% dplyr::group_by(pick(all_of(present_seq_cols))) %>% 
+    counts_per_well= sequencing_filter %>% dplyr::group_by(pick(all_of(pcr_locations))) %>%
       dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
-    
+
     # mapped contaminates to bind
     mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
       dplyr::mutate(barcode_name= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
-      dplyr::select(all_of(c(present_seq_cols, 'forward_read_cl_barcode', 'n', 'barcode_name')))
+      dplyr::select(all_of(c(pcr_locations, 'forward_read_cl_barcode', 'n', 'barcode_name')))
     
     contam_reads= sequencing_filter %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%
       dplyr::bind_rows(mapped_contams) %>%
-      dplyr::left_join(counts_per_well, by= present_seq_cols) %>%
-      dplyr::left_join(pcr_plate_map, by= present_seq_cols) %>%
+      dplyr::left_join(counts_per_well, by= pcr_locations) %>%
+      dplyr::left_join(pcr_plate_map, by= pcr_locations) %>%
       # filter out barcodes that only appear in one well
       dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
       # number of wells in a pcr plate a barcode is detected in
       dplyr::group_by(forward_read_cl_barcode, pcr_plate) %>%
-      dplyr::mutate(num_wells_detected_plate= n()) %>% dplyr::ungroup() %>%
+      dplyr::mutate(num_wells_detected_plate= dplyr::n()) %>% dplyr::ungroup() %>%
       # number of wells in a cell set a barcode is detected in
       dplyr::group_by(forward_read_cl_barcode, cell_set) %>%
-      dplyr::mutate(num_wells_detected_set= n()) %>% dplyr::ungroup() %>%
+      dplyr::mutate(num_wells_detected_set= dplyr::n()) %>% dplyr::ungroup() %>%
       # determine if contamination is project, plate, or set
       dplyr::group_by(forward_read_cl_barcode) %>%
       dplyr::mutate(num_wells_detected= dplyr::n(),
@@ -774,8 +774,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
                                         cor_method= 'pearson') 
         pdf(file=paste(out, "bio_corr_hm.pdf", sep="/"),
             width=sqrt(num_profiles), height=sqrt(num_profiles))
-        print(bio_corr_hm)
-        dev.off()
+        #print(bio_corr_hm)
+        #dev.off()
       }, error= function(e) {
         print(e)
         print('Encountered an error when creating the bio_corr_hm figure. Skipping this output ...') 
@@ -800,5 +800,4 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   } else {
     print('No errors encountered.')
   }
-  return(skipped_qcs)
 }
