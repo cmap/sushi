@@ -8,30 +8,30 @@ then
     exit -1
 fi
 
-if [ -z "$LFC" ]
+if [ -z "$COLLAPSED_VALUES" ]
 then
-	echo LFC parameter empty
+	echo COLLAPSED_VALUES parameter empty
     exit -1
 fi
 
 
 #Enforces abs paths
-if [[ "$LFC" = /* ]]
+if [[ "$COLLAPSED_VALUES" = /* ]]
 then
-	LFC=$(ls $LFC)
+	COLLAPSED_VALUES=$(ls $COLLAPSED_VALUES)
 else
-	LFC=$BUILD_DIR/$LFC
+	COLLAPSED_VALUES=$BUILD_DIR/$COLLAPSED_VALUES
 fi
 
 
 echo Build dir is: $BUILD_DIR
-echo LFC is: $LFC
+echo COLLAPSED_VALUES is: $COLLAPSED_VALUES
 
-echo Rscript collapse_replicates.R -c $LFC	\
+echo Rscript collapse_replicates.R -c $COLLAPSED_VALUES	\
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS
 
 
-Rscript collapse_replicates.R -c $LFC	\
+Rscript collapse_replicates.R -c $COLLAPSED_VALUES	\
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS
