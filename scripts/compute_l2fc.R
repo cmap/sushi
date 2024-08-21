@@ -1,10 +1,14 @@
+options(cli.unicode = FALSE)
 library(argparse)
-library(magrittr) # for %>% and %<>%
+library(magrittr)
 library(tidyverse)
-source("./src/compute_l2fc.R") # source function
+suppressPackageStartupMessages(library(argparse))
+suppressPackageStartupMessages(library(dplyr))
+source("/workspace/scripts/src/compute_l2fc.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", 

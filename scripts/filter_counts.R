@@ -1,3 +1,4 @@
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
@@ -9,21 +10,9 @@ suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 source("./src/filter_raw_reads.R")
 
-
-## writes configuration to file
-##
-## takes:
-##      args: args object from argparse
-print_args <- function(args){
-  config <- data.frame(args=names(args), values=unname(unlist(args)))
-  config_path = paste(args$out, "config.txt", sep="/")
-  print(paste("Saving config.txt file in :", config_path))
-  write_delim(config, config_path, delim = ": ", col_names=F)
-}
-
 # Arguement parser ----
 parser <- ArgumentParser()
-# specify our desired options
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false",
@@ -39,10 +28,10 @@ parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Cont
 parser$add_argument("--sequencing_index_cols", default= "index_1,index_2", 
                     help = "Sequencing columns in the sample meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("--reverse_index2", action="store_true", default=FALSE, 
+parser$add_argument("--reverse_index2", type="logical",
                     help = "Reverse complement of index 2 for NovaSeq and NextSeq")
-parser$add_argument("--rm_data", action="store_true", default=FALSE, help = "Remove bad experimental data")
-parser$add_argument("--pool_id", action="store_true", default=FALSE, help = "Pull pool IDs from CellDB.")
+parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
+parser$add_argument("--pool_id", type="logical", help = "Pull pool IDs from CellDB.")
 parser$add_argument("--control_type", default="negcon", 
                     help = "negative control wells in trt_type column in sample metadata")
 
@@ -146,9 +135,13 @@ write.csv(annotated_counts, annot_out_file, row.names=F)
 
 filtered_counts = filtered_counts$filtered_counts
 
+print(paste("rm_data:", args$rm_data))
 # Remove data if needed
-if(args$rm_data == T){
+if(args$rm_data == TRUE){
+  print('rm_data is TRUE, removing supplied data.')
   data_to_remove <- read.csv(paste(args$out, 'data_to_remove.csv', sep='/'))
+  print('Data to remove:')
+  print(head(data_to_remove))
   filt_rm <- remove_data(filtered_counts, data_to_remove)
   
   # keep the full filtered counts with the data that needs to be removed
@@ -156,8 +149,11 @@ if(args$rm_data == T){
   write.csv(filtered_counts_original, paste(args$out, 'filtered_counts_original.csv', sep='/'), row.names=F, quote=F)
   # re-point to what filtered_counts should be
   filtered_counts <- filt_rm
+  rows_removed = nrow(filtered_counts_original) - nrow(filtered_counts)
+  paste("Number of rows removed: ", rows_removed)
 }
 
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
 print(paste("writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
+

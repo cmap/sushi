@@ -1,27 +1,12 @@
-#library(prismSeqR)
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(tidyverse)) ###### debug
 suppressPackageStartupMessages(library(magrittr))
 source("./src/write_df_from_fastq.R")
-## print_args
-## writes configuration to file
-##
-## takes: 
-##      args: args object from argparse
-print_args <- function(args){
-  config <- data.frame(args=names(args), values=unname(unlist(args)))
-  config_path = paste(
-    args$out, 
-    "config.txt",
-    sep="/"
-  )
-  print(paste("Saving config.txt file in :", config_path))
-  write_delim(config, config_path, delim = ": ", col_names=F)
-}
 
-# create parser object
+# Argument parser ----
 parser <- argparse::ArgumentParser()
-# specify our desired options 
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", 
@@ -41,13 +26,13 @@ parser$add_argument("-s", "--seq_type", default = "", help = "Designate DRAGEN i
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
-#Save arguments
+# set output to working directory if none is specified
 if (args$out == ""){
   args$out = args$wkdir
 }
 #print_args(args)
 
-#if args$out doesn't exist, make it one
+#if args$out doesn't exist, create it
 if (!dir.exists(args$out)){
   dir.create(args$out)
 }

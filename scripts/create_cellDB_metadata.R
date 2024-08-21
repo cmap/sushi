@@ -1,5 +1,5 @@
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
-
 source("./src/cellDB_metadata.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
@@ -10,24 +10,9 @@ suppressPackageStartupMessages(library(httr))
 suppressPackageStartupMessages(library(jsonlite))
 suppressPackageStartupMessages(library(tidyverse))
 
-## writes configuration to file
-##
-## takes:
-##      args: args object from argparse
-print_args <- function(args){
-  config <- data.frame(args=names(args), values=unname(unlist(args)))
-  config_path = paste(
-    args$out,
-    "config.txt",
-    sep="/"
-  )
-  print(paste("Saving config.txt file in :", config_path))
-  write_delim(config, config_path, delim = ": ", col_names=F)
-}
-
-# create parser object
+# Argument parser ----
 parser <- ArgumentParser()
-# specify our desired options
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false",

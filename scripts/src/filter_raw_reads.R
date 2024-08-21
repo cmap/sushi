@@ -1,4 +1,4 @@
-#suppressPackageStartupMessages(library(sets))
+options(cli.unicode = FALSE)
 
 #' validate_columns_exist
 #' 
@@ -24,6 +24,9 @@ validate_columns_exist= function(selected_columns, df) {
 #' @param df A dataframe to check against
 #' @return Boolean
 validate_unique_samples= function(selected_columns, df) {
+  message= paste0('The following columns do not uniquely identify every row of the dataframe: ',
+                  paste(selected_columns, collapse=', '))
+  print(message)
   unique_column_values= df %>% dplyr::distinct(pick(all_of(selected_columns)))
   if(nrow(unique_column_values) != nrow(df)) {
     return(FALSE)
@@ -93,9 +96,9 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' @export 
 filter_raw_reads = function(raw_counts, 
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
+                            reverse_index2,
                             sequencing_index_cols= c('index_1', 'index_2'),
-                            reverse_index2= FALSE, count_threshold= 40) {
-  
+                            count_threshold= 40) {
   require(tidyverse)
   require(magrittr)
   
