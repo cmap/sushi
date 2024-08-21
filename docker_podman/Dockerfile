@@ -30,7 +30,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python dependencies
-RUN pip3 install pandas
+RUN pip3 install pandas requests
 
 # First set of R dependencies
 COPY ./install_packages.R /src/install_packages.R

@@ -26,6 +26,6 @@ args=(
 --config "config.json"
 )
 
-echo "python seq_to_mts.py ${args[@]}"
+echo python3 seq_to_mts.py "${args[@]}"
 
 python3 seq_to_mts.py "${args[@]}"
