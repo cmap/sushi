@@ -6,6 +6,7 @@ source("./src/join_sample_meta.R")
 parser <- ArgumentParser()
 # specify our desired options 
 parser$add_argument('--sample_meta', default= 'sample_meta.csv', help= 'Sample meta data for the sequencing run.')
+parser$add_argument('--cell_set_meta', default= 'cell_set_meta.csv', help= 'Cell set metadata for the sequencing run.')
 parser$add_argument('--l2fc', default= 'l2fc.csv', help= 'L2FC data.') # level 4
 parser$add_argument('--collapsed_l2fc', default= 'collapsed_l2fc.csv', help= 'Collapsed l2fc data.') # level 5
 parser$add_argument('--sig_cols', default= 'cell_set,treatment,dose,dose_unit,day', 
@@ -21,6 +22,7 @@ if (args$out == "") {
 
 # Prepare args ----
 sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',')
+cell_set_meta= data.table::fread(args$cell_set_meta, header= T, sep= ',')
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 
 # Add in metadata for l2fc file ----
@@ -32,7 +34,7 @@ if(file.exists(args$l2fc)) {
     input_cols= sig_cols
     print('WARNING: No "bio_rep" column detected. Proceeding with just sig_cols.')
   }
-  l2fc_with_sm= join_sample_meta(df= l2fc, sample_meta, key_cols= input_cols)
+  l2fc_with_sm= join_sample_meta(df= l2fc, sample_meta, cell_set_meta, key_cols= input_cols)
   
   # Write out
   outpath= paste(args$out, 'l2fc_with_sm.csv', sep='/')
@@ -46,11 +48,11 @@ if(file.exists(args$l2fc)) {
 # Add in metadata for collapsed_l2fc file ----
 if(file.exists(args$collapsed_l2fc)) {
   collapsed_l2fc= data.table::fread(args$collapsed_l2fc, header= T, sep= ',')
-  collapsed_l2fc_with_sm= join_sample_meta(df= collapsed_l2fc, sample_meta, key_cols= sig_cols)
+  collapsed_l2fc_with_sm= join_sample_meta(df= collapsed_l2fc, sample_meta, cell_set_meta, key_cols= sig_cols)
   
   # Write out
-  outpath= paste(args$out, 'collapsed_l2fc_with_sm.csv', sep='/')
-  print(paste("Writing collapsed_l2fc_with_sm.csv to ", outpath))
+  outpath= paste(args$out, 'collapsed_l2fc_with_metadata.csv', sep='/')
+  print(paste("Writing collapsed_l2fc_with_metadata.csv to ", outpath))
   write.csv(collapsed_l2fc_with_sm, outpath, row.names= FALSE, quote= FALSE)
 } else {
   print('WARNING: collapsed_l2fc.csv does not exist. Skipping this file.')
