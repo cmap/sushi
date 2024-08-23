@@ -1,3 +1,4 @@
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(prismSeqR))
 suppressPackageStartupMessages(library(DESeq2))

@@ -1,10 +1,14 @@
+options(cli.unicode = FALSE)
 library(argparse)
-library(magrittr) # for %>% and %<>%
+library(magrittr)
 library(tidyverse)
-source("./src/collapse_bio_reps.R") # source function
+suppressPackageStartupMessages(library(argparse))
+suppressPackageStartupMessages(library(magrittr))
+source("/workspace/scripts/src/collapse_bio_reps.R")
 
-# Parser object ----
+# Argument parser ----
 parser <- ArgumentParser()
+# specify desired options
 parser$add_argument("-v", "--verbose", action= "store_true", default= TRUE,
                     help= "Print extra output [default]")
 parser$add_argument("-q", "--quietly", action= "store_false", dest= "verbose", 
@@ -29,6 +33,6 @@ print("Collapsing biological replicates ...")
 collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values, sig_cols= sig_cols, cell_line_cols= cell_line_cols)
 
 # Write out file ----
-collapsed_l2fc_outpath= paste(args$out, "collapsed_l2fc.csv", sep='/')
+collapsed_l2fc_outpath= paste(args$out, 'collapsed_l2fc.csv', sep='/')
 print(paste0('Writing out collapsed l2fc file to ', collapsed_l2fc_outpath))
 write.csv(x= collapsed_l2fc, file= collapsed_l2fc_outpath, row.names= FALSE, quote= FALSE)

@@ -1,17 +1,16 @@
-suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-suppressPackageStartupMessages(library(dplyr)) #n()
-suppressPackageStartupMessages(library(scam))
-suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(tidyr))
-suppressPackageStartupMessages(library(reshape2))
-suppressPackageStartupMessages(library(tibble))
-suppressPackageStartupMessages(library(cdsrbiomarker))
-suppressPackageStartupMessages(library(prismSeqR))
+library(argparse)
+library(dplyr)
+library(scam)
+library(magrittr)
+library(tidyr)
+library(reshape2)
+library(tibble)
+library(cdsrbiomarker)
+source("/workspace/R/generate_biomarkers.R")
 
+# Argument parser ----
 parser <- ArgumentParser()
-# specify our desired options
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false",
@@ -24,6 +23,7 @@ parser$add_argument("--out", default="", help = "Output path. Default is working
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
+# set output to working directory if none is specified
 if (args$out == ""){
   args$out = args$wkdir
 }

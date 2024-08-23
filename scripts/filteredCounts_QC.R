@@ -1,9 +1,8 @@
+options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
-#suppressMessages(library(cmapR))
-suppressPackageStartupMessages(library(dplyr)) #n()
+suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-#suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
 suppressPackageStartupMessages(library(tibble))
@@ -14,11 +13,11 @@ suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
 suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add fit line and labels
 suppressPackageStartupMessages(library(WGCNA))
-source("./src/QC_images.R") # source function
+source("/workspace/scripts/src/QC_images.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
-# specify our desired options 
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
@@ -33,8 +32,8 @@ parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--l2fc", default="l2fc.csv", help= "path to l2fc file")
 parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "control barcode metadata")
-parser$add_argument("--cell_set_meta", default="../metadata/cell_set_meta.csv", help = "Cell set metadata")
+parser$add_argument("--CB_meta", default="/data/CB_meta.csv", help = "control barcode metadata")
+parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--cell_line_cols", default= 'DepMap_ID,CCLE_name',
                     help= "Columns that identify cell lines or barcodes")
 parser$add_argument("--id_cols", default= 'pcr_plate,pcr_well',
@@ -47,11 +46,10 @@ parser$add_argument("--count_threshold", default=40, help= "Low counts threshold
 parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 
-# parser$add_argument("--db_flag", action="store_true", default=FALSE, help = "Use CellDB to locate cell set information")
-
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
+# set output to working directory if none is specified
 if (args$out == ""){
   args$out = args$wkdir
 }

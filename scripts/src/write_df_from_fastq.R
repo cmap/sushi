@@ -114,6 +114,18 @@ write_df_from_fastq <- function(
   return(cumulative_count_df)
 }
 
+#' takes PRISM fastqs and returns a dataframe
+#' with the number of barcodes from each cell line in each well
+#' 
+#' @param forward_read_fastq_files - vector of fastq file paths
+#' @param CL_BC_LENGTH - length of the cell line barcode <int>
+#' @param PLATE_BC_LENGTH - length of the PCR plate barcode <int>
+#' @param WELL_BC_LENGTH - length of the PCR well barcode <int>
+#' @return - cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_cl_barcode
+#' if the experiment uses single-index barcodes, PLATE_BC_LENGTH should be = -1 
+#' and the WELL_BC_LENGTH should be the length of the barcode, or the other way around depending on
+#' what is most appropriate for your experiment
+
 # this function is for DRAGEN-formatted files
 write_df_from_fastq_DRAGEN <- function(
     forward_read_fastq_files,
@@ -190,6 +202,13 @@ write_df_from_fastq_DRAGEN <- function(
     dplyr::summarise(n = sum(n, na.rm = T)) %>% 
     dplyr::ungroup()
   print (paste("collapsed across", length(cumulative_count_df_uncollapsed$flowcell_name %>% unique()), "flowcells"))
+  
+  # remove index_2 column if it has NAs due to the experiment using single-index barcodes
+  if(sum(is.na(cumulative_count_collapsed_across_flowcells_df$index_2)) == length(cumulative_count_collapsed_across_flowcells_df$index_2)){
+    cumulative_count_collapsed_across_flowcells_df %<>% select(-index_2)
+    cumulative_count_df_uncollapsed %<>% select(-index_2)
+  }
+  
   if(!is.null(save_loc)){
     write_csv(cumulative_count_df_uncollapsed, file =  paste0(save_loc, '/raw_counts_uncollapsed.csv')) 
 

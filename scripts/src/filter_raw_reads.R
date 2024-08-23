@@ -1,3 +1,5 @@
+options(cli.unicode = FALSE)
+
 #' validate_columns_exist
 #' 
 #' This function checks that a list of columns are present in a dataframe.
@@ -27,6 +29,9 @@ validate_columns_exist= function(selected_cols, df) {
 #' @param df A dataframe to check against
 #' @return Boolean
 validate_unique_samples= function(selected_columns, df) {
+  message= paste0('The following columns do not uniquely identify every row of the dataframe: ',
+                  paste(selected_columns, collapse=', '))
+  print(message)
   unique_column_values= df %>% dplyr::distinct(pick(all_of(selected_columns)))
   if(nrow(unique_column_values) != nrow(df)) {
     print('The selected columns do not uniquely identify all rows.')

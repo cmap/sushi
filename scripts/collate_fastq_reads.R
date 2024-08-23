@@ -1,3 +1,4 @@
+options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 library(tidyverse)
@@ -5,7 +6,7 @@ source("./src/collate_fastq_reads.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
-# specify our desired options 
+# specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", help="Print little output")
 parser$add_argument("-c", "--uncollapsed_raw_counts", default="raw_counts_uncollapsed.csv",

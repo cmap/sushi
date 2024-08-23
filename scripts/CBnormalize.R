@@ -1,10 +1,11 @@
+options(cli.unicode = FALSE)
 library(argparse)
-library(magrittr) # for %>% and %<>%
-source("./src/normalize.R") # source function
+library(magrittr)
+source("/workspace/scripts/src/normalize.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
-# specify our desired options 
+# specify our desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                     help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", 
