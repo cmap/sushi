@@ -427,8 +427,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   }
   
   # Do the same for index 2.
-  # Reverse index 2 barcodes if needed.
-  if(reverse_index2) {
+  # Reverse index 2 barcodes if it is indicated and if "index_2" exisits
+  if(reverse_index2 & 'index_2' %in% colnames(sample_meta) ) {
     print("Reverse-complementing index 2 barcode.")
     sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
   }
@@ -485,8 +485,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## Contaminants ----
-  print('5. Generating contaminate cell lines ...')
+  ## Cell line contaminants ----
+  print('5. Generating cell line contaminants ...')
   potential_error= base::tryCatch({
     contams= annotated_counts %>% dplyr::filter(expected_read==F) %>%
       dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
@@ -507,14 +507,14 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## Contaminates for ursula ----
-  print('6. Generating contaminate reads for Ursula ...')
+  ## Contaminant reads ----
+  print('6. Generating contaminant reads ...')
   potential_error= base::tryCatch({
     pcr_locations= c('pcr_plate', 'pcr_well')
     
     # Validation: Check that the PCR columns are present in raw_counts.
     if(!validate_columns_exist(pcr_locations, raw_counts)) {
-      stop('pcr_plate and pcr_well are required raw_counts.csv for this to work.')
+      stop('pcr_plate and pcr_well are required in raw_counts.csv for this to work.')
     }
       
     # count number of wells a cell_set appears in.
@@ -568,8 +568,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     contam_reads %>% write.csv(paste0(out, 'contam_reads.csv'), row.names=F)
   }, error= function(e) {
     print(e)
-    print('Encountered an error when creating the contams for UW file. Skipping this output ...')
-    return('contam for UW')
+    print('Encountered an error when creating the contams reads file. Skipping this output ...')
+    return('contam reads')
   })
   
   # Collect returned string if an error occurred
