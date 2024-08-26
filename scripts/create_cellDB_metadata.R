@@ -63,6 +63,7 @@ if (cb_ladder != "cb_custom.csv"){
 } else {
   file_path <- file.path(args$out, cb_ladder)
   control_bc_df <- read.csv(file_path)
+}
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
 cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence', 'LUA')
