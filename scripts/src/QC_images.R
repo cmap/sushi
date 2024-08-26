@@ -72,6 +72,7 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   num_profiles = annotated_counts %>% dplyr::distinct(pick(all_of(id_cols))) %>% nrow()
   
   # Reverse index 2 barcodes
+  reverse_index2 <- as.logical(args$reverse_index2) # Force reverse indec 2 to be logical
   if(reverse_index2 && ("index_2" %in% colnames(sample_meta))) {
     print("Reverse-complementing index 2 barcode.")
     sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
