@@ -180,8 +180,8 @@ QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
   contams %>% write.csv(file= paste(out, 'contam_cell_lines.csv', sep='/'), row.names=F)
   rm(contams)
   
-  # Contaminates for ursula ----
-  print('generating contaminate reads for Ursula')
+  # Contaminants
+  print('generating contaminant reads')
   # Determine which seq cols are present.
   rc_seq_cols= c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2')
   present_seq_cols= intersect(rc_seq_cols, colnames(raw_counts))
