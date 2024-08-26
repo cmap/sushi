@@ -121,7 +121,7 @@ def main(args):
     for ind, dataset in enumerate(datasets):
         dataset_name = ["sample_meta", "level_3", "level_4", "level_5"][ind]
         if dataset_name == "level_5":
-            dataset['pert_plate'] = 'PULA009R'
+            dataset['pert_plate'] = 'PULA010'
         missing_columns = [col for col in ["x_project_id", "pert_plate"] if col not in dataset.columns]
         print(f'Renaming columns for {dataset_name}...')
         print(f"Original columns {dataset.columns}")
