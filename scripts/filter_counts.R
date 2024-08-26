@@ -24,7 +24,7 @@ parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sa
 parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help = "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help = "Control Barcode metadata")
+parser$add_argument("--CB_meta", default="CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("--sequencing_index_cols", default= "index_1,index_2", 
                     help = "Sequencing columns in the sample meta")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
