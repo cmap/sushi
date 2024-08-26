@@ -4,10 +4,18 @@ import os
 import sys
 import glob
 import logging
+import json
 
 logger = logging.getLogger('seq_to_mts')
 pert_vehicle = "DMSO"
 pert_time_unit = "d"
+
+
+class Config:
+    def __init__(self, config_dict):
+        for key, value in config_dict.items():
+            setattr(self, key, value)
+
 
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -16,13 +24,16 @@ def build_parser():
     parser.add_argument("--verbose", '-v', help="Whether to print a bunch of output", action="store_true", default=False)
     parser.add_argument('--build_name', '-n', help='Build name.', required=True)
     parser.add_argument('--days', '-d', help='Day timepoints to drop from output data separated by commas.')
+    parser.add_argument('--config', '-c', help='Config file for project.', required=True, default='config.json')
     return parser
+
 
 def read_build_file(search_pattern, args):
     fstr = os.path.join(args.build_path, search_pattern)
     fmatch = glob.glob(fstr)
     assert (len(fmatch) == 1) , "Too many files found: {}".format(fmatch)
     return pd.read_csv(fmatch[0])
+
 
 def write_key(df):
     df = df[~df['pert_type'].isin(['trt_poscon', 'ctl_vehicle'])]
@@ -39,6 +50,23 @@ def write_key(df):
 
     return grouped_df
 
+
+def read_config(config_path):
+    with open(config_path, 'r') as f:
+        config_dict = json.load(f)
+    return Config(config_dict)
+
+
+def create_profile_id_column(df, config):
+    # Split the sig_cols string into a list of column names
+    sig_cols = config.SIG_COLS.split(',')
+
+    # Create the 'profile_id' by concatenating the specified columns with ':' as delimiter
+    df['profile_id'] = df[sig_cols].astype(str).agg(':'.join, axis=1)
+
+    return df
+
+
 def main(args):
     if os.path.isdir(args.out):
         pass
@@ -53,7 +81,7 @@ def main(args):
         sample_meta = read_build_file("sample_meta.csv", args)
         level_3 = read_build_file("normalized_counts.csv", args)
         level_4 = read_build_file("l2fc.csv", args)
-        level_5 = read_build_file("collapsed_values.csv", args)
+        level_5 = read_build_file("collapsed_l2fc.csv", args)
 
     except IndexError as err:
         logger.error(err)
@@ -78,6 +106,13 @@ def main(args):
         "median_l2fc": "LFC"
     }
 
+    # Get the columns for profile_id from SIG_COLS
+    config_path = args.build_path + '/' + args.config
+    config = read_config(config_path=config_path)
+
+    # Add profile_id to levels 3,4 and 5
+    level_3 = create_profile_id_column(level_3, config)
+    level_4 = create_profile_id_column(level_4, config)
 
     # Define the list of datasets
     datasets = [sample_meta, level_3, level_4, level_5]
@@ -86,6 +121,8 @@ def main(args):
     for ind, dataset in enumerate(datasets):
         dataset_name = ["sample_meta", "level_3", "level_4", "level_5"][ind]
         missing_columns = [col for col in ["x_project_id", "pert_plate"] if col not in dataset.columns]
+        print(f'Renaming columns for {dataset_name}...')
+        print(f"Original columns {dataset.columns}")
         if missing_columns:
             missing_cols_str = ", ".join(missing_columns)
             raise ValueError(f"Columns '{missing_cols_str}' not found in the '{dataset_name}' dataset. Cannot proceed.")
@@ -93,6 +130,7 @@ def main(args):
             for old_name, new_name in column_mapping.items():
                 if old_name in dataset.columns:
                     dataset.rename(columns={old_name: new_name}, inplace=True)
+        print(f"Renamed columns {dataset.columns}")
 
         # Seq projects are all PR500 for now
         dataset["culture"] = "PR500"

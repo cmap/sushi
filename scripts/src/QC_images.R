@@ -45,6 +45,7 @@ get_index_summary= function(df, index_col, valid_indices) {
 #'           lists of LUAs in that cell set separated by semicolons
 #' @param out - the filepath to the folder in which QC images are meant to be saved, NA by default and 
 #'           images are saved in the working directory 
+#' @param id_cols 
 #' @param sig_cols - 
 #' @param count_col_names - which counts to plot
 #' @param control_type - how the negative controls are designated in the trt_type column in the sample metadata
@@ -53,9 +54,11 @@ get_index_summary= function(df, index_col, valid_indices) {
 #' @return - NA, QC images are written out to the specified folder
 #' @export
 
-QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_counts= NA,
-                     CB_meta, cell_set_meta, out = NA, sig_cols, count_col_name= 'normalized_n',
-                     control_type, count_threshold= 40, reverse_index2= FALSE) {
+QC_images = function(raw_counts, annotated_counts, normalized_counts= NA,
+                     sample_meta, CB_meta, cell_set_meta,
+                     id_cols, sig_cols, count_col_name= 'normalized_n',
+                     control_type, count_threshold= 40, 
+                     reverse_index2= FALSE, out = NA) {
   require(tidyverse)
   require(magrittr)
   require(reshape2)
@@ -64,11 +67,13 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   if(is.na(out)) {
     out = getwd()
   }
-  num_profiles = annotated_counts$profile_id %>% unique() %>% length()
   
   # Some preprocessing ----
+  num_profiles = annotated_counts %>% dplyr::distinct(pick(all_of(id_cols))) %>% nrow()
+  
   # Reverse index 2 barcodes
-  if(reverse_index2 & ("index_2" %in% colnames(sample_meta))) {
+  reverse_index2 <- as.logical(args$reverse_index2) # Force reverse indec 2 to be logical
+  if(reverse_index2 && ("index_2" %in% colnames(sample_meta))) {
     print("Reverse-complementing index 2 barcode.")
     sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
   }
@@ -78,12 +83,25 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   contains_cbs= ifelse(nrow(cb_check)!= 0, T, F)
+  
+  # Count number of cell lines in each cell set
+  num_cls_in_set= cell_set_meta %>% dplyr::filter(cell_set %in% unique(sample_meta$cell_set))
+  # Add cell_cets that are 'missing' or are strings of LUAs
+  if(nrow(num_cls_in_set) != length(unique(sample_meta$cell_set))) {
+    sets_not_in_meta= sample_meta %>% dplyr::filter(!cell_set %in% cell_set_meta$cell_set) %>%
+      dplyr::pull(cell_set) %>% unique() %>% sort()
+    sets_to_add_df= data_frame(cell_set= sets_not_in_meta, members= sets_not_in_meta)
+    num_cls_in_set= dplyr::bind_rows(num_cls_in_set, sets_to_add_df)
+  }
+  num_cls_in_set %<>% dplyr::mutate(expected_num_cl= str_split(members, ';')) %>%
+    tidyr::unnest(cols= expected_num_cl) %>% dplyr::group_by(cell_set) %>% 
+    dplyr::summarize(expected_num_cl= length(unique(expected_num_cl))) %>% dplyr::ungroup()
   #
   
   # Sequencing QCs ____________________ ----
   ## Index count summaries ----
   print("Generating index counts tables")
-  # Check that "index_1" and "index_1" columns are present.
+  # Check that "IndexBarcode1" and "index_1" columns are present.
   # If so, calculate index summary and write out.
   if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts)) {
     expected_index1= unique(sample_meta$index_1)
@@ -105,13 +123,13 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   ## Total counts ----
   print("generating total_counts image")
   total_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
-    mutate(type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
+    mutate(barcode_type = ifelse(!is.na(CCLE_name), "cell line", "control barcode"),
            sample_id= paste(pcr_plate, pcr_well, sep='_')) %>%
-    group_by(pcr_plate, pcr_well, sample_id, profile_id, type) %>% 
+    group_by(pick(all_of(c('pcr_plate', 'pcr_well', 'sample_id', id_cols, 'barcode_type')))) %>% 
     dplyr::summarise(total_counts = sum(n))
   
   tc= total_counts %>% ggplot() +
-    geom_col(aes(x=sample_id, y=total_counts, fill=type), alpha=0.75, position='identity') +
+    geom_col(aes(x=sample_id, y=total_counts, fill=barcode_type), alpha=0.75, position='identity') +
     geom_hline(yintercept= 10^4, linetype=2) + 
     facet_wrap(~pcr_plate, scale= 'free_x') +
     labs(x="PCR location", y="total counts", fill="", title= 'Raw counts - unstacked') + theme_bw() +
@@ -134,11 +152,12 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
                     purrr::map(`[[`, 1) %>% purrr::map(length) %>% as.numeric(),
                   count_type= ifelse(n > count_threshold, 'Detected', 'Low'),
                   count_type= ifelse(n==0, 'Missing', count_type)) %>%
-    dplyr::count(profile_id, pcr_plate, pcr_well, count_type, expected_num_cl, name= 'count') %>%
+    dplyr::count(pick(all_of(c('pcr_plate', 'pcr_well', id_cols, 'count_type', 'expected_num_cl'))), name= 'count') %>%
     dplyr::mutate(frac_type= count/expected_num_cl)
   
-  cl_rec= recovery %>% ggplot() +
-    geom_col(aes(x=profile_id, y=frac_type*100, fill= reorder(count_type, desc(count_type)))) +
+  cl_rec= recovery %>% tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove=FALSE) %>%
+    ggplot() +
+    geom_col(aes(x=profile_id, y=frac_type*100, fill= reorder(count_type, dplyr::desc(count_type)))) +
     facet_wrap(~pcr_plate, scales= 'free_x') +
     labs(x="", y="Percentage of expected cell lines", fill= '') +
     theme_bw() +
@@ -151,180 +170,87 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   rm(recovery, cl_rec)
   
   ## Contaminants ----
+  print('generating contaminate cell lines')
   contams= annotated_counts %>% dplyr::filter(expected_read==F) %>%
     dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
     dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
     dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
     dplyr::arrange(desc(num_wells))
   
-  contams %>% write.csv(file= paste(out, 'contams.csv', sep='/'), row.names=F)
+  contams %>% write.csv(file= paste(out, 'contam_cell_lines.csv', sep='/'), row.names=F)
   rm(contams)
   
-  # Work in progress - Updating contaminant output with new filtered counts
-  run_below= F
-  if(run_below) {
-    # Determine which seq cols are present.
-    if("index_2" %in% colnames(sample_meta)){
-      # sample_meta sequencing columns
-      sm_seq_cols= c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2')
-      # raw_counts sequencing columns
-      rc_seq_cols= c('flowcell_name', 'flowcell_lane', 'index_1', 'index_2')
-    }else{
-      sm_seq_cols= c('flowcell_name', 'flowcell_lane', 'index_1')
-      # raw_counts sequencing columns
-      rc_seq_cols= c('flowcell_name', 'flowcell_lane', 'index_1')
-    }
-    
-    
-    mapped_reads= annotated_counts %>% 
-      dplyr::distinct(pick(any_of(c(sm_seq_cols, 'forward_read_cl_barcode', 'expected')))) %>%
-      dplyr::mutate(mapped=T)
-    
-    meta_joining_vector= list()
-    for(item in seq_cols) {
-      if(item=='index_1') {
-        meta_joining_vector[['index_1']]= item
-      } else if(item=='index_2') {
-        meta_joining_vector[['index_2']]= item
-      } else {
-        meta_joining_vector[[item]]= item
-      }
-    }
-    meta_joining_vector= unlist(meta_joining_vector)
-    
-    # unique combos of seq_cols
-    unique_seq_col_vals= sample_meta %>% dplyr::distinct(pick(any_of(sm_seq_cols)))
-    
-    # get unmapped reads
-    unmapped_read= raw_counts %>% 
-      dplyr::semi_join(unique_seq_col_vals, by= meta_joining_vector) %>%
-      dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F))
-    
-    if("index_2" %in% colnames(sample_meta)){
-      unmapped_read= raw_counts %>% 
-        dplyr::semi_join(unique_seq_col_vals, by= meta_joining_vector) %>%
-        dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence), T, F)) %>%
-      dplyr::filter(index_1 %in% sample_meta$index_1, index_2 %in% sample_meta$index_2) %>%
-        dplyr::left_join(mapped_reads, by= c('index_1', 'index_2', 'forward_read_cl_barcode')) %>%
-        tidyr::replace_na(list(mapped= F)) %>% dplyr::filter(mapped== F) %>% dplyr::select(-mapped)
-      
-      # map of index barcodes to pcr_plate location
-      pcr_plate_map= sample_meta %>%
-        dplyr::distinct(pick(any_of(c('index_1', 'index_2', 'pcr_plate', 'pcr_well', 'cell_set')))) %>%
-        dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
-        dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
-      
-      # total counts per well - used to calculate fractions
-      counts_per_well= raw_counts %>%
-        dplyr::filter(index_1 %in% sample_meta$index_1, index_2 %in% sample_meta$index_2) %>%
-        dplyr::group_by(index_1, index_2) %>% dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
-      
-      # mapped contaminates to bind
-      mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
-        dplyr::mutate(barcode_name= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
-        dplyr::select(index_1, index_2, forward_read_cl_barcode, barcode_name, n)
-      
-      # put everything together
-      contam_reads= unmapped_read %>% dplyr::bind_rows(mapped_contams) %>%
-        dplyr::left_join(counts_per_well, by= c('index_1', 'index_2')) %>%
-        dplyr::left_join(pcr_plate_map, by= join_by('index_1'=='index_1', 'index_2'=='index_2')) %>%
-        # filter out barcodes that only appear in one well
-        dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
-        # number of wells in a pcr plate a barcode is detected in
-        dplyr::group_by(forward_read_cl_barcode, pcr_plate) %>%
-        dplyr::mutate(num_wells_detected_plate= n()) %>% dplyr::ungroup() %>%
-        # number of wells in a cell set a barcode is detected in
-        dplyr::group_by(forward_read_cl_barcode, cell_set) %>%
-        dplyr::mutate(num_wells_detected_set= n()) %>% dplyr::ungroup() %>%
-        # determine if contamination is project, plate, or set
-        dplyr::group_by(forward_read_cl_barcode) %>%
-        dplyr::mutate(num_wells_detected= dplyr::n(),
-                      project_code= unique(sample_meta$project_code),
-                      fraction= n/well_total_n,
-                      type1= ifelse(sum(num_wells_detected== nrow(pcr_plate_map))>1, 'project_contam', NA),
-                      type2= ifelse(sum(num_wells_detected== num_wells_detected_plate & 
-                                          num_wells_detected_plate == num_wells_in_plate)>1, 'plate_contam', NA),
-                      type3= ifelse(sum(num_wells_detected == num_wells_detected_set &
-                                          num_wells_detected_set== num_wells_in_set)>1, 'set_contam', NA)) %>%
-        dplyr::ungroup() %>%
-        tidyr::unite(scope, all_of(c('type1', 'type2', 'type3')), sep=',', remove = T, na.rm = T) %>%
-        dplyr::group_by(project_code, forward_read_cl_barcode, barcode_name, scope, num_wells_detected) %>%
-        dplyr::summarise(min_n= min(n), med_n= median(n), max_n= max(n),
-                         min_fraction= min(fraction), med_fraction= median(fraction), max_fraction=max(fraction)) %>%
-        dplyr::arrange(desc(max_fraction))
-    
-      }else{
-      dplyr::filter(index_1 %in% sample_meta$index_1) %>%
-        dplyr::left_join(mapped_reads, by= c('index_1', 'forward_read_cl_barcode')) %>%
-        tidyr::replace_na(list(mapped= F)) %>% dplyr::filter(mapped== F) %>% dplyr::select(-mapped)
-      
-      # map of index barcodes to pcr_plate location
-      pcr_plate_map= sample_meta %>%
-        dplyr::distinct(pick(any_of(c('index_1', 'pcr_plate', 'pcr_well', 'cell_set')))) %>%
-        dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
-        dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
-      
-      # total counts per well - used to calculate fractions
-      counts_per_well= raw_counts %>%
-        dplyr::filter(index_1 %in% sample_meta$index_1) %>%
-        dplyr::group_by(index_1) %>% dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
-      
-      # mapped contaminates to bind
-      mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
-        dplyr::mutate(barcode_name= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
-        dplyr::select(index_1, forward_read_cl_barcode, barcode_name, n)
-      
-      # put everything together
-      contam_reads= unmapped_read %>% dplyr::bind_rows(mapped_contams) %>%
-        dplyr::left_join(counts_per_well, by= c('index_1')) %>%
-        dplyr::left_join(pcr_plate_map, by= join_by('index_1'=='index_1')) %>%
-        # filter out barcodes that only appear in one well
-        dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
-        # number of wells in a pcr plate a barcode is detected in
-        dplyr::group_by(forward_read_cl_barcode, pcr_plate) %>%
-        dplyr::mutate(num_wells_detected_plate= n()) %>% dplyr::ungroup() %>%
-        # number of wells in a cell set a barcode is detected in
-        dplyr::group_by(forward_read_cl_barcode, cell_set) %>%
-        dplyr::mutate(num_wells_detected_set= n()) %>% dplyr::ungroup() %>%
-        # determine if contamination is project, plate, or set
-        dplyr::group_by(forward_read_cl_barcode) %>%
-        dplyr::mutate(num_wells_detected= dplyr::n(),
-                      project_code= unique(sample_meta$project_code),
-                      fraction= n/well_total_n,
-                      type1= ifelse(sum(num_wells_detected== nrow(pcr_plate_map))>1, 'project_contam', NA),
-                      type2= ifelse(sum(num_wells_detected== num_wells_detected_plate & 
-                                          num_wells_detected_plate == num_wells_in_plate)>1, 'plate_contam', NA),
-                      type3= ifelse(sum(num_wells_detected == num_wells_detected_set &
-                                          num_wells_detected_set== num_wells_in_set)>1, 'set_contam', NA)) %>%
-        dplyr::ungroup() %>%
-        tidyr::unite(scope, all_of(c('type1', 'type2', 'type3')), sep=',', remove = T, na.rm = T) %>%
-        dplyr::group_by(project_code, forward_read_cl_barcode, barcode_name, scope, num_wells_detected) %>%
-        dplyr::summarise(min_n= min(n), med_n= median(n), max_n= max(n),
-                         min_fraction= min(fraction), med_fraction= median(fraction), max_fraction=max(fraction)) %>%
-        dplyr::arrange(desc(max_fraction))
-    }
-    
-    # GCCTATTAATCATTACTACTAATC
-    contam_reads %>% write.csv(paste0(folder_path, 'contam_reads.csv'), row.names=F)
-  }
+  # Contaminants
+  print('generating contaminant reads')
+  # Determine which seq cols are present.
+  rc_seq_cols= c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2')
+  present_seq_cols= intersect(rc_seq_cols, colnames(raw_counts))
+  
+  # map of seq_cols to PCR locations
+  pcr_plate_map= sample_meta %>%
+    dplyr::distinct(pick(any_of(c(present_seq_cols, 'pcr_plate', 'pcr_well', 'cell_set')))) %>%
+    dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
+    dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
+  
+  # index filter and identify reads as mapped or not
+  unique_seq_col_vals= sample_meta %>% dplyr::distinct(pick(all_of(present_seq_cols)))
+  sequencing_filter= raw_counts %>% 
+    dplyr::semi_join(unique_seq_col_vals, by= present_seq_cols) %>%
+    dplyr::mutate(mapped= ifelse(forward_read_cl_barcode %in% unique(annotated_counts$forward_read_cl_barcode), T, F))
+  
+  # total counts per well - used to calculate fractions
+  counts_per_well= sequencing_filter %>% dplyr::group_by(pick(all_of(present_seq_cols))) %>% 
+    dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
+  
+  # mapped contaminates to bind
+  mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
+    dplyr::mutate(barcode_name= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
+    dplyr::select(all_of(c(present_seq_cols, 'forward_read_cl_barcode', 'n', 'barcode_name')))
+  
+  contam_reads= sequencing_filter %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%
+    dplyr::bind_rows(mapped_contams) %>%
+    dplyr::left_join(counts_per_well, by= present_seq_cols) %>%
+    dplyr::left_join(pcr_plate_map, by= present_seq_cols) %>%
+    # filter out barcodes that only appear in one well
+    dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
+    # number of wells in a pcr plate a barcode is detected in
+    dplyr::group_by(forward_read_cl_barcode, pcr_plate) %>%
+    dplyr::mutate(num_wells_detected_plate= n()) %>% dplyr::ungroup() %>%
+    # number of wells in a cell set a barcode is detected in
+    dplyr::group_by(forward_read_cl_barcode, cell_set) %>%
+    dplyr::mutate(num_wells_detected_set= n()) %>% dplyr::ungroup() %>%
+    # determine if contamination is project, plate, or set
+    dplyr::group_by(forward_read_cl_barcode) %>%
+    dplyr::mutate(num_wells_detected= dplyr::n(),
+                  project_code= unique(sample_meta$project_code),
+                  fraction= n/well_total_n,
+                  type1= ifelse(sum(num_wells_detected== nrow(pcr_plate_map))>1, 'project_contam', NA),
+                  type2= ifelse(sum(num_wells_detected== num_wells_detected_plate & 
+                                      num_wells_detected_plate == num_wells_in_plate)>1, 'plate_contam', NA),
+                  type3= ifelse(sum(num_wells_detected == num_wells_detected_set &
+                                      num_wells_detected_set== num_wells_in_set)>1, 'set_contam', NA)) %>%
+    dplyr::ungroup() %>%
+    tidyr::unite(scope, all_of(c('type1', 'type2', 'type3')), sep=',', remove = T, na.rm = T) %>%
+    dplyr::group_by(project_code, forward_read_cl_barcode, barcode_name, scope, num_wells_detected) %>%
+    dplyr::summarise(min_n= min(n), med_n= median(n), max_n= max(n),
+                     min_fraction= min(fraction), med_fraction= median(fraction), max_fraction=max(fraction)) %>%
+    dplyr::arrange(desc(max_fraction))
+  
+  # write out
+  contam_reads %>% write.csv(paste0(out, 'contam_reads.csv'), row.names=F)
   
   ## Cumulative counts by lines in negcons ----
   print("generating cummulative image")
-  cdf= annotated_counts %>% dplyr::filter(expected_read) %>% 
-    dplyr::filter(trt_type== control_type) %>% # filter for only negative controls
-    dplyr::select(!any_of(c('members'))) %>%
-    merge(cell_set_meta, by="cell_set", all.x=T) %>%
-    dplyr::mutate(members= ifelse(is.na(members), cell_set, members), # for custom cell cets
-                  expected_num_cl= as.character(members) %>% purrr::map(strsplit, ';') %>% 
-                    purrr::map(`[[`, 1) %>% purrr::map(length) %>% as.numeric(),
-                  expected_num_cl= ifelse(contains_cbs, expected_num_cl + length(unique(CB_meta$Name)),
+  cdf= annotated_counts %>% dplyr::select(!any_of(c('members'))) %>%
+    dplyr::filter(expected_read, trt_type == control_type) %>%
+    dplyr::left_join(num_cls_in_set, by= "cell_set") %>%
+    dplyr::mutate(expected_num_cl= ifelse(control_barcodes, expected_num_cl + length(unique(CB_meta$Name)),
                                           expected_num_cl)) %>% # add CBs to expected_num_cl if there are CBs
+    tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= FALSE) %>%
     dplyr::group_by(pcr_plate, pcr_well, profile_id, expected_num_cl) %>% 
     dplyr::mutate(total_counts= sum(n), pct_counts= n/total_counts,) %>% dplyr::arrange(-n) %>% 
     dplyr::mutate(cum_pct= cumsum(pct_counts), rank= row_number(),
-                  rank_pct= rank/expected_num_cl) %>% ungroup() %>%
-    dplyr::select(DepMap_ID, Name, log2_dose, pcr_plate, pcr_well, profile_id, expected_num_cl, pct_counts,
-                  cum_pct, rank, rank_pct)
+                  rank_pct= rank/expected_num_cl) %>% dplyr::ungroup()
   
   # additional tables
   mark50= cdf %>% dplyr::filter(cum_pct >= 0.5) %>% dplyr::group_by(profile_id) %>% 
@@ -367,26 +293,28 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
     print("generating control_barcode_trend image")
     
     # calculate r2 and mae if columns do not exist
-    if (!'r2' %in% colnames(normalized_counts) | !'r2' %in% colnames(normalized_counts)) {
+    if (!'norm_r2' %in% colnames(normalized_counts) | !'norm_mae' %in% colnames(normalized_counts)) {
       cb_trend= normalized_counts %>%
         dplyr::filter(control_barcodes %in% c("Y", "T", T),
                       !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type),
                       !is.na(Name)) %>%
+        tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
         dplyr::group_by(profile_id) %>%
         dplyr::mutate(mean_y= mean(log2_dose),
                       residual2= (log2_dose - log2_normalized_n)^2,
                       squares2= (log2_dose - mean_y)^2,
-                      r2= 1 - sum(residual2)/sum(squares2),
-                      mae= median(abs(log2_dose- log2_normalized_n))) %>% ungroup()
+                      norm_r2= 1 - sum(residual2)/sum(squares2),
+                      norm_mae= median(abs(log2_dose- log2_normalized_n))) %>% ungroup()
     } else {
-      cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name))
+      cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name)) %>%
+        tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE)
     }
     
-    trend_sc= cb_trend %>% dplyr::mutate(profile_id= reorder(profile_id, desc(mae))) %>%
+    trend_sc= cb_trend %>% dplyr::mutate(profile_id= reorder(profile_id, dplyr::desc(norm_mae))) %>%
       ggplot(aes(x=log2_n, y=log2_dose)) + geom_point() +
       geom_abline(aes(slope=1, intercept= cb_intercept) , color='blue') +
-      geom_text(aes(x= min(log2_n), y= desc(sort(unique(log2_dose)))[1], 
-                    label= paste('r2=', round(r2, 4), '\nmae=', round(mae, 4), sep='')), 
+      geom_text(aes(x= min(log2_n), y= dplyr::desc(sort(unique(log2_dose)))[1], 
+                    label= paste('r2=', round(norm_r2, 4), '\nmae=', round(norm_mae, 4), sep='')), 
                 hjust='inward', vjust='inward') +
       facet_wrap(~profile_id, scales= 'free_x') +
       labs(x= 'log2(n)', y= 'log2(dose)') + theme_bw()
@@ -400,9 +328,10 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   
   ## Sample correlation -----
   print("generating sample_cor image")
-  correlation_matrix= annotated_counts %>% dplyr::filter(expected_read) %>% 
-    dplyr::filter(!is.na(CCLE_name),
-           (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
+  correlation_matrix= annotated_counts %>%
+    dplyr::filter(expected_read, !is.na(CCLE_name),
+                  (!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
+    tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
     dplyr::mutate(log2_n = log2(n +1)) %>% 
     reshape2::dcast(CCLE_name~profile_id, value.var="log2_n") %>% 
     column_to_rownames("CCLE_name") %>% 
@@ -423,7 +352,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   ## Tech rep correlations ----
   # assumes that tech reps are the last component of profile_id
   if('tech_rep' %in% colnames(normalized_counts)) {
-    if(max(unique(normalized_counts$tech_rep)) == 2) {
+    if(max(unique(normalized_counts$tech_rep), na.rm= TRUE) == 2) {
       print("generating tech rep correlations image")
    
       static_cols= c('project_code', 'CCLE_name', 'DepMap_ID', 'Name', 'cell_set')
@@ -454,16 +383,23 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
   if('bio_rep' %in% colnames(normalized_counts)) {
     num_bio_reps= normalized_counts %>% 
       dplyr::filter((!trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type)) %>% 
-      pull(bio_rep) %>% unique() %>% length()
+      dplyr::pull(bio_rep) %>% unique() %>% length()
     
     if(num_bio_reps > 1) {
       print("generating bio rep correlations image")
+      
+      if('bio_rep' %in% colnames(normalized_counts)) {
+        bio_rep_id_cols= c(sig_cols, 'bio_rep')
+      } else {
+        bio_rep_id_cols= sig_cols
+        print('WARNING: bio_rep column not detected. Assuming that there are NO biological replicates.') 
+        print('Technical replicate collapse will be performed across the sig_cols.')
+      }
+      
       # collapse tech reps taken from 'compute_l2fc'
       collapsed_tech_rep= normalized_counts %>%
         dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
-        dplyr::group_by_at(setdiff(names(.), c('pcr_plate','pcr_well', 'Name', 'log2_dose', 'cb_intercept',
-                                               'profile_id', 'tech_rep', 'n', 'log2_n', 'normalized_n', 
-                                               'log2_normalized_n', 'flag', count_col_name))) %>% 
+        dplyr::group_by(pick(all_of(c('CCLE_name', 'trt_type', bio_rep_id_cols)))) %>%
         dplyr::summarise(mean_normalized_n = mean(!! rlang::sym(count_col_name)), 
                          num_tech_reps= n()) %>% dplyr::ungroup()
       collapsed_tech_rep$sig_id= do.call(paste,c(collapsed_tech_rep[sig_cols], sep=':'))
@@ -475,7 +411,7 @@ QC_images = function(sample_meta, raw_counts, annotated_counts, normalized_count
         reshape2::acast(CCLE_name~plt_id, value.var="mean_normalized_n") %>% 
         cor(use="pairwise.complete.obs")
       
-      bio_corr_hm= bio_corr %>% melt() %>% ggplot() +
+      bio_corr_hm= bio_corr %>% reshape2::melt() %>% ggplot() +
         geom_tile(aes(x=Var1, y=Var2, fill=value)) +
         labs(x="", y="", fill="correlation\nnorm_n") +
         scale_fill_gradientn(breaks= c(0, 0.5, 1), 

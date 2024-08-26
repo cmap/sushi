@@ -1,5 +1,0 @@
-install.packages("textshaping", dependencies = TRUE, Ncpus = 4)
-install.packages("ragg", dependencies = TRUE, Ncpus = 4)
-install.packages("pkgdown", dependencies = TRUE, Ncpus = 4)
-install.packages("devtools", Ncpus = 4)
-install.packages("hash", Ncpus = 4)

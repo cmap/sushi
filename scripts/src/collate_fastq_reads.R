@@ -59,8 +59,9 @@ validate_unique_samples= function(selected_columns, df) {
 #' @param detected_flowcells A dataframe with the columns "flowcell_name" and "flowcell_lane".
 #' @param expected_flowcells A dataframe with the columns "flowcell_name" and "flowcell_lane".
 validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
-  missing_flowcells= expected_flowcells %>% dplyr::anti_join(expected_flowcells, by= c('flowcell_name', 'flowcell_lane'))
-  if(nrow(missing_flowcells)!= 0) {
+  missing_flowcells= expected_flowcells %>%
+    dplyr::anti_join(detected_flowcells, by= c('flowcell_name', 'flowcell_lane'))
+  if(nrow(missing_flowcells) != 0) {
     print('The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
     print(missing_flowcells)
     print('Check that the sample meta is correct or that all fastq files are in the correct directory.')
@@ -134,6 +135,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, sequencing_in
   # Validation: Check that all expected flowcell name + lanes are detected ----
   # Check that all expected flowcell name + lanes are present in uncollapsed raw counts.
   detected_flowcells= uncollapsed_raw_counts %>% dplyr::distinct(flowcell_name, flowcell_lane)
+  print(paste0('Identified ', nrow(detected_flowcells), ' unique flowcell + lane combos in the uncollapsed raw counts ...'))
+  print(detected_flowcells)
   validate_detected_flowcells(detected_flowcells, expected_flowcells)
   
   # Create raw counts by summing over appropriate sequencing_index_cols ----
