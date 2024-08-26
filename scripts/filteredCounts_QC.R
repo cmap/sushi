@@ -12,7 +12,7 @@ suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(ggpubr))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
 suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add fit line and labels
-source("/workspace/scripts/src/QC_images.R")
+source("./src/QC_images.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

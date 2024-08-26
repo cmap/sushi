@@ -4,7 +4,7 @@ library(magrittr)
 library(tidyverse)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(dplyr))
-source("/workspace/scripts/src/compute_l2fc.R")
+source("./src/compute_l2fc.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

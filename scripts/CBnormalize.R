@@ -1,7 +1,7 @@
 options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
-source("/workspace/scripts/src/normalize.R")
+source("./src/normalize.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
