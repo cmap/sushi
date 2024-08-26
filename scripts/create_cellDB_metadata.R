@@ -77,7 +77,8 @@ cell_line_meta <- cell_lines_df %>%
 if (nrow(control_bc_df) > 0 & cb_ladder != "cb_custom.csv") {
   CB_meta <- control_bc_df %>% rename("Sequence" = "sequence", "Name" = "name")
 } else {
-  print(paste("Since the cb_ladder selected was '", cb_ladder, "', no CB_meta.csv file will be outputted."))
+  print(paste("Since the cb_ladder selected was '", cb_ladder, "', no renaming is necessary."))
+  CB_meta <- control_bc_df
 }
 
 cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta)
