@@ -180,6 +180,91 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
   return(recov_plot)
 }
 
+#' Cumulative reads plot
+#' 
+#' Creates a line plot of the cumulative reads.
+#' 
+#' @param input_df Input dataframe. Usually is the filtered_counts dataframe.
+#' @param id_cols Vector of column names that identify every PCR well.
+#' @param counts_col Name of the column that contains the values. Defaults to "n".
+#' @param mark1 Percentage of reads to mark. Draws a line at a specified percentage to indicate the number of 
+#'              cell lines needed to reach this percentage of reads. Defaults to 0.5.
+#' @param mark2 Percentage of reads to mark. Draws a line at a specified percentage to indicate the number of 
+#'              cell lines needed to reach this percentage of reads. This parameter should be greater than the 
+#'              value specified for "mark1". Defaults to 0.95.
+#' @param contains_cb Boolean. If control barcodes are used, this can be set to TRUE so that points 
+#'                    corresponding to the control barcodes will be colored on the plot. Defaults to FALSE.
+#' @param order_aucs Boolean, when there are multiple facets, this can be set to TRUE to sort the facets by 
+#'                   the AUC value. The AUCs will be sorted in descending order. Defaults to FALSE.
+#' @returns Returns a ggplot object.
+create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2= 0.95, 
+                          contains_cbs= FALSE, order_aucs= FALSE) {
+  # Validation: Check that id_cols and counts_col are in the input dataframe.
+  if(!validate_columns_exist(c(id_cols, counts_col), input_df)) {
+    stop('Some input columns were not detected in the cdf input dataframe.')
+  }
+  
+  # Determine percentages, ranks and cumulative percentages
+  calc_cummulative= input_df %>% dplyr::group_by(pick(all_of(id_cols))) %>%
+    dplyr::arrange(dplyr::desc(.data[[counts_col]])) %>%
+    dplyr::mutate(expected_num_cls= dplyr::n(),
+                  total_counts= sum(.data[[counts_col]]), pct_counts= .data[[counts_col]]/total_counts,
+                  cum_pct= cumsum(pct_counts), 
+                  rank= row_number(), rank_pct= rank/expected_num_cls) %>% dplyr::ungroup()
+  
+  # Validation: mark1 should be less than mark2.
+  if(mark1 > mark2 | mark1 < 0 | mark1 > 1) {
+    stop('Mark values must be between 0 and 1 Mark1 should be less than mark2')
+  }
+  
+  # Find the number of cell lines needed to reach mark1 and mark2
+  mark1_values= calc_cummulative %>% dplyr::filter(cum_pct >= mark1) %>% 
+    dplyr::group_by(pick(all_of(id_cols))) %>% dplyr::arrange(cum_pct) %>% 
+    dplyr::filter(row_number() == 1) %>% dplyr::ungroup() %>% 
+    dplyr::select(all_of(id_cols), rank_pct= rank_pct, mark1_rank= rank, mark1_loc= rank_pct)
+  mark2_values= calc_cummulative %>% dplyr::group_by(pick(all_of(id_cols))) %>% 
+    dplyr::mutate(auc= sum(cum_pct * (1 / expected_num_cls))) %>% # calculate AUCs
+    dplyr::filter(cum_pct >= mark2) %>% dplyr::arrange(cum_pct) %>%
+    dplyr::filter(row_number() == 1) %>% dplyr::ungroup() %>% 
+    dplyr::select(all_of(id_cols), rank_pct= rank_pct, mark2_rank= rank, mark2_loc= rank_pct, auc)
+  
+  # Create cdf plot
+  data_for_plot= calc_cummulative %>% 
+    dplyr::left_join(mark1_values, by= c(id_cols, 'rank_pct')) %>% 
+    dplyr::left_join(mark2_values, by= c(id_cols, 'rank_pct')) %>%
+    tidyr::unite(all_of(id_cols), col= 'facet_name', sep= ':', remove= TRUE, na.rm= FALSE)
+  
+  # Reorder by aucs if specified
+  if(order_aucs) {
+    data_for_plot= data_for_plot %>% dplyr::arrange(dplyr::desc(auc)) %>%
+      dplyr::mutate(facet_name= base::factor(facet_name, levels= unique(facet_name)))
+  }
+  
+  # Create plot
+  output_plot= data_for_plot %>%
+    ggplot(aes(x= rank_pct, y=cum_pct)) +
+    # Color control barcodes if specified
+    { if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
+                                  mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, log2_dose)), size= 2) } + 
+    geom_line(color='black') +
+    # point for mark1 of counts
+    geom_segment(aes(x= -Inf , y= mark1, xend= mark1_loc, yend = mark1), color= 'black', linetype= 2) +
+    geom_segment(aes(x= mark1_loc, y= -Inf, xend = mark1_loc, yend = mark1), color= 'black', linetype= 2) +
+    geom_label(aes(x= mark1_loc, y= 0.25, label= mark1_rank), hjust= 0, color= 'black') +
+    # point for 95% of counts
+    geom_segment(aes(x= -Inf , y= mark2, xend= mark2_loc, yend= mark2), color= 'black', linetype= 2) +
+    geom_segment(aes(x= mark2_loc, y= -Inf, xend= mark2_loc, yend= mark2), color= 'black', linetype= 2) +
+    geom_label(aes(x= mark2_loc, y= 0.75, label= mark2_rank), hjust= 0, color= 'black') +
+    # label for AUC
+    #geom_label(aes(x= mark2_loc, y= 0.1, label= paste0('AUC ', round(auc, 3))), hjust= 'inward', color= 'black') +
+    geom_label(. %>% dplyr::filter(!is.na(auc)), mapping= aes(label= paste0('AUC ', round(auc, 3))), 
+               x= 1, y= 0, hjust= 'inward', vjust= 'inward', color= 'black') +
+    facet_wrap(~facet_name) + 
+    labs(x='% rank of unique reads', y='Cumulative percentage', color= 'CBs') + theme_bw()
+  
+  return(output_plot)
+}
+
 #' Control barcode scatter plot
 #' 
 #' Creates a scatter plot of the control barcodes.
@@ -373,10 +458,11 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
                     id_cols= c('pcr_plate', 'pcr_well'), sig_cols,
                     control_type= 'negcon', count_threshold= 40, 
                     reverse_index2= FALSE, out = NA) {
-  require(tidyverse)
-  require(magrittr)
-  require(reshape2)
-  require(scales)
+  library(tidyverse)
+  library(magrittr)
+  library(reshape2)
+  library(scales)
+  library(WGCNA)
   
   if(is.na(out)) {
     out = getwd()
@@ -578,53 +664,20 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   }
   
   ## Cumulative counts by lines in negcons ----
-  print("7. Generating cummulative image ...")
+  print("7. Generating cumulative image ...")
   potential_error= base::tryCatch({
-    cdf= filtered_counts %>% dplyr::filter(trt_type == control_type) %>%
-      dplyr::left_join(num_cls_in_set, by= "cell_set") %>%
-      dplyr::mutate(expected_num_cl= ifelse(control_barcodes, expected_num_cl + length(unique(CB_meta$Name)),
-                                            expected_num_cl)) %>% # add CBs to expected_num_cl if there are CBs
-      tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= FALSE) %>%
-      dplyr::group_by(pcr_plate, pcr_well, profile_id, expected_num_cl) %>% 
-      dplyr::mutate(total_counts= sum(n), pct_counts= n/total_counts,) %>% dplyr::arrange(-n) %>% 
-      dplyr::mutate(cum_pct= cumsum(pct_counts), rank= row_number(),
-                    rank_pct= rank/expected_num_cl) %>% dplyr::ungroup()
-    
-    # additional tables
-    mark50= cdf %>% dplyr::filter(cum_pct >= 0.5) %>% dplyr::group_by(profile_id) %>% 
-      arrange(cum_pct) %>% dplyr::filter(row_number()==1) %>% ungroup() %>% 
-      dplyr::select(profile_id, rank_pct= rank_pct, num50= rank, num50_loc= rank_pct)
-    mark95= cdf %>% dplyr::group_by(profile_id) %>% 
-      dplyr::mutate(auc= sum(cum_pct*(1/expected_num_cl))) %>% # calculate AUCs
-      dplyr::filter(cum_pct >= 0.95) %>% 
-      arrange(cum_pct) %>% dplyr::filter(row_number() ==1) %>% ungroup() %>% 
-      dplyr::select(profile_id, rank_pct= rank_pct, num95= rank, num95_loc= rank_pct, auc)
-    
-    cdf_plot= cdf %>% 
-      merge(mark50, by= c('profile_id', 'rank_pct'), all.x=T) %>% 
-      merge(mark95, by= c('profile_id', 'rank_pct'), all.x= T) %>%
-      ggplot(aes(x= rank_pct, y=cum_pct)) +
-      { if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
-                                    mapping=aes(x= rank_pct, y=cum_pct, color=reorder(Name, log2_dose)), size=3) } + 
-      geom_line(color='black') +
-      # point for 50% of counts
-      geom_segment(aes(x= -Inf , y= .50, xend = num50_loc, yend = .50), color= 'black', linetype='dashed') +
-      geom_segment(aes(x= num50_loc, y= -Inf, xend = num50_loc, yend = .50), color= 'black', linetype='dashed') +
-      geom_label(aes(x=num50_loc, y= .25, label= num50), hjust= 0, color= 'black') +
-      # point for 95% of counts
-      geom_segment(aes(x= -Inf , y= .95, xend = num95_loc, yend = .95), color= 'black', linetype='dashed') +
-      geom_segment(aes(x= num95_loc, y= -Inf, xend = num95_loc, yend = .95), color= 'black', linetype='dashed') +
-      geom_label(aes(x=num95_loc, y= .75, label= num95), hjust= 0, color= 'black') +
-      # label for AUC
-      geom_label(aes(x=num95_loc, y= .25, label= paste0('AUC ', round(auc,3))), hjust= 'inward', color= 'black') +
-      facet_wrap(~profile_id) + 
-      labs(x='% rank of unique reads', y='Cumulative percentage', color= 'CBs') + theme_bw()
+    cdf_plot= create_cdf_plot(filtered_counts %>% dplyr::filter(trt_type == 'control_type'), 
+                              id_cols= id_cols, 
+                              counts_col= 'n', 
+                              mark1= 0.5, mark2= 0.95, 
+                              contains_cbs= contains_cbs, order_aucs= TRUE) +
+      labs(title= 'Cumulative reads in negative controls.')
     
     pdf(file=paste(out, "cdf_plot.pdf", sep="/"),
         width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
     print(cdf_plot)
     dev.off()
-    rm(cdf, mark50, mark95, cdf_plot)
+    rm(cdf_plot)
   }, error= function(e) {
     print(e)
     print('Encountered an error when creating the cdf plot. Skipping this output ...') 
