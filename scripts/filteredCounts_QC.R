@@ -22,12 +22,11 @@ parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="
 parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help= "Sample metadata")
-parser$add_argument("-c", "--uncollapsed_raw_counts", default="raw_counts_uncollapsed.csv",
+parser$add_argument("-c", "--raw_counts_uncollapsed", default="raw_counts_uncollapsed.csv",
                     help="path to file containing uncollapsed raw counts file")
 parser$add_argument("--raw_counts", default= "raw_counts.csv", help="path to raw counts file")
 parser$add_argument("--annotated_counts", default= "annotated_counts.csv",
                     help= "path to file containing annotated counts")
-parser$add_argument("--filtered_counts", default= "filtered_counts.csv", help= "path to filtered_counts file")
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--l2fc", default="l2fc.csv", help= "path to l2fc file")
@@ -56,10 +55,9 @@ if (args$out == ""){
 
 # Read in files and pull out parameters ----
 # Pipeline outputs
-raw_counts_uncollapsed= data.table::fread(args$uncollapsed_raw_counts, header= TRUE, sep= ',')
+raw_counts_uncollapsed= data.table::fread(args$raw_counts_uncollapsed, header= TRUE, sep= ',')
 raw_counts= data.table::fread(args$raw_counts, header= TRUE, sep= ',')
 annotated_counts= data.table::fread(args$annotated_counts, header= TRUE, sep= ',')
-filtered_counts= data.table::fread(args$filtered_counts, header= TRUE, sep= ',')
 if(file.exists(args$normalized_counts)) {
   normalized_counts= data.table::fread(args$normalized_counts, header=TRUE, sep=',', data.table=FALSE)
 } else {
@@ -93,7 +91,6 @@ print("Generating QC images ...")
 QC_images(raw_counts_uncollapsed= raw_counts_uncollapsed, 
           raw_counts= raw_counts, 
           annotated_counts= annotated_counts, 
-          filtered_counts= filtered_counts, 
           normalized_counts= normalized_counts, 
           l2fc= l2fc, 
           sample_meta= sample_meta, 

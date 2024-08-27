@@ -323,6 +323,7 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
 #' @import tidyverse
 #' @import WGCNA
 #' @import reshape2
+#' @import scales
 #' @param input_df Dataframe.
 #' @param row_id_cols Vector of column names from input_df that identifies the cell lines. For example,
 #'                    this can be "DepMap_ID", "CCLE_name" if only cell lines exist. It can also be 
@@ -452,7 +453,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @param out Path to the directory to save the QC images.
 #' @returns NA. QC images are written out to the specified folder.
 QC_images= function(raw_counts_uncollapsed, raw_counts, 
-                    annotated_counts, filtered_counts, normalized_counts= NA, l2fc, 
+                    annotated_counts, normalized_counts= NA, l2fc, 
                     sample_meta, CB_meta, cell_set_meta,
                     cell_line_cols, 
                     id_cols= c('pcr_plate', 'pcr_well'), sig_cols,
@@ -490,6 +491,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   num_cls_in_set %<>% dplyr::mutate(expected_num_cl= str_split(members, ';')) %>%
     tidyr::unnest(cols= expected_num_cl) %>% dplyr::group_by(cell_set) %>% 
     dplyr::summarize(expected_num_cl= length(unique(expected_num_cl))) %>% dplyr::ungroup()
+  
+  filtered_counts= annotated_counts %>% dplyr::filter(expected)
   #
   
   # Sequencing QCs ____________________ ----
