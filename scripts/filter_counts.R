@@ -10,7 +10,7 @@ suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 source("./src/filter_raw_reads.R")
 
-# Arguement parser ----
+# Argument parser ----
 parser <- ArgumentParser()
 # specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
