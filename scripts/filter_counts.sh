@@ -78,7 +78,6 @@ echo RAW_COUNTS is: $RAW_COUNTS
 echo CELL_LINE_META is: $CELL_LINE_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo CELL_SET_META is: $CELL_SET_META
-echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
 args=(
 -c "$RAW_COUNTS"
@@ -88,8 +87,6 @@ args=(
 --cell_set_meta "$CELL_SET_META"
 --out "$BUILD_DIR"
 --count_threshold "$COUNT_THRESHOLD"
---sequencing_index_cols "$SEQUENCING_INDEX_COLS"
---reverse_index2 "$REVERSE_INDEX2"
 --pool_id "$PULL_POOL_ID"
 --rm_data "$REMOVE_DATA"
 --assay_pool_meta "$ASSAY_POOL_META"
