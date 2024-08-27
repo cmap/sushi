@@ -1,6 +1,6 @@
 library(argparse)
 library(tidyverse)
-source("./src/join_sample_meta.R")
+source("./src/join_metadata.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
