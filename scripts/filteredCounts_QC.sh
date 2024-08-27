@@ -73,6 +73,22 @@ else
 fi
 
 #Enforces abs paths
+if [[ "$RAW_COUNTS_UNCOLLAPSED" = /* ]]
+then
+	RAW_COUNTS_UNCOLLAPSED=$(ls $RAW_COUNTS_UNCOLLAPSED)
+else
+	RAW_COUNTS_UNCOLLAPSED=$BUILD_DIR/$RAW_COUNTS_UNCOLLAPSED
+fi
+
+#Enforces abs paths
+if [[ "$L2FC" = /* ]]
+then
+	L2FC=$(ls $L2FC)
+else
+	L2FC=$BUILD_DIR/$L2FC
+fi
+
+#Enforces abs paths
 if [[ "$CONTROL_BARCODE_META" = /* ]]
 then
 	CONTROL_BARCODE_META=$(ls $CONTROL_BARCODE_META)
@@ -88,6 +104,8 @@ echo CELL_SET_META is: $CELL_SET_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
 echo COUNT_COL_NAME is: $COUNT_COL_NAME
+echo RAW_COUNTS_UNCOLLAPSED is: $RAW_COUNTS_UNCOLLAPSED
+echo L2FC is: $L2FC
 echo RAW_COUNTS is: $RAW_COUNTS
 echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
@@ -102,7 +120,9 @@ args=(
 --count_threshold "$COUNT_THRESHOLD"
 --count_col_name "$COUNT_COL_NAME"
 --control_type "$CTL_TYPES"
+--raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
 --raw_counts "$RAW_COUNTS"
+--l2fc "$L2FC"
 --id_cols "$ID_COLS"
 --reverse_index2 "$REVERSE_INDEX2"
 )
@@ -118,7 +138,9 @@ echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --count_col_name $COUNT_COL_NAME \
 --reverse_index2 $REVERSE_INDEX2 \
 --control_type $CTL_TYPES \
+--raw_counts_uncollapsed $RAW_COUNTS_UNCOLLAPSED \
 --raw_counts $RAW_COUNTS \
+--l2fc $L2FC \
 --id_cols $ID_COLS
 
 Rscript filteredCounts_QC.R "${args[@]}"
