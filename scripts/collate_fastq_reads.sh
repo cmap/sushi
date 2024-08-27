@@ -77,11 +77,14 @@ PROJECT_DIR=$(dirname "$BUILD_DIR")
 PROJECT_CODE=$(basename "$PROJECT_DIR")
 
 echo Project Code: $PROJECT_CODE
+echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
 args=(
 --sample_meta "$SAMPLE_META"
 --out "$BUILD_DIR"
 --sequencing_index_cols="$SEQUENCING_INDEX_COLS"
+--id_cols "$ID_COLS" 
+--reverse_index2 "$REVERSE_INDEX2"
 )
 
 echo Rscript collate_fastq_reads.R "${args[@]}"
