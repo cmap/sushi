@@ -74,14 +74,14 @@ def main(args):
         os.makedirs(args.out)
 
     try:
-        fstr = os.path.join(args.build_path, 'l2fc.csv')
+        fstr = os.path.join(args.build_path, 'l2fc_with_meta_columns.csv')
         fmatch = glob.glob(fstr)
         assert (len(fmatch) == 1) , "Too many files found"
         print("Reading in data")
         sample_meta = read_build_file("sample_meta.csv", args)
         level_3 = read_build_file("normalized_counts.csv", args)
-        level_4 = read_build_file("l2fc.csv", args)
-        level_5 = read_build_file("collapsed_l2fc.csv", args)
+        level_4 = read_build_file("l2fc_with_meta_columns.csv", args)
+        level_5 = read_build_file("collapsed_l2fc_with_meta_columns.csv", args)
 
     except IndexError as err:
         logger.error(err)
