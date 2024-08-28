@@ -152,7 +152,7 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
     dplyr::mutate(detect_type= case_when(.data[[value_col]] == 0 ~ 'Not detected',
                                          .data[[value_col]] <= count_threshold ~ 'Low counts',
                                          .data[[value_col]] > count_threshold ~ 'Detected')) %>%
-    dplyr::count(pick(all_of(c(id_cols, facet_col, 'detect_type', 'total_num_cls'))), name= 'num_cls_by_type') %>%
+    dplyr::count(pick(all_of(na.omit(c(id_cols, facet_col, 'detect_type', 'total_num_cls')))), name= 'num_cls_by_type') %>%
     tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
     dplyr::mutate(percent= (num_cls_by_type / total_num_cls) * 100)
   
@@ -258,7 +258,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
     # label for AUC
     #geom_label(aes(x= mark2_loc, y= 0.1, label= paste0('AUC ', round(auc, 3))), hjust= 'inward', color= 'black') +
     geom_label(. %>% dplyr::filter(!is.na(auc)), mapping= aes(label= paste0('AUC ', round(auc, 3))), 
-               x= 1, y= 0, hjust= 'inward', vjust= 'inward', color= 'black') +
+               x= 1, y= 0.25, hjust= 'inward', vjust= 'inward', color= 'black') +
     facet_wrap(~facet_name) + 
     labs(x='% rank of unique reads', y='Cumulative percentage', color= 'CBs') + theme_bw()
   
