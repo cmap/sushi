@@ -459,19 +459,22 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
                     id_cols= c('pcr_plate', 'pcr_well'), sig_cols,
                     control_type= 'negcon', count_threshold= 40, 
                     reverse_index2= FALSE, out = NA) {
-  library(tidyverse)
-  library(magrittr)
-  library(reshape2)
-  library(scales)
-  library(WGCNA)
-  
-  if(is.na(out)) {
-    out = getwd()
-  }
+  # Required packages ----
+  require(tidyverse)
+  require(magrittr)
+  require(reshape2)
+  require(scales)
+  require(WGCNA)
   
   # Some preprocessing ----
-  skipped_qcs= c() # empty vector to collect potential errors
-  num_profiles = annotated_counts %>% dplyr::distinct(pick(all_of(id_cols))) %>% nrow()
+  # Set out directory if none is specified.
+  if(is.na(out)) {out = getwd()}
+  
+  # Create empty vector to collect potential errors.
+  skipped_qcs= c() 
+  
+  # Count number of distinct profile to help scale some plots.
+  num_profiles= annotated_counts %>% dplyr::distinct(pick(all_of(id_cols))) %>% nrow()
   
   # Detect control barcodes
   cb_check= sample_meta %>%
@@ -479,31 +482,16 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   contains_cbs= ifelse(nrow(cb_check)!= 0, T, F)
   
-  # Count number of cell lines in each cell set
-  num_cls_in_set= cell_set_meta %>% dplyr::filter(cell_set %in% unique(sample_meta$cell_set))
-  # Add cell_cets that are 'missing' or are strings of LUAs
-  if(nrow(num_cls_in_set) != length(unique(sample_meta$cell_set))) {
-    sets_not_in_meta= sample_meta %>% dplyr::filter(!cell_set %in% cell_set_meta$cell_set) %>%
-      dplyr::pull(cell_set) %>% unique() %>% sort()
-    sets_to_add_df= data_frame(cell_set= sets_not_in_meta, members= sets_not_in_meta)
-    num_cls_in_set= dplyr::bind_rows(num_cls_in_set, sets_to_add_df)
-  }
-  num_cls_in_set %<>% dplyr::mutate(expected_num_cl= str_split(members, ';')) %>%
-    tidyr::unnest(cols= expected_num_cl) %>% dplyr::group_by(cell_set) %>% 
-    dplyr::summarize(expected_num_cl= length(unique(expected_num_cl))) %>% dplyr::ungroup()
-  
-  filtered_counts= annotated_counts %>% dplyr::filter(expected)
-  #
+  # Pull filtered counts from annotated counts
+  filtered_counts= annotated_counts %>% dplyr::filter(expected_read)
   
   # Sequencing QCs ____________________ ----
-  ## Purity metrics ----
-  # call this function
+  ## 1. Purity metrics ----
   print('1. Generating QC table ...')
   create_qc_table(raw_counts_uncollapsed, raw_counts, filtered_counts,
                   value_col= 'n', file_path= paste0(out, '/QC_table.csv'))
-  #
   
-  ## Index count summaries ----
+  ## 2. Index count summaries ----
   print("2. Generating index counts tables ...")
   # Check that "IndexBarcode1" and "index_1" columns are present.
   # If so, calculate index summary and write out.
@@ -530,7 +518,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     print('Column "index_2" not detected. Skipping index 2 summaries ...',  quote= FALSE)
   }
   
-  ## Total counts ----
+  ## 3. Total counts ----
   print("3. Generating total_counts image ...")
   potential_error= base::tryCatch({
     tc= create_total_counts_barplot(filtered_counts, id_cols, facet_col= 'pcr_plate')
@@ -552,7 +540,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   }
   
   # Assay QCs _________________________ ----
-  ## Cell lines recovered ----
+  ## 4. Cell lines recovered ----
   print("4. Generating cell_lines_present image ...")
   potential_error= base::tryCatch({
     cl_rec= create_recovery_barplot(filtered_counts, id_cols= id_cols, facet_col= 'pcr_plate', 
@@ -574,10 +562,10 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## Cell line contaminants ----
+  ## 5. Cell line contaminants ----
   print('5. Generating cell line contaminants ...')
   potential_error= base::tryCatch({
-    contams= annotated_counts %>% dplyr::filter(expected_read==F) %>%
+    contams= annotated_counts %>% dplyr::filter(expected_read == F) %>%
       dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
       dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
       dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
@@ -596,7 +584,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## Contaminant reads ----
+  ## 6. Contaminant reads ----
   print('6. Generating contaminant reads ...')
   potential_error= base::tryCatch({
     pcr_locations= c('pcr_plate', 'pcr_well')
@@ -666,10 +654,10 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## Cumulative counts by lines in negcons ----
+  ## 7. Cumulative counts by lines in negcons ----
   print("7. Generating cumulative image ...")
   potential_error= base::tryCatch({
-    cdf_plot= create_cdf_plot(filtered_counts %>% dplyr::filter(trt_type == 'control_type'), 
+    cdf_plot= create_cdf_plot(filtered_counts %>% dplyr::filter(trt_type == control_type), 
                               id_cols= id_cols, 
                               counts_col= 'n', 
                               mark1= 0.5, mark2= 0.95, 
@@ -692,7 +680,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## Control barcode trends ----
+  ## 8. Control barcode trends ----
   if(contains_cbs & is.data.frame(normalized_counts)) {
     print("8. Generating control_barcode_trend image")
     potential_error= base::tryCatch({
@@ -717,7 +705,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     print('8. No control barcodes detected. Skipping control_barcode_trend image.')
   }
   
-  ## Sample correlation -----
+  ## 9. Sample correlation -----
   print("9. Generating sample_cor image ...")
   potential_error= base::tryCatch({
     cor_df= filtered_counts %>% 
@@ -744,7 +732,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## Tech rep correlations ----
+  ## 10. Tech rep correlations ----
   if(is.data.frame(normalized_counts) & 'tech_rep' %in% colnames(normalized_counts)) {
     # Check if there are more at least two tech reps
     unique_tech_reps= na.omit(unique(normalized_counts$tech_rep))
@@ -798,7 +786,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     print('10. No technical replicates detected. Skipping tech_reps scatter plot.')
   }
   
-  ## Bio rep correlations ----
+  ## 11. Bio rep correlations ----
   if('bio_rep' %in% colnames(l2fc)) {
     unique_bio_reps= na.omit(unique(l2fc$bio_rep))
     
@@ -830,8 +818,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
                                         cor_method= 'pearson') 
         pdf(file=paste(out, "bio_corr_hm.pdf", sep="/"),
             width=sqrt(num_profiles), height=sqrt(num_profiles))
-        #print(bio_corr_hm)
-        #dev.off()
+        print(bio_corr_hm)
+        dev.off()
       }, error= function(e) {
         print(e)
         print('Encountered an error when creating the bio_corr_hm figure. Skipping this output ...') 
