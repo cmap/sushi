@@ -81,11 +81,11 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$L2FC" = /* ]]
+if [[ "$LFC" = /* ]]
 then
-	L2FC=$(ls $L2FC)
+	LFC=$(ls $LFC)
 else
-	L2FC=$BUILD_DIR/$L2FC
+	LFC=$BUILD_DIR/$LFC
 fi
 
 #Enforces abs paths
@@ -105,7 +105,7 @@ echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
 echo COUNT_COL_NAME is: $COUNT_COL_NAME
 echo RAW_COUNTS_UNCOLLAPSED is: $RAW_COUNTS_UNCOLLAPSED
-echo L2FC is: $L2FC
+echo LFC is: $LFC
 echo RAW_COUNTS is: $RAW_COUNTS
 echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
@@ -122,7 +122,7 @@ args=(
 --control_type "$CTL_TYPES"
 --raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
 --raw_counts "$RAW_COUNTS"
---l2fc "$L2FC"
+--lfc "$LFC"
 --id_cols "$ID_COLS"
 --reverse_index2 "$REVERSE_INDEX2"
 )
@@ -140,7 +140,7 @@ echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --control_type $CTL_TYPES \
 --raw_counts_uncollapsed $RAW_COUNTS_UNCOLLAPSED \
 --raw_counts $RAW_COUNTS \
---l2fc $L2FC \
+--lfc $LFC \
 --id_cols $ID_COLS
 
 Rscript filteredCounts_QC.R "${args[@]}"
