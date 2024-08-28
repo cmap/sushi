@@ -14,6 +14,7 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Check this to trigger the CBnormalize job.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Check this to trigger the compute_l2fc job.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
+        booleanParam(name: 'JOIN_METADATA', defaultValue: true, description: 'Check this to trigger the join_metadata job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
@@ -199,6 +200,9 @@ pipeline {
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates.sh')
+                        }
+                        if (params.JOIN_METADATA) {
+                            scriptsToRun.add('join_metadata.sh')
                         }
                         if (params.RUN_EPS_QC) {
                             scriptsToRun.add('eps_qc.sh')
