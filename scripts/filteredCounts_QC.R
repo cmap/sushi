@@ -29,7 +29,7 @@ parser$add_argument("--annotated_counts", default= "annotated_counts.csv",
                     help= "path to file containing annotated counts")
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
-parser$add_argument("--l2fc", default="l2fc.csv", help= "path to l2fc file")
+parser$add_argument("--lfc", default="l2fc.csv", help= "path to l2fc file")
 parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
 parser$add_argument("--CB_meta", default="/data/CB_meta.csv", help = "control barcode metadata")
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
@@ -63,7 +63,7 @@ if(file.exists(args$normalized_counts)) {
 } else {
   normalized_counts= NA
 }
-l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
+l2fc= data.table::fread(args$lfc, header= TRUE, sep= ',')
 
 # Metadata files
 sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',', data.table= FALSE)
