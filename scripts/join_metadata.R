@@ -7,7 +7,7 @@ parser <- ArgumentParser()
 # specify our desired options 
 parser$add_argument('--sample_meta', default= 'sample_meta.csv', help= 'Sample meta data for the sequencing run.')
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
-parser$add_argument('--l2fc', default= 'l2fc.csv', help= 'L2FC data.') # level 4
+parser$add_argument('--lfc', default= 'l2fc.csv', help= 'L2FC data.') # level 4
 parser$add_argument('--collapsed_l2fc', default= 'collapsed_l2fc.csv', help= 'Collapsed l2fc data.') # level 5
 parser$add_argument('--sig_cols', default= 'cell_set,treatment,dose,dose_unit,day', 
                     help= 'Columns that uniquely identify a condition.') 
@@ -38,8 +38,8 @@ if(file.exists(args$assay_pool_meta)) {
 }
 
 # Add sample meta and assay pool meta to l2fc table ----
-if(file.exists(args$l2fc)) {
-  l2fc= data.table::fread(args$l2fc, header= T, sep= ',')
+if(file.exists(args$lfc)) {
+  l2fc= data.table::fread(args$lfc, header= T, sep= ',')
   
   # Add sample meta columns to l2fc
   if('bio_rep' %in% colnames(sample_meta) & 'bio_rep' %in% colnames(l2fc)) {
