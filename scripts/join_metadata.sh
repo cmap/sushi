@@ -15,9 +15,15 @@ then
 
 fi
 
-if [ -z "$COLLAPSED_L2FC" ]
+if [ -z "$COLLAPSED_VALUES" ]
 then
 	echo Collapsed l2fc parameter empty
+    exit -1
+fi
+
+if [ -z "$ASSAY_POOL_META" ]
+then
+	echo ASSAY_POOL_META parameter empty
     exit -1
 fi
 
@@ -30,23 +36,33 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$COLLAPSED_L2FC" = /* ]]
+if [[ "$COLLAPSED_VALUES" = /* ]]
 then
-	COLLAPSED_L2FC=$(ls $COLLAPSED_L2FC)
+	COLLAPSED_VALUES=$(ls $COLLAPSED_VALUES)
 else
-	COLLAPSED_L2FC=$BUILD_DIR/$COLLAPSED_L2FC
+	COLLAPSED_VALUES=$BUILD_DIR/$COLLAPSED_VALUES
+fi
+
+#Enforces abs paths
+if [[ "$ASSAY_POOL_META" = /* ]]
+then
+	ASSAY_POOL_META=$(ls $ASSAY_POOL_META)
+else
+	ASSAY_POOL_META=$BUILD_DIR/$ASSAY_POOL_META
 fi
 
 echo Build dir is: $BUILD_DIR
 echo LFC is: $LFC
-echo COLLAPSED_L2FC is: $COLLAPSED_L2FC
+echo COLLAPSED_VALUES is: $COLLAPSED_VALUES
 
 echo Rscript join_metadata.R -c $LFC	\
---collapsed_l2fc $COLLAPSED_L2FC \
+--collapsed_l2fc $COLLAPSED_VALUES \
+--assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS
 
 Rscript join_metadata.R -c $LFC	\
---collapsed_l2fc $COLLAPSED_L2FC \
+--collapsed_l2fc $COLLAPSED_VALUES \
+--assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS
