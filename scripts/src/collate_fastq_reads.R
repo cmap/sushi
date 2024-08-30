@@ -141,45 +141,57 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     stop('One or more sequencing_index_cols in the sample meta is not filled out.')
   }
   
-  # Determine which flowcell names + lanes are expected ----
-  # "flowcell_names" and "flowcell_lanes" are strings that can contain more than one item.
-  # Columns can be parsed by splitting on the chars , ; :
-  # If there are multiple lane names and lane numbers, this uses the Cartesian product!
-  # Note: fread and read.csv keeps commas, read_csv DROPS commas
-  expected_flowcells= sample_meta %>% dplyr::distinct(flowcell_names, flowcell_lanes) %>%
-    dplyr::mutate(flowcell_name= base::strsplit(flowcell_names, split='[,;:]', fixed=F),
-                  flowcell_lane= base::strsplit(flowcell_lanes, split='[,;:]', fixed=F)) %>% 
-    tidyr::unnest(cols= flowcell_name) %>% tidyr::unnest(cols= flowcell_lane) %>%
-    dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
-  
-  # Print out expected flowcells from the sample meta.
-  print(paste0('Identified ', nrow(expected_flowcells), ' unique flowcell + lane combos in the sample meta ...'))
-  print(expected_flowcells)
-  
-  # Print warning if there are multiple flowcell names with multiple flowcell lanes.
-  multi_name_and_lanes= expected_flowcells %>% dplyr::filter(grepl(',:;', flowcell_names) & grepl(',:;', flowcell_names))
-  if(nrow(multi_name_and_lanes) > 0) {
-    print('WARNING: Detected sample(s) sequenced over multiple flowcells and flowcell lanes.')
-    print('The function assumes that the same lanes were used for both flowcells.')
-  }
-  
-  # Validation: Check that all expected flowcell name + lanes are detected ----
-  # Check that all expected flowcell name + lanes are present in uncollapsed raw counts.
-  detected_flowcells= uncollapsed_raw_counts %>% dplyr::distinct(flowcell_name, flowcell_lane)
-  print(paste0('Identified ', nrow(detected_flowcells), ' unique flowcell + lane combos in the uncollapsed raw counts ...'))
-  print(detected_flowcells)
-  validate_detected_flowcells(detected_flowcells, expected_flowcells)
-  
-  # Validation: Check that sequencing_index_cols uniquely identify rows of sample meta ----
-  if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
-    print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
-    stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
-  }
-  
-  # Validation: Check that id_cols uniquely identify rows of sample meta ----
-  if(!validate_unique_samples(id_cols, sample_meta)) {
-    print('There may be multiple entries in the sample meta that have the same combination of ID columns.')
-    stop('The specified ID columns do NOT uniquely identify every PCR well.')
+  # If "flowcell_name" and "flowcell_lane" are present filter for valid flowcells ----
+  # Note: Can this switch be tied to the sequencer type?
+  if(all_of(c('flowcell_name', 'flowcell_lane') %in% colnames(uncollapsed_raw_counts))) {
+    # Determine which flowcell names + lanes are expected ----
+    # "flowcell_names" and "flowcell_lanes" are strings that can contain more than one item.
+    # Columns can be parsed by splitting on the chars , ; :
+    # If there are multiple lane names and lane numbers, this uses the Cartesian product!
+    # Note: fread and read.csv keeps commas, read_csv DROPS commas
+    expected_flowcells= sample_meta %>% dplyr::distinct(flowcell_names, flowcell_lanes) %>%
+      dplyr::mutate(flowcell_name= base::strsplit(flowcell_names, split='[,;:]', fixed=F),
+                    flowcell_lane= base::strsplit(flowcell_lanes, split='[,;:]', fixed=F)) %>% 
+      tidyr::unnest(cols= flowcell_name) %>% tidyr::unnest(cols= flowcell_lane) %>%
+      dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
+    
+    # Print out expected flowcells from the sample meta.
+    print(paste0('Identified ', nrow(expected_flowcells), ' unique flowcell + lane combos in the sample meta ...'))
+    print(expected_flowcells)
+    
+    # Print warning if there are multiple flowcell names with multiple flowcell lanes.
+    multi_name_and_lanes= expected_flowcells %>% dplyr::filter(grepl(',:;', flowcell_names) & grepl(',:;', flowcell_names))
+    if(nrow(multi_name_and_lanes) > 0) {
+      print('WARNING: Detected sample(s) sequenced over multiple flowcells and flowcell lanes.')
+      print('The function assumes that the same lanes were used for both flowcells.')
+    }
+    
+    # Validation: Check that all expected flowcell name + lanes are detected ----
+    # Check that all expected flowcell name + lanes are present in uncollapsed raw counts.
+    detected_flowcells= uncollapsed_raw_counts %>% dplyr::distinct(flowcell_name, flowcell_lane)
+    print(paste0('Identified ', nrow(detected_flowcells), ' unique flowcell + lane combos in the uncollapsed raw counts ...'))
+    print(detected_flowcells)
+    validate_detected_flowcells(detected_flowcells, expected_flowcells)
+    
+    # Validation: Check that sequencing_index_cols uniquely identify rows of sample meta ----
+    if(!validate_unique_samples(sequencing_index_cols, sample_meta)) {
+      print('There may be multiple entries in the sample meta that have the same combination of sequencing index columns.')
+      stop('The specified sequencing index columns do NOT uniquely identify every PCR well.')
+    }
+    
+    # Validation: Check that id_cols uniquely identify rows of sample meta ----
+    if(!validate_unique_samples(id_cols, sample_meta)) {
+      print('There may be multiple entries in the sample meta that have the same combination of ID columns.')
+      stop('The specified ID columns do NOT uniquely identify every PCR well.')
+    }
+    
+    # Filter for expected flowcells ----
+    uncollapsed_raw_counts= uncollapsed_raw_counts %>% 
+      dplyr::inner_join(expected_flowcells, by= c('flowcell_name', 'flowcell_lane'))
+    
+  } else {
+    print('Flowcell_name and/or flowcell_lane were not detected in raw_counts_uncollapsed.')
+    print('Proceeding without flowcell filters ...')
   }
   
   # Create sequence map ----
@@ -197,8 +209,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Create raw counts file ----
   # Filter for the expected flowcells and summed up the reads over the ID cols.
   print('Summing up reads ...')
-  raw_counts= uncollapsed_raw_counts %>% 
-    dplyr::inner_join(expected_flowcells, by= c('flowcell_name', 'flowcell_lane')) %>%
+  raw_counts= uncollapsed_raw_counts %>%
     dplyr::inner_join(sequencing_map, by= sequencing_index_cols, relationship= 'many-to-one') %>%
     dplyr::group_by(pick(all_of(c(id_cols, barcode_col)))) %>% 
     dplyr::summarize(n= sum(n)) %>% dplyr::ungroup()
