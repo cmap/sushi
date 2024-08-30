@@ -43,8 +43,8 @@ if (length(norm_count_files) == 1) {
     stop(paste("There are", length(norm_count_files), "normalized count files in this directory. Please ensure there is one and try again."),
          call. = FALSE)
 }
-l2fc <-  data.table::fread(paste(base_dir,"l2fc.csv")) ## ideally filename should be passed as arguments.
-collapsed_l2fc <- data.table::fread(paste(base_dir,"collapsed_l2fc.csv")) ## ideally filename should be passed as arguments.
+l2fc <-  data.table::fread(paste0(base_dir,"l2fc.csv")) ## ideally filename should be passed as arguments.
+collapsed_l2fc <- data.table::fread(paste0(base_dir,"collapsed_l2fc.csv")) ## ideally filename should be passed as arguments.
 
 
 
