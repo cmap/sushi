@@ -14,7 +14,6 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Check this to trigger the CBnormalize job.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Check this to trigger the compute_l2fc job.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
-        booleanParam(name: 'JOIN_METADATA', defaultValue: true, description: 'Check this to trigger the join_metadata job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
         booleanParam(name: 'JOIN_METADATA', defaultValue: true, description: 'Check this to trigger the join_metadata job.')
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
