@@ -143,7 +143,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   
   # If "flowcell_name" and "flowcell_lane" are present filter for valid flowcells ----
   # Note: Can this switch be tied to the sequencer type?
-  if(all_of(c('flowcell_name', 'flowcell_lane') %in% colnames(uncollapsed_raw_counts))) {
+  if(base::all(c('flowcell_name', 'flowcell_lane') %in% colnames(uncollapsed_raw_counts))) {
     # Determine which flowcell names + lanes are expected ----
     # "flowcell_names" and "flowcell_lanes" are strings that can contain more than one item.
     # Columns can be parsed by splitting on the chars , ; :
