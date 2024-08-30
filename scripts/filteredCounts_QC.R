@@ -30,7 +30,6 @@ parser$add_argument("--annotated_counts", default= "annotated_counts.csv",
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--lfc", default="l2fc.csv", help= "path to l2fc file")
-parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help = "Sample metadata")
 parser$add_argument("--CB_meta", default="/data/CB_meta.csv", help = "control barcode metadata")
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--cell_line_cols", default= 'DepMap_ID,CCLE_name',
