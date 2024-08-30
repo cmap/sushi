@@ -78,6 +78,7 @@ echo RAW_COUNTS is: $RAW_COUNTS
 echo CELL_LINE_META is: $CELL_LINE_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo CELL_SET_META is: $CELL_SET_META
+echo ID_COLS is: $ID_COLS
 
 args=(
 -c "$RAW_COUNTS"
@@ -85,6 +86,7 @@ args=(
 --cell_line_meta "$CELL_LINE_META"
 --CB_meta "$CONTROL_BARCODE_META"
 --cell_set_meta "$CELL_SET_META"
+--id_cols "$ID_COLS"
 --out "$BUILD_DIR"
 --count_threshold "$COUNT_THRESHOLD"
 --pool_id "$PULL_POOL_ID"
