@@ -43,6 +43,10 @@ if (length(norm_count_files) == 1) {
     stop(paste("There are", length(norm_count_files), "normalized count files in this directory. Please ensure there is one and try again."),
          call. = FALSE)
 }
+l2fc <-  data.table::fread(paste(base_dir,"l2fc.csv")) ## ideally filename should be passed as arguments.
+collapsed_l2fc <- data.table::fread(paste(base_dir,"collapsed_l2fc.csv")) ## ideally filename should be passed as arguments.
+
+
 
 
 ## get negcon counts at day in QC table to pass to portal
@@ -79,11 +83,34 @@ med_cell_counts_qc <- cell_counts_negcon %>%
 ## threshold applied in raw counts where the pseudocount has not been added already, 
 ## in log2 transformed counts, the pseudocount has been added
 
-## save the output along with build name
+
+## filter out the cell lines that failed QC from LFC output
+
+collapsed_l2fc <- dplyr::left_join(collapsed_l2fc, 
+                                   med_cell_counts_qc %>% 
+                                       dplyr::select(CCLE_name, DepMap_ID, cell_set, day, pert_plate,
+                                                     pass_raw_count_qc)) %>%
+    dplyr::filter(pass_raw_count_qc==T) %>% 
+    dplyr::select(-pass_raw_count_qc)
+
+l2fc <- dplyr::left_join(l2fc, 
+                         med_cell_counts_qc %>% 
+                             dplyr::select(CCLE_name, DepMap_ID, cell_set, day, pert_plate, 
+                                           pass_raw_count_qc)) %>%
+    dplyr::filter(pass_raw_count_qc==T) %>% 
+    dplyr::select(-pass_raw_count_qc)
+
+
+
+## save the QC table output along with build name
 out_path = paste0(out_dir, "/", build_name, "_EPS_QC_TABLE.csv")
 print(paste0("Writing out EPS_QC table to ", out_path))
-write_csv(med_cell_counts_qc, out_path)
+write.csv(med_cell_counts_qc, out_path,row.names= FALSE, quote= FALSE)
 
+
+## overwrite the l2fc and collapsed_l2fc files with the filtered data
+write.csv(l2fc, paste0(base_dir, "l2fc.csv"),row.names= FALSE, quote= FALSE)
+write.csv(collapsed_l2fc, paste0(base_dir, "collapsed_l2fc.csv"), row.names= FALSE, quote= FALSE)
 
 
 
