@@ -41,7 +41,8 @@ parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day
 parser$add_argument("--control_type", default = "negcon",
                     help= "how negative control wells are distinguished in the trt_type column")
 parser$add_argument("--count_threshold", default=40, help= "Low counts threshold")
-parser$add_argument("--reverse_index2", default=FALSE, help = "Reverse index 2")
+parser$add_argument("--reverse_index2", type="logical", default=FALSE,
+                    help= "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("-o","--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
