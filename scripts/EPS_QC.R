@@ -43,8 +43,8 @@ if (length(norm_count_files) == 1) {
     stop(paste("There are", length(norm_count_files), "normalized count files in this directory. Please ensure there is one and try again."),
          call. = FALSE)
 }
-l2fc <-  data.table::fread(paste0(base_dir,"l2fc.csv")) ## ideally filename should be passed as arguments.
-collapsed_l2fc <- data.table::fread(paste0(base_dir,"collapsed_l2fc.csv")) ## ideally filename should be passed as arguments.
+l2fc <-  data.table::fread(paste0(base_dir,"/l2fc.csv")) ## ideally filename should be passed as arguments.
+collapsed_l2fc <- data.table::fread(paste0(base_dir,"/collapsed_l2fc.csv")) ## ideally filename should be passed as arguments.
 
 
 
@@ -109,8 +109,8 @@ write.csv(med_cell_counts_qc, out_path,row.names= FALSE, quote= FALSE)
 
 
 ## overwrite the l2fc and collapsed_l2fc files with the filtered data
-write.csv(l2fc, paste0(base_dir, "l2fc.csv"),row.names= FALSE, quote= FALSE)
-write.csv(collapsed_l2fc, paste0(base_dir, "collapsed_l2fc.csv"), row.names= FALSE, quote= FALSE)
+write.csv(l2fc, paste0(base_dir, "/l2fc.csv"),row.names= FALSE, quote= FALSE)
+write.csv(collapsed_l2fc, paste0(base_dir, "/collapsed_l2fc.csv"), row.names= FALSE, quote= FALSE)
 
 
 
