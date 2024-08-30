@@ -16,7 +16,7 @@ parser$add_argument("--sequencing_index_cols", default= "index_1,index_2",
                     help = "Sequencing columns in the sample meta")
 parser$add_argument("--id_cols", default= "pcr_plate,pcr_well", 
                     help = "Columns that identify a unique PCR well")
-parser$add_argument("--reverse_index2", action="store_true", default=FALSE, 
+parser$add_argument("--reverse_index2", type="logical", default=FALSE,
                     help= "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--barcode_col", default= "forward_read_cl_barcode", 
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
