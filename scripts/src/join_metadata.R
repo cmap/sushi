@@ -23,11 +23,14 @@ validate_columns_exist= function(selected_cols, df) {
 #' 
 #' Joins a given data frame with the sample meta.
 #' 
+#' @import tidyverse
 #' @param input_df Input dataframe that should contain the columns specified in the "key_cols" parameter and "cell_set".
 #' @param metadata Dataframe of the sample meta used in the run.
 #' @param key_cols Vector of column names used as identifiers in the sample meta.
 #' @returns Data frame with additional columns from the sample meta.
 join_metadata= function(input_df, metadata, key_cols) {
+  require(tidyverse)
+  
   # Validation: Check that key_cols are present in df ----
   if(validate_columns_exist(key_cols, input_df) == FALSE) {
     stop('Not all key_cols (printed above) are present in the provided dataframe.')
@@ -51,7 +54,7 @@ join_metadata= function(input_df, metadata, key_cols) {
     dplyr::select(-tidyselect::ends_with('.y'))
   
   # Validation: Check that merge did not explode ----
-  print(paste0(' Input df rows: ', nrow(input_df)))
+  print(paste0('Input df rows: ', nrow(input_df)))
   print(paste0('Output df rows: ', nrow(output_df)))
   if(nrow(input_df) < nrow(output_df)) {
     stop('Metadata join is producing more rows than expected!')

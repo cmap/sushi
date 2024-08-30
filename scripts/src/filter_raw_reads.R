@@ -119,7 +119,7 @@ filter_raw_reads = function(raw_counts,
   
   # Validation: Check that cell sets do not contain duplicate LUAs ----
   # This will produce a warning if a LUA appears in a cell set more than once!
-  # This currently does NOT result in an error. Error avoided using a distinct when creating the template
+  # This currently does NOT result in an error. Error avoided using a distinct when creating the template.
   validate_cell_set_luas(sample_meta, cell_set_meta)
   
   # Split off unmapped reads ----
@@ -191,6 +191,7 @@ filter_raw_reads = function(raw_counts,
     print('Warning: Low cell line purity!')
   }
   
+  print('Filter_raw_reads has completed!')
   return(list(unmapped_reads= unmapped_reads, 
               annotated_counts= annotated_counts, 
               filtered_counts= filtered_counts))

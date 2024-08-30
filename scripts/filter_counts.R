@@ -73,13 +73,13 @@ cell_line_meta %<>%
  # distinct() # This needs to be removed for sequencing_index_cols to work! - YL
 
 # Run filter_raw_reads -----
-print("creating filtered count file")
-filtered_counts = filter_raw_reads(raw_counts= raw_counts, sample_meta= sample_meta,
-                                   cell_line_meta= cell_line_meta,
-                                   cell_set_meta= cell_set_meta,
-                                   CB_meta= CB_meta,
-                                   id_cols= id_cols,
-                                   count_threshold= as.numeric(args$count_threshold))
+print('Calling filter_raw_reads ...')
+filtered_counts= filter_raw_reads(raw_counts= raw_counts, sample_meta= sample_meta,
+                                  cell_line_meta= cell_line_meta,
+                                  cell_set_meta= cell_set_meta,
+                                  CB_meta= CB_meta,
+                                  id_cols= id_cols,
+                                  count_threshold= as.numeric(args$count_threshold))
 
 # Pulling pool_id when db_flag and pool_id flags are passed
 if (args$pool_id) {
@@ -110,12 +110,12 @@ if(sum(cl_entries$n) == 0) {
 # Write out module outputs ----
 unmapped_reads= filtered_counts$unmapped_reads
 unmapped_out = paste(args$out, 'unmapped_reads.csv', sep='/')
-print(paste("writing unmapped reads to: ", unmapped_out))
+print(paste("Writing unmapped reads to: ", unmapped_out))
 write.csv(unmapped_reads, unmapped_out, row.names=F)
 
 annotated_counts = filtered_counts$annotated_counts
 annot_out_file = paste(args$out, 'annotated_counts.csv', sep='/')
-print(paste("writing annotated counts to: ", annot_out_file))
+print(paste("Writing annotated counts to: ", annot_out_file))
 write.csv(annotated_counts, annot_out_file, row.names=F)
 
 filtered_counts = filtered_counts$filtered_counts
@@ -139,6 +139,6 @@ if(args$rm_data == TRUE){
 }
 
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
-print(paste("writing filtered counts csv to: ", filtrc_out_file))
+print(paste("Writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
 

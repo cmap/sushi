@@ -24,8 +24,8 @@ if (args$out == "") {
 sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',')
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 
-# For assay pool meta, check if it exists. If so, then filter it for relavent cell_sets/davepool_ids
-# and select and rename some columns.
+# For assay pool meta, check if it exists. If so, then filter it for relevant cell_sets/davepool_ids
+# and select/rename some columns.
 assay_pool_meta_exists= FALSE
 if(file.exists(args$assay_pool_meta)) {
   assay_pool_meta_exists= TRUE # Update boolean

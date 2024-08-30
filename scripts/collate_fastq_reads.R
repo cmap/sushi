@@ -51,7 +51,7 @@ if(!all(id_cols %in% colnames(sample_meta))) {
              id_cols[!id_cols %in% colnames(sample_meta)]))
 }
 
-print("Collating fastq reads ...")
+print("Calling collate_fastq_reads ...")
 raw_counts= collate_fastq_reads(uncollapsed_raw_counts= raw_counts_uncollapsed, 
                                 sample_meta= sample_meta, 
                                 sequencing_index_cols= sequencing_index_cols,

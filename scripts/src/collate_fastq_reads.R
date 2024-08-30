@@ -83,6 +83,7 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #' 
 #' @param uncollapsed_raw_counts Dataframe of reads from all the fastq files with the following columns -
 #'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", "forward_read_cl_barcode", and "n".
+#'                    The flowcell columns are optional. If they do not exists, flowcell filters will be skipped.
 #' @param sample_meta Sample metadata generate for the project which may contain the following columns - 
 #'                    "flowcell_names", "flowcell_lanes", "index_1", "index_2". The sample meta MUST contain
 #'                    "flowcell_names" and "flowcell_lanes" for filtering.
@@ -141,9 +142,11 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     stop('One or more sequencing_index_cols in the sample meta is not filled out.')
   }
   
-  # If "flowcell_name" and "flowcell_lane" are present filter for valid flowcells ----
+  # If "flowcell_name" and "flowcell_lane" are present, filter for valid flowcells ----
   # Note: Can this switch be tied to the sequencer type?
   if(base::all(c('flowcell_name', 'flowcell_lane') %in% colnames(uncollapsed_raw_counts))) {
+    print('Detecting flowcells. Filtering for valid flowcells ...')
+    
     # Determine which flowcell names + lanes are expected ----
     # "flowcell_names" and "flowcell_lanes" are strings that can contain more than one item.
     # Columns can be parsed by splitting on the chars , ; :
@@ -191,7 +194,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     
   } else {
     print('Flowcell_name and/or flowcell_lane were not detected in raw_counts_uncollapsed.')
-    print('Proceeding without flowcell filters ...')
+    print('Proceeding without filtering flowcells ...')
   }
   
   # Create sequence map ----
@@ -223,6 +226,6 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     print('Warning: Low index purity!')
   } else {}
   
-  print('Done!')
+  print('Collate_fastq_reads has completed!')
   return(raw_counts)
 }

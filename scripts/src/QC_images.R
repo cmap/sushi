@@ -23,6 +23,7 @@ validate_columns_exist= function(selected_cols, df) {
 #' 
 #' Generates some simple summaries for each unique index.
 #' 
+#' @import tidyverse
 #' @param df A dataframe which must contain the column "n" which represents the count of a read.
 #' @param index_col The name of the column contain the index barcodes as a string. This column must be present in "df".
 #' @param valid_indices. A vector of all the valid indices for "index_col".
@@ -87,6 +88,7 @@ create_qc_table= function(raw_counts_uncollapsed, raw_counts, filtered_counts, v
 #' Creates the total counts barplot with bars colored by the barcode type,
 #' either a cell line barcode or control barcode.
 #'
+#' @import tidyverse
 #' @param filtered_counts Filtered counts dataframe.
 #' @param id_cols Vector of columns names that identify each sample.
 #' @param facet_col String name of the column in filtered_counts to facet the plot.
@@ -106,6 +108,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
     dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
     dplyr::summarise(total_counts= sum(n)) %>% dplyr::ungroup()
   
+  # Create total counts plot
   total_counts_plot= total_counts %>% 
     ggplot(aes(x=sample_id, y=total_counts, fill=barcode_type)) +
     geom_col(alpha=0.75, position='identity') +
@@ -125,6 +128,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
 #' the total cell line counts on teh y axis. The parameter "include_ctrl_bcs" can be used to include the control
 #' barcodes in the cell line count. 
 #' 
+#' @import tidyverse
 #' @param filtered_counts Filtered counts dataframe.
 #' @param id_cols Vector of column names that identify each sample.
 #' @param facet_col String name of the column in filtered_counts to facet the plot.
@@ -184,6 +188,7 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
 #' 
 #' Creates a line plot of the cumulative reads.
 #' 
+#' @import tidyverse
 #' @param input_df Input dataframe. Usually is the filtered_counts dataframe.
 #' @param id_cols Vector of column names that identify every PCR well.
 #' @param counts_col Name of the column that contains the values. Defaults to "n".
@@ -244,8 +249,8 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
   output_plot= data_for_plot %>%
     ggplot(aes(x= rank_pct, y=cum_pct)) +
     # Color control barcodes if specified
-    { if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
-                                  mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, log2_dose)), size= 2) } + 
+    {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
+                                 mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, log2_dose)), size= 2)} + 
     geom_line(color='black') +
     # point for mark1 of counts
     geom_segment(aes(x= -Inf , y= mark1, xend= mark1_loc, yend = mark1), color= 'black', linetype= 2) +
@@ -269,6 +274,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
 #' 
 #' Creates a scatter plot of the control barcodes.
 #' 
+#' @import tidyverse
 #' @param normalized_counts Dataframe output from the normalize module.
 #' @param id_cols Vector of column names that identify every PCR well.
 #' @param value_col Name of the column that contains the values.
@@ -376,6 +382,8 @@ create_cor_heatmap= function(input_df, row_id_cols, col_id_cols, value_col,
 #' 
 #' From a long table, creates scatter plots to two replicates.
 #' 
+#' @import tidyverse
+#' @import ggmisc
 #' @param input_df Dataframe.
 #' @param cell_line_cols List of column names used to identify each cell line or control barcode.
 #' @param replicate_group_cols List of column names that describe a group of similar conditions.
@@ -441,8 +449,6 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @param normalized_counts Normalized counts dataframe from the normalize module. This is an optional parameter.
 #' @param l2fc L2FC dataframe from the compute_l2fc module. This is used for the bio_reps plot. 
 #' @param sample_meta Dataframe of the sample metadata for the sequencing run.
-#' @param CB_meta Dataframe of the control barcode metadata. This is only used for the CDF plot.
-#' @param cell_set_meta Dataframe of the cell set metadata. This is only used for the CDF plot.
 #' @param cell_line_cols Vector of sample meta column names used to describe a cell line or barcode.
 #' @param id_cols Vector of sample meta column names used to identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
@@ -454,7 +460,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @returns NA. QC images are written out to the specified folder.
 QC_images= function(raw_counts_uncollapsed, raw_counts, 
                     annotated_counts, normalized_counts= NA, l2fc, 
-                    sample_meta, CB_meta, cell_set_meta,
+                    sample_meta,
                     cell_line_cols, 
                     id_cols= c('pcr_plate', 'pcr_well'), sig_cols,
                     control_type= 'negcon', count_threshold= 40, 
@@ -463,8 +469,9 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   require(tidyverse)
   require(magrittr)
   require(reshape2)
-  require(scales)
   require(WGCNA)
+  require(scales)
+  require(ggmisc)
   
   # Some preprocessing ----
   # Set out directory if none is specified.
@@ -480,7 +487,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   cb_check= sample_meta %>%
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
-  contains_cbs= ifelse(nrow(cb_check)!= 0, T, F)
+  contains_cbs= ifelse(nrow(cb_check)!= 0, TRUE, FALSE)
   
   # Pull filtered counts from annotated counts
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read)
@@ -684,7 +691,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   if(contains_cbs & is.data.frame(normalized_counts)) {
     print("8. Generating control_barcode_trend image")
     potential_error= base::tryCatch({
-      trend_sc= create_ctrlBC_scatterplots(normalized_counts, id_cols, value_col= 'log2_n')
+      trend_sc= create_ctrlBC_scatterplots(normalized_counts %>% dplyr::filter(control_barcodes %in% c("Y", "T", T)), 
+                                           id_cols, value_col= 'log2_n')
       
       pdf(file=paste(out, "control_barcode_trend.pdf", sep="/"),
           width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
@@ -837,7 +845,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   }
   
   # End _________________________ ----
-  print('QC finishing')
+  print('QCs finishing!')
   if(length(na.omit(skipped_qcs)) != 0) {
     print(paste0('WARNING: The following ', length(skipped_qcs), ' QCs encountered errors and were skipped - '))
     print(na.omit(skipped_qcs))

@@ -1,18 +1,14 @@
 options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
-suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-suppressPackageStartupMessages(library(tidyr))
 suppressPackageStartupMessages(library(reshape2))
-suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(grDevices))
-suppressPackageStartupMessages(library(ggplot2))
-suppressPackageStartupMessages(library(ggpubr))
+suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
-suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add fit line and labels
-suppressPackageStartupMessages(library(WGCNA))
+suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add linear fit labels
+suppressPackageStartupMessages(library(WGCNA)) # for faster correlations
 source("/workspace/scripts/src/QC_images.R")
 
 # Argument parser ----
@@ -30,8 +26,6 @@ parser$add_argument("--annotated_counts", default= "annotated_counts.csv",
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--lfc", default="l2fc.csv", help= "path to l2fc file")
-parser$add_argument("--CB_meta", default="/data/CB_meta.csv", help = "control barcode metadata")
-parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help = "Cell set metadata")
 parser$add_argument("--cell_line_cols", default= 'DepMap_ID,CCLE_name',
                     help= "Columns that identify cell lines or barcodes")
 parser$add_argument("--id_cols", default= 'pcr_plate,pcr_well',
@@ -54,6 +48,8 @@ if (args$out == ""){
 }
 
 # Read in files and pull out parameters ----
+sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
+
 # Pipeline outputs
 raw_counts_uncollapsed= data.table::fread(args$raw_counts_uncollapsed, header= TRUE, sep= ',')
 raw_counts= data.table::fread(args$raw_counts, header= TRUE, sep= ',')
@@ -65,37 +61,22 @@ if(file.exists(args$normalized_counts)) {
 }
 l2fc= data.table::fread(args$lfc, header= TRUE, sep= ',')
 
-# Metadata files
-sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',', data.table= FALSE)
-CB_meta= data.table::fread(args$CB_meta, header=TRUE, sep=',', data.table=FALSE)
-cell_set_meta = data.table::fread(args$cell_set_meta, header=TRUE, sep=',', data.table=FALSE)
-
 # Parameters
 cell_line_cols = unlist(strsplit(args$cell_line_cols, ","))
 id_cols= unlist(strsplit(args$id_cols, ","))
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 control_type = args$control_type
 count_threshold= as.numeric(args$count_threshold)
+#
 
-# # If flag passed, use cell_set_meta file generated for the project via CellDB
-# if (args$db_flag) {
-#   print("Calling cell_set_meta generated using CellDB")
-#   cell_set_meta = read.csv("cell_set_meta.csv")
-#   # Otherwise, use static file
-# } else {
-#   print("Using static cell set metadata file to locate cell information.")
-#   cell_set_meta = read.csv(args$cell_set_meta)
-# }
-
-print("Generating QC images ...")
+# Call QC images function ----
+print("Calling QC images ...")
 QC_images(raw_counts_uncollapsed= raw_counts_uncollapsed, 
           raw_counts= raw_counts, 
           annotated_counts= annotated_counts, 
           normalized_counts= normalized_counts, 
           l2fc= l2fc, 
-          sample_meta= sample_meta, 
-          CB_meta= CB_meta, 
-          cell_set_meta= cell_set_meta,
+          sample_meta= sample_meta,
           cell_line_cols= c('DepMap_ID', 'CCLE_name'), 
           id_cols= id_cols, 
           sig_cols= sig_cols,
