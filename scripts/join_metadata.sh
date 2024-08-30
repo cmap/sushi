@@ -51,18 +51,29 @@ else
 	ASSAY_POOL_META=$BUILD_DIR/$ASSAY_POOL_META
 fi
 
+#Enforces abs paths
+if [[ "$SAMPLE_META" = /* ]]
+then
+	SAMPLE_META=$(ls $SAMPLE_META)
+else
+	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
+fi
+
 echo Build dir is: $BUILD_DIR
 echo LFC is: $LFC
 echo COLLAPSED_VALUES is: $COLLAPSED_VALUES
+echo SAMPLE_META is: $SAMPLE_META
 
 echo Rscript join_metadata.R -c $LFC	\
 --collapsed_l2fc $COLLAPSED_VALUES \
 --assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
---sig_cols $SIG_COLS
+--sig_cols $SIG_COLS \
+--sample_meta $SAMPLE_META
 
 Rscript join_metadata.R -c $LFC	\
 --collapsed_l2fc $COLLAPSED_VALUES \
 --assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
---sig_cols $SIG_COLS
+--sig_cols $SIG_COLS \
+--sample_meta $SAMPLE_META
