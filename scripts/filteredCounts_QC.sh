@@ -103,7 +103,6 @@ echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
 echo CELL_SET_META is: $CELL_SET_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
-echo COUNT_COL_NAME is: $COUNT_COL_NAME
 echo RAW_COUNTS_UNCOLLAPSED is: $RAW_COUNTS_UNCOLLAPSED
 echo LFC is: $LFC
 echo RAW_COUNTS is: $RAW_COUNTS
@@ -118,7 +117,6 @@ args=(
 --CB_meta "$CONTROL_BARCODE_META"
 --out "$BUILD_DIR"
 --count_threshold "$COUNT_THRESHOLD"
---count_col_name "$COUNT_COL_NAME"
 --control_type "$CTL_TYPES"
 --raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
 --raw_counts "$RAW_COUNTS"
@@ -135,7 +133,6 @@ echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --sig_cols $SIG_COLS \
 --out $BUILD_DIR \
 --count_threshold $COUNT_THRESHOLD \
---count_col_name $COUNT_COL_NAME \
 --reverse_index2 $REVERSE_INDEX2 \
 --control_type $CTL_TYPES \
 --raw_counts_uncollapsed $RAW_COUNTS_UNCOLLAPSED \
