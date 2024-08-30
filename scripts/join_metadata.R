@@ -39,6 +39,7 @@ if(file.exists(args$assay_pool_meta)) {
 
 # Add sample meta and assay pool meta to l2fc table ----
 if(file.exists(args$lfc)) {
+  print('Attempting to add sample_meta to l2fc file.')
   l2fc= data.table::fread(args$lfc, header= T, sep= ',')
   
   # Add sample meta columns to l2fc
@@ -51,6 +52,7 @@ if(file.exists(args$lfc)) {
   l2fc_with_meta_columns= join_metadata(input_df= l2fc, metadata= sample_meta, key_cols= input_cols)
   
   # Add assay pool meta columns to l2fc
+  print('Attempting to add assay_pool_meta to l2fc file.')
   if(assay_pool_meta_exists) {
     l2fc_with_meta_columns= join_metadata(input_df= l2fc_with_meta_columns, 
                                           metadata= input_assay_pool_meta,
@@ -69,6 +71,7 @@ if(file.exists(args$lfc)) {
 
 # Add sample meta and assay pool meta to collapsed_l2fc table ----
 if(file.exists(args$collapsed_l2fc)) {
+  print('Attempting to add sample_meta to collapsed l2fc.')
   collapsed_l2fc= data.table::fread(args$collapsed_l2fc, header= T, sep= ',')
   
   # Add sample meta columns to collapsed l2fc
@@ -77,6 +80,7 @@ if(file.exists(args$collapsed_l2fc)) {
   
   # Add assay pool meta columns to collapsed l2fc
   if(assay_pool_meta_exists) {
+    print('Attempting to add assay_pool_meta to collapsed l2fc.')
     collapsed_l2fc_with_meta_columns= join_metadata(input_df= collapsed_l2fc_with_meta_columns, 
                                                     metadata= input_assay_pool_meta,
                                                     key_cols= c('DepMap_ID', 'CCLE_name', 'cell_set'))
@@ -87,7 +91,7 @@ if(file.exists(args$collapsed_l2fc)) {
   # Write out
   outpath= paste(args$out, 'collapsed_l2fc_with_meta_columns.csv', sep='/')
   print(paste("Writing collapsed_l2fc_with_meta_columns.csv to ", outpath))
-  write.csv(collapsed_l2fc_with_meta_columns.csv, outpath, row.names= FALSE, quote= FALSE)
+  write.csv(collapsed_l2fc_with_meta_columns, outpath, row.names= FALSE, quote= FALSE)
 } else {
   print('WARNING: collapsed_l2fc.csv does not exist. Skipping this file.')
 }
