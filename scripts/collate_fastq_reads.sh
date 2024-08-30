@@ -64,11 +64,19 @@ then
 fi
 
 #Enforces abs paths
+if [[ "$RAW_COUNTS_UNCOLLAPSED" = /* ]]
+then
+	RAW_COUNTS_UNCOLLAPSED=$(ls $RAW_COUNTS_UNCOLLAPSED)
+else
+	RAW_COUNTS_UNCOLLAPSED=$BUILD_DIR/$RAW_COUNTS_UNCOLLAPSED
+fi
+
+#Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
 then
-	SAMPLE_META=$(ls $SAMPLE_META)
+  SAMPLE_META=$(ls $SAMPLE_META)
 else
-	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
+  SAMPLE_META=$BUILD_DIR/$SAMPLE_META
 fi
 
 echo Build dir is: $BUILD_DIR
@@ -80,6 +88,7 @@ echo Project Code: $PROJECT_CODE
 echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
 args=(
+--raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
 --sample_meta "$SAMPLE_META"
 --out "$BUILD_DIR"
 --sequencing_index_cols="$SEQUENCING_INDEX_COLS"
