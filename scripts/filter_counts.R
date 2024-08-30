@@ -20,7 +20,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument("-c", "--raw_counts", default="raw_counts.csv", help = "path to file containing raw counts")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
-parser$add_argument("--sample_meta", default="sample_meta.csv", help= "Sample metadata")
+parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help= "Sample metadata")
 parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help= "Cell Line metadata")
 parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help= "Cell set metadata")
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
