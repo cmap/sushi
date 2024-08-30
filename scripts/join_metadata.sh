@@ -8,7 +8,7 @@ then
     exit -1
 fi
 
-if [ -z "$L2FC" ]
+if [ -z "$LFC" ]
 then
 	echo LFC parameter empty
     exit -1
@@ -64,14 +64,14 @@ echo LFC is: $LFC
 echo COLLAPSED_VALUES is: $COLLAPSED_VALUES
 echo SAMPLE_META is: $SAMPLE_META
 
-echo Rscript join_metadata.R -c $LFC	\
+echo Rscript join_metadata.R --lfc $LFC	\
 --collapsed_l2fc $COLLAPSED_VALUES \
 --assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
 --sample_meta $SAMPLE_META
 
-Rscript join_metadata.R -c $LFC	\
+Rscript join_metadata.R --lfc $LFC	\
 --collapsed_l2fc $COLLAPSED_VALUES \
 --assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
