@@ -10,11 +10,11 @@ pipeline {
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
-        booleanParam(name: 'FILTER_COUNTS_QC', defaultValue: true, description: 'Check this to trigger the filteredCounts_QC job.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Check this to trigger the CBnormalize job.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Check this to trigger the compute_l2fc job.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
+        booleanParam(name: 'FILTER_COUNTS_QC', defaultValue: true, description: 'Check this to trigger the filteredCounts_QC job.')
         booleanParam(name: 'JOIN_METADATA', defaultValue: true, description: 'Check this to trigger the join_metadata job.')
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
@@ -189,9 +189,6 @@ pipeline {
                         if (params.FILTER_COUNTS) {
                             scriptsToRun.add('filter_counts.sh')
                         }
-                        if (params.FILTER_COUNTS_QC) {
-                            scriptsToRun.add('filteredCounts_QC.sh')
-                        }
                         if (params.CBNORMALIZE) {
                             scriptsToRun.add('CBnormalize.sh')
                         }
@@ -200,6 +197,9 @@ pipeline {
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates.sh')
+                        }
+                        if (params.FILTER_COUNTS_QC) {
+                            scriptsToRun.add('filteredCounts_QC.sh')
                         }
                         if (params.JOIN_METADATA) {
                             scriptsToRun.add('join_metadata.sh')
