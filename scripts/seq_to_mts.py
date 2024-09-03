@@ -7,6 +7,8 @@ import logging
 import json
 import gzip
 import shutil
+import boto3
+from botocore.exceptions import NoCredentialsError
 
 logger = logging.getLogger('seq_to_mts')
 pert_vehicle = "DMSO"
@@ -27,6 +29,7 @@ def build_parser():
     parser.add_argument('--build_name', '-n', help='Build name.', required=True)
     parser.add_argument('--days', '-d', help='Day timepoints to drop from output data separated by commas.')
     parser.add_argument('--config', '-c', help='Config file for project.', required=True, default='config.json')
+    parser.add_argument('--api_key', '-a', help='API Key for S3 access', required=True)
     return parser
 
 
@@ -75,6 +78,24 @@ def gzip_file(input_file):
         with gzip.open(input_file + '.gz', 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     os.remove(input_file)  # Remove the original file after gzipping
+
+
+def sync_to_s3(local_dir, s3_bucket, s3_prefix, api_key):
+    """Sync the local directory to S3."""
+    s3 = boto3.client('s3', aws_access_key_id=api_key)
+
+    for root, dirs, files in os.walk(local_dir):
+        for file in files:
+            local_path = os.path.join(root, file)
+            relative_path = os.path.relpath(local_path, local_dir)
+            s3_path = os.path.join(s3_prefix, relative_path)
+
+            try:
+                s3.upload_file(local_path, s3_bucket, s3_path)
+                logger.info(f"Uploaded {local_path} to s3://{s3_bucket}/{s3_path}")
+            except NoCredentialsError:
+                logger.error("AWS credentials not found.")
+                raise
 
 
 def main(args):
@@ -229,6 +250,10 @@ def main(args):
             shutil.copy(eps_qc_file, output_eps_qc_file)
             gzip_file(output_eps_qc_file)
 
+    # Sync the directory to S3
+    s3_bucket = "macchiato.clue.io"
+    s3_prefix = f"builds/{args.build_name}/build/"
+    sync_to_s3(args.out, s3_bucket, s3_prefix, args.api_key)
 
 if __name__ == "__main__":
     args = build_parser().parse_args(sys.argv[1:])
