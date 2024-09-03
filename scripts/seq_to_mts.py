@@ -29,7 +29,6 @@ def build_parser():
     parser.add_argument('--build_name', '-n', help='Build name.', required=True)
     parser.add_argument('--days', '-d', help='Day timepoints to drop from output data separated by commas.')
     parser.add_argument('--config', '-c', help='Config file for project.', required=True, default='config.json')
-    parser.add_argument('--api_key', '-a', help='API Key for S3 access', required=True)
     return parser
 
 
