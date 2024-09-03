@@ -5,6 +5,8 @@ import sys
 import glob
 import logging
 import json
+import gzip
+import shutil
 
 logger = logging.getLogger('seq_to_mts')
 pert_vehicle = "DMSO"
@@ -65,6 +67,14 @@ def create_profile_id_column(df, config):
     df['profile_id'] = df[sig_cols].astype(str).agg(':'.join, axis=1)
 
     return df
+
+
+def gzip_file(input_file):
+    """Gzip a file in place."""
+    with open(input_file, 'rb') as f_in:
+        with gzip.open(input_file + '.gz', 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    os.remove(input_file)  # Remove the original file after gzipping
 
 
 def main(args):
@@ -196,15 +206,28 @@ def main(args):
     # Writing out project key
     project_key = write_key(level_3)
 
-
     # Saving modified data
-    # Add number of cell lines and unique pert_plate/well combinations
-    level_3.to_csv(args.out + "/" + project + "_inst_info.txt", sep="\t", index=None)
-    level_3.to_csv(args.out + "/" + project + "_LEVEL3_NORMALIZED_COUNTS.csv", index=0)
-    level_4.to_csv(args.out + "/" + project + "_LEVEL4_LFC.csv", index=0)
-    level_5.to_csv(args.out + "/" + project + "_LEVEL5_LFC.csv", index=0)
-    project_key.to_csv(args.out + "/" + project + "_compound_key.csv", index=False)
-    return level_3, project_key, level_4, level_5
+    output_files = {
+        project + "_inst_info.txt": level_3,
+        project + "_LEVEL3_NORMALIZED_COUNTS.csv": level_3,
+        project + "_LEVEL4_LFC.csv": level_4,
+        project + "_LEVEL5_LFC.csv": level_5,
+        project + "_compound_key.csv": project_key,
+    }
+
+    for file_name, df in output_files.items():
+        output_path = os.path.join(args.out, file_name)
+        df.to_csv(output_path, index=False)
+        gzip_file(output_path)
+
+    # Check for *_EPS_QC_TABLE.csv file and gzip if it exists
+    eps_qc_file_pattern = os.path.join(args.build_path, "*_EPS_QC_TABLE.csv")
+    eps_qc_files = glob.glob(eps_qc_file_pattern)
+    if eps_qc_files:
+        for eps_qc_file in eps_qc_files:
+            output_eps_qc_file = os.path.join(args.out, os.path.basename(eps_qc_file))
+            shutil.copy(eps_qc_file, output_eps_qc_file)
+            gzip_file(output_eps_qc_file)
 
 
 if __name__ == "__main__":
