@@ -79,9 +79,9 @@ def gzip_file(input_file):
     os.remove(input_file)  # Remove the original file after gzipping
 
 
-def sync_to_s3(local_dir, s3_bucket, s3_prefix, api_key):
+def sync_to_s3(local_dir, s3_bucket, s3_prefix):
     """Sync the local directory to S3."""
-    s3 = boto3.client('s3', aws_access_key_id=api_key)
+    s3 = boto3.client('s3')
 
     for root, dirs, files in os.walk(local_dir):
         for file in files:
@@ -252,7 +252,7 @@ def main(args):
     # Sync the directory to S3
     s3_bucket = "macchiato.clue.io"
     s3_prefix = f"builds/{args.build_name}/build/"
-    sync_to_s3(args.out, s3_bucket, s3_prefix, args.api_key)
+    sync_to_s3(args.out, s3_bucket, s3_prefix)
 
 if __name__ == "__main__":
     args = build_parser().parse_args(sys.argv[1:])
