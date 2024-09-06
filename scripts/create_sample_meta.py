@@ -6,10 +6,7 @@ import os
 
 def fetch_data(screen, api_key):
     url = f"https://api.clue.io/api/v_eps_metadata?filter=%7B%22where%22%3A%7B%22project_code%22%3A%22{screen}%22%7D%7D"
-    headers = {
-        'Accept': 'application/json',
-        'user_key': api_key
-    }
+    headers = {"Accept": "application/json", "user_key": api_key}
 
     response = requests.get(url, headers=headers)
 
@@ -28,7 +25,7 @@ def save_dataframe(df, build_dir):
     os.makedirs(build_dir, exist_ok=True)
 
     # Define the file path
-    file_path = os.path.join(build_dir, 'sample_meta.csv')
+    file_path = os.path.join(build_dir, "sample_meta.csv")
 
     # Write the DataFrame to a CSV file
     df.to_csv(file_path, index=False)
@@ -36,19 +33,27 @@ def save_dataframe(df, build_dir):
 
 
 def rename_columns(df):
-    rename_map = {
-        'index1': 'index_1',
-        'index2': 'index_2',
-        'pert_id': 'compound_id'
-    }
+    rename_map = {"index1": "index_1", "index2": "index_2", "pert_id": "compound_id"}
     return df.rename(columns=rename_map)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Fetch data from API and save to a CSV file.")
-    parser.add_argument('--screen', '-s', type=str, required=True, help='Screen code to query the API')
-    parser.add_argument('--api_key', '-k', type=str, required=True, help='API key for authentication')
-    parser.add_argument('--build_dir', '-b', type=str, required=True, help='Directory to save the CSV file')
+    parser = argparse.ArgumentParser(
+        description="Fetch data from API and save to a CSV file."
+    )
+    parser.add_argument(
+        "--screen", "-s", type=str, required=True, help="Screen code to query the API"
+    )
+    parser.add_argument(
+        "--api_key", "-k", type=str, required=True, help="API key for authentication"
+    )
+    parser.add_argument(
+        "--build_dir",
+        "-b",
+        type=str,
+        required=True,
+        help="Directory to save the CSV file",
+    )
 
     args = parser.parse_args()
     screen = args.screen
