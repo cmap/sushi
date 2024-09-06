@@ -97,6 +97,22 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix):
                 raise
 
 
+def remove_invalid_pert_ids(df):
+    """
+    Removes rows where 'pert_id' is either NaN or 'NONE'.
+
+    Parameters:
+    df (pd.DataFrame): Input dataframe containing a 'pert_id' column.
+
+    Returns:
+    pd.DataFrame: Dataframe with invalid 'pert_id' rows removed.
+    """
+    # Drop rows where 'pert_id' is NaN or 'NONE'
+    clean_df = df[~df['pert_id'].isna() & (df['pert_id'] != 'NONE')]
+
+    return clean_df
+
+
 def main(args):
     if os.path.isdir(args.out):
         pass
@@ -186,6 +202,12 @@ def main(args):
 
     level_5 = level_5.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
                                 pert_id = level_5["pert_iname"].str.upper())
+
+    # Remove invalid 'pert_id' rows, currently 'NONE' and NaN
+    sample_meta = remove_invalid_pert_ids(sample_meta)
+    level_3 = remove_invalid_pert_ids(level_3)
+    level_4 = remove_invalid_pert_ids(level_4)
+    level_5 = remove_invalid_pert_ids(level_5)
 
     # Adding itime/time and idose
     sample_meta["pert_itime"] = sample_meta["pert_time"].astype(str) + " " + sample_meta["pert_time_unit"]
