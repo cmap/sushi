@@ -113,8 +113,6 @@ args=(
 --annotated_counts "$ANNOTATED_COUNTS"
 --normalized_counts "$NORMALIZED_COUNTS"
 --sig_cols "$SIG_COLS"
---cell_set_meta "$CELL_SET_META"
---CB_meta "$CONTROL_BARCODE_META"
 --out "$BUILD_DIR"
 --count_threshold "$COUNT_THRESHOLD"
 --control_type "$CTL_TYPES"
@@ -128,8 +126,6 @@ args=(
 echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
 --annotated_counts $ANNOTATED_COUNTS \
 --normalized_counts $NORMALIZED_COUNTS \
---cell_set_meta $CELL_SET_META \
---CB_meta $CONTROL_BARCODE_META \
 --sig_cols $SIG_COLS \
 --out $BUILD_DIR \
 --count_threshold $COUNT_THRESHOLD \
