@@ -122,7 +122,7 @@ def main(args):
     try:
         fstr = os.path.join(args.build_path, 'l2fc.csv')
         fmatch = glob.glob(fstr)
-        assert (len(fmatch) == 1) , "Too many files found"
+        assert (len(fmatch) > 2) , "Too many files found"
         print("Reading in data")
         sample_meta = read_build_file("sample_meta.csv", args)
         level_3 = read_build_file("normalized_counts.csv", args)
