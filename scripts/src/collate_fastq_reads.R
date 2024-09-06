@@ -214,7 +214,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   print('Summing up reads ...')
   raw_counts= uncollapsed_raw_counts %>%
     dplyr::inner_join(sequencing_map, by= sequencing_index_cols, relationship= 'many-to-one') %>%
-    dplyr::group_by(pick(all_of(c(id_cols, barcode_col)))) %>% 
+    dplyr::group_by(pick(all_of(c(id_cols, barcode_col)))) %>%
     dplyr::summarize(n= sum(n)) %>% dplyr::ungroup()
   
   # Calculate index purity ----
