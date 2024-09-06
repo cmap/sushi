@@ -1,7 +1,7 @@
 options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
-source("/workspace/scripts/src/normalize.R")
+source("./src/normalize.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
@@ -14,7 +14,7 @@ parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing filtered counts")
 parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
                     help = "Columns to identify each PCR well")
-parser$add_argument("--CB_meta", default="../metadata/CB_meta.csv", help= "Control Barcode metadata")
+parser$add_argument("--CB_meta", default="CB_meta.csv", help= "Control Barcode metadata")
 parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults to working directory")
 parser$add_argument("--pseudocount", default=20, help = "pseudocount for normalization")
 parser$add_argument("--control_type", default = "negcon", 

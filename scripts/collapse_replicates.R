@@ -4,7 +4,7 @@ library(magrittr)
 library(tidyverse)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(magrittr))
-source("/workspace/scripts/src/collapse_bio_reps.R")
+source("./src/collapse_bio_reps.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

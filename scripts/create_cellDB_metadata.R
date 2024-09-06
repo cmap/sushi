@@ -58,7 +58,12 @@ cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_
 cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
 assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
 assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
-control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, filter = list(where = list(set = cb_ladder), fields = c("sequence", "name", "log_dose")))
+if (cb_ladder != "cb_custom.csv"){
+  control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, filter = list(where = list(set = cb_ladder), fields = c("sequence", "name", "log_dose")))
+} else {
+  file_path <- file.path(args$out, cb_ladder)
+  control_bc_df <- read.csv(file_path)
+}
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
 cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence', 'LUA')
@@ -69,10 +74,11 @@ cell_line_meta <- cell_lines_df %>%
          "CCLE_name" = "ccle_name") %>% dplyr::select(any_of(c(cell_line_cols)))
 
 # Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
-if (nrow(control_bc_df) > 0) {
+if (nrow(control_bc_df) > 0 & cb_ladder != "cb_custom.csv") {
   CB_meta <- control_bc_df %>% rename("Sequence" = "sequence", "Name" = "name")
 } else {
-  print(paste("Since the cb_ladder selected was '", cb_ladder, "', no CB_meta.csv file will be outputted."))
+  print(paste("Since the cb_ladder selected was '", cb_ladder, "', no renaming is necessary."))
+  CB_meta <- control_bc_df
 }
 
 cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta)
