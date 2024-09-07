@@ -69,12 +69,11 @@ validate_required_cols = function(df, required_columns){
   }
 }
 
-remove_data_from_filter_counts = function(filtered_counts, outpath) {
+remove_data_from_filter_counts = function(filtered_counts, data_to_remove) {
   # Remove data if needed
-  print('rm_data is TRUE, removing supplied data.')
-  data_to_remove <- read.csv(paste(outpath, 'data_to_remove.csv', sep='/'))
-  print('Data to remove:')
-  print(head(data_to_remove))
+  #print('rm_data is TRUE, removing supplied data.')
+  #print('Data to remove:')
+  #print(head(data_to_remove))
   filt_rm <- remove_data(filtered_counts, data_to_remove)
   return(filt_rm)
 }
@@ -211,7 +210,8 @@ main = function() {
   print(paste("rm_data:", args$rm_data))
   if(args$rm_data == TRUE){
     filtered_counts$filtered_counts_original <- filtered_counts$filtered_counts
-    filtered_counts$filtered_counts = remove_data_from_filter_counts(filtered_counts$filtered_counts, args$out)
+    data_to_remove <- read.csv(paste(args$out, 'data_to_remove.csv', sep='/'))
+    filtered_counts$filtered_counts = remove_data_from_filter_counts(filtered_counts$filtered_counts,data_to_remove)
     
     # re-point to what filtered_counts should be
     filtered_counts <- filt_rm
