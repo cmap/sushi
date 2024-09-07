@@ -63,7 +63,7 @@ merge_pool_info = function(df, assay_pool_meta, unique_cell_sets){
 }
 
 validate_required_cols = function(df, required_columns){
-  intersect(colnames(df), required_columns)
+
   if (length(intersect(colnames(df), required_columns)) != length(required_columns)){
     stop(paste("Required columns:", required_columns, "are not present in the provided dataframe."))
   }
@@ -106,11 +106,22 @@ write_results_to_csv = function(results, outpath) {
     write.csv(results$filtered_counts_original, paste(outpath, 'filtered_counts_original.csv', sep='/'), row.names=F, quote=F)
   }
 }
+readFiles = function(args){
+  cell_set_meta= data.table::fread(args$cell_set_meta, header= T, sep= ',', data.table= F)
+  cell_line_meta= data.table::fread(args$cell_line_meta, header= T, sep= ',', data.table= F)
+  CB_meta= data.table::fread(args$CB_meta, header= T, sep= ',', data.table= F)
+  sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
+  raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
 
-main = function() {
-  # Arguement parser ----
-  parser <- ArgumentParser()
-  # specify desired options
+  //IS THIS CORRECT
+  ds <- data.frame(cell_set_meta, cell_line_meta,CB_meta,sample_meta,raw_counts)
+
+  return ds
+  
+}
+parseArgs = function(){
+   parser <- ArgumentParser()
+    # specify desired options
   parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
                       help="Print extra output [default]")
   parser$add_argument("-q", "--quietly", action="store_false",
@@ -134,7 +145,12 @@ main = function() {
                       help = "negative control wells in trt_type column in sample metadata")
   
   # get command line options, if help option encountered print help and exit
-  args <- parser$parse_args()
+  return parser$parse_args()
+}
+main = function() {
+  
+  # get command line options, if help option encountered print help and exit
+  args <- parseArgs()
   
   # set output to working directory if none is specified
   if (args$out == ""){
@@ -143,12 +159,19 @@ main = function() {
   #print_args(args)
   
   # Read in files and set up parameters ----
-  cell_set_meta= data.table::fread(args$cell_set_meta, header= T, sep= ',', data.table= F)
-  cell_line_meta= data.table::fread(args$cell_line_meta, header= T, sep= ',', data.table= F)
-  CB_meta= data.table::fread(args$CB_meta, header= T, sep= ',', data.table= F)
-  sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
-  raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
-  
+  #cell_set_meta= data.table::fread(args$cell_set_meta, header= T, sep= ',', data.table= F)
+  #cell_line_meta= data.table::fread(args$cell_line_meta, header= T, sep= ',', data.table= F)
+  #CB_meta= data.table::fread(args$CB_meta, header= T, sep= ',', data.table= F)
+  #sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
+  #raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
+
+  dfc = readFiles(args);
+  cell_set_meta= dfc$cell_set_meta
+  cell_line_meta= dfc$cell_line_meta
+  CB_meta= dfc$CB_meta
+  sample_meta= dfc$sample_meta
+  raw_counts= dfc$raw_counts
+
   validate_cell_line_meta(cell_line_meta)
   validate_seq_index_cols(args$sequencing_index_cols, sample_meta)
   cell_line_meta = remove_duplicate_luas(cell_line_meta)
