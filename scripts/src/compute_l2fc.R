@@ -51,11 +51,6 @@ compute_l2fc= function(normalized_counts,
     stop('Not all cell_line_cols (printed above) are present in normalized_counts.')
   }
   
-  # Validation: Check that ctrl_cols are in sig_cols ----
-  if(!all(ctrl_cols %in% sig_cols)) {
-    stop('Control columns are not a subset of sig columns.')
-  }
-  
   # Collapsing technical replicates ----
   # Detect bio_rep column to be used to collapse technical replicates
   if('bio_rep' %in% colnames(normalized_counts)) {
@@ -67,10 +62,11 @@ compute_l2fc= function(normalized_counts,
   }
   
   # collapse tech reps
-  print('Collapsing technical replicates ...')
+  print('Collapsing technical replicates on the following columns: ')
+  print(unique(c(cell_line_cols, 'trt_type', bio_rep_id_cols, ctrl_cols)))
   collapsed_tech_rep= normalized_counts %>%
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
-    dplyr::group_by(pick(all_of(c(cell_line_cols, 'trt_type', bio_rep_id_cols)))) %>%
+    dplyr::group_by(pick(all_of(c(cell_line_cols, 'trt_type', bio_rep_id_cols, ctrl_cols)))) %>%
     dplyr::summarise(mean_n= mean(n),
                      mean_normalized_n = mean(!!rlang::sym(count_col_name)), 
                      num_tech_reps= dplyr::n()) %>% dplyr::ungroup()
@@ -81,6 +77,8 @@ compute_l2fc= function(normalized_counts,
           dplyr::summarise(count= dplyr::n()) %>% dplyr::ungroup())
     
   # Pull out negative controls and collapse any biological replicates ----
+  print('Collapsing control conditions on the following columns: ')
+  print(unique(c(cell_line_cols, ctrl_cols)))
   controls= collapsed_tech_rep %>% dplyr::filter(trt_type== control_type) %>% 
     dplyr::group_by(pick(all_of(c(cell_line_cols, ctrl_cols)))) %>%
     dplyr::summarise(control_median_n= median(mean_n),
