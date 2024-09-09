@@ -107,7 +107,8 @@ echo "Running in container:"
   -e ASSAY_POOL_META="$ASSAY_POOL_META" \
   -e RAW_COUNTS_UNCOLLAPSED="$RAW_COUNTS_UNCOLLAPSED"\
   -v "$WORKSPACE:/workspace" \
-  -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key \
+  -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
+  -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \
   -v /cmap/data/vdb/prismSeq:/data \
   -v "$BUILD_DIR:$BUILD_DIR" \
   -w /workspace/scripts \

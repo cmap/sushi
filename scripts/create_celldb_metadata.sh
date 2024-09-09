@@ -97,6 +97,7 @@ parameters=(
   "COUNT_COL_NAME:$COUNT_COL_NAME"
   "CONTROL_BARCODE_META:$CONTROL_BARCODE_META"
   "BUILD_NAME:$BUILD_NAME"
+  "API_KEY:$API_KEY"
 )
 
 echo $R_LIBS
@@ -105,6 +106,7 @@ args=(
 --sample_meta "$SAMPLE_META"
 --out "$BUILD_DIR"
 --cb_ladder "$CONTROL_BARCODE_META"
+--api_key "$API_KEY"
 )
 
 echo Rscript create_cellDB_metadata.R "${args[@]}"
