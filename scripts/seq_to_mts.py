@@ -321,7 +321,7 @@ def main(args):
 
     for file_name, df in output_files.items():
         # Downstream MTS pipeline expects inst_info to be tab-separated
-        if file_name == project + "inst_info.txt":
+        if file_name == project + "_inst_info.txt":
             df.to_csv(os.path.join(args.out, file_name), sep="\t", index=False)
         else:
             output_path = os.path.join(args.out, file_name)
