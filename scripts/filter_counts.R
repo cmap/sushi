@@ -88,11 +88,11 @@ if (args$pool_id) {
     select(pool_id, ccle_name, davepool_id, depmap_id)
   
   filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
-    merge(assay_pool_meta, by.x=c("ccle_name", "cell_set", "DepMap_ID"), 
+    merge(assay_pool_meta, by.x=c("ccle_name", "cell_set", "depmap_id"), 
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
   
   filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
-    merge(assay_pool_meta, by.x=c("ccle_name", "cell_set", "DepMap_ID"), 
+    merge(assay_pool_meta, by.x=c("ccle_name", "cell_set", "depmap_id"), 
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
 }
 

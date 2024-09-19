@@ -38,12 +38,12 @@ validate_num_bio_reps= function(max_bio_rep_id, max_bio_rep_count) {
 #' computes the MAD/sqrt(n).
 #'
 #' @param l2fc Dataframe of l2fc values The following columns are required -
-#'              DepMap_ID, ccle_name, counts_flag, mean_n, mean_normalized_n, and l2fc.
+#'              depmap_id, ccle_name, counts_flag, mean_n, mean_normalized_n, and l2fc.
 #' @param sig_cols List of columns that define an individual condition. This should not include any replicates.
 #'                  The columns in this list should be present in the l2fc dataframe.
-#' @param cell_line_cols List of columns that define a cell line. Defaults to project_code, DepMap_ID, and ccle_name
+#' @param cell_line_cols List of columns that define a cell line. Defaults to project_code, depmap_id, and ccle_name
 #' @returns - collapsed_counts
-collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'DepMap_ID', 'ccle_name')) {
+collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'depmap_id', 'ccle_name')) {
   # Validation: Check that sig_cols are present in l2fc ----
   if(validate_columns_exist(sig_cols, l2fc) == FALSE) {
     print(sig_cols)

@@ -69,8 +69,7 @@ if (cb_ladder != "cb_custom.csv"){
 cell_line_cols= c('DepMap_ID', 'ccle_name', 'Sequence', 'LUA')
 cell_line_meta <- cell_lines_df %>%
   rename("LUA" = "lua",
-         "Sequence" = "dna_sequence",
-         "DepMap_ID" = "depmap_id") %>% dplyr::select(any_of(c(cell_line_cols)))
+         "Sequence" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
 
 # Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
 if (nrow(control_bc_df) > 0 & cb_ladder != "cb_custom.csv") {

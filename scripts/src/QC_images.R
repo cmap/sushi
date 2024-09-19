@@ -332,8 +332,8 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
 #' @import scales
 #' @param input_df Dataframe.
 #' @param row_id_cols Vector of column names from input_df that identifies the cell lines. For example,
-#'                    this can be "DepMap_ID", "ccle_name" if only cell lines exist. It can also be 
-#'                    "DepMap_ID", "ccle_name", "Name" if control barcodes are also present.
+#'                    this can be "depmap_id", "ccle_name" if only cell lines exist. It can also be 
+#'                    "depmap_id", "ccle_name", "Name" if control barcodes are also present.
 #' @param col_id_cols Vector of column names from input_df that identifies the PCR wells or conditions.
 #'                    For example, this can be "pcr_plate", "pcr_well" or a list of conditions like those in sig_cols.
 #' @param value_col String name of the column in input_df to be used as the values.
@@ -717,10 +717,10 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   print("9. Generating sample_cor image ...")
   potential_error= base::tryCatch({
     cor_df= filtered_counts %>% 
-      dplyr::filter(!is.na(DepMap_ID), !is.na(trt_type), !trt_type %in% c("empty", "", "CB_only")) %>%
+      dplyr::filter(!is.na(depmap_id), !is.na(trt_type), !trt_type %in% c("empty", "", "CB_only")) %>%
       dplyr::mutate(log2_n= log2(n + 1))
     cp= create_cor_heatmap(input_df= cor_df,
-                           row_id_cols= c('DepMap_ID'),
+                           row_id_cols= c('depmap_id'),
                            col_id_cols= c(sig_cols, id_cols),
                            value_col= 'log2_n')
     

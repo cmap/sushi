@@ -138,7 +138,7 @@ def main(args):
     # Define the column renaming dictionary
     column_mapping = {
         "project_code": "screen",
-        "DepMap_ID": "depmap_id",
+        "depmap_id": "depmap_id",
         "ccle_name": "ccle_name",
         "prism_cell_set": "culture",
         "trt_type": "pert_type",

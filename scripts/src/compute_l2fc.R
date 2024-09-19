@@ -29,7 +29,7 @@ validate_columns_exist= function(selected_columns, df) {
 #' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. 
 #'          Generally normalized_n if running on normalied_counts or n if running on filtered_counts
 #' @param count_threshold - threshold for determining low counts, defaults to 40.
-#' @param cell_line_cols - Vector of columns that define a cell line. Defaults to project_code, DepMap_ID, and ccle_name
+#' @param cell_line_cols - Vector of columns that define a cell line. Defaults to project_code, depmap_id, and ccle_name
 #' @return - l2fc data.frame with l2fc column
 #' @export
 compute_l2fc= function(normalized_counts,
@@ -37,7 +37,7 @@ compute_l2fc= function(normalized_counts,
                        sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
                        count_col_name="normalized_n", count_threshold= 40,
-                       cell_line_cols= c('project_code', 'DepMap_ID', 'ccle_name')) {
+                       cell_line_cols= c('project_code', 'depmap_id', 'ccle_name')) {
   
   # Validation: Check that sig_cols are in normalized_counts ----
   if(validate_columns_exist(sig_cols, normalized_counts) == FALSE) {

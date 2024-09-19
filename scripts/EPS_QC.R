@@ -63,14 +63,14 @@ if(nrow(cell_counts_negcon) <1) {
     stop("Error: no negcon data at this day")
 }
 # validation: columns required in QC table should be present
-if (!all(c("ccle_name", "DepMap_ID", "cell_set", "day", "pert_plate") %in% colnames(cell_counts_negcon))){
-    stop("All columns required in QC table not found, i.e:ccle_name, DepMap_ID, cell_set, day, pert_plate")
+if (!all(c("ccle_name", "depmap_id", "cell_set", "day", "pert_plate") %in% colnames(cell_counts_negcon))){
+    stop("All columns required in QC table not found, i.e: ccle_name, depmap_id, cell_set, day, pert_plate")
 }
 
 
 ## get median counts in negcon and apply count threshold to generate the QC table
 med_cell_counts_qc <- cell_counts_negcon %>% 
-    dplyr::group_by(ccle_name, DepMap_ID, cell_set, day, pert_plate) %>% 
+    dplyr::group_by(ccle_name, depmap_id, cell_set, day, pert_plate) %>% 
     dplyr::summarize(med_log_raw_counts=median(log2_n), 
                      med_log_norm_counts= median(log2_normalized_n),
                      med_raw_counts= median(n)) %>% 
