@@ -66,7 +66,7 @@ if (cb_ladder != "cb_custom.csv"){
 }
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-cell_line_cols= c('DepMap_ID', 'ccle_name', 'Sequence', 'LUA')
+cell_line_cols= c('depmap_id', 'ccle_name', 'Sequence', 'LUA')
 cell_line_meta <- cell_lines_df %>%
   rename("LUA" = "lua",
          "Sequence" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
