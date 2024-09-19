@@ -34,7 +34,7 @@ if(file.exists(args$assay_pool_meta)) {
   assay_pool_meta= read.delim(args$assay_pool_meta)
   unique_cell_sets= unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   input_assay_pool_meta= assay_pool_meta %>% dplyr::filter(davepool_id %in% unique_cell_sets) %>% 
-    dplyr::select(DepMap_ID= depmap_id, CCLE_name= ccle_name, cell_set= davepool_id, pool_id)
+    dplyr::select(DepMap_ID= depmap_id, ccle_name= ccle_name, cell_set= davepool_id, pool_id)
 }
 
 # Add sample meta and assay pool meta to l2fc table ----
@@ -56,7 +56,7 @@ if(file.exists(args$lfc)) {
   if(assay_pool_meta_exists) {
     l2fc_with_meta_columns= join_metadata(input_df= l2fc_with_meta_columns, 
                                           metadata= input_assay_pool_meta,
-                                          key_cols= c('DepMap_ID', 'CCLE_name', 'cell_set'))
+                                          key_cols= c('DepMap_ID', 'ccle_name', 'cell_set'))
   } else {
     print('WARNING: Assay pool meta not detected and will not be joined onto l2fc.')
   }
@@ -83,7 +83,7 @@ if(file.exists(args$collapsed_l2fc)) {
     print('Attempting to add assay_pool_meta to collapsed l2fc.')
     collapsed_l2fc_with_meta_columns= join_metadata(input_df= collapsed_l2fc_with_meta_columns, 
                                                     metadata= input_assay_pool_meta,
-                                                    key_cols= c('DepMap_ID', 'CCLE_name', 'cell_set'))
+                                                    key_cols= c('DepMap_ID', 'ccle_name', 'cell_set'))
   } else {
     print('WARNING: Assay pool meta not detected and will not be joined onto collapsed l2fc.')
   }

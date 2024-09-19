@@ -102,7 +102,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   
   # Sum up reads 
   total_counts= filtered_counts %>%
-    dplyr::mutate(barcode_type= case_when(!is.na(CCLE_name) ~ 'cell line',
+    dplyr::mutate(barcode_type= case_when(!is.na(ccle_name) ~ 'cell line',
                                           !is.na(Name) ~ 'ctrl barcode')) %>%
     tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
     dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
@@ -332,8 +332,8 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
 #' @import scales
 #' @param input_df Dataframe.
 #' @param row_id_cols Vector of column names from input_df that identifies the cell lines. For example,
-#'                    this can be "DepMap_ID", "CCLE_name" if only cell lines exist. It can also be 
-#'                    "DepMap_ID", "CCLE_name", "Name" if control barcodes are also present.
+#'                    this can be "DepMap_ID", "ccle_name" if only cell lines exist. It can also be 
+#'                    "DepMap_ID", "ccle_name", "Name" if control barcodes are also present.
 #' @param col_id_cols Vector of column names from input_df that identifies the PCR wells or conditions.
 #'                    For example, this can be "pcr_plate", "pcr_well" or a list of conditions like those in sig_cols.
 #' @param value_col String name of the column in input_df to be used as the values.
@@ -418,7 +418,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
   reps_piv= reps_piv %>%
     pivot_wider(id_cols= all_of(c(cell_line_cols, 'replicate_group')),
                 names_from= replicate_col, names_prefix= replicate_col, values_from= value_col) %>%
-    dplyr::mutate(type= ifelse(!is.na(CCLE_name), "cell line", "control barcode")) %>% dplyr::ungroup()
+    dplyr::mutate(type= ifelse(!is.na(ccle_name), "cell line", "control barcode")) %>% dplyr::ungroup()
   
   # Create names of the columns to plot on xy axes
   x_col_name= paste0(replicate_col, x_axis_rep)
@@ -573,7 +573,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   print('5. Generating cell line contaminants ...')
   potential_error= base::tryCatch({
     contams= annotated_counts %>% dplyr::filter(expected_read == F) %>%
-      dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
+      dplyr::mutate(barcode_id= ifelse(is.na(ccle_name), Name, ccle_name)) %>%
       dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
       dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
       dplyr::arrange(desc(num_wells))
@@ -616,7 +616,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
 
     # mapped contaminates to bind
     mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
-      dplyr::mutate(barcode_name= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
+      dplyr::mutate(barcode_name= ifelse(is.na(ccle_name), Name, ccle_name)) %>%
       dplyr::select(all_of(c(pcr_locations, 'forward_read_cl_barcode', 'n', 'barcode_name')))
     
     contam_reads= sequencing_filter %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%

@@ -26,7 +26,7 @@ parser$add_argument("--annotated_counts", default= "annotated_counts.csv",
 parser$add_argument("--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
 parser$add_argument("--lfc", default="l2fc.csv", help= "path to l2fc file")
-parser$add_argument("--cell_line_cols", default= 'DepMap_ID,CCLE_name',
+parser$add_argument("--cell_line_cols", default= 'DepMap_ID,ccle_name',
                     help= "Columns that identify cell lines or barcodes")
 parser$add_argument("--id_cols", default= 'pcr_plate,pcr_well',
                     help= "Columns to identify each PCR well")
@@ -77,7 +77,7 @@ QC_images(raw_counts_uncollapsed= raw_counts_uncollapsed,
           normalized_counts= normalized_counts, 
           l2fc= l2fc, 
           sample_meta= sample_meta,
-          cell_line_cols= c('DepMap_ID', 'CCLE_name'), 
+          cell_line_cols= c('DepMap_ID', 'ccle_name'), 
           id_cols= id_cols, 
           sig_cols= sig_cols,
           control_type= control_type, 

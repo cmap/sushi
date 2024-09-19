@@ -66,12 +66,11 @@ if (cb_ladder != "cb_custom.csv"){
 }
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence', 'LUA')
+cell_line_cols= c('DepMap_ID', 'ccle_name', 'Sequence', 'LUA')
 cell_line_meta <- cell_lines_df %>%
   rename("LUA" = "lua",
          "Sequence" = "dna_sequence",
-         "DepMap_ID" = "depmap_id",
-         "CCLE_name" = "ccle_name") %>% dplyr::select(any_of(c(cell_line_cols)))
+         "DepMap_ID" = "depmap_id") %>% dplyr::select(any_of(c(cell_line_cols)))
 
 # Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
 if (nrow(control_bc_df) > 0 & cb_ladder != "cb_custom.csv") {

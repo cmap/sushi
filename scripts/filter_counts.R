@@ -88,11 +88,11 @@ if (args$pool_id) {
     select(pool_id, ccle_name, davepool_id, depmap_id)
   
   filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
-    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
+    merge(assay_pool_meta, by.x=c("ccle_name", "cell_set", "DepMap_ID"), 
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
   
   filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
-    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
+    merge(assay_pool_meta, by.x=c("ccle_name", "cell_set", "DepMap_ID"), 
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
 }
 
@@ -101,7 +101,7 @@ if(sum(filtered_counts$filtered_counts$n) == 0) {
   stop('All entries in filtered counts are missing!')
 }
 
-cl_entries= filtered_counts$filtered_counts %>% dplyr::filter(!is.na(CCLE_name))
+cl_entries= filtered_counts$filtered_counts %>% dplyr::filter(!is.na(ccle_name))
 if(sum(cl_entries$n) == 0) {
   stop('All cell line counts are zero!')
 }

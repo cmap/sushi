@@ -17,7 +17,7 @@ parser$add_argument("-c", "--lfc", default= "l2fc.csv",
                     help= "path to file containing l2fc values")
 parser$add_argument("--sig_cols", default= "cell_set,treatment,dose,dose_unit,day", 
                     help= "columns used to identify a unique condition")
-parser$add_argument("--cell_line_cols", default= "project_code,DepMap_ID,CCLE_name", 
+parser$add_argument("--cell_line_cols", default= "project_code,DepMap_ID,ccle_name", 
                     help= "Columns that can describe a cell line")
 parser$add_argument("-o", "--out", default= getwd(), help= "Output path. Default is working directory")
 

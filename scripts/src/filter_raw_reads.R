@@ -76,7 +76,7 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #'                   "forward_read_cl_barcode", and "n".
 #' @param sample_meta Dataframe of the metadata for the sequencing run. This file should contain the id_cols,
 #'                    "cell_set", "control_barcodes", etc.
-#' @param cell_line_meta Master metadata of cell lines with the following required columns - "CCLE_name",
+#' @param cell_line_meta Master metadata of cell lines with the following required columns - "ccle_name",
 #'                       "DepMap_ID", "LUA", and "Sequence".
 #' @param cell_set_meta Master metadata of cell sets and their contents with the following required columns -
 #'                      "cell_set" and "members".
