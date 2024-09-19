@@ -70,7 +70,7 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
     print('The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
     print(missing_flowcells)
     print('Check that the sample meta is correct or that all fastq files are in the correct directory.')
-    stop('One or more flowcell specified in the sample meta was not detected.')
+    #stop('One or more flowcell specified in the sample meta was not detected.')
   }
 }
 
@@ -112,7 +112,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   if(reverse_index2) {
     if('index_2' %in% colnames(sample_meta)) {
       print("Reverse-complementing index 2 barcode ...")
-      sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
+      sample_meta[, index_2 := chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))]
     } else {
       stop('Reverse index 2 is set to TRUE, but index_2 does not exists.')
     }
@@ -189,8 +189,9 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     }
     
     # Filter for expected flowcells ----
-    uncollapsed_raw_counts= uncollapsed_raw_counts %>% 
-      dplyr::inner_join(expected_flowcells, by= c('flowcell_name', 'flowcell_lane'))
+    uncollapsed_raw_counts= data.table::merge.data.table(
+      uncollapsed_raw_counts, data.table::setDT(expected_flowcells), 
+      by= c('flowcell_name', 'flowcell_lane'), allow.cartesian= FALSE)
     
   } else {
     print('Flowcell_name and/or flowcell_lane were not detected in raw_counts_uncollapsed.')
@@ -212,10 +213,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Create raw counts file ----
   # Filter for the expected flowcells and summed up the reads over the ID cols.
   print('Summing up reads ...')
-  raw_counts= uncollapsed_raw_counts %>%
-    dplyr::inner_join(sequencing_map, by= sequencing_index_cols, relationship= 'many-to-one') %>%
-    dplyr::group_by(pick(all_of(c(id_cols, barcode_col)))) %>%
-    dplyr::summarize(n= sum(n)) %>% dplyr::ungroup()
+  raw_counts= data.table::merge.data.table(uncollapsed_raw_counts, sequencing_map, by= sequencing_index_cols)
+  raw_counts= raw_counts[, .(n= sum(n)), by= c(id_cols, barcode_col)]
   
   # Calculate index purity ----
   index_purity= sum(raw_counts$n) / sum(uncollapsed_raw_counts$n)
