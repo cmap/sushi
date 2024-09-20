@@ -67,10 +67,9 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
   missing_flowcells= expected_flowcells %>% dplyr::anti_join(detected_flowcells, by= c('flowcell_name', 'flowcell_lane'))
 
   if(nrow(missing_flowcells) != 0) {
-    print('The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
+    print('WARNING: The following flowcells/lanes specified in the sample meta were not detected in the fastq reads.')
     print(missing_flowcells)
     print('Check that the sample meta is correct or that all fastq files are in the correct directory.')
-    #stop('One or more flowcell specified in the sample meta was not detected.')
   }
 }
 
@@ -112,7 +111,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   if(reverse_index2) {
     if('index_2' %in% colnames(sample_meta)) {
       print("Reverse-complementing index 2 barcode ...")
-      sample_meta[, index_2 := chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))]
+      sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
     } else {
       stop('Reverse index 2 is set to TRUE, but index_2 does not exists.')
     }
