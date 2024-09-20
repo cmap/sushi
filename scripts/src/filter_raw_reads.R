@@ -98,6 +98,7 @@ filter_raw_reads = function(raw_counts,
                             count_threshold= 40) {
   require(tidyverse)
   require(magrittr)
+  browser()
   
   # Processing metadata and inputs ---- 
   # CB meta is in log10 and should be converted to log2.
@@ -128,8 +129,7 @@ filter_raw_reads = function(raw_counts,
   # Also sorted reads in descending order by read count.
   print('Splitting off unmapped reads ...')
   raw_counts[, mapped := forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence)]
-  unmapped_reads= raw_counts %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%
-    dplyr::arrange(dplyr::desc(n))
+  unmapped_reads= raw_counts[mapped==FALSE,][order(-n)][, mapped:= NULL]
   
   # Creating a template of all expected reads in the run ----
   # Use all 4 meta data files to create a "template" dataframe where
