@@ -127,8 +127,8 @@ filter_raw_reads = function(raw_counts,
   # but do not map to known barcodes in PRISM.
   # Also sorted reads in descending order by read count.
   print('Splitting off unmapped reads ...')
-  raw_counts %<>% dplyr::mutate(mapped= forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence))
-  unmapped_reads= raw_counts %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>% 
+  raw_counts[, mapped := forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence)]
+  unmapped_reads= raw_counts %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%
     dplyr::arrange(dplyr::desc(n))
   
   # Creating a template of all expected reads in the run ----
