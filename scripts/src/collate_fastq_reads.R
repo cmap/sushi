@@ -215,6 +215,12 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   raw_counts= data.table::merge.data.table(uncollapsed_raw_counts, sequencing_map, by= sequencing_index_cols)
   raw_counts= raw_counts[, .(n= sum(n)), by= c(id_cols, barcode_col)]
   
+  # Escape for when a chunk contains invalid sequencing locations
+  if(nrow(raw_counts) == 0) {
+    print('WARNING: raw_counts is empty!')
+    return(raw_counts)
+  }
+  
   # Calculate index purity ----
   index_purity= sum(raw_counts$n) / sum(uncollapsed_raw_counts$n)
   print(paste0('Index purity: ', round(index_purity, 4)))
