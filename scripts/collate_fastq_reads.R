@@ -30,40 +30,61 @@ if (args$out == "") {
   args$out = args$wkdir
 }
 
-# Run collate_fastq_reads ----
+# Read in sample meta and parse argument strings ----
 # Read in files and parse vector arguments
-raw_counts_uncollapsed= data.table::fread(args$raw_counts_uncollapsed, header= T, sep= ',')
 sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',')
 
 # Parse vector inputs
 sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
 id_cols= unlist(strsplit(args$id_cols, ","))
 
-# Validation: Check that sequencing_index_cols are from sample meta column names
+# Validation: Check that sequencing_index_cols are from sample meta column names ----
 if(!all(sequencing_index_cols %in% colnames(sample_meta))) {
   stop(paste('The following sequencing_index_cols were not found in the sample meta: ',
              sequencing_index_cols[!sequencing_index_cols %in% colnames(sample_meta)]))
 }
 
-# Validation: Check that id_cols are from sample meta column names
+# Validation: Check that id_cols are from sample meta column names ----
 if(!all(id_cols %in% colnames(sample_meta))) {
   stop(paste('The following id_cols were not found in the sample meta: ',
              id_cols[!id_cols %in% colnames(sample_meta)]))
 }
 
-print("Calling collate_fastq_reads ...")
-raw_counts= collate_fastq_reads(uncollapsed_raw_counts= raw_counts_uncollapsed, 
-                                sample_meta= sample_meta, 
-                                sequencing_index_cols= sequencing_index_cols,
-                                id_cols= id_cols,
-                                reverse_index2= args$reverse_index2,
-                                barcode_col= args$barcode_col)
+# Run collate_fastq_reads on chunks ----
+# Set up loop to process chunks
+header_col_names= data.table::fread(args$raw_counts_uncollapsed, header=T, sep= ',', nrow= 0) %>% colnames()
+chunk_size= 10^6 # Maximum number of rows in a chunk
+chunk_idx= 1 # Counter to keep track of chunks in a loop
+current_chunk_size= chunk_size # Variable for loop exit condition
+chunk_collector= list() # List to collect processed chunks
 
-# Validation: Basic file size check
+# For each chunk, call collate
+while(current_chunk_size == chunk_size) {
+  nori_chunk= data.table::fread(args$raw_counts_uncollapsed, header= F, sep= ',',
+                                col.names= header_col_names,
+                                nrow= chunk_size, skip= chunk_size * (chunk_idx - 1) + 1)
+  
+  current_chunk_size= nrow(nori_chunk) # set current chunk size to stop loop
+  print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
+  
+  chunk_collector[[chunk_idx]]= collate_fastq_reads(nori_chunk, sample_meta,
+                                                    sequencing_index_cols= sequencing_index_cols,
+                                                    id_cols= id_cols,
+                                                    reverse_index2=  args$reverse_index2,
+                                                    barcode_col= args$barcode_col)
+  
+  chunk_idx= chunk_idx + 1
+}
+
+raw_counts= data.table::rbindlist(chunk_collector)
+raw_counts= raw_counts[, .(n= sum(n)), by= c(id_cols, args$barcode_col)]
+
+# Validation: Basic file size check ----
 if(nrow(raw_counts) == 0) {
   stop('ERROR: Empty file generated. No rows in raw_counts output.')
 } 
 
+# Write out file ----
 rc_out_file= paste(args$out, 'raw_counts.csv', sep='/')
 print(paste("Writing raw_counts.csv to ", rc_out_file))
 write.csv(raw_counts, rc_out_file, row.names= FALSE, quote= FALSE)
