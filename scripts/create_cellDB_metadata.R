@@ -59,7 +59,7 @@ cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_k
 assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
 assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
 if (cb_ladder != "cb_custom.csv"){
-  control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, filter = list(where = list(set = cb_ladder), fields = c("sequence", "name", "log_dose")))
+  control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, filter = list(where = list(set = cb_ladder), fields = c("sequence", "name", "cb_log10_dose")))
 } else {
   file_path <- file.path(args$out, cb_ladder)
   control_bc_df <- read.csv(file_path)

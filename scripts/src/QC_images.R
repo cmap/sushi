@@ -250,7 +250,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
     ggplot(aes(x= rank_pct, y=cum_pct)) +
     # Color control barcodes if specified
     {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
-                                 mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, log2_dose)), size= 2)} + 
+                                 mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, cb_log2_dose)), size= 2)} + 
     geom_line(color='black') +
     # point for mark1 of counts
     geom_segment(aes(x= -Inf , y= mark1, xend= mark1_loc, yend = mark1), color= 'black', linetype= 2) +
@@ -293,11 +293,11 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
     normalized_counts= normalized_counts %>% 
       dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T), n != 0) %>%
       dplyr::group_by(pick(all_of(id_cols))) %>%
-      dplyr::mutate(mean_y= mean(log2_dose),
-                    residual2= (log2_dose - log2_normalized_n)^2,
-                    squares2= (log2_dose - mean_y)^2,
+      dplyr::mutate(mean_y= mean(cb_log2_dose),
+                    residual2= (cb_log2_dose - log2_normalized_n)^2,
+                    squares2= (cb_log2_dose - mean_y)^2,
                     norm_r2= 1 - sum(residual2) / sum(squares2),
-                    norm_mae= median(abs(log2_dose- log2_normalized_n))) %>% ungroup()
+                    norm_mae= median(abs(cb_log2_dose- log2_normalized_n))) %>% ungroup()
   } 
   
   # Filter for just the control barcodes, create a profile_id for faceting, 
@@ -305,10 +305,10 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
   cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T)) %>%
     tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
     dplyr::group_by(profile_id) %>% dplyr::mutate(label_x_pos= min(.data[[value_col]]),
-                                                  label_y_pos= max(log2_dose)) %>% dplyr::ungroup()
+                                                  label_y_pos= max(cb_log2_dose)) %>% dplyr::ungroup()
   
   # Create control barcode trend plot
-  trend_scatter_plot= cb_trend %>% ggplot(aes(x= .data[[value_col]], y= log2_dose)) + 
+  trend_scatter_plot= cb_trend %>% ggplot(aes(x= .data[[value_col]], y= cb_log2_dose)) + 
     geom_point() +
     geom_abline(aes(slope=1, intercept= cb_intercept) , color='blue', alpha= 0.5) +
     geom_text(aes(x= label_x_pos, y= label_y_pos,

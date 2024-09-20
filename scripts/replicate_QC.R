@@ -41,7 +41,7 @@ check_replicate_cor = function(normalized_counts, out) {
   
   tech_collapsed_counts = normalized_counts %>% 
     filter(is.na(Name)) %>%  
-    dplyr::select(-Name, -log_dose, -n, -log_n, -log_normalized_n) %>% 
+    dplyr::select(-Name, -cb_log2_dose, -n, -log_n, -log_normalized_n) %>% 
     group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
     ungroup()
