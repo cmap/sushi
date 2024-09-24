@@ -2,6 +2,7 @@ options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 library(tidyverse)
+library(data.table)
 source("./src/collate_fastq_reads.R")
 
 # Argument parser ----
@@ -38,53 +39,50 @@ sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',')
 sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
 id_cols= unlist(strsplit(args$id_cols, ","))
 
-# Validation: Check that sequencing_index_cols are from sample meta column names ----
-if(!all(sequencing_index_cols %in% colnames(sample_meta))) {
-  stop(paste('The following sequencing_index_cols were not found in the sample meta: ',
-             sequencing_index_cols[!sequencing_index_cols %in% colnames(sample_meta)]))
+# Validation: Check that sequencing_index_cols present in the sample meta ----
+if(!validate_columns_exist(sequencing_index_cols, sample_meta)) {
+  print('The following sequencing_index_cols are not present in the sample meta.')
+  stop('One or more sequencing_index_cols is NOT present in the sample meta.')
 }
 
-# Validation: Check that id_cols are from sample meta column names ----
-if(!all(id_cols %in% colnames(sample_meta))) {
-  stop(paste('The following id_cols were not found in the sample meta: ',
-             id_cols[!id_cols %in% colnames(sample_meta)]))
+# Validation: Check that id_cols are present in the sample meta ----
+if(!validate_columns_exist(id_cols, sample_meta)) {
+  stop('One or more id_cols is NOT present in the sample meta.')
 }
 
-# Run collate_fastq_reads on chunks ----
-# Set up loop to process chunks
-header_col_names= data.table::fread(args$raw_counts_uncollapsed, header=T, sep= ',', nrow= 0) %>% colnames()
-chunk_size= 10^6 # Maximum number of rows in a chunk
-chunk_idx= 1 # Counter to keep track of chunks in a loop
-current_chunk_size= chunk_size # Variable for loop exit condition
-chunk_collector= list() # List to collect processed chunks
+# Run collate_fastq_reads on chunks of raw_counts_uncollapsed.csv ----
+summed_reads= process_in_chunks(large_file_path= args$raw_counts_uncollapsed, 
+                                chunk_size= 10^6, 
+                                action= collate_fastq_reads,
+                                sample_meta= sample_meta, 
+                                sequencing_index_cols= sequencing_index_cols,
+                                id_cols= id_cols,
+                                reverse_index2= args$reverse_index2,
+                                barcode_col= args$barcode_col)
 
-# For each chunk, call collate
-while(current_chunk_size == chunk_size) {
-  nori_chunk= data.table::fread(args$raw_counts_uncollapsed, header= F, sep= ',',
-                                col.names= header_col_names,
-                                nrow= chunk_size, skip= chunk_size * (chunk_idx - 1) + 1)
-  
-  current_chunk_size= nrow(nori_chunk) # set current chunk size to stop loop
-  print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
-  
-  chunk_collector[[chunk_idx]]= collate_fastq_reads(nori_chunk, sample_meta,
-                                                    sequencing_index_cols= sequencing_index_cols,
-                                                    id_cols= id_cols,
-                                                    reverse_index2=  args$reverse_index2,
-                                                    barcode_col= args$barcode_col)
-  
-  chunk_idx= chunk_idx + 1
-}
+# Sum up the read across the chunks afterwards!
+summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, args$barcode_col)]
 
-raw_counts= data.table::rbindlist(chunk_collector)
-raw_counts= raw_counts[, .(n= sum(n)), by= c(id_cols, args$barcode_col)]
+# Split reads by either known or unknown ----
+# Reads are separated by whether or not the barcode exists in the PRISM library
+# Read in metadata to get list of all known barcodes
+cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
+CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
+
+# Call function to separate barcodes
+split_reads= extract_known_barcodes(summed_reads, unique(c(cell_line_meta$Sequence, CB_meta$Sequence)),
+                                    barcode_col= args$barcode)
 
 # Validation: Basic file size check ----
-if(nrow(raw_counts) == 0) {
+if(nrow(split_reads$mapped_reads) == 0) {
   stop('ERROR: Empty file generated. No rows in raw_counts output.')
 } 
 
-# Write out file ----
-rc_out_file= paste(args$out, 'raw_counts.csv', sep='/')
-print(paste("Writing raw_counts.csv to ", rc_out_file))
-write.csv(raw_counts, rc_out_file, row.names= FALSE, quote= FALSE)
+# Write out files ----
+out_file= paste(args$out, 'unknown_reads.csv', sep='/')
+print(paste("Writing unknown_reads.csv to ", out_file))
+write.csv(split_reads$unknown_reads, out_file, row.names= FALSE, quote= FALSE)
+
+out_file= paste(args$out, 'known_reads.csv', sep='/')
+print(paste("Writing known_reads.csv to ", out_file))
+write.csv(split_reads$known_reads, out_file, row.names= FALSE, quote= FALSE)
