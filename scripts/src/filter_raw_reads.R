@@ -96,8 +96,8 @@ filter_raw_reads = function(raw_counts,
                             sample_meta, cell_line_meta, cell_set_meta, CB_meta,
                             id_cols= c('pcr_plate', 'pcr_well'), 
                             count_threshold= 40) {
-  require(tidyverse)
   require(magrittr)
+  require(tidyverse)
   
   # Processing metadata and inputs ---- 
   # CB meta is in log10 and should be converted to log2.
@@ -121,14 +121,6 @@ filter_raw_reads = function(raw_counts,
   # This will produce a warning if a LUA appears in a cell set more than once!
   # This currently does NOT result in an error. Error avoided using a distinct when creating the template.
   validate_cell_set_luas(sample_meta, cell_set_meta)
-  
-  # Split off unmapped reads ----
-  # Unmapped reads are defined as reads that are identified from valid PCR locations,
-  # but do not map to known barcodes in PRISM.
-  # Also sorted reads in descending order by read count.
-  print('Splitting off unmapped reads ...')
-  raw_counts[, mapped := forward_read_cl_barcode %in% c(cell_line_meta$Sequence, CB_meta$Sequence)]
-  unmapped_reads= raw_counts[mapped==FALSE,][order(-n)][, mapped:= NULL]
   
   # Creating a template of all expected reads in the run ----
   # Use all 4 meta data files to create a "template" dataframe where
@@ -157,7 +149,30 @@ filter_raw_reads = function(raw_counts,
   # Reads that to not match to the template are contaminants and,
   # reads that are only present in the template are missing/not detected by PCR.
   print("Annotating reads ...")
-  annotated_counts= raw_counts %>% dplyr::filter(mapped) %>%
+  # Data.table version #
+  # # Left join cell_line_meta using data.table inplace left join
+  # raw_counts[cell_line_meta, base::setdiff(colnames(cell_line_meta), c('Sequence')) := 
+  #              base::mget(base::setdiff(colnames(cell_line_meta), c('Sequence'))), 
+  #            on= c('forward_read_cl_barcode' = 'Sequence')]
+  # # Left join CB_meta using data.table inplace left join
+  # raw_counts[CB_meta, base::setdiff(colnames(CB_meta), c('Sequence')) := 
+  #              base::mget(base::setdiff(colnames(CB_meta), c('Sequence'))), 
+  #            on= c('forward_read_cl_barcode' = 'Sequence')]
+  # # Left join CB_meta using data.table inplace left join
+  # raw_counts[sample_meta, base::setdiff(colnames(sample_meta), id_cols) := 
+  #              base::mget(base::setdiff(colnames(sample_meta), id_cols)), 
+  #            on= id_cols]
+  # data.table::setnames(raw_counts, 'forward_read_cl_barcode', 'Sequence')
+  # 
+  # annotated_counts= data.table::merge.data.table(
+  #   raw_counts, data.table::setDT(template %>% dplyr::mutate(expected_read= T)), 
+  #   by= intersect(colnames(template), colnames(raw_counts)), all.x= TRUE, all.y= TRUE,
+  #   allow.cartesian= FALSE) %>%
+  #   dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>%
+  #   dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
+  
+  # Dplyr version #
+  annotated_counts= raw_counts %>%
     dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
     dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
@@ -191,8 +206,7 @@ filter_raw_reads = function(raw_counts,
   }
   
   print('Filter_raw_reads has completed!')
-  return(list(unmapped_reads= unmapped_reads, 
-              annotated_counts= annotated_counts, 
+  return(list(annotated_counts= annotated_counts, 
               filtered_counts= filtered_counts))
 }
 
