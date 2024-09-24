@@ -73,6 +73,38 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
   }
 }
 
+#' process_in_chunks
+#' 
+#' This function runs some action over chunks of a large file. At the end, all chunks are
+#' appended together.
+#' 
+#' @param large_file_path description
+#' @param chunk_size description
+#' @param action A function passed to act on each chunk
+process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
+  
+  header_col_names= data.table::fread(large_file_path, header= TRUE, sep= ',', nrow= 0) %>% colnames()
+  chunk_idx= 1 # Counter to keep track of chunks in a loop
+  current_chunk_size= chunk_size # Variable for loop exit condition
+  chunk_collector= list() # List to collect processed chunks
+  
+  # For each chunk, call collate
+  while(current_chunk_size == chunk_size) {
+    current_chunk= data.table::fread(large_file_path, header= FALSE, sep= ',',
+                                     col.names= header_col_names,
+                                     nrow= chunk_size, skip= chunk_size * (chunk_idx - 1) + 1)
+    
+    current_chunk_size= nrow(current_chunk) # set current chunk size to stop loop
+    print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
+    
+    chunk_collector[[chunk_idx]]= do.call(action, list(current_chunk, ...))
+    chunk_idx= chunk_idx + 1
+  }
+  
+  output_table= data.table::rbindlist(chunk_collector)
+  return(output_table)
+}
+
 #' collate_fastq_reads
 #' 
 #' This function takes in the fastq reads (uncollapsed_raw_counts) and
@@ -100,12 +132,14 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #' @param barcode_col String name of the column in uncollapsed_raw_counts that contains the sequences.  
 #' @returns Returns a dataframe with columns specified by the id_cols along with barcode_col, and "n".
 #' @import tidyverse
+#' @import data.table
 collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta, 
                               sequencing_index_cols= c('index_1', 'index_2'),
                               id_cols= c('pcr_plate', 'pcr_well'),
                               reverse_index2= FALSE,
                               barcode_col= 'forward_read_cl_barcode') {
   require(tidyverse)
+  require(data.table)
   
   # Reverse index 2 if specified ----
   if(reverse_index2) {
@@ -117,6 +151,9 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     }
   }
   
+  # Create sequence map ----
+  sequencing_map= sample_meta %>% dplyr::distinct(pick(all_of(c(sequencing_index_cols, id_cols))))
+  
   # Validation: Check that flowcell_names and flowcell_lanes exist in the sample meta ----
   if(!validate_columns_exist(c('flowcell_names', 'flowcell_lanes'), sample_meta)) {
     stop('The above column(s) are NOT present in the sample meta.')
@@ -125,8 +162,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Validation: Check that sequencing_index_cols exist in the sample meta ----
   if(!validate_columns_exist(sequencing_index_cols, sample_meta)) {
     print('The following sequencing_index_cols are not present in the sample meta.')
-    print(sequencing_index_cols[!sequencing_index_cols %in% colnames(sample_meta)])
-    stop('One or more sequencing_index_cols is NOT present in the sample meta.')
+    stop('The above sequencing_index_cols are NOT present in the sample meta.')
   }
   
   # Validation: Check that id_cols exist in the sample meta ----
@@ -139,6 +175,15 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Error out of the sequencing_index_cols are not filled out in the sample meta.
   if(!validate_columns_entries(sequencing_index_cols, sample_meta)) {
     stop('One or more sequencing_index_cols in the sample meta is not filled out.')
+  }
+  
+  # Validation: Check that mapping is one to one ----
+  check_mapping= sequencing_map %>% dplyr::group_by(pick(all_of(sequencing_index_cols))) %>%
+    dplyr::filter(dplyr::n() > 1) %>% dplyr::ungroup()
+  if(nrow(check_mapping) > 0) {
+    print('The following sequencing locations map to multiple conditions.')
+    print(check_mapping)
+    stop('The sequencing index columns do not map 1 to 1 to the ID columns.')
   }
   
   # If "flowcell_name" and "flowcell_lane" are present, filter for valid flowcells ----
@@ -197,39 +242,46 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     print('Proceeding without filtering flowcells ...')
   }
   
-  # Create sequence map ----
-  sequencing_map= sample_meta %>% dplyr::distinct(pick(all_of(c(sequencing_index_cols, id_cols))))
-  
-  # Validation: Check that mapping is one to one ----
-  check_mapping= sequencing_map %>% dplyr::group_by(pick(all_of(sequencing_index_cols))) %>%
-    dplyr::filter(dplyr::n() > 1) %>% dplyr::ungroup()
-  if(nrow(check_mapping) > 0) {
-    print('The following sequening locations map to multiple conditions.')
-    print(check_mapping)
-    stop('The sequencing index columns do not map 1 to 1 to the ID columns.')
-  }
-  
-  # Create raw counts file ----
+  # Create summed_reads file ----
   # Filter for the expected flowcells and summed up the reads over the ID cols.
   print('Summing up reads ...')
-  raw_counts= data.table::merge.data.table(uncollapsed_raw_counts, sequencing_map, by= sequencing_index_cols)
-  raw_counts= raw_counts[, .(n= sum(n)), by= c(id_cols, barcode_col)]
+  summed_reads= data.table::merge.data.table(uncollapsed_raw_counts, sequencing_map, by= sequencing_index_cols)
+  summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
   
   # Escape for when a chunk contains invalid sequencing locations
-  if(nrow(raw_counts) == 0) {
-    print('WARNING: raw_counts is empty!')
-    return(raw_counts)
+  if(nrow(summed_reads) == 0) {
+    print('WARNING: summed_reads is empty!')
+    return(summed_reads)
   }
   
-  # Calculate index purity ----
-  index_purity= sum(raw_counts$n) / sum(uncollapsed_raw_counts$n)
-  print(paste0('Index purity: ', round(index_purity, 4)))
+  # Calculate index purity in a chunk----
+  index_purity= sum(summed_reads$n) / sum(uncollapsed_raw_counts$n)
+  print(paste0('Index purity in chunk: ', round(index_purity, 4)))
   if(index_purity > 1) {
-    stop('ERROR: Index purity is greater than 1!')
+    stop('ERROR: Chunk index purity is greater than 1!')
   } else if(index_purity < 0.5) {
     print('Warning: Low index purity!')
   } else {}
   
   print('Collate_fastq_reads has completed!')
-  return(raw_counts)
+  return(summed_reads)
+}
+
+#' extract_known_barcodes
+#' 
+#' This function runs some action over chunks of a large file. At the end, all chunks are
+#' appended together.
+#' 
+#' @param raw_counts description
+#' @param known_barcodes A vector known barcodes.
+#' @param barcode_col String name of the column in uncollapsed_raw_counts that contains the sequences. 
+extract_known_barcodes= function(summed_reads, known_barcodes, barcode_col= 'forward_read_cl_barcode') {
+  # Create boolean column of known or unknown
+  summed_reads[, known := get(barcode_col) %chin% known_barcodes]
+  
+  # Filter using that boolean column
+  unknown_reads= summed_reads[known == FALSE,][order(-n)][, known := NULL]
+  summed_reads= summed_reads[known == TRUE,][, known := NULL]
+  
+  return(list(unknown_reads= unknown_reads, known_reads= summed_reads))
 }
