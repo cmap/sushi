@@ -21,6 +21,8 @@ parser$add_argument("--reverse_index2", type="logical", default=FALSE,
                     help= "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--barcode_col", default= "forward_read_cl_barcode", 
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
+parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help= "Cell Line metadata")
+parser$add_argument("--CB_meta", default="CB_meta.csv", help = "Control Barcode metadata")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
