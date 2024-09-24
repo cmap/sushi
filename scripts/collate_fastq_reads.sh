@@ -79,6 +79,22 @@ else
   SAMPLE_META=$BUILD_DIR/$SAMPLE_META
 fi
 
+#Enforces abs paths
+if [[ "$CELL_LINE_META" = /* ]]
+then
+  CELL_LINE_META=$(ls $CELL_LINE_META)
+else
+  CELL_LINE_META=$BUILD_DIR/$CELL_LINE_META
+fi
+
+#Enforces abs paths
+if [[ "$CONTROL_BARCODE_META" = /* ]]
+then
+  CONTROL_BARCODE_META=$(ls $CONTROL_BARCODE_META)
+else
+  CONTROL_BARCODE_META=$BUILD_DIR/$CONTROL_BARCODE_META
+fi
+
 echo Build dir is: $BUILD_DIR
 
 PROJECT_DIR=$(dirname "$BUILD_DIR")
@@ -86,6 +102,8 @@ PROJECT_CODE=$(basename "$PROJECT_DIR")
 
 echo Project Code: $PROJECT_CODE
 echo REVERSE_INDEX2 is: $REVERSE_INDEX2
+echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
+echo CELL_LINE_META is: $CELL_LINE_META
 
 args=(
 --raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
@@ -94,6 +112,8 @@ args=(
 --sequencing_index_cols="$SEQUENCING_INDEX_COLS"
 --id_cols "$ID_COLS" 
 --reverse_index2 "$REVERSE_INDEX2"
+--cell_line_meta "$CELL_LINE_META"
+--CB_meta "$CONTROL_BARCODE_META"
 )
 
 echo Rscript collate_fastq_reads.R "${args[@]}"
