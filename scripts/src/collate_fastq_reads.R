@@ -88,7 +88,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
   current_chunk_size= chunk_size # Variable for loop exit condition
   chunk_collector= list() # List to collect processed chunks
   
-  # For each chunk, call collate
+  # For each chunk, call an action
   while(current_chunk_size == chunk_size) {
     current_chunk= data.table::fread(large_file_path, header= FALSE, sep= ',',
                                      col.names= header_col_names,
