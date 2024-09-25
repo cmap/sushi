@@ -39,7 +39,7 @@ get_index_summary= function(df, index_col, valid_indices) {
   output_summary= df %>% dplyr::group_by(pick(all_of(index_col))) %>% 
     dplyr::summarise(idx_n= sum(n)) %>% dplyr::ungroup() %>%
     dplyr::mutate(fraction= round(idx_n/sum(idx_n), 5),
-                  expected= ifelse(.[[index_col]] %in% valid_indices, T, F),
+                  expected= ifelse(.[[index_col]] %chin% valid_indices, T, F),
                   contains_n= ifelse(grepl('N', .[[index_col]]), T, F),
                   lv_dist= apply(stringdist::stringdistmatrix(.[[index_col]], valid_indices, method="lv"), 
                                  1, min),
@@ -59,28 +59,67 @@ get_index_summary= function(df, index_col, valid_indices) {
 #' @param value_col String name of the counts column present all three dataframes.
 #' @param file_path Location to write out the output.
 #' @returns Writes out a QC_table to the file_path.
-create_qc_table= function(raw_counts_uncollapsed, raw_counts, filtered_counts, value_col= 'n', file_path) {
-  # Validation: Check that value_col is present in the three files.
-  if(!validate_columns_exist(value_col, raw_counts_uncollapsed)) {
+create_qc_table= function(raw_counts_uncollapsed_filepath, unknown_reads, known_reads, filtered_counts,
+                          value_col= 'n', file_path) {
+  # Validations: Check that the path works and that value_col exists in all tables
+  if(!file.exists(raw_counts_uncollapsed_filepath)) {
+    stop('Cannot find the raw counts uncollapsed file.')
+  }
+  rcu_headers= data.table::fread(raw_counts_uncollapsed_filepath, header= TRUE, sep= ',', nrow= 0)
+  if(!validate_columns_exist(value_col, rcu_headers)) {
     stop(paste0('The column ', value_col, " was not detected in uncollapsed raw counts."))
   }
-  if(!validate_columns_exist(value_col, raw_counts)) {
-    stop(paste0('The column ', value_col, " was not detected in raw counts."))
+  if(!validate_columns_exist(value_col, unknown_reads)) {
+    stop(paste0('The column ', value_col, " was not detected in unknown_reads.csv"))
+  }
+  if(!validate_columns_exist(value_col, known_reads)) {
+    stop(paste0('The column ', value_col, " was not detected in known_reads.csv"))
   }
   if(!validate_columns_exist(value_col, filtered_counts)) {
-    stop(paste0('The column ', value_col, " was not detected in filtered counts."))
+    stop(paste0('The column ', value_col, " was not detected in filtered_counts.csv"))
   }
   
   # Calculate purities
-  index_purity= sum(raw_counts[[value_col]]) / sum(raw_counts_uncollapsed[[value_col]])
+  # Determine total number of reads
+  chunk_sum= process_in_chunks(large_file_path= raw_counts_uncollapsed_filepath, 
+                               chunk_size= 10^6, 
+                               action= function(x) data.table::as.data.table(sum(x[[value_col]])))
+  total_num_reads= sum(unlist(test_sum))
+  
+  # Calculate purities
+  index_purity= (sum(unknown_reads[[value_col]]) + sum(known_reads[[value_col]])) / total_num_reads
   print(paste0('Index purity: ', round(index_purity, 4)))
-  cell_line_purity= sum(filtered_counts[[value_col]]) / sum(raw_counts[[value_col]])
+  cell_line_purity= sum(filtered_counts[[value_col]]) / (sum(unknown_reads[[value_col]]) + sum(known_reads[[value_col]])) 
   print(paste0('Cell line purity: ', round(cell_line_purity, 4)))
   qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
   
   # Write out table
   print(paste0('Writing QC table out to ', file_path))
   qc_table %>% write.csv(file_path, row.names= FALSE, quote= FALSE)
+}
+
+process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
+  
+  header_col_names= data.table::fread(large_file_path, header= TRUE, sep= ',', nrow= 0) %>% colnames()
+  chunk_idx= 1 # Counter to keep track of chunks in a loop
+  current_chunk_size= chunk_size # Variable for loop exit condition
+  chunk_collector= list() # List to collect processed chunks
+  
+  # For each chunk, call an action
+  while(current_chunk_size == chunk_size) {
+    current_chunk= data.table::fread(large_file_path, header= FALSE, sep= ',',
+                                     col.names= header_col_names,
+                                     nrow= chunk_size, skip= chunk_size * (chunk_idx - 1) + 1)
+    
+    current_chunk_size= nrow(current_chunk) # set current chunk size to stop loop
+    print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
+    
+    chunk_collector[[chunk_idx]]= do.call(action, list(current_chunk, ...))
+    chunk_idx= chunk_idx + 1
+  }
+  
+  output_table= data.table::rbindlist(chunk_collector)
+  return(output_table)
 }
 
 #' Total counts barplot
@@ -468,6 +507,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   # Required packages ----
   require(tidyverse)
   require(magrittr)
+  require(data.table)
   require(reshape2)
   require(WGCNA)
   require(scales)
@@ -495,30 +535,44 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   # Sequencing QCs ____________________ ----
   ## 1. Purity metrics ----
   print('1. Generating QC table ...')
-  create_qc_table(raw_counts_uncollapsed, raw_counts, filtered_counts,
+  create_qc_table(raw_counts_uncollapsed, 
+                  unknown_reads= unknown_reads,
+                  known_reads= known_reads,
+                  filtered_counts,
                   value_col= 'n', file_path= paste0(out, '/QC_table.csv'))
   
   ## 2. Index count summaries ----
   print("2. Generating index counts tables ...")
-  # Check that "IndexBarcode1" and "index_1" columns are present.
-  # If so, calculate index summary and write out.
-  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed)) {
+  
+  # Pull out headers to perform checks
+  raw_counts_uncollapsed_headers= data.table::fread(raw_counts_file_path, header= TRUE, sep= ',', nrow= 0)
+  
+  # Check that "index_1" is present. If so, calculate index summary and write out.
+  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_headers)) {
     expected_index1= unique(sample_meta$index_1)
-    index1_counts= get_index_summary(raw_counts_uncollapsed, 'index_1', expected_index1)
+    # Aggregate by index_1 using chunks
+    index1_chunks= process_in_chunks(large_file_path= raw_counts_file_path, chunk_size= 10^6, 
+                                     action= function(x) x[, list(n= sum(n)), by= index_1]) 
+    index1_counts= get_index_summary(index1_chunks, 'index_1', expected_index1)
     index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
   } else {
     print('Column "index_1" not detected. Skipping index 1 summaries ...', quote= FALSE)
   }
   
   # Do the same for index 2.
-  # Reverse index 2 barcodes if it is indicated and if "index_2" exisits
+  # Reverse index 2 barcodes if it is indicated and if "index_2" exists
   if(reverse_index2 & 'index_2' %in% colnames(sample_meta) ) {
     print("Reverse-complementing index 2 barcode.")
     sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
   }
   
-  if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts_uncollapsed)) {
+  if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts_uncollapsed_headers)) {
     expected_index2= unique(sample_meta$index_2)
+    
+    # Aggregate by index_2 using chunks
+    index2_chunks= process_in_chunks(large_file_path= raw_counts_file_path, chunk_size= 10^6, 
+                                     action= function(x) x[, list(n= sum(n)), by= index_2]) 
+    
     index2_counts= get_index_summary(raw_counts_uncollapsed, 'index_2', expected_index2)
     index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
   } else {
@@ -594,59 +648,15 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   ## 6. Contaminant reads ----
   print('6. Generating contaminant reads ...')
   potential_error= base::tryCatch({
-    pcr_locations= c('pcr_plate', 'pcr_well')
+    # watered down version
+    summed_unknown_reads= unknown_reads[, list(num_reads = sum(n), num_wells= .N), 
+                                        by= base::mget('forward_read_cl_barcode')]
+    summed_contams= annotated_counts[expected_read == FALSE, list(num_reads = sum(n), num_wells= .N),
+                                          by= base::mget(c('forward_read_cl_barcode', 'DepMap_ID', 'cb_name'))]
+    summed_contams[, barcode_name:= ifelse(is.na(DepMap_ID), cb_name, DepMap_ID)][,DepMap_ID:= NULL]
     
-    # Validation: Check that the PCR columns are present in raw_counts.
-    if(!validate_columns_exist(pcr_locations, raw_counts)) {
-      stop('pcr_plate and pcr_well are required in raw_counts.csv for this to work.')
-    }
-      
-    # count number of wells a cell_set appears in.
-    pcr_plate_map= sample_meta %>% dplyr::distinct(pick(any_of(c(pcr_locations, 'cell_set')))) %>%
-      dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
-      dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
-
-    # index filter and identify reads as mapped or not
-    sequencing_filter= raw_counts %>%
-      dplyr::mutate(mapped= forward_read_cl_barcode %in% unique(annotated_counts$forward_read_cl_barcode))
-
-    # total counts per well - used to calculate fractions
-    counts_per_well= sequencing_filter %>% dplyr::group_by(pick(all_of(pcr_locations))) %>%
-      dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
-
-    # mapped contaminates to bind
-    mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
-      dplyr::mutate(barcode_name= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
-      dplyr::select(all_of(c(pcr_locations, 'forward_read_cl_barcode', 'n', 'barcode_name')))
-    
-    contam_reads= sequencing_filter %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%
-      dplyr::bind_rows(mapped_contams) %>%
-      dplyr::left_join(counts_per_well, by= pcr_locations) %>%
-      dplyr::left_join(pcr_plate_map, by= pcr_locations) %>%
-      # filter out barcodes that only appear in one well
-      dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
-      # number of wells in a pcr plate a barcode is detected in
-      dplyr::group_by(forward_read_cl_barcode, pcr_plate) %>%
-      dplyr::mutate(num_wells_detected_plate= dplyr::n()) %>% dplyr::ungroup() %>%
-      # number of wells in a cell set a barcode is detected in
-      dplyr::group_by(forward_read_cl_barcode, cell_set) %>%
-      dplyr::mutate(num_wells_detected_set= dplyr::n()) %>% dplyr::ungroup() %>%
-      # determine if contamination is project, plate, or set
-      dplyr::group_by(forward_read_cl_barcode) %>%
-      dplyr::mutate(num_wells_detected= dplyr::n(),
-                    project_code= unique(sample_meta$project_code),
-                    fraction= n/well_total_n,
-                    type1= ifelse(sum(num_wells_detected== nrow(pcr_plate_map))>1, 'project_contam', NA),
-                    type2= ifelse(sum(num_wells_detected== num_wells_detected_plate & 
-                                        num_wells_detected_plate == num_wells_in_plate)>1, 'plate_contam', NA),
-                    type3= ifelse(sum(num_wells_detected == num_wells_detected_set &
-                                        num_wells_detected_set== num_wells_in_set)>1, 'set_contam', NA)) %>%
-      dplyr::ungroup() %>%
-      tidyr::unite(scope, all_of(c('type1', 'type2', 'type3')), sep=',', remove = T, na.rm = T) %>%
-      dplyr::group_by(project_code, forward_read_cl_barcode, barcode_name, scope, num_wells_detected) %>%
-      dplyr::summarise(min_n= min(n), med_n= median(n), max_n= max(n),
-                       min_fraction= min(fraction), med_fraction= median(fraction), max_fraction=max(fraction)) %>%
-      dplyr::arrange(desc(max_fraction))
+    contam_reads= data.table::rbindlist(list(summed_contams, summed_unknown_reads), fill= TRUE) %>%
+      dplyr::arrange(dplyr::desc(num_reads))
     
     # write out
     contam_reads %>% write.csv(paste0(out, 'contam_reads.csv'), row.names=F)
