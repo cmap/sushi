@@ -7,7 +7,7 @@
 #'           n: raw readcounts
 #'           trt_type: spcification of sample type (e.g. whether a sample is a control or not)
 #'           ccle_name: contains the name of the cell line that the read corresponds to, or NA
-#'           Name: contains the name of the control barcode that the read corresponds to, or NA
+#'           cb_name: contains the name of the control barcode that the read corresponds to, or NA
 #'           all columns specified in sample_cols and sig_cols 
 #' @param sample_cols - a vector of column names denoting which values specify each individual sample
 #'                    (by default: cell_set, treatment, dose, dose_unity, day, and bio_rep)
@@ -29,7 +29,7 @@ run_DE = function(filtered_counts,
     dplyr::select(-any_of(c("log_dose", "log_n"))) %>% 
     dplyr::group_by_at(setdiff(names(.), c("n", "tech_rep", "profile_id", "pcr_plate", "pcr_well"))) %>% 
     dplyr::summarise(n=round(mean(n))) %>% ungroup() %>% 
-    mutate(ccle_name = ifelse(is.na(ccle_name), as.character(Name), as.character(ccle_name)),
+    mutate(ccle_name = ifelse(is.na(ccle_name), as.character(cb_name), as.character(ccle_name)),
            ccle_name = paste0(ccle_name, "__", cell_set)) %>% 
     dcast(ccle_name~sample_id, value.var="n") %>% 
     column_to_rownames("ccle_name") %>% 
@@ -73,8 +73,8 @@ run_DE = function(filtered_counts,
   
   l2fc_DEseq = filtered_counts %>% 
     filter(!trt_type %in% c("day_0", "empty", control_type)) %>% 
-    mutate(ccle_name = ifelse(is.na(ccle_name), as.character(Name), as.character(ccle_name))) %>%
-    select(-any_of(c("Name", "log_dose", "n", "log_n", "bio_rep", "tech_rep", "profile_id", "sample_id"))) %>% 
+    mutate(ccle_name = ifelse(is.na(ccle_name), as.character(cb_name), as.character(ccle_name))) %>%
+    select(-any_of(c("cb_name", "log_dose", "n", "log_n", "bio_rep", "tech_rep", "profile_id", "sample_id"))) %>% 
     distinct() %>% 
     merge(final, by=c("ccle_name", "cell_set", "sig_id"), all.x=F)
   

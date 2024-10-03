@@ -32,7 +32,7 @@ input_id_cols= unlist(strsplit(args$id_cols, ","))
 # Run normalize ----
 print("Creating normalized count file ...")
 normalized_counts = normalize(X= filtered_counts, id_cols= input_id_cols,
-                              barcodes= CB_meta$Name, 
+                              barcodes= CB_meta$cb_name, 
                               pseudocount= input_pseudocount)
 
 # Write out file ----
