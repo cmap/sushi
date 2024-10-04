@@ -65,7 +65,7 @@ sig_cols= unlist(strsplit(args$sig_cols, ','))
 
 # Call QC images function ----
 print("Calling QC images ...")
-QC_images(raw_counts_uncollapsed_filepath= raw_counts_uncollapsed,
+QC_images(raw_counts_uncollapsed_path= args$raw_counts_uncollapsed,
           prism_barcode_counts= prism_barcode_counts, 
           unknown_barcode_counts= unknown_barcode_counts,
           annotated_counts= annotated_counts, 
