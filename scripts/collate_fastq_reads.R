@@ -63,7 +63,7 @@ chunked_results= process_in_chunks(large_file_path= args$raw_counts_uncollapsed,
                                    sample_meta= sample_meta, 
                                    sequencing_index_cols= sequencing_index_cols,
                                    id_cols= id_cols,
-                                   known_barcodes= unique(cell_line_meta$Sequence, CB_meta$Sequence),
+                                   known_barcodes= unique(c(cell_line_meta$Sequence, CB_meta$Sequence)),
                                    reverse_index2= args$reverse_index2,
                                    barcode_col= args$barcode_col)
 
