@@ -64,13 +64,13 @@ if(file.exists(args$lfc)) {
   # Write out
   outpath= paste(args$out, 'l2fc_with_meta_columns.csv', sep='/')
   print(paste("Writing l2fc_with_meta_columns.csv to ", outpath))
-  write.csv(l2fc_with_meta_columns, outpath, row.names= FALSE, quote= FALSE)
+  l2fc_with_meta_columns %>% write.csv(outpath, row.names= FALSE, quote= FALSE)
 } else {
   print('WARNING: l2fc.csv does not exist. Skipping this file.')
 }
 
 # Add sample meta and assay pool meta to collapsed_l2fc table ----
-if(file.exists(args$collapsed_l2fc)) {
+if(file.exists(args$collapsed_lfc)) {
   print('Attempting to add sample_meta to collapsed l2fc.')
   collapsed_l2fc= data.table::fread(args$collapsed_l2fc, header= T, sep= ',')
   
@@ -91,7 +91,7 @@ if(file.exists(args$collapsed_l2fc)) {
   # Write out
   outpath= paste(args$out, 'collapsed_l2fc_with_meta_columns.csv', sep='/')
   print(paste("Writing collapsed_l2fc_with_meta_columns.csv to ", outpath))
-  write.csv(collapsed_l2fc_with_meta_columns, outpath, row.names= FALSE, quote= FALSE)
+  collapsed_l2fc_with_meta_columns %>% write.csv(outpath, row.names= FALSE, quote= FALSE)
 } else {
   print('WARNING: collapsed_l2fc.csv does not exist. Skipping this file.')
 }
