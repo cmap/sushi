@@ -108,12 +108,13 @@ echo CELL_LINE_META is: $CELL_LINE_META
 args=(
 --raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
 --sample_meta "$SAMPLE_META"
---out "$BUILD_DIR"
+--cell_line_meta "$CELL_LINE_META"
+--CB_meta "$CONTROL_BARCODE_META"
 --sequencing_index_cols="$SEQUENCING_INDEX_COLS"
 --id_cols "$ID_COLS" 
 --reverse_index2 "$REVERSE_INDEX2"
---cell_line_meta "$CELL_LINE_META"
---CB_meta "$CONTROL_BARCODE_META"
+--barcode_col "$BARCODE_COL"
+--out "$BUILD_DIR"
 )
 
 echo Rscript collate_fastq_reads.R "${args[@]}"

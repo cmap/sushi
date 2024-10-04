@@ -54,6 +54,7 @@ pipeline {
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'Set of columns that define individual controls in COMPUTE_LFC')
         
         // Additional parameters
+        string(name: 'BARCODE_COL', defaultValue: 'forward_read_cl_barcode', description: 'In COLLATE_FASTQ_READS, the name of the column containing the read')
         string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'In CBNORMALIZE, the pesudocount value for log transformations.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'In COMPUTE_LFC, the name of the numeric column to use for calculations')
         string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'In COMPUTE_LFC, the value in trt_type that indicates the negative controls')
@@ -125,7 +126,7 @@ pipeline {
                         'SEQUENCING_INDEX_COLS', 'ID_COLS', 'CELL_LINE_COLS', 'SIG_COLS', 'CONTROL_COLS',
 
                         // additional parameters
-                        'PSEUDOCOUNT', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'API_URL'
+                        'BARCODE_COL', 'PSEUDOCOUNT', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'API_URL'
                     ]
 
                     def config = [:]

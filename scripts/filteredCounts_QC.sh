@@ -65,11 +65,19 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$RAW_COUNTS" = /* ]]
+if [[ "$PRISM_BARCODE_COUNTS" = /* ]]
 then
-	RAW_COUNTS=$(ls $RAW_COUNTS)
+	PRISM_BARCODE_COUNTS=$(ls $PRISM_BARCODE_COUNTS)
 else
-	RAW_COUNTS=$BUILD_DIR/$RAW_COUNTS
+	PRISM_BARCODE_COUNTS=$BUILD_DIR/$PRISM_BARCODE_COUNTS
+fi
+
+#Enforces abs paths
+if [[ "$UNKNOWN_BARCODE_COUNTS" = /* ]]
+then
+	UNKNOWN_BARCODE_COUNTS=$(ls $UNKNOWN_BARCODE_COUNTS)
+else
+	UNKNOWN_BARCODE_COUNTS=$BUILD_DIR/$UNKNOWN_BARCODE_COUNTS
 fi
 
 #Enforces abs paths
@@ -105,7 +113,6 @@ echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
 echo RAW_COUNTS_UNCOLLAPSED is: $RAW_COUNTS_UNCOLLAPSED
 echo LFC is: $LFC
-echo RAW_COUNTS is: $RAW_COUNTS
 echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
 args=(
@@ -117,23 +124,13 @@ args=(
 --count_threshold "$COUNT_THRESHOLD"
 --control_type "$CTL_TYPES"
 --raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
---raw_counts "$RAW_COUNTS"
+--prism_barcode_counts "$PRISM_BARCODE_COUNTS"
+--unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
 --lfc "$LFC"
 --id_cols "$ID_COLS"
 --reverse_index2 "$REVERSE_INDEX2"
 )
 
-echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
---annotated_counts $ANNOTATED_COUNTS \
---normalized_counts $NORMALIZED_COUNTS \
---sig_cols $SIG_COLS \
---out $BUILD_DIR \
---count_threshold $COUNT_THRESHOLD \
---reverse_index2 $REVERSE_INDEX2 \
---control_type $CTL_TYPES \
---raw_counts_uncollapsed $RAW_COUNTS_UNCOLLAPSED \
---raw_counts $RAW_COUNTS \
---lfc $LFC \
---id_cols $ID_COLS
+echo Rscript filteredCounts_QC.R "${args[@]}"
 
 Rscript filteredCounts_QC.R "${args[@]}"

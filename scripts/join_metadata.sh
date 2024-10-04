@@ -36,11 +36,11 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$COLLAPSED_VALUES" = /* ]]
+if [[ "$COLLAPSED_LFC" = /* ]]
 then
-	COLLAPSED_VALUES=$(ls $COLLAPSED_VALUES)
+	COLLAPSED_LFC=$(ls $COLLAPSED_LFC)
 else
-	COLLAPSED_VALUES=$BUILD_DIR/$COLLAPSED_VALUES
+	COLLAPSED_LFC=$BUILD_DIR/$COLLAPSED_LFC
 fi
 
 #Enforces abs paths
@@ -61,18 +61,18 @@ fi
 
 echo Build dir is: $BUILD_DIR
 echo LFC is: $LFC
-echo COLLAPSED_VALUES is: $COLLAPSED_VALUES
+echo COLLAPSED_LFC is: $COLLAPSED_LFC
 echo SAMPLE_META is: $SAMPLE_META
 
 echo Rscript join_metadata.R --lfc $LFC	\
---collapsed_l2fc $COLLAPSED_VALUES \
+--collapsed_lfc $COLLAPSED_LFC \
 --assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
 --sample_meta $SAMPLE_META
 
 Rscript join_metadata.R --lfc $LFC	\
---collapsed_l2fc $COLLAPSED_VALUES \
+--collapsed_lfc $COLLAPSED_LFC \
 --assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
