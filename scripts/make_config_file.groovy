@@ -13,7 +13,7 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Check this to trigger the CBnormalize job.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Check this to trigger the compute_l2fc job.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
-        booleanParam(name: 'FILTER_COUNTS_QC', defaultValue: true, description: 'Check this to trigger the QC job.')
+        booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC job.')
         booleanParam(name: 'JOIN_METADATA', defaultValue: true, description: 'Check this to trigger the join_metadata job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
         booleanParam(name: 'RUN_NORM', defaultValue: true, description: 'Run normalization module on data.')
@@ -30,7 +30,7 @@ pipeline {
         string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch or if already specified in the config file.)')
 
         // Metadata files used by sushi
-        string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name of sample metadata within the BUILD_DIR directory.')
+        string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name of sample metadata within the BUILD_DIR directory.\n can text be formated here?')
         string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell Set Metadata. Static cell_line_meta location: /data/vdb/prismSeq/cell_set_meta.csv')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
         string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes.')
@@ -40,11 +40,11 @@ pipeline {
         string(name: 'RAW_COUNTS_UNCOLLAPSED', defaultValue: 'raw_counts_uncollapsed.csv', description: 'Filename in BUILD_DIR containing nori output')
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts')
         string(name: 'UNKNOWN_BARCODE_COUNTS', defaultValue: 'unknown_barcode_counts.csv', description: 'Filename in BUILD_DIR containing unknown barcode counts')
-        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'File in BUILD_DIR containing annotated counts')
-        string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'File in BUILD_DIR containing filtered counts')
-        string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'File in BUILD_DIR containing normalized counts')
-        string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'File containing log2 fold change values')
-        string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'File in BUILD_DIR containing replicate collapsed l2fc values')
+        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'Filename in BUILD_DIR containing annotated counts')
+        string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'Filename in BUILD_DIR containing filtered counts')
+        string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'Filename in BUILD_DIR containing normalized counts')
+        string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'Filename containing log2 fold change values')
+        string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values')
 
         // Column names parameters
         string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'Sequencing index columns used in COLLATE_FASTQ_READS')
@@ -58,7 +58,7 @@ pipeline {
         string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'In CBNORMALIZE, the pesudocount value for log transformations.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'In COMPUTE_LFC, the name of the numeric column to use for calculations')
         string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'In COMPUTE_LFC, the value in trt_type that indicates the negative controls')
-        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'In FILTER_COUNTS_QC, the threshold for calling reads with low counts')
+        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'In QC_IMAGES, the threshold for calling reads with low counts')
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
     }
 
@@ -219,7 +219,7 @@ pipeline {
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates.sh')
                         }
-                        if (params.FILTER_COUNTS_QC) {
+                        if (params.QC_IMAGES) {
                             scriptsToRun.add('filteredCounts_QC.sh')
                         }
                         if (params.JOIN_METADATA) {
