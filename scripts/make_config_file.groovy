@@ -13,6 +13,8 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Check this to trigger the CBnormalize job.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Check this to trigger the compute_l2fc job.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
+        booleanParam(name: 'FILTER_COUNTS_QC', defaultValue: true, description: 'Check this to trigger the QC job.')
+        booleanParam(name: 'JOIN_METADATA', defaultValue: true, description: 'Check this to trigger the join_metadata job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
         booleanParam(name: 'RUN_NORM', defaultValue: true, description: 'Run normalization module on data.')
         booleanParam(name: 'PULL_POOL_ID', defaultValue: false, description: 'Flag indicating whether to pull pool IDs from CellDB - only applicable to cell sets (i.e. EXT.PR500.CS01.1.A, EXT.PR500.CS01.1.B, etc).')
@@ -22,31 +24,40 @@ pipeline {
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
         string(name: 'SCREEN', defaultValue: '', description: 'Screen name from COMET, necessary if using COMET for sample metadata.')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
-        string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'Type to mark as control in compute_LFC')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
         booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
         string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch or if already specified in the config file.)')
-        string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell set metadata')
-        string(name: 'ID_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep', description: 'Columns to concat to create unique ID for each sample-replicate')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'Set of columns that define individual controls')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day', description: 'Signature columns')
-        string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'index_1,index_2,flowcell_names', description: 'Sequencing index columns')
-        string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes.')
-        string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Field used to calculate L2FC')
-        string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell Set Metadata. Static cell_line_meta location: /data/vdb/prismSeq/cell_set_meta.csv')
+
+        // Metadata files used by sushi
         string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name of sample metadata within the BUILD_DIR directory.')
-        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Minimum threshold to filter cell line counts by.')
-        string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Pseudocount for normalization.')
+        string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell Set Metadata. Static cell_line_meta location: /data/vdb/prismSeq/cell_set_meta.csv')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
-        string(name: 'RAW_COUNTS_UNCOLLAPSED', defaultValue: 'raw_counts_uncollapsed.csv', description: 'Filename in BUILD_DIR containing nori output')
-        string(name: 'RAW_COUNTS', defaultValue: 'raw_counts.csv', description: 'Filename in BUILD_DIR containing raw counts')
-        string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'File in BUILD_DIR containing filtered counts')
-        string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'File containing log2 fold change values')
-        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'File in BUILD_DIR containing annotated counts')
-        string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'File in BUILD_DIR containing normalized counts')
-        string(name: 'COLLAPSED_VALUES', defaultValue: 'collapsed_l2fc.csv', description: 'File in BUILD_DIR containing replicate collapsed l2fc values')
+        string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes.')
         string(name: 'ASSAY_POOL_META', defaultValue: 'assay_pool_meta.txt', description: 'File in BUILD_DIR containing assay pool metadata')
+
+        // Files consumed and created by sushi
+        string(name: 'RAW_COUNTS_UNCOLLAPSED', defaultValue: 'raw_counts_uncollapsed.csv', description: 'Filename in BUILD_DIR containing nori output')
+        string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts')
+        string(name: 'UNKNOWN_BARCODE_COUNTS', defaultValue: 'unknown_barcode_counts.csv', description: 'Filename in BUILD_DIR containing unknown barcode counts')
+        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'File in BUILD_DIR containing annotated counts')
+        string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'File in BUILD_DIR containing filtered counts')
+        string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'File in BUILD_DIR containing normalized counts')
+        string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'File containing log2 fold change values')
+        string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'File in BUILD_DIR containing replicate collapsed l2fc values')
+
+        // Column names parameters
+        string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'Sequencing index columns used in COLLATE_FASTQ_READS')
+        string(name: 'ID_COLS', defaultValue: 'pcr_plate,pcr_well', description: 'Columns to concat to create unique ID for each sample-replicate')
+        string(name: 'CELL_LINE_COLS', defaultValue: 'DepMap_ID', description: 'Columns in intermediate files that describe a read or cell line')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day', description: 'Signature columns')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'Set of columns that define individual controls in COMPUTE_LFC')
+        
+        // Additional parameters
+        string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'In CBNORMALIZE, the pesudocount value for log transformations.')
+        string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'In COMPUTE_LFC, the name of the numeric column to use for calculations')
+        string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'In COMPUTE_LFC, the value in trt_type that indicates the negative controls')
+        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'In FILTER_COUNTS_QC, the threshold for calling reads with low counts')
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
     }
 
@@ -100,12 +111,21 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'REVERSE_INDEX2',
-                        'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SIG_COLS',
-                        'RUN_NORM', 'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
-                        'PULL_POOL_ID', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
-                        'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
-                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL', 'FILTER_COUNTS_QC', 'ASSAY_POOL_META', 'SCREEN',
-                        'RAW_COUNTS_UNCOLLAPSED'
+                        'RUN_NORM', 'BUILD_NAME', 'CONVERT_SUSHI', 'PULL_POOL_ID', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
+                        'COUNTS', 'SCREEN',
+
+                        // metadata files
+                        'SAMPLE_META', 'CELL_SET_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META', 'ASSAY_POOL_META'
+
+                        // sushi files
+                        'RAW_COUNTS_UNCOLLAPSED', 'PRISM_BARCODE_COUNTS', 'UNKNOWN_BARCODE_COUNTS', 
+                        'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS', 'LFC', 'COLLAPSED_LFC'
+
+                        // column name parameters
+                        'SEQUENCING_INDEX_COLS', 'ID_COLS', 'CELL_LINE_COLS', 'SIG_COLS', 'CONTROL_COLS',
+
+                        // additional parameters
+                        'PSEUDOCOUNT', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'API_URL'
                     ]
 
                     def config = [:]
