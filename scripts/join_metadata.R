@@ -72,7 +72,7 @@ if(file.exists(args$lfc)) {
 # Add sample meta and assay pool meta to collapsed_l2fc table ----
 if(file.exists(args$collapsed_lfc)) {
   print('Attempting to add sample_meta to collapsed l2fc.')
-  collapsed_l2fc= data.table::fread(args$collapsed_l2fc, header= T, sep= ',')
+  collapsed_l2fc= data.table::fread(args$collapsed_lfc, header= T, sep= ',')
   
   # Add sample meta columns to collapsed l2fc
   collapsed_l2fc_with_meta_columns= join_metadata(input_df= collapsed_l2fc, metadata= sample_meta, 
