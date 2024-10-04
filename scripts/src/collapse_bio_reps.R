@@ -1,19 +1,3 @@
-#' validate_columns_exist
-#' 
-#' This function checks that a list of columns are present in a dataframe.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_columns_exist= function(selected_columns, df) {
-  # Check that all of selected_columns are in df
-  if(any(!selected_columns %in% colnames(df))) {
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
 #' validate_num_bio_reps
 #' 
 #' This function checks that all the expected flowcells are present in a table of detected flowcells.
@@ -57,8 +41,7 @@ collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'D
   }
   
   # Median collapsing bio replicates ----
-  collapsed_counts= l2fc %>% dplyr::filter(is.na(counts_flag)) %>% 
-    tidyr::unite(col= 'sig_id', all_of(sig_cols), sep= ':', na.rm= FALSE, remove= FALSE) %>%
+  collapsed_counts= l2fc %>% tidyr::unite(col= 'sig_id', all_of(sig_cols), sep= ':', na.rm= FALSE, remove= FALSE) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'sig_id', sig_cols)))) %>%
     dplyr::summarise(trt_median_n= median(mean_n), trt_median_normalized_n= median(mean_normalized_n),
                      trt_mad_sqrtN= mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
