@@ -8,16 +8,16 @@
 #' @param value_col String name of the counts column present all three dataframes.
 #' @param file_path Location to write out the output.
 #' @returns Writes out a QC_table to the file_path.
-create_qc_table= function(raw_counts_uncollapsed_filepath, unknown_barcode_counts, 
+create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts, 
                           prism_barcode_counts, filtered_counts,
                           value_col= 'n', output_path) {
   # Validation: Check that the file at the path exists
-  if(!file.exists(raw_counts_uncollapsed_filepath)) {
+  if(!file.exists(raw_counts_uncollapsed_path)) {
     stop('Cannot find the raw counts uncollapsed file.')
   }
   
   # Pull out only the headers of the large file for validation
-  rcu_headers= data.table::fread(raw_counts_uncollapsed_filepath, header= TRUE, sep= ',', nrow= 0)
+  rcu_headers= data.table::fread(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
   
   # Validation: Check that value_col exists in raw_counts_uncollapsed
   if(!validate_columns_exist(value_col, rcu_headers)) {
@@ -40,7 +40,7 @@ create_qc_table= function(raw_counts_uncollapsed_filepath, unknown_barcode_count
   }
   
   # Determine total number of reads in raw_counts_uncollapsed using chunking
-  chunk_sum= process_in_chunks(large_file_path= raw_counts_uncollapsed_filepath, 
+  chunk_sum= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, 
                                chunk_size= 10^6, 
                                action= function(x) data.table::as.data.table(sum(x[[value_col]])))
   total_num_reads= sum(unlist(chunk_sum))
@@ -111,7 +111,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   # Sum up reads 
   total_counts= filtered_counts %>%
     dplyr::mutate(barcode_type= case_when(!is.na(CCLE_name) ~ 'cell line',
-                                          !is.na(cb_name) ~ 'ctrl barcode')) %>%
+                                          !is.na(Name) ~ 'ctrl barcode')) %>%
     tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
     dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
     dplyr::summarise(total_counts= sum(n)) %>% dplyr::ungroup()
@@ -391,7 +391,7 @@ create_cor_heatmap= function(input_df, row_id_cols, col_id_cols, value_col,
 #' From a long table, creates scatter plots to two replicates.
 #' 
 #' @import tidyverse
-#' @import ggmisc
+#' @import ggpmisc
 #' @param input_df Dataframe.
 #' @param cell_line_cols List of column names used to identify each cell line or control barcode.
 #' @param replicate_group_cols List of column names that describe a group of similar conditions.
@@ -466,7 +466,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @param reverse_index2 Boolean set to TRUE if the sequencing involved the reverse complement workflow.
 #' @param out Path to the directory to save the QC images.
 #' @returns NA. QC images are written out to the specified folder.
-QC_images= function(raw_counts_uncollapsed_filepath,
+QC_images= function(raw_counts_uncollapsed_path,
                     prism_barcode_counts, unknown_barcode_counts,
                     annotated_counts, normalized_counts= NA, l2fc, 
                     sample_meta,
@@ -483,7 +483,7 @@ QC_images= function(raw_counts_uncollapsed_filepath,
   require(reshape2)
   require(WGCNA)
   require(scales)
-  require(ggmisc)
+  require(ggpmisc)
   
   # Some preprocessing ----
   # Set out directory if none is specified.
@@ -511,7 +511,7 @@ QC_images= function(raw_counts_uncollapsed_filepath,
                   unknown_barcode_counts= unknown_barcode_counts,
                   prism_barcode_counts= prism_barcode_counts,
                   filtered_counts= filtered_counts,
-                  value_col= 'n', file_path= paste0(out, '/QC_table.csv'))
+                  value_col= 'n', output_path= paste0(out, '/QC_table.csv'))
   
   ## 2. Index count summaries ----
   print('2. Generating index counts tables ...')
@@ -553,7 +553,7 @@ QC_images= function(raw_counts_uncollapsed_filepath,
     expected_index2= unique(sample_meta$index_2)
     
     # Call get_index_summary over index2_chunks as a full table, then write out table
-    index2_counts= get_index_summary(data.table::rbindlist(raw_counts_uncollapsed), 'index_2', expected_index2)
+    index2_counts= get_index_summary(data.table::rbindlist(index2_chunks), 'index_2', expected_index2)
     index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep= '/'), row.names= FALSE, quote= FALSE)
   } else {
     print('Column "index_2" not detected. Skipping index 2 summaries ...',  quote= FALSE)
@@ -572,7 +572,7 @@ QC_images= function(raw_counts_uncollapsed_filepath,
   }, error= function(e) {
     print(e)
     print('Encountered an error when creating the total counts barplot. Skipping this output ...') 
-    return('QC table')
+    return('Totalc ounts image')
   })
   
   # Collect returned string if an error occurred
