@@ -1,52 +1,5 @@
 options(cli.unicode = FALSE)
 
-#' validate_columns_exist
-#' 
-#' This function checks that a list of columns are present in a dataframe.
-#' Columns that were not found in the dataframe are printed out.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_columns_exist= function(selected_cols, df) {
-  # Check that all of selected_columns are in df - base::setdiff(A, B) = A[!A %in% B].
-  unmatched_cols= base::setdiff(selected_cols, colnames(df))
-  
-  if(length(unmatched_cols) > 0) {
-    print('The following columns are missing: ')
-    print(unmatched_cols)
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
-#' validate_unique_samples
-#' 
-#' This function checks that a list of columns uniquely identifies all entries of a dataframe.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_unique_samples= function(selected_columns, df) {
-  message= paste0('The following columns do not uniquely identify every row of the dataframe: ',
-                  paste(selected_columns, collapse=', '))
-  print(message)
-  unique_column_values= df %>% dplyr::distinct(pick(all_of(selected_columns)))
-  if(nrow(unique_column_values) != nrow(df)) {
-    print('The selected columns do not uniquely identify all rows.')
-    
-    dups= df %>% dplyr::group_by(pick(all_of(selected_columns))) %>%
-      dplyr::filter(dplyr::n() > 1) %>% dplyr::ungroup() %>% 
-      dplyr::arrange(pick(all_of(selected_columns)))
-    print(dups)
-    
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
 #' validate_cell_set_luas
 #' 
 #' This function checks that every cell set in the sample meta does not contain duplicate members.
@@ -76,33 +29,28 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #'                   "forward_read_cl_barcode", and "n".
 #' @param sample_meta Dataframe of the metadata for the sequencing run. This file should contain the id_cols,
 #'                    "cell_set", "control_barcodes", etc.
-#' @param cell_line_meta Master metadata of cell lines with the following required columns - "CCLE_name",
-#'                       "DepMap_ID", "LUA", and "Sequence".
 #' @param cell_set_meta Master metadata of cell sets and their contents with the following required columns -
 #'                      "cell_set" and "members".
+#' @param cell_line_meta Master metadata of cell lines with the following required columns - "CCLE_name",
+#'                       "DepMap_ID", "LUA", and "Sequence".
 #' @param CB_meta Master metadata of control barcodes, their sequences, and their doses. The file should contain 
 #'                the columns - "Sequence", "Name", and "log_dose".
 #' @param id_cols Columns present in both raw_counts and sample_meta that uniquely identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
-#' @param count_threshold Threshold to call low counts. This defaults to 40. 
 #' @returns List with the following elements:
 #' #' \itemize{
-#'   \item unmapped_reads: table of reads with valid index pairs but did not map to any known barcode.
-#'         The table contains the following columns - id_cols, "forward_read_cl_barcode", and "n".
 #'   \item annotated_counts: table of reads and the associated well and well conditions.
 #'   \item filtered_counts: table of all expected reads for the project, this is a subset of annotated counts.
 #' }
-filter_raw_reads = function(raw_counts, 
-                            sample_meta, cell_line_meta, cell_set_meta, CB_meta,
-                            id_cols= c('pcr_plate', 'pcr_well'), 
-                            count_threshold= 40) {
+filter_raw_reads = function(prism_barcode_counts, 
+                            sample_meta, cell_set_meta, cell_line_meta, CB_meta,
+                            id_cols= c('pcr_plate', 'pcr_well')) {
   require(magrittr)
   require(tidyverse)
   
-  # Processing metadata and inputs ---- 
-  # CB meta is in log10 and should be converted to log2.
+  # CB meta is in log10 and should be converted to log2 ----
   if('log_dose' %in% colnames(CB_meta)) {
-    print("Converting CB_meta from log10 to log2 ...")
+    print("Converting CB_meta from log10 to log2.")
     CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
   }
   
@@ -119,13 +67,13 @@ filter_raw_reads = function(raw_counts,
   
   # Validation: Check that cell sets do not contain duplicate LUAs ----
   # This will produce a warning if a LUA appears in a cell set more than once!
-  # This currently does NOT result in an error. Error avoided using a distinct when creating the template.
+  # This currently does NOT result in an error. Error avoided using a distinct when creating the template of expected reads.
   validate_cell_set_luas(sample_meta, cell_set_meta)
   
   # Creating a template of all expected reads in the run ----
-  # Use all 4 meta data files to create a "template" dataframe where
+  # Use all 4 metadata files to create a "template" dataframe where
   # every row is a cell line that is expected in a PCR well. 
-  print('Creating template of expected reads ...')
+  print('Creating template of expected reads.')
   # Join cell_set_meta and cell_line_meta. The cell_set can be a name "P939" or a list of LUAs.
   template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
@@ -136,6 +84,8 @@ filter_raw_reads = function(raw_counts,
   
   # Check for control barcodes and add them to the template.
   if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
+    # Filter for wells with control barcodes and perform a many-to-many join. 
+    # This will expand each well entry to the number of control barcodes for that well.
     cb_template= sample_meta %>% dplyr::filter(control_barcodes %in% c('Y', 'T', T)) %>%
       dplyr::mutate(joiner= 'temp') %>%
       dplyr::inner_join(CB_meta %>% dplyr::mutate(joiner= 'temp'), by='joiner', relationship= 'many-to-many') %>% 
@@ -144,35 +94,11 @@ filter_raw_reads = function(raw_counts,
   }
   
   # Annotating reads ----
-  # From the set of reads that have the valid sequencing_index_cols combinations and map to the PRISM seq library,
-  # join in metadata to give each read a name and PCR location.
-  # Reads that to not match to the template are contaminants and,
-  # reads that are only present in the template are missing/not detected by PCR.
-  print("Annotating reads ...")
-  # Data.table version #
-  # # Left join cell_line_meta using data.table inplace left join
-  # raw_counts[cell_line_meta, base::setdiff(colnames(cell_line_meta), c('Sequence')) := 
-  #              base::mget(base::setdiff(colnames(cell_line_meta), c('Sequence'))), 
-  #            on= c('forward_read_cl_barcode' = 'Sequence')]
-  # # Left join CB_meta using data.table inplace left join
-  # raw_counts[CB_meta, base::setdiff(colnames(CB_meta), c('Sequence')) := 
-  #              base::mget(base::setdiff(colnames(CB_meta), c('Sequence'))), 
-  #            on= c('forward_read_cl_barcode' = 'Sequence')]
-  # # Left join CB_meta using data.table inplace left join
-  # raw_counts[sample_meta, base::setdiff(colnames(sample_meta), id_cols) := 
-  #              base::mget(base::setdiff(colnames(sample_meta), id_cols)), 
-  #            on= id_cols]
-  # data.table::setnames(raw_counts, 'forward_read_cl_barcode', 'Sequence')
-  # 
-  # annotated_counts= data.table::merge.data.table(
-  #   raw_counts, data.table::setDT(template %>% dplyr::mutate(expected_read= T)), 
-  #   by= intersect(colnames(template), colnames(raw_counts)), all.x= TRUE, all.y= TRUE,
-  #   allow.cartesian= FALSE) %>%
-  #   dplyr::select(!any_of(c('prism_cell_set', 'members', 'mapped'))) %>%
-  #   dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
-  
-  # Dplyr version #
-  annotated_counts= raw_counts %>%
+  # From prism_barcode_counts, left join metadata to annotate all reads.
+  # Perform a full join with the template of expected reads so that there is a row entry for 
+  # cell lines not detected in sequencing.
+  print("Annotating reads.")
+  annotated_counts= prism_barcode_counts %>%
     dplyr::left_join(cell_line_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
                      relationship= 'many-to-one') %>%
     dplyr::left_join(CB_meta, by= join_by('forward_read_cl_barcode'=='Sequence'),
@@ -186,17 +112,14 @@ filter_raw_reads = function(raw_counts,
     dplyr::mutate(n= replace_na(n, 0), expected_read= replace_na(expected_read, F))
   
   # Generating filtered reads ----
-  # Get filtered counts from annotated counts. Also flag reads that are either missing,
-  # or below a count threshold.
+  # Get filtered counts from annotated counts and drop a few select columns.
   print("Filtering reads ...")
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read) %>%
     dplyr::select(!any_of(c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2', 
-                            'forward_read_cl_barcode', 'LUA', 'expected_read'))) %>%
-    dplyr::mutate(flag= ifelse(n==0, 'Missing', NA),
-                  flag= ifelse(n!=0 & n < count_threshold, 'low counts', flag))
+                            'forward_read_cl_barcode', 'LUA', 'expected_read')))
   
   # Calculate cell line purity ----
-  cell_line_purity= sum(filtered_counts$n)/ sum(raw_counts$n)
+  cell_line_purity= sum(filtered_counts$n)/ sum(prism_barcode_counts$n)
   print(paste0('Cell line purity: ', round(cell_line_purity, 4)))
   if(cell_line_purity > 1) {
     stop('ERROR: Cell line purity is greater than 1!')
@@ -205,9 +128,9 @@ filter_raw_reads = function(raw_counts,
     print('Warning: Low cell line purity!')
   }
   
+  # Return both annotated_counts and filtered_counts ----
   print('Filter_raw_reads has completed!')
-  return(list(annotated_counts= annotated_counts, 
-              filtered_counts= filtered_counts))
+  return(list(annotated_counts= annotated_counts, filtered_counts= filtered_counts))
 }
 
 # checks is a string can be numeric
