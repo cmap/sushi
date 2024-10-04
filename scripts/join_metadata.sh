@@ -15,7 +15,7 @@ then
 
 fi
 
-if [ -z "$COLLAPSED_VALUES" ]
+if [ -z "$COLLAPSED_LFC" ]
 then
 	echo Collapsed l2fc parameter empty
     exit -1
