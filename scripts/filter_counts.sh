@@ -8,12 +8,6 @@ then
     exit -1
 fi
 
-if [ -z "$RAW_COUNTS" ]
-then
-	echo RAW_COUNTS parameter empty
-    exit -1
-fi
-
 if [ -z "$SAMPLE_META" ]
 then
 	echo SAMPLE_META parameter empty
