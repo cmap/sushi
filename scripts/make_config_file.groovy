@@ -116,11 +116,11 @@ pipeline {
                         'COUNTS', 'SCREEN',
 
                         // metadata files
-                        'SAMPLE_META', 'CELL_SET_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META', 'ASSAY_POOL_META'
+                        'SAMPLE_META', 'CELL_SET_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META', 'ASSAY_POOL_META',
 
                         // sushi files
                         'RAW_COUNTS_UNCOLLAPSED', 'PRISM_BARCODE_COUNTS', 'UNKNOWN_BARCODE_COUNTS', 
-                        'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS', 'LFC', 'COLLAPSED_LFC'
+                        'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS', 'LFC', 'COLLAPSED_LFC',
 
                         // column name parameters
                         'SEQUENCING_INDEX_COLS', 'ID_COLS', 'CELL_LINE_COLS', 'SIG_COLS', 'CONTROL_COLS',
