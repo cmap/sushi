@@ -8,6 +8,7 @@ pipeline {
     parameters {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
+        booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Check this to trigger the create_sample_meta job.')
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
         booleanParam(name: 'FILTER_COUNTS_QC', defaultValue: true, description: 'Check this to trigger the filteredCounts_QC job.')
@@ -179,7 +180,7 @@ pipeline {
                         if (params.CREATE_CELLDB_METADATA) {
                             scriptsToRun.add('create_celldb_metadata.sh')
                         }
-                        if (params.SCREEN?.trim()) {
+                        if (params.CREATE_SAMPLE_META) {
                             scriptsToRun.add('create_sample_meta.sh')
                         }
                         if (params.COLLATE_FASTQ_READS) {
