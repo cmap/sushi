@@ -29,8 +29,16 @@ pipeline {
         booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
         string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch or if already specified in the config file.)')
 
+        // Most common parameters
+        // Column names parameters
+        string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'Sequencing index columns used in COLLATE_FASTQ_READS')
+        string(name: 'ID_COLS', defaultValue: 'pcr_plate,pcr_well', description: 'Columns to concat to create unique ID for each sample-replicate')
+        string(name: 'CELL_LINE_COLS', defaultValue: 'DepMap_ID', description: 'Columns in intermediate files that describe a read or cell line')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day', description: 'Signature columns')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'Set of columns that define individual controls in COMPUTE_LFC')
+
         // Metadata files used by sushi
-        string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name of sample metadata within the BUILD_DIR directory.\n can text be formated here?')
+        string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name of sample metadata within the BUILD_DIR directory.')
         string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell Set Metadata. Static cell_line_meta location: /data/vdb/prismSeq/cell_set_meta.csv')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
         string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes.')
@@ -46,19 +54,12 @@ pipeline {
         string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'Filename containing log2 fold change values')
         string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values')
 
-        // Column names parameters
-        string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'Sequencing index columns used in COLLATE_FASTQ_READS')
-        string(name: 'ID_COLS', defaultValue: 'pcr_plate,pcr_well', description: 'Columns to concat to create unique ID for each sample-replicate')
-        string(name: 'CELL_LINE_COLS', defaultValue: 'DepMap_ID', description: 'Columns in intermediate files that describe a read or cell line')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,treatment,dose,dose_unit,day', description: 'Signature columns')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'Set of columns that define individual controls in COMPUTE_LFC')
-        
         // Additional parameters
         string(name: 'BARCODE_COL', defaultValue: 'forward_read_cl_barcode', description: 'In COLLATE_FASTQ_READS, the name of the column containing the read')
         string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'In CBNORMALIZE, the pesudocount value for log transformations.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'In COMPUTE_LFC, the name of the numeric column to use for calculations')
         string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'In COMPUTE_LFC, the value in trt_type that indicates the negative controls')
-        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'In QC_IMAGES, the threshold for calling reads with low counts')
+        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Drops cell lines below this threshold in the negative controls')
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
     }
 
