@@ -172,8 +172,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Functions fifelse and %chin% are just faster data.table versions of ifelse and %in%.
   
   # works?
-  summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes) | 
-                                                         n >= low_abundance_threshold,
+  summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes),
                                                        get(barcode_col), 'unknown_low_abundance_barcode')]
   
   # not working
