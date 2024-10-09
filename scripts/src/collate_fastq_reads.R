@@ -171,9 +171,9 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Function := performs the mutate in place without copying the dataframe.
   # Functions fifelse and %chin% are just faster data.table versions of ifelse and %in%.
   
-  # summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes) | 
-  #                                           n >= low_abundance_threshold,
-  #                                         get(barcode_col), 'unknown_low_abundance_barcode')]
+  summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes) |
+                                                         n >= 20,
+                                                       get(barcode_col), 'unknown_low_abundance_barcode')]
   
   # The code above is the initial implementation. It works locally, but not on Jenkins.
   # The problem appears to occur when adding a second condition in the ifelse - not sure why this is happening.
@@ -186,19 +186,18 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   #                                         get(barcode_col), 'unknown_low_abundance_barcode')]
   
   # wasted
-  summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
-  prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,]
-  
-  unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]
-  unknown_barcode_counts[, c(barcode_col) := data.table::fifelse(n >= low_abundance_threshold, 
-                                                                 get(barcode_col), 'unknown_low_abundance_barcode')]
-  unknown_barcode_counts= unknown_barcode_counts[, .(n= sum(n)), by= c(id_cols, barcode_col)]
+  # print(low_abundance_threshold)
+  # summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
+  # prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,]
+  # 
+  # unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]
+  # unknown_barcode_counts[, c(barcode_col) := data.table::fifelse(n >= low_abundance_threshold, 
+  #                                                                get(barcode_col), 'unknown_low_abundance_barcode')]
+  # unknown_barcode_counts= unknown_barcode_counts[, .(n= sum(n)), by= c(id_cols, barcode_col)]
 
-  #summed_reads[, c(barcode_col) := data.table::fifelse(temp, get(barcode_col), 'unknown_low_abundance_barcode')]
-  #summed_reads[, temp := NULL]
   
   # Use data.table to group by id_cols and barcode_col and sum up reads across flowcells.
-  #summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
+  summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
   
   # Calculate index purity ----
   # This is only accurate if the Nori input file is small enough to fit into a chunk.
@@ -214,8 +213,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   
   # Return list of two dfs with known or unknown read counts ----
   print('Completing collate_fastq_reads.')
-  return(list(prism_barcode_counts= prism_barcode_counts,
-              unknown_barcode_counts= unknown_barcode_counts))
-  #return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 
-  #            unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))
+  # return(list(prism_barcode_counts= prism_barcode_counts,
+  #             unknown_barcode_counts= unknown_barcode_counts))
+  return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 
+              unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))
 }
