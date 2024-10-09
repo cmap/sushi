@@ -176,7 +176,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   #                                         get(barcode_col), 'unknown_low_abundance_barcode')]
   
   # two columns?
-  summed_reads[, temp := ifelse(get(barcode_col) %chin% unique(known_barcodes) | n >= low_abundance_threshold,
+  summed_reads[, temp := ifelse(get(barcode_col) %in% unique(known_barcodes) | n >= low_abundance_threshold,
                                           TRUE, FALSE)]
   #summed_reads[, c(barcode_col) := data.table::fifelse(temp, get(barcode_col), 'unknown_low_abundance_barcode')]
   #summed_reads[, temp := NULL]
@@ -202,11 +202,6 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   } else if(index_purity < 0.5) {
     print('Warning: Low index purity!')
   } else {}
-  
-  # troubleshooting ----
-  print(head(summed_reads))
-  print(nrow(summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,]))
-  print(nrow(summed_reads[!(summed_reads[[barcode_col]] %chin% known_barcodes),]))  
   
   # Return list of two dfs with known or unknown read counts ----
   print('Completing collate_fastq_reads.')
