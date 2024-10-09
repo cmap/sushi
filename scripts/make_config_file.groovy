@@ -2,10 +2,19 @@ import hudson.model.*
 import jenkins.model.*
 import groovy.json.JsonSlurper
 
+String sectionHeaderStyleCss = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
+String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
+
 pipeline {
     agent any
     // Define parameters that can be edited via the Jenkins UI
     parameters {
+        separator(
+          name: "Group_1",
+          sectionHeader: "Foo Params",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleCss
+        )
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Check this to trigger the create_sample_meta job.')
