@@ -52,7 +52,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                               id_cols= c('pcr_plate', 'pcr_well'),
                               known_barcodes,
                               reverse_index2= FALSE,
-                              barcode_col= 'forward_read_cl_barcode') {
+                              barcode_col= 'forward_read_cl_barcode',
+                              low_abundance_threshold= 20) {
   require(tidyverse)
   require(data.table)
   
@@ -165,11 +166,14 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Performing inner join with data.table instead of dplyr
   summed_reads= data.table::merge.data.table(uncollapsed_raw_counts, sequencing_map, by= sequencing_index_cols)
   # Code below is checking if a barcode is in the list of known barcodes.
-  # If the barcode is not in the list of known barcodes, then the barcode is replaced with the string "unknown_reads".
-  # Function := performs the mutate inplace without copying the dataframe.
+  # If the barcode is not in the list of known barcodes and its counts is below the low_abundance_threshold, 
+  # then the barcode is replaced with the string "unknown_low_abundance_barcode".
+  # Function := performs the mutate in place without copying the dataframe.
   # Functions fifelse and %chin% are just faster data.table versions of ifelse and %in%.
-  summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes), 
-                                                       get(barcode_col), 'unknown_reads')]
+  summed_reads[, c(barcode_col) := data.table::fifelse(
+    !get(barcode_col) %chin% unique(known_barcodes) & n < low_abundance_threshold, 
+    'unknown_low_abundance_barcode', get(barcode_col))]
+  
   # Use data.table to group by id_cols and barcode_col and sum up reads across flowcells.
   summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
   
@@ -187,6 +191,6 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   
   # Return list of two dfs with known or unknown read counts ----
   print('Completing collate_fastq_reads.')
-  return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] != 'unknown_reads',], 
-              unknown_barcode_counts= summed_reads[summed_reads[[barcode_col]] == 'unknown_reads',]))
+  return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 
+              unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))
 }
