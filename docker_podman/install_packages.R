@@ -1,6 +1,7 @@
 # Install CRAN packages
 install.packages("argparse", dependencies = TRUE)
 install.packages("magrittr", dependencies = TRUE)
+install.packages("data.table", version = "1.14.8", dependencies = TRUE)
 install.packages("tidyverse", dependencies = TRUE)
 install.packages("BiocManager", dependencies = TRUE)
 install.packages("scam", dependencies = TRUE)
