@@ -48,7 +48,6 @@ CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 # Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
 
-# What is this check doing? -YL ----
 # make sure LUA codes in cell line meta are unique
 cell_line_meta %<>% 
   dplyr::group_by(LUA) %>% 

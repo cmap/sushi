@@ -128,6 +128,7 @@ args=(
 --unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
 --lfc "$LFC"
 --id_cols "$ID_COLS"
+--barcode_col "$BARCODE_COL"
 --reverse_index2 "$REVERSE_INDEX2"
 )
 

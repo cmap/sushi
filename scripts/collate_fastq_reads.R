@@ -24,6 +24,8 @@ parser$add_argument("--reverse_index2", type="logical", default=FALSE,
                     help= "Reverse complement of index 2 for NovaSeq and NextSeq")
 parser$add_argument("--barcode_col", default= "forward_read_cl_barcode", 
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
+parser$add_argument('--low_abundance_threshold', default= 20, 
+                    help= 'For unknown barcodes, counts below this threshold will be marked as an unknown barcode.')
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -65,7 +67,8 @@ chunked_results= process_in_chunks(large_file_path= args$raw_counts_uncollapsed,
                                    id_cols= id_cols,
                                    known_barcodes= unique(c(cell_line_meta$Sequence, CB_meta$Sequence)),
                                    reverse_index2= args$reverse_index2,
-                                   barcode_col= args$barcode_col)
+                                   barcode_col= args$barcode_col,
+                                   low_abundance_threshold= as.numeric(args$low_abundance_threshold))
 
 # From each chunk, extract prism_barcode_counts and bind the rows together into one dataframe.
 prism_barcode_counts= data.table::rbindlist(lapply(chunked_results, function(x) x$prism_barcode_counts))
