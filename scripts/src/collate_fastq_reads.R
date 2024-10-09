@@ -174,8 +174,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # works?
   # summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes),
   #                                                      get(barcode_col), 'unknown_low_abundance_barcode')]
-  summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes) | 
-                                                         n > low_abundance_threshold,
+  summed_reads[, c(barcode_col) := ifelse(get(barcode_col) %chin% unique(known_barcodes) | 
+                                                         n >= low_abundance_threshold,
                                                        get(barcode_col), 'unknown_low_abundance_barcode')]
   
   # not working
