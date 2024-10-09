@@ -190,7 +190,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   } else {}
   
   # troubleshooting ----
-  head(summed_reads)
+  print(head(summed_reads))
   print(nrow(summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,]))
   print(nrow(summed_reads[!(summed_reads[[barcode_col]] %chin% known_barcodes),]))  
   
