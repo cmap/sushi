@@ -2,7 +2,8 @@ import hudson.model.*
 import jenkins.model.*
 import groovy.json.JsonSlurper
 
-String sectionHeaderStyleCss = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
+String sectionHeaderStyleGreen = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
+String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
 
 pipeline {
@@ -11,9 +12,9 @@ pipeline {
     parameters {
         separator(
           name: "Group_1",
-          sectionHeader: "Foo Params",
+          sectionHeader: "User Inputs",
           separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleCss
+          sectionHeaderStyle: sectionHeaderStyleGreen
         )
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
@@ -34,6 +35,12 @@ pipeline {
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
         string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'Type to mark as control in compute_LFC')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
+        separator(
+          name: "Group_1",
+          sectionHeader: "Do Not Edit",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleRed
+        )
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
         booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
         string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch or if already specified in the config file.)')
