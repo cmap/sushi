@@ -189,6 +189,9 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     print('Warning: Low index purity!')
   } else {}
   
+  print(nrow(summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,]))
+  print(nrow(summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))  
+  
   # Return list of two dfs with known or unknown read counts ----
   print('Completing collate_fastq_reads.')
   return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 

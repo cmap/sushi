@@ -83,7 +83,12 @@ unknown_barcode_counts= unknown_barcode_counts[, .(n= sum(n)), by= c(id_cols, ar
 # Validation: Basic file size check ----
 if(nrow(prism_barcode_counts) == 0) {
   stop('ERROR: Empty file generated. No rows in prism_barcode_counts output.')
-} 
+}
+
+# Trouble shooting ----
+nrow(prism_barcode_counts)
+nrow(unknown_barcode_counts)
+#
 
 # Write out files ----
 out_file= paste(args$out, 'prism_barcode_counts.csv', sep='/')
