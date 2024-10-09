@@ -171,7 +171,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Function := performs the mutate in place without copying the dataframe.
   # Functions fifelse and %chin% are just faster data.table versions of ifelse and %in%.
   summed_reads[, c(barcode_col) := data.table::fifelse(
-    !(get(barcode_col) %chin% unique(known_barcodes)) & (n < low_abundance_threshold), 
+    !get(barcode_col) %chin% unique(known_barcodes) & n < low_abundance_threshold, 
     'unknown_low_abundance_barcode', get(barcode_col))]
   
   # Use data.table to group by id_cols and barcode_col and sum up reads across flowcells.
@@ -189,12 +189,13 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     print('Warning: Low index purity!')
   } else {}
   
-  # troubleshooting
+  # troubleshooting ----
+  head(summed_reads)
   print(nrow(summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,]))
   print(nrow(summed_reads[!(summed_reads[[barcode_col]] %chin% known_barcodes),]))  
   
   # Return list of two dfs with known or unknown read counts ----
   print('Completing collate_fastq_reads.')
   return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 
-              unknown_barcode_counts= summed_reads[!(summed_reads[[barcode_col]] %chin% known_barcodes),]))
+              unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))
 }
