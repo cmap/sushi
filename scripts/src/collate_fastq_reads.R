@@ -178,13 +178,14 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # two columns?
   summed_reads[, temp := ifelse(get(barcode_col) %chin% unique(known_barcodes) | n >= low_abundance_threshold,
                                           TRUE, FALSE)]
-  summed_reads[, c(barcode_col) := data.table::fifelse(temp, get(barcode_col), 'unknown_low_abundance_barcode')]
-  summed_reads[, temp := NULL]
+  #summed_reads[, c(barcode_col) := data.table::fifelse(temp, get(barcode_col), 'unknown_low_abundance_barcode')]
+  #summed_reads[, temp := NULL]
+  print(head(summed_reads))
   
-  
-  # doesnt work
+  # This code is more efficient, but doesn't work in Jenkins only works locally
+  # The problem appears after adding a second condition in the ifelse - not sure why this is happening.
   # summed_reads[, c(barcode_col) := ifelse(get(barcode_col) %chin% unique(known_barcodes) | 
-  #                                                        n >= low_abundance_threshold,
+  #                                           n >= low_abundance_threshold,
   #                                         get(barcode_col), 'unknown_low_abundance_barcode')]
   
   # Use data.table to group by id_cols and barcode_col and sum up reads across flowcells.
