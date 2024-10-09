@@ -170,9 +170,16 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # then the barcode is replaced with the string "unknown_low_abundance_barcode".
   # Function := performs the mutate in place without copying the dataframe.
   # Functions fifelse and %chin% are just faster data.table versions of ifelse and %in%.
-  summed_reads[, c(barcode_col) := data.table::fifelse(
-    !get(barcode_col) %chin% unique(known_barcodes) & n < low_abundance_threshold, 
-    'unknown_low_abundance_barcode', get(barcode_col))]
+  
+  # works?
+  summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes) | 
+                                                         n >= low_abundance_threshold,
+                                                       get(barcode_col), 'unknown_low_abundance_barcode')]
+  
+  # not working
+  # summed_reads[, c(barcode_col) := data.table::fifelse(
+  #   !get(barcode_col) %chin% unique(known_barcodes) & n < low_abundance_threshold, 
+  #   'unknown_low_abundance_barcode', get(barcode_col))]
   
   # Use data.table to group by id_cols and barcode_col and sum up reads across flowcells.
   summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
