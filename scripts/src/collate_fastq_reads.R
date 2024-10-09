@@ -171,25 +171,34 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Function := performs the mutate in place without copying the dataframe.
   # Functions fifelse and %chin% are just faster data.table versions of ifelse and %in%.
   
+  # summed_reads[, c(barcode_col) := data.table::fifelse(get(barcode_col) %chin% unique(known_barcodes) | 
+  #                                           n >= low_abundance_threshold,
+  #                                         get(barcode_col), 'unknown_low_abundance_barcode')]
+  
+  # The code above is the initial implementation. It works locally, but not on Jenkins.
+  # The problem appears to occur when adding a second condition in the ifelse - not sure why this is happening.
+  # %chin% to %in% - error persists
+  # data.table::fifelse to base::ifelse - error persists
+  # Jenkins and local are working with the same version of data.table.
+  
   # works?
   # summed_reads[, c(barcode_col) := ifelse(get(barcode_col) %chin% unique(known_barcodes),
   #                                         get(barcode_col), 'unknown_low_abundance_barcode')]
   
-  # two columns?
-  summed_reads[, temp := ifelse(get(barcode_col) %in% unique(known_barcodes) | n >= low_abundance_threshold,
-                                          TRUE, FALSE)]
+  # wasted
+  summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
+  prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,]
+  
+  unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]
+  unknown_barcode_counts[, c(barcode_col) := data.table::fifelse(n >= low_abundance_threshold, 
+                                                                 get(barcode_col), 'unknown_low_abundance_barcode')]
+  unknown_barcode_counts= unknown_barcode_counts[, .(n= sum(n)), by= c(id_cols, barcode_col)]
+
   #summed_reads[, c(barcode_col) := data.table::fifelse(temp, get(barcode_col), 'unknown_low_abundance_barcode')]
   #summed_reads[, temp := NULL]
-  print(head(summed_reads))
-  
-  # This code is more efficient, but doesn't work in Jenkins only works locally
-  # The problem appears after adding a second condition in the ifelse - not sure why this is happening.
-  # summed_reads[, c(barcode_col) := ifelse(get(barcode_col) %chin% unique(known_barcodes) | 
-  #                                           n >= low_abundance_threshold,
-  #                                         get(barcode_col), 'unknown_low_abundance_barcode')]
   
   # Use data.table to group by id_cols and barcode_col and sum up reads across flowcells.
-  summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
+  #summed_reads= summed_reads[, .(n= sum(n)), by= c(id_cols, barcode_col)]
   
   # Calculate index purity ----
   # This is only accurate if the Nori input file is small enough to fit into a chunk.
@@ -205,6 +214,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   
   # Return list of two dfs with known or unknown read counts ----
   print('Completing collate_fastq_reads.')
-  return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 
-              unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))
+  return(list(prism_barcode_counts= prism_barcode_counts,
+              unknown_barcode_counts= unknown_barcode_counts))
+  #return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 
+  #            unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))
 }
