@@ -56,8 +56,8 @@ if(!validate_columns_exist(id_cols, sample_meta)) {
 }
 
 # Run collate_fastq_reads on chunks of raw_counts_uncollapsed.csv ----
-# raw_counts_uncollapsed can be too large to read into memory,
-# so collate_fastq_reads is performed on chunks of the large file.
+# raw_counts_uncollapsed could be too large to read into memory,
+# so collate_fastq_reads is performed on chunks of the raw_counts_uncollapsed file.
 chunked_results= process_in_chunks(large_file_path= args$raw_counts_uncollapsed, 
                                    chunk_size= 10^6, 
                                    action= collate_fastq_reads,
@@ -70,14 +70,13 @@ chunked_results= process_in_chunks(large_file_path= args$raw_counts_uncollapsed,
                                    barcode_col= args$barcode_col,
                                    low_abundance_threshold= as.numeric(args$low_abundance_threshold))
 
-# From each chunk, extract prism_barcode_counts and bind the rows together into one dataframe.
+# From each chunk, extract prism_barcode_counts or unknown_barcode_counts and bind those rows together.
+# Then use data.table to aggregate and sum up reads across the chunks.
+# data.table functions are faster and less memory intensivie.
 prism_barcode_counts= data.table::rbindlist(lapply(chunked_results, function(x) x$prism_barcode_counts))
-# Use data.table to group_by id_cols and barcode_col to sum up reads across all chunks.
 prism_barcode_counts= prism_barcode_counts[, .(n= sum(n)), by= c(id_cols, args$barcode_col)]
 
-# From each chunk, extract unknown_barcode_counts and bind the rows together into one dataframe.
 unknown_barcode_counts= data.table::rbindlist(lapply(chunked_results, function(x) x$unknown_barcode_counts))
-# Use data.table to group_by id_cols and barcode_col to sum up reads across all chunks.
 unknown_barcode_counts= unknown_barcode_counts[, .(n= sum(n)), by= c(id_cols, args$barcode_col)]
 
 # Validation: Basic file size check ----
