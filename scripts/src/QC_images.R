@@ -2,10 +2,11 @@
 #' 
 #' Create the qc table with index purity and cell line purity.
 #' 
-#' @param raw_counts_uncollapsed Dataframe output from nori.
-#' @param raw_counts Raw counts dataframe outputed from collate_fastq_reads.
-#' @param filtered_counts Filtered counts dataframe outputed from filter_raw_reads.
-#' @param value_col String name of the counts column present all three dataframes.
+#' @param raw_counts_uncollapsed_path Path to the nori raw_counts_uncollapsed file.
+#' @param unknown_barcode_counts Dataframe of unknown barcodes.
+#' @param prism_barcode_counts Dataframe of prism barcodes extracted from the nori. 
+#' @param filtered_counts Filtered counts dataframe created from filter_raw_reads.
+#' @param value_col String name of the counts column present all the four input dataframes.
 #' @param file_path Location to write out the output.
 #' @returns Writes out a QC_table to the file_path.
 create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts, 
@@ -129,7 +130,6 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   return(total_counts_plot)
 }
 
-
 #' Cell line recover barplot
 #' 
 #' Creates barplots of the cell lines recovered. The parameter "plot_type" can be used to plot the percentage or
@@ -141,7 +141,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
 #' @param id_cols Vector of column names that identify each sample.
 #' @param facet_col String name of the column in filtered_counts to facet the plot.
 #' @param value_col String name of the column in filtered_counts that contains the counts.
-#' @param counts_threshold Threshold used to determine low counts.
+#' @param count_threshold Threshold used to determine low counts.
 #' @param plot_type String of either "percent" or "count" to adjust the y axis to be either the percentage or the 
 #'                  total number of cell lines.
 #' @param include_ctrl_bcs Boolean. Set to TRUE if control barcodes are to be counted. 
@@ -449,14 +449,14 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #'
 #' Takes in various pipeline outputs and generates 11 QC files.
 #'
-#' @param raw_counts_uncollapsed Dataframe output from nori. This is used to generate purity metrics and
-#'                               the index summaries.
-#' @param raw_counts Raw counts dataframe from the collate_fastq_reads modules. This is used to generate puritu metrics.
+#' @param raw_counts_uncollapsed_path Path to the raw_counts_uncollapsed file.
+#' @param prism_barcode_counts Dataframe of prism barcodes identified in the run.
+#' @param unknown_barcode_counts Dataframe of unknown barcodes.
 #' @param annotated_counts Annotated counts dataframe from the filter_raw_reads module.
-#' @param filtered_counts Filtered counts dataframe from the filter_raw_reads module.
 #' @param normalized_counts Normalized counts dataframe from the normalize module. This is an optional parameter.
 #' @param l2fc L2FC dataframe from the compute_l2fc module. This is used for the bio_reps plot. 
 #' @param sample_meta Dataframe of the sample metadata for the sequencing run.
+#' @param barcode_col String name of the column containing the barcode sequences.
 #' @param cell_line_cols Vector of sample meta column names used to describe a cell line or barcode.
 #' @param id_cols Vector of sample meta column names used to identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
@@ -605,8 +605,8 @@ QC_images= function(raw_counts_uncollapsed_path,
                                    row.names= FALSE, quote= FALSE)
   }, error= function(e) {
     print(e)
-    print('Encountered an error when creating the total counts barplot. Skipping this output ...') 
-    return('Totalc ounts image')
+    print('Encountered an error when creating the summary unknown barcode reads. Skipping this output ...') 
+    return('unknown barcode reads')
   })
   
   # Collect returned string if an error occurred
