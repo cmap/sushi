@@ -1,19 +1,3 @@
-#' validate_columns_exist
-#' 
-#' This function checks that a list of columns are present in a dataframe.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_columns_exist= function(selected_columns, df) {
-  # Check that all of selected_columns are in df
-  if(any(!selected_columns %in% colnames(df))) {
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
 #' validate_num_bio_reps
 #' 
 #' This function checks that all the expected flowcells are present in a table of detected flowcells.

@@ -9,28 +9,25 @@ suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 source("./src/filter_raw_reads.R")
+source("./src/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
 # specify desired options
-parser$add_argument("-v", "--verbose", action="store_true", default=TRUE,
-                    help="Print extra output [default]")
-parser$add_argument("-q", "--quietly", action="store_false",
-                    dest="verbose", help="Print little output")
+parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
+parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", help="Print little output")
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
-parser$add_argument("-c", "--raw_counts", default="raw_counts.csv", help = "path to file containing raw counts")
-parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
-parser$add_argument("-s", "--sample_meta", default="sample_meta.csv", help= "Sample metadata")
-parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help= "Cell Line metadata")
-parser$add_argument("--cell_set_meta", default="cell_set_meta.csv", help= "Cell set metadata")
+parser$add_argument('--prism_barcode_counts', default= 'prism_barcode_counts.csv', help= 'Path to prism_barcode_counts.csv')
+parser$add_argument('--sample_meta', default= 'sample_meta.csv', help= 'Path to sample_meta.csv')
+parser$add_argument('--cell_set_meta', default= 'cell_set_meta.csv', help= 'Path to cell_set_meta.csv')
+parser$add_argument('--cell_line_meta', default= 'cell_line_meta.csv', help= 'Path to cell_line_meta.csv')
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
-parser$add_argument("--id_cols", default= "pcr_plate,pcr_well", help = "Columns to identify each PCR well")
-parser$add_argument("--CB_meta", default="CB_meta.csv", help = "Control Barcode metadata")
-parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
+parser$add_argument('--CB_meta', default= 'CB_meta.csv', help= 'Path to CB_meta.csv')
+parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well', 
+                    help= 'List of sample_meta column names used to identify every PCR well')
 parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
 parser$add_argument("--pool_id", type="logical", help = "Pull pool IDs from CellDB.")
-parser$add_argument("--control_type", default="negcon", 
-                    help = "negative control wells in trt_type column in sample metadata")
+parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -41,16 +38,15 @@ if (args$out == ""){
 }
 #print_args(args)
 
-# Read in files and set up parameters ----
-cell_set_meta= data.table::fread(args$cell_set_meta, header= T, sep= ',', data.table= F)
-cell_line_meta= data.table::fread(args$cell_line_meta, header= T, sep= ',', data.table= F)
-CB_meta= data.table::fread(args$CB_meta, header= T, sep= ',', data.table= F)
-sample_meta= data.table::fread(args$sample_meta, header= T, sep= ',', data.table= F)
-raw_counts= data.table::fread(args$raw_counts, header= T, sep= ',', data.table= F)
+# Read in all input files ----
+prism_barcode_counts= data.table::fread(args$prism_barcode_counts, header= TRUE, sep= ',')
+sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
+cell_set_meta= data.table::fread(args$cell_set_meta, header= TRUE, sep= ',')
+cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
+CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 
-# Convert strings to vectors ----
+# Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
-count_threshold = as.numeric(args$count_threshold)
 
 # make sure LUA codes in cell line meta are unique
 cell_line_meta %<>% 
@@ -66,58 +62,38 @@ cell_line_meta %<>%
   dplyr::filter(!duplicated(cell_line_meta$LUA, fromLast = TRUE)) %>%
   dplyr::select(-LUA.duplicity)
 
-# Remove flowcell_name and lane columns from sample_meta because
-# there is a profile_id duplicate when there are more than 1 seq runs
-#sample_meta %<>% select(-flowcell_name, -flowcell_lane) %>%
- # distinct() # This needs to be removed for sequencing_index_cols to work! - YL
-
 # Run filter_raw_reads -----
 print('Calling filter_raw_reads ...')
-filtered_counts= filter_raw_reads(raw_counts= raw_counts, sample_meta= sample_meta,
-                                  cell_line_meta= cell_line_meta,
-                                  cell_set_meta= cell_set_meta,
-                                  CB_meta= CB_meta,
-                                  id_cols= id_cols,
-                                  count_threshold= as.numeric(args$count_threshold))
+module_outputs= filter_raw_reads(prism_barcode_counts= prism_barcode_counts, 
+                                 sample_meta= sample_meta,
+                                 cell_set_meta= cell_set_meta,
+                                 cell_line_meta= cell_line_meta,
+                                 CB_meta= CB_meta,
+                                 id_cols= id_cols)
 
-# Pulling pool_id when db_flag and pool_id flags are passed
+# Pulling pool_id when db_flag and pool_id flags are passed ----
 if (args$pool_id) {
   assay_pool_meta = read.delim(args$assay_pool_meta)
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   assay_pool_meta <- assay_pool_meta[assay_pool_meta$davepool_id %in% unique_cell_sets,] %>% 
     select(pool_id, ccle_name, davepool_id, depmap_id)
   
-  filtered_counts$filtered_counts = filtered_counts$filtered_counts %>% 
+  module_outputs$filtered_counts = module_outputs$filtered_counts %>% 
     merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
   
-  filtered_counts$annotated_counts = filtered_counts$annotated_counts %>% 
+  module_outputs$annotated_counts = module_outputs$annotated_counts %>% 
     merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
           by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
 }
 
 # Validation: Basic file size check ----
-if(sum(filtered_counts$filtered_counts$n) == 0) {
+if(sum(module_outputs$filtered_counts$n) == 0) {
   stop('All entries in filtered counts are missing!')
 }
 
-cl_entries= filtered_counts$filtered_counts %>% dplyr::filter(!is.na(CCLE_name))
-if(sum(cl_entries$n) == 0) {
-  stop('All cell line counts are zero!')
-}
-
-# Write out module outputs ----
-unmapped_reads= filtered_counts$unmapped_reads
-unmapped_out = paste(args$out, 'unmapped_reads.csv', sep='/')
-print(paste("Writing unmapped reads to: ", unmapped_out))
-write.csv(unmapped_reads, unmapped_out, row.names=F)
-
-annotated_counts = filtered_counts$annotated_counts
-annot_out_file = paste(args$out, 'annotated_counts.csv', sep='/')
-print(paste("Writing annotated counts to: ", annot_out_file))
-write.csv(annotated_counts, annot_out_file, row.names=F)
-
-filtered_counts = filtered_counts$filtered_counts
+# Remove data ----
+filtered_counts= module_outputs$filtered_counts
 
 print(paste("rm_data:", args$rm_data))
 # Remove data if needed
@@ -137,7 +113,11 @@ if(args$rm_data == TRUE){
   paste("Number of rows removed: ", rows_removed)
 }
 
+# Write out files ----
+annot_out_file= paste0(args$out, '/annotated_counts.csv')
+print(paste('Writing annotated counts to: ', annot_out_file))
+module_outputs$annotated_counts %>% write.csv(annot_out_file, row.names= FALSE)
+
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
 print(paste("Writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
-

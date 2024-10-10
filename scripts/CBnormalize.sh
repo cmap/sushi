@@ -52,27 +52,18 @@ echo SAMPLE_META is: $SAMPLE_META
 echo $RUN_NORM
 
 
-if [[ "$RUN_NORM" == "true" ]]
-then
-	echo "Running normalization module"
+echo "Running normalization module"
 
-	echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
-    --CB_meta $CONTROL_BARCODE_META \
-    --pseudocount $PSEUDOCOUNT \
-    --id_cols $ID_COLS \
-    --out $BUILD_DIR
+echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
+--CB_meta $CONTROL_BARCODE_META \
+--pseudocount $PSEUDOCOUNT \
+--id_cols $ID_COLS \
+--out $BUILD_DIR
 
-	Rscript CBnormalize.R -c $FILTERED_COUNTS	\
-	--CB_meta $CONTROL_BARCODE_META \
-	--pseudocount $PSEUDOCOUNT \
-	--id_cols $ID_COLS \
-	--out $BUILD_DIR
+Rscript CBnormalize.R -c $FILTERED_COUNTS	\
+--CB_meta $CONTROL_BARCODE_META \
+--pseudocount $PSEUDOCOUNT \
+--id_cols $ID_COLS \
+--out $BUILD_DIR
 
-	COUNTS="normalized_counts.csv"
-
-else
-	echo "Not running normalization module"
-    COUNTS=$FILTERED_COUNTS
-    COUNT_COL_NAME="n"
-    echo $COUNTS
-fi
+COUNTS="normalized_counts.csv"

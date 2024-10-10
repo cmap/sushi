@@ -5,6 +5,7 @@ library(tidyverse)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(magrittr))
 source("./src/collapse_bio_reps.R")
+source("./src/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

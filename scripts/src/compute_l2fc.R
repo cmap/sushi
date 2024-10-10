@@ -1,19 +1,3 @@
-#' validate_columns_exist
-#' 
-#' This function checks that a list of columns are present in a dataframe.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_columns_exist= function(selected_columns, df) {
-  # Check that all of selected_columns are in df
-  if(any(!selected_columns %in% colnames(df))) {
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
 #' compute_l2fc
 #' 
 #' takes normalized counts and computes log-fold change values as compared to the designated control condition
@@ -68,13 +52,12 @@ compute_l2fc= function(normalized_counts,
     dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(CCLE_name)) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'trt_type', bio_rep_id_cols, ctrl_cols)))) %>%
     dplyr::summarise(mean_n= mean(n),
-                     mean_normalized_n = mean(!!rlang::sym(count_col_name)), 
-                     num_tech_reps= dplyr::n()) %>% dplyr::ungroup()
+                     mean_normalized_n = mean(!!rlang::sym(count_col_name))) %>% dplyr::ungroup()
   
   # Print out the occurrence of each count of tech_reps
-  print('Number of technical replicate collapsed across all cell lines and biological replicates:')
-  print(collapsed_tech_rep %>% dplyr::group_by(num_tech_reps) %>% 
-          dplyr::summarise(count= dplyr::n()) %>% dplyr::ungroup())
+  # print('Number of technical replicate collapsed across all cell lines and biological replicates:')
+  # print(collapsed_tech_rep %>% dplyr::group_by(num_tech_reps) %>% 
+  #         dplyr::summarise(count= dplyr::n()) %>% dplyr::ungroup())
     
   # Pull out negative controls and collapse any biological replicates ----
   print('Collapsing control conditions on the following columns: ')
@@ -84,8 +67,7 @@ compute_l2fc= function(normalized_counts,
     dplyr::summarise(control_median_n= median(mean_n),
                      control_median_normalized_n = median(mean_normalized_n),
                      control_mad_sqrtN = mad(log2(mean_normalized_n))/sqrt(dplyr::n()),
-                     num_ctrl_bio_reps = dplyr::n()) %>% dplyr::ungroup() %>% 
-    dplyr::mutate(control_MAD_QC = (control_mad_sqrtN <= 0.5/log10(2))) #%>% # New: adjusted cut off to log2
+                     num_ctrl_bio_reps = dplyr::n()) %>% dplyr::ungroup()
   
   # Validation: Check that negative controls were extracted ----
   if(nrow(controls)==0) {

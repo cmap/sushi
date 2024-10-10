@@ -32,7 +32,8 @@ echo Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
 --sig_cols $SIG_COLS \
 --ctrl_cols $CONTROL_COLS \
 --count_threshold $COUNT_THRESHOLD \
---normalized_counts $NORMALIZED_COUNTS
+--normalized_counts $NORMALIZED_COUNTS \
+--cell_line_cols $CELL_LINE_COLS
 
 Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
 --out $BUILD_DIR \
@@ -41,4 +42,5 @@ Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
 --sig_cols $SIG_COLS \
 --ctrl_cols $CONTROL_COLS \
 --count_threshold $COUNT_THRESHOLD \
---normalized_counts $NORMALIZED_COUNTS
+--normalized_counts $NORMALIZED_COUNTS \
+--cell_line_cols $CELL_LINE_COLS

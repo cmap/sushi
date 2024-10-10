@@ -8,12 +8,6 @@ then
     exit -1
 fi
 
-if [ -z "$RAW_COUNTS" ]
-then
-	echo RAW_COUNTS parameter empty
-    exit -1
-fi
-
 if [ -z "$SAMPLE_META" ]
 then
 	echo SAMPLE_META parameter empty
@@ -29,11 +23,11 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$RAW_COUNTS" = /* ]]
+if [[ "$PRISM_BARCODE_COUNTS" = /* ]]
 then
-	RAW_COUNTS=$(ls $RAW_COUNTS)
+	PRISM_BARCODE_COUNTS=$(ls $PRISM_BARCODE_COUNTS)
 else
-	RAW_COUNTS=$BUILD_DIR/$RAW_COUNTS
+	PRISM_BARCODE_COUNTS=$BUILD_DIR/$PRISM_BARCODE_COUNTS
 fi
 
 echo $CELL_LINE_META
@@ -74,21 +68,20 @@ fi
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
-echo RAW_COUNTS is: $RAW_COUNTS
+echo PRISM_BARCODE_COUNTS is: $PRISM_BARCODE_COUNTS
 echo CELL_LINE_META is: $CELL_LINE_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo CELL_SET_META is: $CELL_SET_META
 echo ID_COLS is: $ID_COLS
 
 args=(
--c "$RAW_COUNTS"
+--prism_barcode_counts "$PRISM_BARCODE_COUNTS"
 --sample_meta "$SAMPLE_META"
 --cell_line_meta "$CELL_LINE_META"
 --CB_meta "$CONTROL_BARCODE_META"
 --cell_set_meta "$CELL_SET_META"
 --id_cols "$ID_COLS"
 --out "$BUILD_DIR"
---count_threshold "$COUNT_THRESHOLD"
 --pool_id "$PULL_POOL_ID"
 --rm_data "$REMOVE_DATA"
 --assay_pool_meta "$ASSAY_POOL_META"
