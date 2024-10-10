@@ -6,11 +6,14 @@
 #' 
 #' This function runs some action over chunks of a large file. At the end, returns a list of all the chunks
 #' 
-#' @param large_file_path description
-#' @param chunk_size description
-#' @param action A function passed to act on each chunk
+#' @param large_file_path Path to a large csv file. This file may be too large to read into R.
+#' @param chunk_size The number of rows in a chunk.
+#' @param action A function to perform over a chunk.
 #' @param ... Additional parameters to be passed into the action parameter
 process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
+  # Read in the column names. These names will be passed onto each chunk.
+  # When reading a file in chunks, the column names in the first line are not always passed.
+  # Use data.table to read in just the headers with nrow= 0.
   header_col_names= data.table::fread(large_file_path, header= TRUE, sep= ',', nrow= 0) %>% colnames()
   chunk_idx= 1 # Counter to keep track of chunks in a loop
   current_chunk_size= chunk_size # Variable for loop exit condition
@@ -18,6 +21,9 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
   
   # For each chunk, call an action
   while(current_chunk_size == chunk_size) {
+    # Read in a chunk of the large file and set the column names.
+    # nrow - the number of rows to read in
+    # skip - the number of rows to skip before starting to read in.
     current_chunk= data.table::fread(large_file_path, header= FALSE, sep= ',',
                                      col.names= header_col_names,
                                      nrow= chunk_size, skip= chunk_size * (chunk_idx - 1) + 1)
@@ -25,6 +31,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
     current_chunk_size= nrow(current_chunk) # set current chunk size to stop loop
     print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
     
+    # Call the action over the chunk
     chunk_collector[[chunk_idx]]= do.call(action, list(current_chunk, ...))
     chunk_idx= chunk_idx + 1
   }
