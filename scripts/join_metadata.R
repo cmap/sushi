@@ -56,7 +56,7 @@ if(file.exists(args$lfc)) {
   if(assay_pool_meta_exists) {
     l2fc_with_meta_columns= join_metadata(input_df= l2fc_with_meta_columns, 
                                           metadata= input_assay_pool_meta,
-                                          key_cols= c('DepMap_ID', 'cell_set'))
+                                          key_cols= c('DepMap_ID', 'CCLE_name', 'cell_set'))
   } else {
     print('WARNING: Assay pool meta not detected and will not be joined onto l2fc.')
   }
@@ -83,7 +83,7 @@ if(file.exists(args$collapsed_lfc)) {
     print('Attempting to add assay_pool_meta to collapsed l2fc.')
     collapsed_l2fc_with_meta_columns= join_metadata(input_df= collapsed_l2fc_with_meta_columns, 
                                                     metadata= input_assay_pool_meta,
-                                                    key_cols= c('DepMap_ID', 'cell_set'))
+                                                    key_cols= c('DepMap_ID', 'CCLE_name', 'cell_set'))
   } else {
     print('WARNING: Assay pool meta not detected and will not be joined onto collapsed l2fc.')
   }
