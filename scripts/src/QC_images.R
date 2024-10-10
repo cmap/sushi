@@ -333,7 +333,7 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
 #' @param input_df Dataframe.
 #' @param row_id_cols Vector of column names from input_df that identifies the cell lines. For example,
 #'                    this can be "depmap_id", "ccle_name" if only cell lines exist. It can also be 
-#'                    "depmap_id", "ccle_name", "Name" if control barcodes are also present.
+#'                    "depmap_id", "ccle_name", "cb_name" if control barcodes are also present.
 #' @param col_id_cols Vector of column names from input_df that identifies the PCR wells or conditions.
 #'                    For example, this can be "pcr_plate", "pcr_well" or a list of conditions like those in sig_cols.
 #' @param value_col String name of the column in input_df to be used as the values.
@@ -573,7 +573,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   print('5. Generating cell line contaminants ...')
   potential_error= base::tryCatch({
     contams= annotated_counts %>% dplyr::filter(expected_read == F) %>%
-      dplyr::mutate(barcode_id= ifelse(is.na(ccle_name), Name, ccle_name)) %>%
+      dplyr::mutate(barcode_id= ifelse(is.na(ccle_name), cb_name, ccle_name)) %>%
       dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
       dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
       dplyr::arrange(desc(num_wells))
@@ -616,7 +616,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
 
     # mapped contaminates to bind
     mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
-      dplyr::mutate(barcode_name= ifelse(is.na(ccle_name), Name, ccle_name)) %>%
+      dplyr::mutate(barcode_name= ifelse(is.na(ccle_name), cb_name, ccle_name)) %>%
       dplyr::select(all_of(c(pcr_locations, 'forward_read_cl_barcode', 'n', 'barcode_name')))
     
     contam_reads= sequencing_filter %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%
@@ -755,8 +755,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
       }
       
       # Handle cases if control barcodes are used.
-      if('Name' %in% colnames(normalized_counts)) {
-        unique_cell_line_cols= c(cell_line_cols, 'Name')
+      if('cb_name' %in% colnames(normalized_counts)) {
+        unique_cell_line_cols= c(cell_line_cols, 'cb_name')
       } else {
         unique_cell_line_cols= cell_line_cols
       }
