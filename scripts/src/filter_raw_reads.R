@@ -57,7 +57,10 @@ filter_raw_reads= function(prism_barcode_counts,
   # If neither names are present, error out
   if('cb_log10_dose' %in% colnames(CB_meta)) {
     print("Converting CB_meta from log10 to log2.")
-    CB_meta= CB_meta %>% dplyr::mutate(cb_log2_dose= cb_log10_dose/log10(2)) %>% dplyr::select(-cb_log10_dose)
+    # Data table equivalient of 
+    # CB_meta %<>% dplyr::mutate(cb_log2_dose= cb_log10_dose/log10(2)) %>% dplyr::select(-cb_log10_dose)
+    CB_meta[, cb_log2_dose := cb_log10_dose/log10(2)][, cb_log10_dose := NULL]
+    # This is to ensure that all merge components are of type data.table.
   } else if('cb_log10_dose' %in% colnames(CB_meta)) {
     print('Detecting cb_log2_dose in CB_meta.')
   } else {
