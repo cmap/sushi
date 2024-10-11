@@ -1,22 +1,67 @@
-#' validate_columns_exist
+#' Calculate purity metrics
 #' 
-#' This function checks that a list of columns are present in a dataframe.
-#' Columns that were not found in the dataframe are printed out.
+#' Create the qc table with index purity and cell line purity.
 #' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @returns Boolean
-validate_columns_exist= function(selected_cols, df) {
-  # Check that all of selected_columns are in df - base::setdiff(A, B) = A[!A %in% B].
-  unmatched_cols= base::setdiff(selected_cols, colnames(df))
-  
-  if(length(unmatched_cols) > 0) {
-    print('The following columns are missing: ')
-    print(unmatched_cols)
-    return(FALSE)
-  } else {
-    return(TRUE)
+#' @param raw_counts_uncollapsed_path Path to the nori raw_counts_uncollapsed file.
+#' @param unknown_barcode_counts Dataframe of unknown barcodes.
+#' @param prism_barcode_counts Dataframe of prism barcodes extracted from the nori. 
+#' @param filtered_counts Filtered counts dataframe created from filter_raw_reads.
+#' @param value_col String name of the counts column present all the four input dataframes.
+#' @param file_path Location to write out the output.
+#' @returns Writes out a QC_table to the file_path.
+create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts, 
+                          prism_barcode_counts, filtered_counts,
+                          value_col= 'n', output_path) {
+  # Validation: Check that the file at the path exists
+  if(!file.exists(raw_counts_uncollapsed_path)) {
+    stop('Cannot find the raw counts uncollapsed file.')
   }
+  
+  # Pull out only the headers of the large file for validation
+  rcu_headers= data.table::fread(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
+  
+  # Validation: Check that value_col exists in raw_counts_uncollapsed
+  if(!validate_columns_exist(value_col, rcu_headers)) {
+    stop(paste0('The column ', value_col, ' was not detected in uncollapsed raw counts.'))
+  }
+  
+  # Validation: Check that value_col exists in unknown_barocde_counts
+  if(!validate_columns_exist(value_col, unknown_barcode_counts)) {
+    stop(paste0('The column ', value_col, ' was not detected in unknown_barcode_counts.csv'))
+  }
+  
+  # Validation: Check that value_col exists in prism_barocde_counts
+  if(!validate_columns_exist(value_col, prism_barcode_counts)) {
+    stop(paste0('The column ', value_col, ' was not detected in prism_barcode_counts.csv'))
+  }
+  
+  # Validation: Check that value_col exists in filtered_counts
+  if(!validate_columns_exist(value_col, filtered_counts)) {
+    stop(paste0('The column ', value_col, ' was not detected in filtered_counts.csv'))
+  }
+  
+  # Determine total number of reads in raw_counts_uncollapsed using chunking
+  chunk_sum= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, 
+                               chunk_size= 10^6, 
+                               action= function(x) data.table::as.data.table(sum(x[[value_col]])))
+  total_num_reads= sum(unlist(chunk_sum))
+  
+  # Determine number of reads that mapped to valid PCR locations
+  # These reads have the correct index barcodes
+  total_valid_pcr_reads= sum(unknown_barcode_counts[[value_col]]) + sum(prism_barcode_counts[[value_col]])
+  
+  # Calculate purities
+  # Index purity is the fraction of reads that mapped to valid PCR locations out of the total number of reads.
+  index_purity= total_valid_pcr_reads / total_num_reads
+  print(paste0('Index purity: ', round(index_purity, 4)))
+  # Cell line purity is the fraction of reads that are identified as cell lines or control barcodes out of valid PCR reads.
+  cell_line_purity= sum(filtered_counts[[value_col]]) / total_valid_pcr_reads
+  print(paste0('Cell line purity: ', round(cell_line_purity, 4)))
+  
+  # Write out QC table
+  qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
+  print(paste0('Writing QC table out to ', output_path))
+  qc_table %>% write.csv(output_path, row.names= FALSE, quote= FALSE)
 }
 
 #' Calculate index summaries
@@ -39,48 +84,12 @@ get_index_summary= function(df, index_col, valid_indices) {
   output_summary= df %>% dplyr::group_by(pick(all_of(index_col))) %>% 
     dplyr::summarise(idx_n= sum(n)) %>% dplyr::ungroup() %>%
     dplyr::mutate(fraction= round(idx_n/sum(idx_n), 5),
-                  expected= ifelse(.[[index_col]] %in% valid_indices, T, F),
+                  expected= ifelse(.[[index_col]] %chin% valid_indices, T, F),
                   contains_n= ifelse(grepl('N', .[[index_col]]), T, F),
-                  lv_dist= apply(stringdist::stringdistmatrix(.[[index_col]], valid_indices, method="lv"), 
-                                 1, min),
-                  ham_dist= apply(stringdist::stringdistmatrix(.[[index_col]], valid_indices, method="hamming"), 
-                                  1, min)) %>%
+                  lv_dist= apply(stringdist::stringdistmatrix(.[[index_col]], valid_indices, method="lv"), 1, min),
+                  ham_dist= apply(stringdist::stringdistmatrix(.[[index_col]], valid_indices, method="hamming"), 1, min)) %>%
     dplyr::arrange(desc(fraction))
   return(output_summary)
-}
-
-#' Calculate purity metrics
-#' 
-#' Create the qc table with index purity and cell line purity.
-#' 
-#' @param raw_counts_uncollapsed Dataframe output from nori.
-#' @param raw_counts Raw counts dataframe outputed from collate_fastq_reads.
-#' @param filtered_counts Filtered counts dataframe outputed from filter_raw_reads.
-#' @param value_col String name of the counts column present all three dataframes.
-#' @param file_path Location to write out the output.
-#' @returns Writes out a QC_table to the file_path.
-create_qc_table= function(raw_counts_uncollapsed, raw_counts, filtered_counts, value_col= 'n', file_path) {
-  # Validation: Check that value_col is present in the three files.
-  if(!validate_columns_exist(value_col, raw_counts_uncollapsed)) {
-    stop(paste0('The column ', value_col, " was not detected in uncollapsed raw counts."))
-  }
-  if(!validate_columns_exist(value_col, raw_counts)) {
-    stop(paste0('The column ', value_col, " was not detected in raw counts."))
-  }
-  if(!validate_columns_exist(value_col, filtered_counts)) {
-    stop(paste0('The column ', value_col, " was not detected in filtered counts."))
-  }
-  
-  # Calculate purities
-  index_purity= sum(raw_counts[[value_col]]) / sum(raw_counts_uncollapsed[[value_col]])
-  print(paste0('Index purity: ', round(index_purity, 4)))
-  cell_line_purity= sum(filtered_counts[[value_col]]) / sum(raw_counts[[value_col]])
-  print(paste0('Cell line purity: ', round(cell_line_purity, 4)))
-  qc_table= data.frame(index_purity= index_purity, cell_line_purity= cell_line_purity)
-  
-  # Write out table
-  print(paste0('Writing QC table out to ', file_path))
-  qc_table %>% write.csv(file_path, row.names= FALSE, quote= FALSE)
 }
 
 #' Total counts barplot
@@ -110,17 +119,16 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   
   # Create total counts plot
   total_counts_plot= total_counts %>% 
-    ggplot(aes(x=sample_id, y=total_counts, fill=barcode_type)) +
-    geom_col(alpha=0.75, position='identity') +
-    geom_hline(yintercept= 10^4, linetype=2) + 
+    ggplot(aes(x= sample_id, y= total_counts, fill= barcode_type)) +
+    geom_col(alpha= 0.75, position= 'identity') +
+    geom_hline(yintercept= 10^4, linetype= 2) + 
     {if(!is.na(facet_col)) facet_wrap(~.data[[facet_col]], scale= 'free_x')} +
-    labs(x= "Sample constructed using id_cols", y="Total counts", fill= 'Barcode\ntype', 
+    labs(x= 'Sample constructed using id_cols', y= 'Total counts', fill= 'Barcode\ntype', 
          title= 'Filtered counts - unstacked') + 
     theme_bw() + theme(axis.text.x = element_text(angle=70, hjust=1))
   
   return(total_counts_plot)
 }
-
 
 #' Cell line recover barplot
 #' 
@@ -133,7 +141,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
 #' @param id_cols Vector of column names that identify each sample.
 #' @param facet_col String name of the column in filtered_counts to facet the plot.
 #' @param value_col String name of the column in filtered_counts that contains the counts.
-#' @param counts_threshold Threshold used to determine low counts.
+#' @param count_threshold Threshold used to determine low counts.
 #' @param plot_type String of either "percent" or "count" to adjust the y axis to be either the percentage or the 
 #'                  total number of cell lines.
 #' @param include_ctrl_bcs Boolean. Set to TRUE if control barcodes are to be counted. 
@@ -142,7 +150,7 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
                                   plot_type= 'percent', include_ctrl_bcs= FALSE) {
   # Validation: Check that id_cols, facet_col, or value_col exist in filtered counts.
   if(!validate_columns_exist(na.omit(c(id_cols, facet_col, value_col)), filtered_counts)) {
-    stop('Some input columns were not detected in filtered counts.')
+    stop('In create_recovery_barplot, some required input columns were not detected.')
   }
   
   # Filter out control barcodes if it is specified.
@@ -176,9 +184,9 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
   # Create recovery plot.
   recov_plot= recovery %>%
     ggplot(aes(x= sample_id, y= .data[[y_col]], fill= reorder(detect_type, dplyr::desc(detect_type)))) +
-    geom_col(alpha=0.75, position='stack') +
+    geom_col(position= 'stack', alpha= 0.75) +
     {if(!is.na(facet_col)) facet_wrap(~.data[[facet_col]], scale= 'free_x')} +
-    labs(x= "Sample constructed using id_cols", y= y_text, fill= '', title= 'Cell line recovery') + 
+    labs(x= 'Sample constructed using id_cols', y= y_text, fill= '', title= 'Cell line recovery') + 
     theme_bw() + theme(axis.text.x = element_text(angle=70, hjust=1))
   
   return(recov_plot)
@@ -206,7 +214,12 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
                           contains_cbs= FALSE, order_aucs= FALSE) {
   # Validation: Check that id_cols and counts_col are in the input dataframe.
   if(!validate_columns_exist(c(id_cols, counts_col), input_df)) {
-    stop('Some input columns were not detected in the cdf input dataframe.')
+    stop('In create_cdf_plot, some required input columns were not detected.')
+  }
+  
+  # Validation: mark1 should be less than mark2.
+  if(mark1 > mark2 | mark1 < 0 | mark1 > 1) {
+    stop('Mark values must be between 0 and 1. mark1 should be less than mark2')
   }
   
   # Determine percentages, ranks and cumulative percentages
@@ -215,12 +228,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
     dplyr::mutate(expected_num_cls= dplyr::n(),
                   total_counts= sum(.data[[counts_col]]), pct_counts= .data[[counts_col]]/total_counts,
                   cum_pct= cumsum(pct_counts), 
-                  rank= row_number(), rank_pct= rank/expected_num_cls) %>% dplyr::ungroup()
-  
-  # Validation: mark1 should be less than mark2.
-  if(mark1 > mark2 | mark1 < 0 | mark1 > 1) {
-    stop('Mark values must be between 0 and 1 Mark1 should be less than mark2')
-  }
+                  rank= row_number(), rank_pct= rank / expected_num_cls) %>% dplyr::ungroup()
   
   # Find the number of cell lines needed to reach mark1 and mark2
   mark1_values= calc_cummulative %>% dplyr::filter(cum_pct >= mark1) %>% 
@@ -247,7 +255,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
   
   # Create plot
   output_plot= data_for_plot %>%
-    ggplot(aes(x= rank_pct, y=cum_pct)) +
+    ggplot(aes(x= rank_pct, y= cum_pct)) +
     # Color control barcodes if specified
     {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
                                  mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, cb_log2_dose)), size= 2)} + 
@@ -265,7 +273,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
     geom_label(. %>% dplyr::filter(!is.na(auc)), mapping= aes(label= paste0('AUC ', round(auc, 3))), 
                x= 1, y= 0.25, hjust= 'inward', vjust= 'inward', color= 'black') +
     facet_wrap(~facet_name) + 
-    labs(x='% rank of unique reads', y='Cumulative percentage', color= 'CBs') + theme_bw()
+    labs(x= '% rank of unique reads', y= 'Cumulative percentage', color= 'CBs') + theme_bw()
   
   return(output_plot)
 }
@@ -369,11 +377,11 @@ create_cor_heatmap= function(input_df, row_id_cols, col_id_cols, value_col,
   cor_heatmap= correlation_mx %>% reshape2::melt() %>% 
     ggplot(aes(x= Var1, y= Var2, fill= value)) + 
     geom_tile() +
-    labs(x= '', y= '', fill= '', title= paste0('Correlations using ', value_col)) +
     scale_fill_gradientn(breaks= c(0, 0.5, 1), 
                          colours= c('blue', 'white','red'),
                          limits=c(0, 1), oob= scales::squish) +
-    theme(axis.text.x = element_text(angle=70, hjust=1))
+    labs(x= '', y= '', fill= '', title= paste0('Correlations using ', value_col)) +
+    theme_bw() + theme(axis.text.x = element_text(angle=70, hjust=1))
   
   return(cor_heatmap)
 }
@@ -383,7 +391,7 @@ create_cor_heatmap= function(input_df, row_id_cols, col_id_cols, value_col,
 #' From a long table, creates scatter plots to two replicates.
 #' 
 #' @import tidyverse
-#' @import ggmisc
+#' @import ggpmisc
 #' @param input_df Dataframe.
 #' @param cell_line_cols List of column names used to identify each cell line or control barcode.
 #' @param replicate_group_cols List of column names that describe a group of similar conditions.
@@ -441,14 +449,14 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #'
 #' Takes in various pipeline outputs and generates 11 QC files.
 #'
-#' @param raw_counts_uncollapsed Dataframe output from nori. This is used to generate purity metrics and
-#'                               the index summaries.
-#' @param raw_counts Raw counts dataframe from the collate_fastq_reads modules. This is used to generate puritu metrics.
+#' @param raw_counts_uncollapsed_path Path to the raw_counts_uncollapsed file.
+#' @param prism_barcode_counts Dataframe of prism barcodes identified in the run.
+#' @param unknown_barcode_counts Dataframe of unknown barcodes.
 #' @param annotated_counts Annotated counts dataframe from the filter_raw_reads module.
-#' @param filtered_counts Filtered counts dataframe from the filter_raw_reads module.
 #' @param normalized_counts Normalized counts dataframe from the normalize module. This is an optional parameter.
 #' @param l2fc L2FC dataframe from the compute_l2fc module. This is used for the bio_reps plot. 
 #' @param sample_meta Dataframe of the sample metadata for the sequencing run.
+#' @param barcode_col String name of the column containing the barcode sequences.
 #' @param cell_line_cols Vector of sample meta column names used to describe a cell line or barcode.
 #' @param id_cols Vector of sample meta column names used to identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
@@ -458,75 +466,102 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @param reverse_index2 Boolean set to TRUE if the sequencing involved the reverse complement workflow.
 #' @param out Path to the directory to save the QC images.
 #' @returns NA. QC images are written out to the specified folder.
-QC_images= function(raw_counts_uncollapsed, raw_counts, 
+QC_images= function(raw_counts_uncollapsed_path,
+                    prism_barcode_counts, unknown_barcode_counts,
                     annotated_counts, normalized_counts= NA, l2fc, 
                     sample_meta,
-                    cell_line_cols, 
-                    id_cols= c('pcr_plate', 'pcr_well'), sig_cols,
+                    barcode_col= 'forward_read_cl_barcode',
+                    id_cols= c('pcr_plate', 'pcr_well'),
+                    cell_line_cols= c('DepMap_ID'), 
+                    sig_cols,
                     control_type= 'negcon', count_threshold= 40, 
                     reverse_index2= FALSE, out = NA) {
+  
   # Required packages ----
   require(tidyverse)
   require(magrittr)
+  require(data.table)
   require(reshape2)
   require(WGCNA)
   require(scales)
-  require(ggmisc)
+  require(ggpmisc)
   
   # Some preprocessing ----
   # Set out directory if none is specified.
-  if(is.na(out)) {out = getwd()}
+  if(is.na(out)) {out= getwd()}
   
-  # Create empty vector to collect potential errors.
-  skipped_qcs= c() 
+  # Create empty vector to collect potential errors when running QCs
+  skipped_qcs= c()
   
   # Count number of distinct profile to help scale some plots.
   num_profiles= annotated_counts %>% dplyr::distinct(pick(all_of(id_cols))) %>% nrow()
   
-  # Detect control barcodes
+  # Detect if there are wells with control barcodes.
   cb_check= sample_meta %>%
     dplyr::filter(control_barcodes %in% c("Y", "T", T),
                   !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
   contains_cbs= ifelse(nrow(cb_check)!= 0, TRUE, FALSE)
   
-  # Pull filtered counts from annotated counts
+  # Create filtered_counts df from annotated_counts 
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read)
   
   # Sequencing QCs ____________________ ----
   ## 1. Purity metrics ----
   print('1. Generating QC table ...')
-  create_qc_table(raw_counts_uncollapsed, raw_counts, filtered_counts,
-                  value_col= 'n', file_path= paste0(out, '/QC_table.csv'))
+  create_qc_table(raw_counts_uncollapsed_path= raw_counts_uncollapsed_path, 
+                  unknown_barcode_counts= unknown_barcode_counts,
+                  prism_barcode_counts= prism_barcode_counts,
+                  filtered_counts= filtered_counts,
+                  value_col= 'n', output_path= paste0(out, '/QC_table.csv'))
   
   ## 2. Index count summaries ----
-  print("2. Generating index counts tables ...")
-  # Check that "IndexBarcode1" and "index_1" columns are present.
-  # If so, calculate index summary and write out.
-  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed)) {
+  print('2. Generating index counts tables ...')
+  
+  # Pull out headers to perform checks
+  raw_counts_uncollapsed_headers= data.table::fread(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
+  
+  # Check that "index_1" is present. If so, calculate index summary and write out.
+  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_path)) {
+    # Aggregate over index_1 using chunks
+    # Action is set to a data.table summarize with summing
+    index1_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= 10^6, 
+                                     action= function(x) x[, list(n= sum(n)), by= index_1])
+    
+    # Create vector of unique index_1 values
     expected_index1= unique(sample_meta$index_1)
-    index1_counts= get_index_summary(raw_counts_uncollapsed, 'index_1', expected_index1)
-    index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep='/'), row.names=F)
+    
+    # Call get_index_summary over index1_chunks as a full table, then write out table
+    index1_counts= get_index_summary(data.table::rbindlist(index1_chunks), 'index_1', expected_index1)
+    index1_counts %>% write.csv(file= paste(out, 'index1_counts.csv', sep= '/'), row.names= FALSE, quote= FALSE)
   } else {
     print('Column "index_1" not detected. Skipping index 1 summaries ...', quote= FALSE)
   }
   
   # Do the same for index 2.
-  # Reverse index 2 barcodes if it is indicated and if "index_2" exisits
+  # Reverse index 2 barcodes if it is indicated and if "index_2" exists
   if(reverse_index2 & 'index_2' %in% colnames(sample_meta) ) {
     print("Reverse-complementing index 2 barcode.")
     sample_meta$index_2= chartr("ATGC", "TACG", stringi::stri_reverse(sample_meta$index_2))
   }
   
-  if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts_uncollapsed)) {
+  if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts_uncollapsed_headers)) {
+    # Aggregate over index_2 using chunks
+    # Action is set to a data.table summarize with summing
+    index2_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= 10^6, 
+                                     action= function(x) x[, list(n= sum(n)), by= index_2]) 
+    
+    # Create vector of unique index_2 values
     expected_index2= unique(sample_meta$index_2)
-    index2_counts= get_index_summary(raw_counts_uncollapsed, 'index_2', expected_index2)
-    index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep='/'), row.names=F)
+    
+    # Call get_index_summary over index2_chunks as a full table, then write out table
+    index2_counts= get_index_summary(data.table::rbindlist(index2_chunks), 'index_2', expected_index2)
+    index2_counts %>% write.csv(file= paste(out, 'index2_counts.csv', sep= '/'), row.names= FALSE, quote= FALSE)
   } else {
     print('Column "index_2" not detected. Skipping index 2 summaries ...',  quote= FALSE)
   }
   
   ## 3. Total counts ----
-  print("3. Generating total_counts image ...")
+  print('3. Generating total_counts image ...')
   potential_error= base::tryCatch({
     tc= create_total_counts_barplot(filtered_counts, id_cols, facet_col= 'pcr_plate')
     
@@ -538,7 +573,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   }, error= function(e) {
     print(e)
     print('Encountered an error when creating the total counts barplot. Skipping this output ...') 
-    return('QC table')
+    return('Totalc ounts image')
   })
   
   # Collect returned string if an error occurred
@@ -546,15 +581,49 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
+  ## 4. Unknown barcodes ----
+  print('4. Generating table of unknown barcode reads ...')
+  potential_error= base::tryCatch({
+    unknown_totals= unknown_barcode_counts[, .(well_total= sum(n)), by= id_cols]
+    prism_totals= prism_barcode_counts[, .(well_total= sum(n)), by= id_cols]
+    well_totals= data.table::rbindlist(list(unknown_totals, prism_totals))[, .(well_total= sum(well_total)), by= id_cols]
+    
+    unknown_barcodes= unknown_barcode_counts %>% 
+      dplyr::filter(.data[[barcode_col]] != 'unknown_reads') %>%
+      dplyr::left_join(well_totals, by= id_cols) %>%
+      dplyr::mutate(read_percent= n / well_total) %>%
+      dplyr::group_by(pick(all_of(barcode_col))) %>%
+      dplyr::summarise(total= sum(n),
+                       median_read= median(n),
+                       median_percent= median(read_percent),
+                       max_read= max(n),
+                       max_percent= max(read_percent),
+                       num_wells= dplyr::n()) %>% dplyr::ungroup() %>%
+      dplyr::arrange(dplyr::desc(median_percent))
+    
+    unknown_barcodes %>% write.csv(file= paste(out, 'unknown_barcodes_summary.csv', sep= '/'), 
+                                   row.names= FALSE, quote= FALSE)
+  }, error= function(e) {
+    print(e)
+    print('Encountered an error when creating the summary unknown barcode reads. Skipping this output ...') 
+    return('unknown barcode reads')
+  })
+  
+  # Collect returned string if an error occurred
+  if(!is.null(potential_error)) {
+    skipped_qcs = c(skipped_qcs, potential_error)
+  }
+  #
+  
   # Assay QCs _________________________ ----
-  ## 4. Cell lines recovered ----
-  print("4. Generating cell_lines_present image ...")
+  ## 5. Cell lines recovered ----
+  print('5. Generating cell_lines_present image ...')
   potential_error= base::tryCatch({
     cl_rec= create_recovery_barplot(filtered_counts, id_cols= id_cols, facet_col= 'pcr_plate', 
                                     count_threshold= count_threshold, plot_type= 'percent')
     
-    pdf(file=paste(out, "cell_lines_present.pdf", sep="/"),
-        width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+    pdf(file= paste(out, "cell_lines_present.pdf", sep="/"),
+        width= sqrt(num_profiles)*2, height= sqrt(num_profiles))
     print(cl_rec)
     dev.off()
     rm(cl_rec)
@@ -569,16 +638,16 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## 5. Cell line contaminants ----
-  print('5. Generating cell line contaminants ...')
+  ## 6. Cell line contaminants ----
+  print('6. Generating cell line contaminants ...')
   potential_error= base::tryCatch({
-    contams= annotated_counts %>% dplyr::filter(expected_read == F) %>%
+    contams= annotated_counts %>% dplyr::filter(expected_read == FALSE) %>%
       dplyr::mutate(barcode_id= ifelse(is.na(ccle_name), cb_name, ccle_name)) %>%
       dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
-      dplyr::summarise(num_wells= n(), median_n=median(n), max_n= max(n)) %>% ungroup() %>%
+      dplyr::summarise(num_wells= n(), median_n= median(n), max_n= max(n)) %>% ungroup() %>%
       dplyr::arrange(desc(num_wells))
     
-    contams %>% write.csv(file= paste(out, 'contam_cell_lines.csv', sep='/'), row.names=F)
+    contams %>% write.csv(file= paste(out, 'contam_cell_lines.csv', sep='/'), row.names= FALSE, quote= FALSE)
     rm(contams)
   }, error= function(e) {
     print(e)
@@ -591,78 +660,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     skipped_qcs = c(skipped_qcs, potential_error)
   }
   
-  ## 6. Contaminant reads ----
-  print('6. Generating contaminant reads ...')
-  potential_error= base::tryCatch({
-    pcr_locations= c('pcr_plate', 'pcr_well')
-    
-    # Validation: Check that the PCR columns are present in raw_counts.
-    if(!validate_columns_exist(pcr_locations, raw_counts)) {
-      stop('pcr_plate and pcr_well are required in raw_counts.csv for this to work.')
-    }
-      
-    # count number of wells a cell_set appears in.
-    pcr_plate_map= sample_meta %>% dplyr::distinct(pick(any_of(c(pcr_locations, 'cell_set')))) %>%
-      dplyr::group_by(pcr_plate) %>% dplyr::mutate(num_wells_in_plate= dplyr::n()) %>% dplyr::ungroup() %>%
-      dplyr::group_by(cell_set) %>% dplyr::mutate(num_wells_in_set= dplyr::n()) %>% dplyr::ungroup()
-
-    # index filter and identify reads as mapped or not
-    sequencing_filter= raw_counts %>%
-      dplyr::mutate(mapped= forward_read_cl_barcode %in% unique(annotated_counts$forward_read_cl_barcode))
-
-    # total counts per well - used to calculate fractions
-    counts_per_well= sequencing_filter %>% dplyr::group_by(pick(all_of(pcr_locations))) %>%
-      dplyr::summarise(well_total_n= sum(n)) %>% dplyr::ungroup()
-
-    # mapped contaminates to bind
-    mapped_contams= annotated_counts %>% dplyr::filter(!expected_read) %>%
-      dplyr::mutate(barcode_name= ifelse(is.na(ccle_name), cb_name, ccle_name)) %>%
-      dplyr::select(all_of(c(pcr_locations, 'forward_read_cl_barcode', 'n', 'barcode_name')))
-    
-    contam_reads= sequencing_filter %>% dplyr::filter(mapped == FALSE) %>% dplyr::select(-mapped) %>%
-      dplyr::bind_rows(mapped_contams) %>%
-      dplyr::left_join(counts_per_well, by= pcr_locations) %>%
-      dplyr::left_join(pcr_plate_map, by= pcr_locations) %>%
-      # filter out barcodes that only appear in one well
-      dplyr::group_by(forward_read_cl_barcode) %>% dplyr::filter(dplyr::n() >1) %>% dplyr::ungroup() %>%
-      # number of wells in a pcr plate a barcode is detected in
-      dplyr::group_by(forward_read_cl_barcode, pcr_plate) %>%
-      dplyr::mutate(num_wells_detected_plate= dplyr::n()) %>% dplyr::ungroup() %>%
-      # number of wells in a cell set a barcode is detected in
-      dplyr::group_by(forward_read_cl_barcode, cell_set) %>%
-      dplyr::mutate(num_wells_detected_set= dplyr::n()) %>% dplyr::ungroup() %>%
-      # determine if contamination is project, plate, or set
-      dplyr::group_by(forward_read_cl_barcode) %>%
-      dplyr::mutate(num_wells_detected= dplyr::n(),
-                    project_code= unique(sample_meta$project_code),
-                    fraction= n/well_total_n,
-                    type1= ifelse(sum(num_wells_detected== nrow(pcr_plate_map))>1, 'project_contam', NA),
-                    type2= ifelse(sum(num_wells_detected== num_wells_detected_plate & 
-                                        num_wells_detected_plate == num_wells_in_plate)>1, 'plate_contam', NA),
-                    type3= ifelse(sum(num_wells_detected == num_wells_detected_set &
-                                        num_wells_detected_set== num_wells_in_set)>1, 'set_contam', NA)) %>%
-      dplyr::ungroup() %>%
-      tidyr::unite(scope, all_of(c('type1', 'type2', 'type3')), sep=',', remove = T, na.rm = T) %>%
-      dplyr::group_by(project_code, forward_read_cl_barcode, barcode_name, scope, num_wells_detected) %>%
-      dplyr::summarise(min_n= min(n), med_n= median(n), max_n= max(n),
-                       min_fraction= min(fraction), med_fraction= median(fraction), max_fraction=max(fraction)) %>%
-      dplyr::arrange(desc(max_fraction))
-    
-    # write out
-    contam_reads %>% write.csv(paste0(out, 'contam_reads.csv'), row.names=F)
-  }, error= function(e) {
-    print(e)
-    print('Encountered an error when creating the contams reads file. Skipping this output ...')
-    return('contam reads')
-  })
-  
-  # Collect returned string if an error occurred
-  if(!is.null(potential_error)) {
-    skipped_qcs = c(skipped_qcs, potential_error)
-  }
-  
   ## 7. Cumulative counts by lines in negcons ----
-  print("7. Generating cumulative image ...")
+  print('7. Generating cumulative image ...')
   potential_error= base::tryCatch({
     cdf_plot= create_cdf_plot(filtered_counts %>% dplyr::filter(trt_type == control_type), 
                               id_cols= id_cols, 
@@ -671,8 +670,8 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
                               contains_cbs= contains_cbs, order_aucs= TRUE) +
       labs(title= 'Cumulative reads in negative controls.')
     
-    pdf(file=paste(out, "cdf_plot.pdf", sep="/"),
-        width=sqrt(num_profiles)*2, height=sqrt(num_profiles))
+    pdf(file=paste(out, 'cdf_plot.pdf', sep= '/'),
+        width= sqrt(num_profiles) * 2, height= sqrt(num_profiles))
     print(cdf_plot)
     dev.off()
     rm(cdf_plot)
@@ -684,18 +683,18 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   
   # Collect returned string if an error occurred
   if(!is.null(potential_error)) {
-    skipped_qcs = c(skipped_qcs, potential_error)
+    skipped_qcs= c(skipped_qcs, potential_error)
   }
   
   ## 8. Control barcode trends ----
   if(contains_cbs & is.data.frame(normalized_counts)) {
-    print("8. Generating control_barcode_trend image")
+    print('8. Generating control_barcode_trend image')
     potential_error= base::tryCatch({
       trend_sc= create_ctrlBC_scatterplots(normalized_counts %>% dplyr::filter(control_barcodes %in% c("Y", "T", T)), 
                                            id_cols, value_col= 'log2_n')
       
       pdf(file=paste(out, "control_barcode_trend.pdf", sep="/"),
-          width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
+          width= sqrt(num_profiles) * 2, height= sqrt(num_profiles) * 2)
       print(trend_sc)
       dev.off()
       rm(cb_trend, trend_sc)
@@ -707,25 +706,25 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     
     # Collect returned string if an error occurred
     if(!is.null(potential_error)) {
-      skipped_qcs = c(skipped_qcs, potential_error)
+      skipped_qcs= c(skipped_qcs, potential_error)
     }
   } else {
     print('8. No control barcodes detected. Skipping control_barcode_trend image.')
   }
   
   ## 9. Sample correlation -----
-  print("9. Generating sample_cor image ...")
+  print('9. Generating sample_cor image ...')
   potential_error= base::tryCatch({
     cor_df= filtered_counts %>% 
-      dplyr::filter(!is.na(depmap_id), !is.na(trt_type), !trt_type %in% c("empty", "", "CB_only")) %>%
+      dplyr::filter(!is.na(depmap_id), !is.na(trt_type), !trt_type %in% c('empty', '', 'CB_only')) %>%
       dplyr::mutate(log2_n= log2(n + 1))
     cp= create_cor_heatmap(input_df= cor_df,
                            row_id_cols= c('depmap_id'),
                            col_id_cols= c(sig_cols, id_cols),
                            value_col= 'log2_n')
     
-    pdf(file=paste(out, "sample_cor.pdf", sep="/"),
-        width=sqrt(num_profiles)*2, height=sqrt(num_profiles)*2)
+    pdf(file= paste(out, 'sample_cor.pdf', sep= '/'),
+        width= sqrt(num_profiles) * 2, height= sqrt(num_profiles) * 2)
     print(cp)
     dev.off()
     rm(correlation_matrix, cp)
@@ -737,7 +736,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
   
   # Collect returned string if an error occurred
   if(!is.null(potential_error)) {
-    skipped_qcs = c(skipped_qcs, potential_error)
+    skipped_qcs= c(skipped_qcs, potential_error)
   }
   
   ## 10. Tech rep correlations ----
@@ -746,7 +745,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
     unique_tech_reps= na.omit(unique(normalized_counts$tech_rep))
     
     if(length(unique_tech_reps) >= 2) {
-      print("10. Generating tech rep correlations image ...")
+      print('10. Generating tech rep correlations image ...')
       # Set up replicate groups depending "bio_rep" column
       if('bio_rep' %in% colnames(normalized_counts) & !'bio_rep' %in% sig_cols) {
         replicate_group_cols= c(sig_cols, 'bio_rep')
@@ -784,7 +783,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
       
       # Collect returned string if an error occurred
       if(!is.null(potential_error)) {
-        skipped_qcs = c(skipped_qcs, potential_error)
+        skipped_qcs= c(skipped_qcs, potential_error)
       }
       
     } else {
@@ -802,6 +801,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
       l2fc_with_log2= l2fc %>% dplyr::mutate(log2_mean_normalized_n= log2(mean_normalized_n))
       
       # Bio replicate scatter plots
+      # This is just another visualization that isn't being used.
       # bio_reps_plt= create_replicate_scatterplots(input_df= l2fc_with_log2s, 
       #                                           cell_line_cols= cell_line_cols, 
       #                                           replicate_group_cols= sig_cols, 
@@ -817,15 +817,15 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
       # }
       
       # Bio replicate heatmap
-      print("11. Generating bio rep correlations heatmap ...")
+      print('11. Generating bio rep correlations heatmap ...')
       potential_error= base::tryCatch({
         bio_corr_hm= create_cor_heatmap(input_df= l2fc_with_log2, 
                                         row_id_cols= cell_line_cols, 
                                         col_id_cols= c(sig_cols, 'bio_rep'), 
                                         value_col= 'l2fc',
                                         cor_method= 'pearson') 
-        pdf(file=paste(out, "bio_corr_hm.pdf", sep="/"),
-            width=sqrt(num_profiles), height=sqrt(num_profiles))
+        pdf(file= paste(out, 'bio_corr_hm.pdf', sep= '/'),
+            width= sqrt(num_profiles), height= sqrt(num_profiles))
         print(bio_corr_hm)
         dev.off()
       }, error= function(e) {
@@ -836,7 +836,7 @@ QC_images= function(raw_counts_uncollapsed, raw_counts,
       
       # Collect returned string if an error occurred
       if(!is.null(potential_error)) {
-        skipped_qcs = c(skipped_qcs, potential_error)
+        skipped_qcs= c(skipped_qcs, potential_error)
       }
       
     } else {
