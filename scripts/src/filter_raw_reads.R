@@ -75,7 +75,8 @@ filter_raw_reads = function(prism_barcode_counts,
   # every row is a cell line that is expected in a PCR well. 
   print('Creating template of expected reads.')
   # Join cell_set_meta and cell_line_meta. The cell_set can be a name "P939" or a list of LUAs.
-  template= sample_meta %>% dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
+  template= sample_meta %>% dplyr::filter(!is.na(cell_set)) %>% # this filter prevents some NA rows
+    dplyr::left_join(cell_set_meta, by= 'cell_set') %>%
     dplyr::mutate(members= ifelse(is.na(members), str_split(cell_set, ';'), str_split(members, ';'))) %>% 
     tidyr::unnest(cols= members) %>%
     dplyr::left_join(cell_line_meta, by= dplyr::join_by('members'=='LUA'), relationship= 'many-to-one') %>%
