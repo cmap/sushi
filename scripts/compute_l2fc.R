@@ -5,6 +5,7 @@ library(tidyverse)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(dplyr))
 source("./src/compute_l2fc.R")
+source("./src/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

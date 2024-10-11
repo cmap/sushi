@@ -1,19 +1,3 @@
-#' validate_columns_exist
-#' 
-#' This function checks that a list of columns are present in a dataframe.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_columns_exist= function(selected_columns, df) {
-  # Check that all of selected_columns are in df
-  if(any(!selected_columns %in% colnames(df))) {
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
 #'  normalize
 #'
 #'  takes a filtered dataframe of raw read counts and normalizes
@@ -40,21 +24,20 @@ normalize <- function(X, id_cols, barcodes, pseudocount) {
   X %<>% dplyr::mutate(log2_n = log2(n + pseudocount))
   
   # Validation: Check that id_cols are present in the dataframe ----
-  if(validate_columns_exist(id_cols, X) == FALSE) {
-    print(id_cols)
+  if(!validate_columns_exist(id_cols, X)) {
     stop('One or more id_cols (printed above) is NOT present in the supplied dataframe.')
   }
   
   # Identify valid profiles and valid control barcodes to determine intercept ----
-  # dropping invalid trt_type, wells without control barcodes, cell line entries or other CBs, cbs with zero reads,
-  # and profiles with fewer than 4 CBs.
+  # Drop wells with invalid trt_type, wells without control barcodes, cell line entries or other CBs, 
+  # cbs with zero reads, and profiles with fewer than 4 CBs.
   valid_profiles= X %>% dplyr::filter(!trt_type %in% c("empty", "", "CB_only"), !is.na(trt_type), 
                                       control_barcodes %in% c('Y', 'T', T), Name %in% barcodes, n!= 0) %>%
     dplyr::group_by(pick(all_of(id_cols))) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
   
   # Validation: Check which wells/profiles were dropped ----
-  distinct_all_profiles = X %>% dplyr::distinct(pick(all_of(id_cols)))
-  distinct_valid_profiles = valid_profiles %>% dplyr::distinct(pick(all_of(id_cols)))
+  distinct_all_profiles= X %>% dplyr::distinct(pick(all_of(id_cols)))
+  distinct_valid_profiles= valid_profiles %>% dplyr::distinct(pick(all_of(id_cols)))
   if(nrow(distinct_all_profiles) != nrow(distinct_valid_profiles)) {
     # Print error if all profiles were dropped
     if(nrow(valid_profiles) == 0) {
@@ -80,17 +63,17 @@ normalize <- function(X, id_cols, barcodes, pseudocount) {
   fit_stats= valid_profiles %>% dplyr::inner_join(fit_intercepts, by=id_cols) %>% 
     dplyr::group_by(pick(all_of(id_cols))) %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
-                  norm_mae= median(abs(log2_dose- log2_normalized_n)),
+                  norm_mae= median(abs(log2_dose - log2_normalized_n)),
                   mean_y= mean(log2_dose),
-                  residual2= (log2_dose- log2_normalized_n)^2,
-                  squares2= (log2_dose- mean_y)^2,
-                  norm_r2= 1- sum(residual2)/sum(squares2)) %>% dplyr::ungroup() %>%
+                  residual2= (log2_dose - log2_normalized_n)^2,
+                  squares2= (log2_dose - mean_y)^2,
+                  norm_r2= 1 - sum(residual2) / sum(squares2)) %>% dplyr::ungroup() %>%
     dplyr::distinct(pick(all_of(c(id_cols, 'cb_intercept', 'norm_mae', 'norm_r2'))))
   
   # Normalize entries ----
   normalized= X %>% dplyr::inner_join(fit_stats, by=id_cols) %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
-                  normalized_n = 2^log2_normalized_n)
+                  normalized_n= 2^log2_normalized_n)
   
   return(normalized)
 }
