@@ -8,7 +8,7 @@ parser <- ArgumentParser()
 parser$add_argument('--sample_meta', default= 'sample_meta.csv', help= 'Sample meta data for the sequencing run.')
 parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
 parser$add_argument('--lfc', default= 'l2fc.csv', help= 'L2FC data.') # level 4
-parser$add_argument('--collapsed_l2fc', default= 'collapsed_l2fc.csv', help= 'Collapsed l2fc data.') # level 5
+parser$add_argument('--collapsed_lfc', default= 'collapsed_l2fc.csv', help= 'Collapsed l2fc data.') # level 5
 parser$add_argument('--sig_cols', default= 'cell_set,treatment,dose,dose_unit,day', 
                     help= 'Columns that uniquely identify a condition.') 
 parser$add_argument('--out', default= getwd(), help= 'Path to the output directory.')
@@ -64,15 +64,15 @@ if(file.exists(args$lfc)) {
   # Write out
   outpath= paste(args$out, 'l2fc_with_meta_columns.csv', sep='/')
   print(paste("Writing l2fc_with_meta_columns.csv to ", outpath))
-  write.csv(l2fc_with_meta_columns, outpath, row.names= FALSE, quote= FALSE)
+  l2fc_with_meta_columns %>% write.csv(outpath, row.names= FALSE, quote= FALSE)
 } else {
   print('WARNING: l2fc.csv does not exist. Skipping this file.')
 }
 
 # Add sample meta and assay pool meta to collapsed_l2fc table ----
-if(file.exists(args$collapsed_l2fc)) {
+if(file.exists(args$collapsed_lfc)) {
   print('Attempting to add sample_meta to collapsed l2fc.')
-  collapsed_l2fc= data.table::fread(args$collapsed_l2fc, header= T, sep= ',')
+  collapsed_l2fc= data.table::fread(args$collapsed_lfc, header= T, sep= ',')
   
   # Add sample meta columns to collapsed l2fc
   collapsed_l2fc_with_meta_columns= join_metadata(input_df= collapsed_l2fc, metadata= sample_meta, 
@@ -92,7 +92,7 @@ if(file.exists(args$collapsed_l2fc)) {
   # Write out
   outpath= paste(args$out, 'collapsed_l2fc_with_meta_columns.csv', sep='/')
   print(paste("Writing collapsed_l2fc_with_meta_columns.csv to ", outpath))
-  write.csv(collapsed_l2fc_with_meta_columns, outpath, row.names= FALSE, quote= FALSE)
+  collapsed_l2fc_with_meta_columns %>% write.csv(outpath, row.names= FALSE, quote= FALSE)
 } else {
   print('WARNING: collapsed_l2fc.csv does not exist. Skipping this file.')
 }

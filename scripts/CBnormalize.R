@@ -2,6 +2,7 @@ options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 source("./src/normalize.R")
+source("./src/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
