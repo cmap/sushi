@@ -34,7 +34,7 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' @param cell_line_meta Master metadata of cell lines with the following required columns - "CCLE_name",
 #'                       "DepMap_ID", "LUA", and "Sequence".
 #' @param CB_meta Master metadata of control barcodes, their sequences, and their doses. The file should contain 
-#'                the columns - "Sequence", "Name", and "log_dose".
+#'                the columns - "Sequence", "cb_name", and "cb_log10_dose".
 #' @param id_cols Columns present in both raw_counts and sample_meta that uniquely identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
 #' @returns List with the following elements:
@@ -51,7 +51,7 @@ filter_raw_reads = function(prism_barcode_counts,
   # CB meta is in log10 and should be converted to log2 ----
   if('log_dose' %in% colnames(CB_meta)) {
     print("Converting CB_meta from log10 to log2.")
-    CB_meta= CB_meta %>% dplyr::mutate(log2_dose= log_dose/log10(2)) %>% dplyr::select(-log_dose)
+    CB_meta= CB_meta %>% dplyr::mutate(cb_log2_dose= cb_log10_dose/log10(2)) %>% dplyr::select(-cb_log10_dose)
   }
   
   # Validation: Check that id_cols exist in the sample meta ----

@@ -111,7 +111,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   
   # Sum up reads 
   total_counts= filtered_counts %>%
-    dplyr::mutate(barcode_type= case_when(!is.na(CCLE_name) ~ 'cell line',
+    dplyr::mutate(barcode_type= case_when(!is.na(ccle_name) ~ 'cell line',
                                           !is.na(Name) ~ 'ctrl barcode')) %>%
     tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
     dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
@@ -258,7 +258,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
     ggplot(aes(x= rank_pct, y= cum_pct)) +
     # Color control barcodes if specified
     {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
-                                 mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, log2_dose)), size= 2)} + 
+                                 mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, cb_log2_dose)), size= 2)} + 
     geom_line(color='black') +
     # point for mark1 of counts
     geom_segment(aes(x= -Inf , y= mark1, xend= mark1_loc, yend = mark1), color= 'black', linetype= 2) +
@@ -301,11 +301,11 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
     normalized_counts= normalized_counts %>% 
       dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T), n != 0) %>%
       dplyr::group_by(pick(all_of(id_cols))) %>%
-      dplyr::mutate(mean_y= mean(log2_dose),
-                    residual2= (log2_dose - log2_normalized_n)^2,
-                    squares2= (log2_dose - mean_y)^2,
+      dplyr::mutate(mean_y= mean(cb_log2_dose),
+                    residual2= (cb_log2_dose - log2_normalized_n)^2,
+                    squares2= (cb_log2_dose - mean_y)^2,
                     norm_r2= 1 - sum(residual2) / sum(squares2),
-                    norm_mae= median(abs(log2_dose- log2_normalized_n))) %>% ungroup()
+                    norm_mae= median(abs(cb_log2_dose- log2_normalized_n))) %>% ungroup()
   } 
   
   # Filter for just the control barcodes, create a profile_id for faceting, 
@@ -313,10 +313,10 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
   cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T)) %>%
     tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
     dplyr::group_by(profile_id) %>% dplyr::mutate(label_x_pos= min(.data[[value_col]]),
-                                                  label_y_pos= max(log2_dose)) %>% dplyr::ungroup()
+                                                  label_y_pos= max(cb_log2_dose)) %>% dplyr::ungroup()
   
   # Create control barcode trend plot
-  trend_scatter_plot= cb_trend %>% ggplot(aes(x= .data[[value_col]], y= log2_dose)) + 
+  trend_scatter_plot= cb_trend %>% ggplot(aes(x= .data[[value_col]], y= cb_log2_dose)) + 
     geom_point() +
     geom_abline(aes(slope=1, intercept= cb_intercept) , color='blue', alpha= 0.5) +
     geom_text(aes(x= label_x_pos, y= label_y_pos,
@@ -340,8 +340,8 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
 #' @import scales
 #' @param input_df Dataframe.
 #' @param row_id_cols Vector of column names from input_df that identifies the cell lines. For example,
-#'                    this can be "DepMap_ID", "CCLE_name" if only cell lines exist. It can also be 
-#'                    "DepMap_ID", "CCLE_name", "Name" if control barcodes are also present.
+#'                    this can be "depmap_id", "ccle_name" if only cell lines exist. It can also be 
+#'                    "depmap_id", "ccle_name", "cb_name" if control barcodes are also present.
 #' @param col_id_cols Vector of column names from input_df that identifies the PCR wells or conditions.
 #'                    For example, this can be "pcr_plate", "pcr_well" or a list of conditions like those in sig_cols.
 #' @param value_col String name of the column in input_df to be used as the values.
@@ -426,7 +426,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
   reps_piv= reps_piv %>%
     pivot_wider(id_cols= all_of(c(cell_line_cols, 'replicate_group')),
                 names_from= replicate_col, names_prefix= replicate_col, values_from= value_col) %>%
-    dplyr::mutate(type= ifelse(!is.na(CCLE_name), "cell line", "control barcode")) %>% dplyr::ungroup()
+    dplyr::mutate(type= ifelse(!is.na(ccle_name), "cell line", "control barcode")) %>% dplyr::ungroup()
   
   # Create names of the columns to plot on xy axes
   x_col_name= paste0(replicate_col, x_axis_rep)
@@ -642,7 +642,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   print('6. Generating cell line contaminants ...')
   potential_error= base::tryCatch({
     contams= annotated_counts %>% dplyr::filter(expected_read == FALSE) %>%
-      dplyr::mutate(barcode_id= ifelse(is.na(CCLE_name), Name, CCLE_name)) %>%
+      dplyr::mutate(barcode_id= ifelse(is.na(ccle_name), cb_name, ccle_name)) %>%
       dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
       dplyr::summarise(num_wells= n(), median_n= median(n), max_n= max(n)) %>% ungroup() %>%
       dplyr::arrange(desc(num_wells))
@@ -716,10 +716,10 @@ QC_images= function(raw_counts_uncollapsed_path,
   print('9. Generating sample_cor image ...')
   potential_error= base::tryCatch({
     cor_df= filtered_counts %>% 
-      dplyr::filter(!is.na(DepMap_ID), !is.na(trt_type), !trt_type %in% c('empty', '', 'CB_only')) %>%
+      dplyr::filter(!is.na(depmap_id), !is.na(trt_type), !trt_type %in% c('empty', '', 'CB_only')) %>%
       dplyr::mutate(log2_n= log2(n + 1))
     cp= create_cor_heatmap(input_df= cor_df,
-                           row_id_cols= c('DepMap_ID'),
+                           row_id_cols= c('depmap_id'),
                            col_id_cols= c(sig_cols, id_cols),
                            value_col= 'log2_n')
     
@@ -754,8 +754,8 @@ QC_images= function(raw_counts_uncollapsed_path,
       }
       
       # Handle cases if control barcodes are used.
-      if('Name' %in% colnames(normalized_counts)) {
-        unique_cell_line_cols= c(cell_line_cols, 'Name')
+      if('cb_name' %in% colnames(normalized_counts)) {
+        unique_cell_line_cols= c(cell_line_cols, 'cb_name')
       } else {
         unique_cell_line_cols= cell_line_cols
       }
