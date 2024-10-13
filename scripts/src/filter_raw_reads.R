@@ -1,21 +1,17 @@
 options(cli.unicode = FALSE)
 
-#' validate_cell_set_luas
+#' validate_cell_set
 #' 
-#' This function checks that every cell set in the sample meta does not contain duplicate members.
-#' If a cell set has duplicate LUAs, a warning is printed.
+#' This function checks for duplicate cell lines within each cell set.
 #' 
-#' @param sample_meta The sample_meta df with the column "cell_set".
 #' @param cell_set_meta The cell_set_meta df with the columns "cell_set" and "members".
-validate_cell_set_luas= function(sample_meta, cell_set_meta) {
-  duplicate_luas= cell_set_meta %>% dplyr::filter(cell_set %in% unique(sample_meta$cell_set)) %>%
-    dplyr::mutate(members= str_split(members, ';')) %>%
-    tidyr::unnest(cols= 'members') %>%
-    dplyr::count(cell_set, members, name= 'count') %>% dplyr::filter(count > 1)
+validate_cell_set= function(cell_set_and_pool_meta) {
+  duplicate_cls= cell_set_and_pool_meta %>% dplyr::count(cell_set, depmap_id, name= 'count') %>% 
+    dplyr::filter(count > 1)
   
-  if(nrow(duplicate_luas) > 0) {
-    print('WARNING: The following LUAs appear more than once in a cell set!!!')
-    print(duplicate_luas)
+  if(nrow(duplicate_cls) > 0) {
+    print('WARNING: The following CLs appear more than once in a cell set!!!')
+    print(duplicate_cls)
     print('The module will continue, but check the cell_set meta!!!')
   }
 }
@@ -25,27 +21,29 @@ validate_cell_set_luas= function(sample_meta, cell_set_meta) {
 #' Takes the raw readcount table and filters for expected indices and cell lines
 #' using the given metadata.
 #'
-#' @param raw_counts Dataframe of reads. The columns of this dataframe should include the id_cols,
+#' @param prism_barcode_counts Dataframe of reads. The columns of this dataframe should include the id_cols,
 #'                   "forward_read_cl_barcode", and "n".
 #' @param sample_meta Dataframe of the metadata for the sequencing run. This file should contain the id_cols,
 #'                    "cell_set", "control_barcodes", etc.
-#' @param cell_set_meta Master metadata of cell sets and their contents with the following required columns -
-#'                      "cell_set" and "members".
-#' @param cell_line_meta Master metadata of cell lines with the following required columns - "CCLE_name",
-#'                       "DepMap_ID", "LUA", and "Sequence".
+#' @param cell_set_and_pool_meta Metadata of cell sets and their contents with the following required columns -
+#'                      "cell_set" and "depmap_id".
+#' @param cell_line_meta Master metadata of cell lines with the following required columns -
+#'                       "depmap_id" and "forward_read_cl_barcode".
 #' @param CB_meta Master metadata of control barcodes, their sequences, and their doses. The file should contain 
-#'                the columns - "Sequence", "cb_name", and "cb_log10_dose".
+#'                the columns - "cb_ladder", "cb_name", and "cb_log10_dose" or "cb_log2_dose".
 #' @param id_cols Columns present in both raw_counts and sample_meta that uniquely identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
+#' @param barcode_col Name of the column containing the sequence. This column must appear across prism_barocde_counts,
+#'                    
 #' @returns List with the following elements:
 #' #' \itemize{
 #'   \item annotated_counts: table of reads and the associated well and well conditions.
 #'   \item filtered_counts: table of all expected reads for the project, this is a subset of annotated counts.
 #' }
 filter_raw_reads= function(prism_barcode_counts, 
-                            sample_meta, cell_set_meta, cell_line_meta, CB_meta,
-                            id_cols= c('pcr_plate', 'pcr_well'),
-                            barcode_col= 'forward_read_cl_barcode') {
+                           sample_meta, cell_set_and_pool_meta, cell_line_meta, CB_meta,
+                           id_cols= c('pcr_plate', 'pcr_well'),
+                           barcode_col= 'forward_read_cl_barcode') {
   require(magrittr)
   require(tidyverse)
   require(data.table)
@@ -61,7 +59,7 @@ filter_raw_reads= function(prism_barcode_counts,
     # CB_meta %<>% dplyr::mutate(cb_log2_dose= cb_log10_dose/log10(2)) %>% dplyr::select(-cb_log10_dose)
     CB_meta[, cb_log2_dose := cb_log10_dose/log10(2)][, cb_log10_dose := NULL]
     # This is to ensure that all merge components are of type data.table.
-  } else if('cb_log10_dose' %in% colnames(CB_meta)) {
+  } else if('cb_log2_dose' %in% colnames(CB_meta)) {
     print('Detecting cb_log2_dose in CB_meta.')
   } else {
     stop('Missing either cb_log2_dose or cb_log10_dose in CB_meta.csv.')
@@ -78,10 +76,10 @@ filter_raw_reads= function(prism_barcode_counts,
     stop('The specified ID columns do NOT uniquely identify every PCR well.')
   }
   
-  # Validation: Check that cell sets do not contain duplicate LUAs ----
-  # This will produce a warning if a LUA appears in a cell set more than once!
-  # This currently does NOT result in an error. Error avoided using a distinct when creating the template of expected reads.
-  validate_cell_set_luas(sample_meta, cell_set_meta)
+  # Validation: Check that cell sets do not contain duplicate depmap ids ----
+  # This will produce a warning if a depmap_id appears in a cell set more than once!
+  # This currently does NOT error out
+  validate_cell_set(cell_set_and_pool_meta)
   
   # Creating a template of all expected reads in the run ----
   # Use all 4 metadata files to create a "template" dataframe where
@@ -96,7 +94,7 @@ filter_raw_reads= function(prism_barcode_counts,
   template[cell_line_meta, c(barcode_col) := get(barcode_col), on= 'depmap_id']
   
   # Check for control barcodes and add them to the template.
-  if(any(unique(sample_meta$control_barcodes) %in% c('Y', 'T', T))) {
+  if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {
     # From the sample meta, identify all expected control barcode sequences
     # Filter for just wells that have cb_ladder(s) present in CB_meta and join the CB_meta
     cb_template= data.table::merge.data.table(sample_meta[cb_ladder %in% unique(CB_meta$cb_ladder),],
@@ -104,7 +102,7 @@ filter_raw_reads= function(prism_barcode_counts,
     template= data.table::rbindlist(list(template, cb_template), fill= TRUE)
   }
   
-  # Add a column to indicate if a read was expected - will help in annotated counts
+  # Add a column to indicate if a read was expected - this column is used by annotated counts
   template[, expected_read := TRUE]
   
   # Annotating reads ----
@@ -113,16 +111,23 @@ filter_raw_reads= function(prism_barcode_counts,
   # cell lines not detected in sequencing.
   print("Annotating reads.")
   # Annotate prism_barcode_counts using data.table left joins performed in place!
-  # Left join sample meta using id_cols as the keys
-  # Sample meta must be the first to join! Otherwise you risk cb_ladder and pool_id complicating join with the template.
-  prism_barcode_counts[sample_meta, base::setdiff(colnames(sample_meta), id_cols) :=
-                         mget(base::setdiff(colnames(sample_meta), id_cols)), on= id_cols]
+  mutate_cols= base::setdiff(colnames(sample_meta), id_cols) # columns to add or update
+  values_cols= paste0('i.', mutate_cols)# same as mutate_cols but with 'i.' prefix
+  prism_barcode_counts[sample_meta, (mutate_cols) := base::mget(values_cols), on= id_cols]
+  # This is equivalent to prism_barcode_counts %<>% dplyr::left_join(sample_meta, by= id_cols)
+  # data.table version here requires specifying the new columns that are created/updated
+  # The prefix 'i.' indicates that the new/updated columns should be coming from the data.table in the brackets.
+  # The format 'x := y' requires x to be the string of the column name and y to be the column variable.
+  
   # Left join cell_line_meta using barcode_col as the key
-  prism_barcode_counts[cell_line_meta, base::setdiff(colnames(cell_line_meta), barcode_col) :=
-                         mget(base::setdiff(colnames(cell_line_meta), barcode_col)), on= barcode_col]
-  # Left join CB_meta using barcode_col as the key
-  prism_barcode_counts[CB_meta, base::setdiff(colnames(CB_meta), barcode_col) :=
-                         mget(base::setdiff(colnames(CB_meta), barcode_col)), on= barcode_col]
+  mutate_cols= base::setdiff(colnames(cell_line_meta), barcode_col) # columns to add or update
+  values_cols= paste0('i.', mutate_cols)# same as mutate_cols but with 'i.' prefix
+  prism_barcode_counts[cell_line_meta, (mutate_cols) := base::mget(values_cols), on= barcode_col]
+  
+  # Left join CB_meta using barcode_col and cb ladder as the keys
+  mutate_cols= base::setdiff(colnames(CB_meta), barcode_col) # columns to add or update
+  values_cols= paste0('i.', mutate_cols)# same as mutate_cols but with 'i.' prefix
+  prism_barcode_counts[CB_meta, (mutate_cols) := base::mget(values_cols), on= barcode_col]
 
   # Create annotated counts by performing a full join with template
   annotated_counts= data.table::merge.data.table(prism_barcode_counts, template,
@@ -137,7 +142,7 @@ filter_raw_reads= function(prism_barcode_counts,
   # Generating filtered reads ----
   # Get filtered counts from annotated counts and drop a few select columns.
   print("Filtering reads ...")
-  filtered_counts= annotated_counts[expected_read, ] %>%
+  filtered_counts= annotated_counts[expected_read == TRUE, ] %>%
     dplyr::select(!any_of(c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2', 
                             'forward_read_cl_barcode', 'expected_read')))
   
