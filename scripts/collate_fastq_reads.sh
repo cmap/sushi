@@ -114,6 +114,7 @@ args=(
 --id_cols "$ID_COLS" 
 --reverse_index2 "$REVERSE_INDEX2"
 --barcode_col "$BARCODE_COL"
+--chunk_size "$CHUNK_SIZE"
 --low_abundance_threshold "$LOW_ABUNDANCE_THRESHOLD"
 --out "$BUILD_DIR"
 )

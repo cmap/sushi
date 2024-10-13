@@ -130,6 +130,8 @@ args=(
 --id_cols "$ID_COLS"
 --barcode_col "$BARCODE_COL"
 --reverse_index2 "$REVERSE_INDEX2"
+--chunk_size "$CHUNK_SIZE"
+--cell_line_cols "$CELL_LINE_COLS"
 )
 
 echo Rscript filteredCounts_QC.R "${args[@]}"
