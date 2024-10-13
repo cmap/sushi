@@ -21,7 +21,7 @@ compute_l2fc= function(normalized_counts,
                        sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
                        count_col_name="normalized_n", count_threshold= 40,
-                       cell_line_cols= c('project_code', 'depmap_id', 'ccle_name')) {
+                       cell_line_cols= c('project_code', 'depmap_id')) {
   
   # Validation: Check that sig_cols are in normalized_counts ----
   if(validate_columns_exist(sig_cols, normalized_counts) == FALSE) {
@@ -47,12 +47,12 @@ compute_l2fc= function(normalized_counts,
   
   # collapse tech reps
   print('Collapsing technical replicates on the following columns: ')
-  print(unique(c(cell_line_cols, 'trt_type', bio_rep_id_cols, ctrl_cols)))
+  print(unique(c(cell_line_cols, 'pert_type', bio_rep_id_cols, ctrl_cols)))
   collapsed_tech_rep= normalized_counts %>%
-    dplyr::filter(!(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type), !is.na(ccle_name)) %>%
-    dplyr::group_by(pick(all_of(c(cell_line_cols, 'trt_type', bio_rep_id_cols, ctrl_cols)))) %>%
+    dplyr::filter(!(pert_type %in% c('empty', '', 'CB_only', NA)), !is.na(depmap_id)) %>%
+    dplyr::group_by(pick(all_of(c(cell_line_cols, 'pert_type', bio_rep_id_cols, ctrl_cols)))) %>%
     dplyr::summarise(mean_n= mean(n),
-                     mean_normalized_n = mean(!!rlang::sym(count_col_name))) %>% dplyr::ungroup()
+                     mean_normalized_n= mean(!!rlang::sym(count_col_name))) %>% dplyr::ungroup()
   
   # Print out the occurrence of each count of tech_reps
   # print('Number of technical replicate collapsed across all cell lines and biological replicates:')
@@ -62,22 +62,22 @@ compute_l2fc= function(normalized_counts,
   # Pull out negative controls and collapse any biological replicates ----
   print('Collapsing control conditions on the following columns: ')
   print(unique(c(cell_line_cols, ctrl_cols)))
-  controls= collapsed_tech_rep %>% dplyr::filter(trt_type== control_type) %>% 
+  controls= collapsed_tech_rep %>% dplyr::filter(pert_type== control_type) %>% 
     dplyr::group_by(pick(all_of(c(cell_line_cols, ctrl_cols)))) %>%
     dplyr::summarise(control_median_n= median(mean_n),
                      control_median_normalized_n = median(mean_normalized_n),
-                     control_mad_sqrtN = mad(log2(mean_normalized_n))/sqrt(dplyr::n()),
+                     control_mad_sqrtN = mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
                      num_ctrl_bio_reps = dplyr::n()) %>% dplyr::ungroup()
   
   # Validation: Check that negative controls were extracted ----
-  if(nrow(controls)==0) {
+  if(nrow(controls) == 0) {
     stop("No samples found for the indicated control_type.")
   }
   
   # Join neg_cons and compute l2fc ----
-  l2fc= collapsed_tech_rep %>% dplyr::filter(!trt_type %in% c(control_type, 'day_0')) %>% 
-    dplyr::inner_join(controls, by= c(cell_line_cols, ctrl_cols), relationship='many-to-one') %>%
-    dplyr::mutate(l2fc= log2(mean_normalized_n/control_median_normalized_n),
+  l2fc= collapsed_tech_rep %>% dplyr::filter(!pert_type %in% c(control_type, 'day_0')) %>% 
+    dplyr::inner_join(controls, by= c(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
+    dplyr::mutate(l2fc= log2(mean_normalized_n / control_median_normalized_n),
                   counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA))
   
   return(l2fc)
