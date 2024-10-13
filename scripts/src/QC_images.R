@@ -11,7 +11,7 @@
 #' @returns Writes out a QC_table to the file_path.
 create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts, 
                           prism_barcode_counts, filtered_counts,
-                          value_col= 'n', output_path) {
+                          value_col= 'n', chunk_size= 10^6, output_path) {
   # Validation: Check that the file at the path exists
   if(!file.exists(raw_counts_uncollapsed_path)) {
     stop('Cannot find the raw counts uncollapsed file.')
@@ -42,7 +42,7 @@ create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts,
   
   # Determine total number of reads in raw_counts_uncollapsed using chunking
   chunk_sum= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, 
-                               chunk_size= 10^6, 
+                               chunk_size= chunk_size, 
                                action= function(x) data.table::as.data.table(sum(x[[value_col]])))
   total_num_reads= sum(unlist(chunk_sum))
   
@@ -472,10 +472,11 @@ QC_images= function(raw_counts_uncollapsed_path,
                     sample_meta,
                     barcode_col= 'forward_read_cl_barcode',
                     id_cols= c('pcr_plate', 'pcr_well'),
-                    cell_line_cols= c('DepMap_ID'), 
+                    cell_line_cols= c('depmap_id'), 
                     sig_cols,
                     control_type= 'negcon', count_threshold= 40, 
-                    reverse_index2= FALSE, out = NA) {
+                    chunk_size= 10^6,
+                    reverse_index2= FALSE, out= NA) {
   
   # Required packages ----
   require(tidyverse)
@@ -511,7 +512,8 @@ QC_images= function(raw_counts_uncollapsed_path,
                   unknown_barcode_counts= unknown_barcode_counts,
                   prism_barcode_counts= prism_barcode_counts,
                   filtered_counts= filtered_counts,
-                  value_col= 'n', output_path= paste0(out, '/QC_table.csv'))
+                  value_col= 'n', chunk_size= chunk_size,
+                  output_path= paste0(out, '/QC_table.csv'))
   
   ## 2. Index count summaries ----
   print('2. Generating index counts tables ...')
@@ -523,7 +525,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_path)) {
     # Aggregate over index_1 using chunks
     # Action is set to a data.table summarize with summing
-    index1_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= 10^6, 
+    index1_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= chunk_size, 
                                      action= function(x) x[, list(n= sum(n)), by= index_1])
     
     # Create vector of unique index_1 values
@@ -546,7 +548,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts_uncollapsed_headers)) {
     # Aggregate over index_2 using chunks
     # Action is set to a data.table summarize with summing
-    index2_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= 10^6, 
+    index2_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= chunk_size, 
                                      action= function(x) x[, list(n= sum(n)), by= index_2]) 
     
     # Create vector of unique index_2 values

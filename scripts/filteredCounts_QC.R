@@ -21,6 +21,7 @@ parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", hel
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument('--raw_counts_uncollapsed', default= "raw_counts_uncollapsed.csv",
                     help= 'Path to file containing uncollapsed raw counts')
+parser$add_argument('--chunk_size', default= 10000000, help= 'Integer number of rows for a chunk.')
 parser$add_argument('--prism_barcode_counts', default= "prism_barcode_counts.csv", help= 'Path to prism_barcode_counts.csv')
 parser$add_argument('--unknown_barcode_counts', default= "unknown_barcode_counts.csv", 
                     help= 'Path to unknown_barcode_counts.csv')
@@ -68,6 +69,7 @@ sig_cols= unlist(strsplit(args$sig_cols, ','))
 # Call QC images function ----
 print("Calling QC images ...")
 QC_images(raw_counts_uncollapsed_path= args$raw_counts_uncollapsed,
+          chunk_size= base::strtoi(args$chunk_size),
           prism_barcode_counts= prism_barcode_counts, 
           unknown_barcode_counts= unknown_barcode_counts,
           annotated_counts= annotated_counts, 
