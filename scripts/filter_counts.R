@@ -49,19 +49,13 @@ CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 # Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
 
-# make sure LUA codes in cell line meta are unique
-cell_line_meta %<>% 
-  dplyr::group_by(LUA) %>% 
-  dplyr::mutate(LUA.duplicity = n()) %>% 
-  dplyr::ungroup()
-
-print(paste0("LUAs that are duplicated ", 
-             dplyr::filter(cell_line_meta, LUA.duplicity > 1)$LUA %>% 
-               unique() %>% sort() %>% paste0(collapse = ", "))) # print LUA duplicates
-
-cell_line_meta %<>% 
-  dplyr::filter(!duplicated(cell_line_meta$LUA, fromLast = TRUE)) %>%
-  dplyr::select(-LUA.duplicity)
+# Remove any duplicate DepMap IDs in cell_set_meta ----
+duplicate_ids= cell_line_meta %>% dplyr::count(depmap_id, name= 'count') %>% 
+  dplyr::filter(count > 1)
+print('The following DepMap IDs are duplicated in the cell line meta.')
+print(duplicate_ids)
+print('FILTER_COUNTS will continue without considering these IDs.')
+cell_line_meta %<>% dplyr::filter(!depmap_id %in% duplicate_ids$depmap_id)
 
 # Run filter_raw_reads -----
 print('Calling filter_raw_reads ...')
