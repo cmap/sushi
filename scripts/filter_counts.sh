@@ -75,7 +75,6 @@ args=(
 --id_cols "$ID_COLS"
 --out "$BUILD_DIR"
 --rm_data "$REMOVE_DATA"
---assay_pool_meta "$ASSAY_POOL_META"
 )
 
 echo Rscript filter_counts.R "${args[@]}"
