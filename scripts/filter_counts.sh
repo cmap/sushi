@@ -74,7 +74,6 @@ args=(
 --cell_set_and_pool_meta "$CELL_SET_AND_POOL_META"
 --id_cols "$ID_COLS"
 --out "$BUILD_DIR"
---pool_id "$PULL_POOL_ID"
 --rm_data "$REMOVE_DATA"
 --assay_pool_meta "$ASSAY_POOL_META"
 )
