@@ -25,22 +25,16 @@ fi
 echo Build dir is: $BUILD_DIR
 echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
 
-echo Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
---out $BUILD_DIR \
---control_type $CTL_TYPES \
---count_col_name $COUNT_COL_NAME \
---sig_cols $SIG_COLS \
---ctrl_cols $CONTROL_COLS \
---count_threshold $COUNT_THRESHOLD \
---normalized_counts $NORMALIZED_COUNTS \
+args=(
+--normalized_counts "$NORMALIZED_COUNTS"
+--out "$BUILD_DIR"
+--control_type $CTL_TYPES 
+--count_col_name $COUNT_COL_NAME 
+--sig_cols $SIG_COLS 
+--ctrl_cols $CONTROL_COLS 
+--count_threshold $COUNT_THRESHOLD 
 --cell_line_cols $CELL_LINE_COLS
+)
 
-Rscript compute_l2fc.R -c $NORMALIZED_COUNTS \
---out $BUILD_DIR \
---control_type $CTL_TYPES \
---count_col_name $COUNT_COL_NAME \
---sig_cols $SIG_COLS \
---ctrl_cols $CONTROL_COLS \
---count_threshold $COUNT_THRESHOLD \
---normalized_counts $NORMALIZED_COUNTS \
---cell_line_cols $CELL_LINE_COLS
+echo Rscript compute_l2fc.R "${args[@]}"
+Rscript compute_l2fc.R "${args[@]}"

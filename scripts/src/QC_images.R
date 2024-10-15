@@ -11,7 +11,7 @@
 #' @returns Writes out a QC_table to the file_path.
 create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts, 
                           prism_barcode_counts, filtered_counts,
-                          value_col= 'n', output_path) {
+                          value_col= 'n', chunk_size= 10^6, output_path) {
   # Validation: Check that the file at the path exists
   if(!file.exists(raw_counts_uncollapsed_path)) {
     stop('Cannot find the raw counts uncollapsed file.')
@@ -42,7 +42,7 @@ create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts,
   
   # Determine total number of reads in raw_counts_uncollapsed using chunking
   chunk_sum= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, 
-                               chunk_size= 10^6, 
+                               chunk_size= chunk_size, 
                                action= function(x) data.table::as.data.table(sum(x[[value_col]])))
   total_num_reads= sum(unlist(chunk_sum))
   
@@ -111,8 +111,8 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   
   # Sum up reads 
   total_counts= filtered_counts %>%
-    dplyr::mutate(barcode_type= case_when(!is.na(ccle_name) ~ 'cell line',
-                                          !is.na(Name) ~ 'ctrl barcode')) %>%
+    dplyr::mutate(barcode_type= case_when(!is.na(depmap_id) ~ 'cell line',
+                                          !is.na(cb_name) ~ 'ctrl barcode')) %>%
     tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
     dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
     dplyr::summarise(total_counts= sum(n)) %>% dplyr::ungroup()
@@ -155,7 +155,7 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
   
   # Filter out control barcodes if it is specified.
   if(include_ctrl_bcs == FALSE) {
-    filtered_counts= filtered_counts %>% dplyr::filter(is.na(Name))
+    filtered_counts= filtered_counts %>% dplyr::filter(is.na(cb_name))
   }
   
   # Count number of cell lines/ barcodes for a detection group.
@@ -257,8 +257,8 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
   output_plot= data_for_plot %>%
     ggplot(aes(x= rank_pct, y= cum_pct)) +
     # Color control barcodes if specified
-    {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(Name)), 
-                                 mapping= aes(x= rank_pct, y=cum_pct, color=reorder(Name, cb_log2_dose)), size= 2)} + 
+    {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(cb_name)), 
+                                 mapping= aes(x= rank_pct, y=cum_pct, color= reorder(cb_name, cb_log2_dose)), size= 2)} + 
     geom_line(color='black') +
     # point for mark1 of counts
     geom_segment(aes(x= -Inf , y= mark1, xend= mark1_loc, yend = mark1), color= 'black', linetype= 2) +
@@ -299,7 +299,7 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
     print('Calculating both columns - this method may not be as robust as the normalize module.')
     
     normalized_counts= normalized_counts %>% 
-      dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T), n != 0) %>%
+      dplyr::filter(!is.na(cb_name), !is.na(cb_ladder), n != 0) %>%
       dplyr::group_by(pick(all_of(id_cols))) %>%
       dplyr::mutate(mean_y= mean(cb_log2_dose),
                     residual2= (cb_log2_dose - log2_normalized_n)^2,
@@ -310,7 +310,7 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
   
   # Filter for just the control barcodes, create a profile_id for faceting, 
   # and determine the x and y positions for the r2 + mae label.
-  cb_trend= normalized_counts %>% dplyr::filter(!is.na(Name), control_barcodes %in% c("Y", "T", T)) %>%
+  cb_trend= normalized_counts %>% dplyr::filter(!is.na(cb_name), !is.na(cb_ladder)) %>%
     tidyr::unite(all_of(id_cols), col= 'profile_id', sep= ':', remove= TRUE) %>%
     dplyr::group_by(profile_id) %>% dplyr::mutate(label_x_pos= min(.data[[value_col]]),
                                                   label_y_pos= max(cb_log2_dose)) %>% dplyr::ungroup()
@@ -472,10 +472,11 @@ QC_images= function(raw_counts_uncollapsed_path,
                     sample_meta,
                     barcode_col= 'forward_read_cl_barcode',
                     id_cols= c('pcr_plate', 'pcr_well'),
-                    cell_line_cols= c('DepMap_ID'), 
+                    cell_line_cols= c('depmap_id'), 
                     sig_cols,
                     control_type= 'negcon', count_threshold= 40, 
-                    reverse_index2= FALSE, out = NA) {
+                    chunk_size= 10^6,
+                    reverse_index2= FALSE, out= NA) {
   
   # Required packages ----
   require(tidyverse)
@@ -497,10 +498,9 @@ QC_images= function(raw_counts_uncollapsed_path,
   num_profiles= annotated_counts %>% dplyr::distinct(pick(all_of(id_cols))) %>% nrow()
   
   # Detect if there are wells with control barcodes.
-  cb_check= sample_meta %>%
-    dplyr::filter(control_barcodes %in% c("Y", "T", T),
-                  !(trt_type %in% c("empty", "", "CB_only")) & !is.na(trt_type))
-  contains_cbs= ifelse(nrow(cb_check)!= 0, TRUE, FALSE)
+  cb_check= sample_meta %>% dplyr::filter(!cb_ladder %in% c('None', 'empty', '', ' ', NA),
+                                          !pert_type %in% c("empty", "", "CB_only", NA))
+  contains_cbs= nrow(cb_check) > 0 # set boolean
   
   # Create filtered_counts df from annotated_counts 
   filtered_counts= annotated_counts %>% dplyr::filter(expected_read)
@@ -512,7 +512,8 @@ QC_images= function(raw_counts_uncollapsed_path,
                   unknown_barcode_counts= unknown_barcode_counts,
                   prism_barcode_counts= prism_barcode_counts,
                   filtered_counts= filtered_counts,
-                  value_col= 'n', output_path= paste0(out, '/QC_table.csv'))
+                  value_col= 'n', chunk_size= chunk_size,
+                  output_path= paste0(out, '/QC_table.csv'))
   
   ## 2. Index count summaries ----
   print('2. Generating index counts tables ...')
@@ -524,7 +525,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_path)) {
     # Aggregate over index_1 using chunks
     # Action is set to a data.table summarize with summing
-    index1_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= 10^6, 
+    index1_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= chunk_size, 
                                      action= function(x) x[, list(n= sum(n)), by= index_1])
     
     # Create vector of unique index_1 values
@@ -547,7 +548,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   if('index_2' %in% colnames(sample_meta) & 'index_2' %in% colnames(raw_counts_uncollapsed_headers)) {
     # Aggregate over index_2 using chunks
     # Action is set to a data.table summarize with summing
-    index2_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= 10^6, 
+    index2_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= chunk_size, 
                                      action= function(x) x[, list(n= sum(n)), by= index_2]) 
     
     # Create vector of unique index_2 values
@@ -642,7 +643,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   print('6. Generating cell line contaminants ...')
   potential_error= base::tryCatch({
     contams= annotated_counts %>% dplyr::filter(expected_read == FALSE) %>%
-      dplyr::mutate(barcode_id= ifelse(is.na(ccle_name), cb_name, ccle_name)) %>%
+      dplyr::mutate(barcode_id= ifelse(is.na(depmap_id), cb_name, depmap_id)) %>%
       dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
       dplyr::summarise(num_wells= n(), median_n= median(n), max_n= max(n)) %>% ungroup() %>%
       dplyr::arrange(desc(num_wells))
@@ -663,7 +664,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   ## 7. Cumulative counts by lines in negcons ----
   print('7. Generating cumulative image ...')
   potential_error= base::tryCatch({
-    cdf_plot= create_cdf_plot(filtered_counts %>% dplyr::filter(trt_type == control_type), 
+    cdf_plot= create_cdf_plot(filtered_counts %>% dplyr::filter(pert_type == control_type), 
                               id_cols= id_cols, 
                               counts_col= 'n', 
                               mark1= 0.5, mark2= 0.95, 
@@ -690,7 +691,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   if(contains_cbs & is.data.frame(normalized_counts)) {
     print('8. Generating control_barcode_trend image')
     potential_error= base::tryCatch({
-      trend_sc= create_ctrlBC_scatterplots(normalized_counts %>% dplyr::filter(control_barcodes %in% c("Y", "T", T)), 
+      trend_sc= create_ctrlBC_scatterplots(normalized_counts %>% dplyr::filter(!cb_ladder %in% c(NA, FALSE, 'none', '')), 
                                            id_cols, value_col= 'log2_n')
       
       pdf(file=paste(out, "control_barcode_trend.pdf", sep="/"),
@@ -716,7 +717,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   print('9. Generating sample_cor image ...')
   potential_error= base::tryCatch({
     cor_df= filtered_counts %>% 
-      dplyr::filter(!is.na(depmap_id), !is.na(trt_type), !trt_type %in% c('empty', '', 'CB_only')) %>%
+      dplyr::filter(!is.na(depmap_id), !pert_type %in% c(NA, 'empty', '', 'CB_only')) %>%
       dplyr::mutate(log2_n= log2(n + 1))
     cp= create_cor_heatmap(input_df= cor_df,
                            row_id_cols= c('depmap_id'),
