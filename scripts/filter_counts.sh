@@ -40,14 +40,14 @@ else
 	CELL_LINE_META=$BUILD_DIR/$CELL_LINE_META
 fi
 
-echo $CELL_SET_META
+echo $CELL_SET_AND_POOL_META
 
 #Enforces abs paths
-if [[ "$CELL_SET_META" = /* ]]
+if [[ "$CELL_SET_AND_POOL_META" = /* ]]
 then
-	CELL_SET_META=$(ls $CELL_SET_META)
+	CELL_SET_AND_POOL_META=$(ls $CELL_SET_AND_POOL_META)
 else
-	CELL_SET_META=$BUILD_DIR/$CELL_SET_META
+	CELL_SET_AND_POOL_META=$BUILD_DIR/$CELL_SET_AND_POOL_META
 fi
 
 #Enforces abs paths
@@ -58,20 +58,12 @@ else
 	CONTROL_BARCODE_META=$BUILD_DIR/$CONTROL_BARCODE_META
 fi
 
-#Enforces abs paths
-if [[ "$ASSAY_POOL_META" = /* ]]
-then
-	ASSAY_POOL_META=$(ls $ASSAY_POOL_META)
-else
-	ASSAY_POOL_META=$BUILD_DIR/$ASSAY_POOL_META
-fi
-
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo PRISM_BARCODE_COUNTS is: $PRISM_BARCODE_COUNTS
 echo CELL_LINE_META is: $CELL_LINE_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
-echo CELL_SET_META is: $CELL_SET_META
+echo CELL_SET_AND_POOL_META is: $CELL_SET_AND_POOL_META
 echo ID_COLS is: $ID_COLS
 
 args=(
@@ -79,12 +71,10 @@ args=(
 --sample_meta "$SAMPLE_META"
 --cell_line_meta "$CELL_LINE_META"
 --CB_meta "$CONTROL_BARCODE_META"
---cell_set_meta "$CELL_SET_META"
+--cell_set_and_pool_meta "$CELL_SET_AND_POOL_META"
 --id_cols "$ID_COLS"
 --out "$BUILD_DIR"
---pool_id "$PULL_POOL_ID"
 --rm_data "$REMOVE_DATA"
---assay_pool_meta "$ASSAY_POOL_META"
 )
 
 echo Rscript filter_counts.R "${args[@]}"

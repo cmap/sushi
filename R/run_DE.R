@@ -6,8 +6,8 @@
 #' @param filtered_counts - dataframe of annotated readcounts that must include the following columns:
 #'           n: raw readcounts
 #'           trt_type: spcification of sample type (e.g. whether a sample is a control or not)
-#'           CCLE_name: contains the name of the cell line that the read corresponds to, or NA
-#'           Name: contains the name of the control barcode that the read corresponds to, or NA
+#'           ccle_name: contains the name of the cell line that the read corresponds to, or NA
+#'           cb_name: contains the name of the control barcode that the read corresponds to, or NA
 #'           all columns specified in sample_cols and sig_cols 
 #' @param sample_cols - a vector of column names denoting which values specify each individual sample
 #'                    (by default: cell_set, treatment, dose, dose_unity, day, and bio_rep)
@@ -29,10 +29,10 @@ run_DE = function(filtered_counts,
     dplyr::select(-any_of(c("log_dose", "log_n"))) %>% 
     dplyr::group_by_at(setdiff(names(.), c("n", "tech_rep", "profile_id", "pcr_plate", "pcr_well"))) %>% 
     dplyr::summarise(n=round(mean(n))) %>% ungroup() %>% 
-    mutate(CCLE_name = ifelse(is.na(CCLE_name), as.character(Name), as.character(CCLE_name)),
-           CCLE_name = paste0(CCLE_name, "__", cell_set)) %>% 
-    dcast(CCLE_name~sample_id, value.var="n") %>% 
-    column_to_rownames("CCLE_name") %>% 
+    mutate(ccle_name = ifelse(is.na(ccle_name), as.character(cb_name), as.character(ccle_name)),
+           ccle_name = paste0(ccle_name, "__", cell_set)) %>% 
+    dcast(ccle_name~sample_id, value.var="n") %>% 
+    column_to_rownames("ccle_name") %>% 
     as.matrix()
   countData[is.na(countData)] = 0
   
@@ -62,21 +62,21 @@ run_DE = function(filtered_counts,
       hold = res_shrunk[,c("log2FoldChange", "lfcSE", "padj")] %>% 
         as.data.frame() %>% 
         mutate(sig_id = sig_id) %>% 
-        rownames_to_column("CCLE_name")
+        rownames_to_column("ccle_name")
       final = final %>% 
         rbind(hold)
     }
   }
   final = final %>% 
-    mutate(cell_set = as.character(CCLE_name) %>% purrr::map(str_split, "__") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist() %>% as.character(),
-           CCLE_name = as.character(CCLE_name) %>% purrr::map(str_split, "__") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist() %>% as.character())
+    mutate(cell_set = as.character(ccle_name) %>% purrr::map(str_split, "__") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 2) %>% unlist() %>% as.character(),
+           ccle_name = as.character(ccle_name) %>% purrr::map(str_split, "__") %>% purrr::map(`[[`, 1) %>% purrr::map(`[`, 1) %>% unlist() %>% as.character())
   
   l2fc_DEseq = filtered_counts %>% 
     filter(!trt_type %in% c("day_0", "empty", control_type)) %>% 
-    mutate(CCLE_name = ifelse(is.na(CCLE_name), as.character(Name), as.character(CCLE_name))) %>%
-    select(-any_of(c("Name", "log_dose", "n", "log_n", "bio_rep", "tech_rep", "profile_id", "sample_id"))) %>% 
+    mutate(ccle_name = ifelse(is.na(ccle_name), as.character(cb_name), as.character(ccle_name))) %>%
+    select(-any_of(c("cb_name", "log_dose", "n", "log_n", "bio_rep", "tech_rep", "profile_id", "sample_id"))) %>% 
     distinct() %>% 
-    merge(final, by=c("CCLE_name", "cell_set", "sig_id"), all.x=F)
+    merge(final, by=c("ccle_name", "cell_set", "sig_id"), all.x=F)
   
   return(l2fc_DEseq)
 }

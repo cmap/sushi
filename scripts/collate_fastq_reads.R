@@ -26,6 +26,7 @@ parser$add_argument("--barcode_col", default= "forward_read_cl_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument('--low_abundance_threshold', default= 20, 
                     help= 'For unknown barcodes, counts below this threshold will be marked as an unknown barcode.')
+parser$add_argument('--chunk_size', default= 10000000, help= 'Integer number of rows for a chunk.')
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -59,20 +60,21 @@ if(!validate_columns_exist(id_cols, sample_meta)) {
 # raw_counts_uncollapsed could be too large to read into memory,
 # so collate_fastq_reads is performed on chunks of the raw_counts_uncollapsed file.
 chunked_results= process_in_chunks(large_file_path= args$raw_counts_uncollapsed, 
-                                   chunk_size= 10^6, 
+                                   chunk_size= base::strtoi(args$chunk_size), 
                                    action= collate_fastq_reads,
                                    # Parameters for collate_fastq_reads
                                    sample_meta= sample_meta, 
                                    sequencing_index_cols= sequencing_index_cols,
                                    id_cols= id_cols,
-                                   known_barcodes= unique(c(cell_line_meta$Sequence, CB_meta$Sequence)),
+                                   known_barcodes= unique(c(cell_line_meta[[args$barcode_col]], 
+                                                            CB_meta[[args$barcode_col]])),
                                    reverse_index2= args$reverse_index2,
                                    barcode_col= args$barcode_col,
                                    low_abundance_threshold= as.numeric(args$low_abundance_threshold))
 
 # From each chunk, extract prism_barcode_counts or unknown_barcode_counts and bind those rows together.
 # Then use data.table to aggregate and sum up reads across the chunks.
-# data.table functions are faster and less memory intensivie.
+# data.table functions are faster and less memory intensive.
 prism_barcode_counts= data.table::rbindlist(lapply(chunked_results, function(x) x$prism_barcode_counts))
 prism_barcode_counts= prism_barcode_counts[, .(n= sum(n)), by= c(id_cols, args$barcode_col)]
 

@@ -1,24 +1,3 @@
-#' validate_columns_exist
-#' 
-#' This function checks that a list of columns are present in a dataframe.
-#' Columns that were not found in the dataframe are printed out.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_columns_exist= function(selected_cols, df) {
-  # Check that all of selected_columns are in df - base::setdiff(A, B) = A[!A %in% B].
-  unmatched_cols= base::setdiff(selected_cols, colnames(df))
-  
-  if(length(unmatched_cols) > 0) {
-    print('The following columns are missing: ')
-    print(unmatched_cols)
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
 #' Join metadata
 #' 
 #' Joins a given data frame with the sample meta.

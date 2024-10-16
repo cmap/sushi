@@ -19,14 +19,15 @@ parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", hel
 parser$add_argument("--wkdir", default=getwd(), help="Working directory")
 parser$add_argument('--prism_barcode_counts', default= 'prism_barcode_counts.csv', help= 'Path to prism_barcode_counts.csv')
 parser$add_argument('--sample_meta', default= 'sample_meta.csv', help= 'Path to sample_meta.csv')
-parser$add_argument('--cell_set_meta', default= 'cell_set_meta.csv', help= 'Path to cell_set_meta.csv')
+parser$add_argument('--cell_set_and_pool_meta', default= 'cell_set_and_pool_meta.csv', 
+                    help= 'Path to cell_set_and_pool_meta.csv')
 parser$add_argument('--cell_line_meta', default= 'cell_line_meta.csv', help= 'Path to cell_line_meta.csv')
-parser$add_argument("--assay_pool_meta", default="assay_pool_meta.txt", help = "Assay pool metadata")
 parser$add_argument('--CB_meta', default= 'CB_meta.csv', help= 'Path to CB_meta.csv')
 parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well', 
                     help= 'List of sample_meta column names used to identify every PCR well')
+parser$add_argument("--barcode_col", default= "forward_read_cl_barcode", 
+                    help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
-parser$add_argument("--pool_id", type="logical", help = "Pull pool IDs from CellDB.")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -41,60 +42,44 @@ if (args$out == ""){
 # Read in all input files ----
 prism_barcode_counts= data.table::fread(args$prism_barcode_counts, header= TRUE, sep= ',')
 sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
-cell_set_meta= data.table::fread(args$cell_set_meta, header= TRUE, sep= ',')
+cell_set_and_pool_meta= data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep= ',')
 cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 
 # Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
 
-# make sure LUA codes in cell line meta are unique
-cell_line_meta %<>% 
-  dplyr::group_by(LUA) %>% 
-  dplyr::mutate(LUA.duplicity = n()) %>% 
-  dplyr::ungroup()
-
-print(paste0("LUAs that are duplicated ", 
-             dplyr::filter(cell_line_meta, LUA.duplicity > 1)$LUA %>% 
-               unique() %>% sort() %>% paste0(collapse = ", "))) # print LUA duplicates
-
-cell_line_meta %<>% 
-  dplyr::filter(!duplicated(cell_line_meta$LUA, fromLast = TRUE)) %>%
-  dplyr::select(-LUA.duplicity)
+# Remove any duplicate DepMap IDs in cell_set_meta ----
+duplicate_ids= cell_line_meta %>% dplyr::count(depmap_id, name= 'count') %>% 
+  dplyr::filter(count > 1)
+print('The following DepMap IDs are duplicated in the cell line meta.')
+print(duplicate_ids)
+print('FILTER_COUNTS will continue without considering these IDs.')
+cell_line_meta %<>% dplyr::filter(!depmap_id %in% duplicate_ids$depmap_id)
 
 # Run filter_raw_reads -----
 print('Calling filter_raw_reads ...')
 module_outputs= filter_raw_reads(prism_barcode_counts= prism_barcode_counts, 
                                  sample_meta= sample_meta,
-                                 cell_set_meta= cell_set_meta,
+                                 cell_set_and_pool_meta= cell_set_and_pool_meta,
                                  cell_line_meta= cell_line_meta,
                                  CB_meta= CB_meta,
-                                 id_cols= id_cols)
-
-# Pulling pool_id when db_flag and pool_id flags are passed ----
-if (args$pool_id) {
-  assay_pool_meta = read.delim(args$assay_pool_meta)
-  unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
-  assay_pool_meta <- assay_pool_meta[assay_pool_meta$davepool_id %in% unique_cell_sets,] %>% 
-    select(pool_id, ccle_name, davepool_id, depmap_id)
-  
-  module_outputs$filtered_counts = module_outputs$filtered_counts %>% 
-    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
-          by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T) 
-  
-  module_outputs$annotated_counts = module_outputs$annotated_counts %>% 
-    merge(assay_pool_meta, by.x=c("CCLE_name", "cell_set", "DepMap_ID"), 
-          by.y=c("ccle_name", "davepool_id", "depmap_id"), all.x=T)
-}
+                                 id_cols= id_cols,
+                                 barcode_col= args$barcode_col)
 
 # Validation: Basic file size check ----
 if(sum(module_outputs$filtered_counts$n) == 0) {
   stop('All entries in filtered counts are missing!')
 }
 
-# Remove data ----
+# Also check that cell line counts are not all zeros.
 filtered_counts= module_outputs$filtered_counts
+cl_entries= filtered_counts %>% dplyr::filter(!is.na(depmap_id))
+if(sum(cl_entries$n) == 0) {
+  stop('All cell line counts are zero!')
+}
 
+# Remove data ----
 print(paste("rm_data:", args$rm_data))
 # Remove data if needed
 if(args$rm_data == TRUE){
