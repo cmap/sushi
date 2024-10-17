@@ -6,7 +6,7 @@ String sectionHeaderStyleGreen = ' color: white; background: green; font-family:
 String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
 
-pipeline {
+ppipeline {
     agent any
     // Define parameters that can be edited via the Jenkins UI
     parameters {
@@ -52,16 +52,28 @@ pipeline {
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Field used to calculate L2FC')
         string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell Set Metadata. Static cell_line_meta location: /data/vdb/prismSeq/cell_set_meta.csv')
         string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name of sample metadata within the BUILD_DIR directory.')
-        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Minimum threshold to filter cell line counts by.')
-        string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Pseudocount for normalization.')
+        string(name: 'CELL_SET_META', defaultValue: 'cell_set_meta.csv', description: 'Cell Set Metadata. Static cell_line_meta location: /data/vdb/prismSeq/cell_set_meta.csv')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
-        string(name: 'RAW_COUNTS', defaultValue: 'raw_counts.csv', description: 'Filename in BUILD_DIR containing raw counts')
-        string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'File in BUILD_DIR containing filtered counts')
-        string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'File containing log2 fold change values')
-        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'File in BUILD_DIR containing annotated counts')
-        string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'File in BUILD_DIR containing normalized counts')
-        string(name: 'COLLAPSED_VALUES', defaultValue: 'collapsed_l2fc.csv', description: 'File in BUILD_DIR containing replicate collapsed l2fc values')
+        string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes.')
         string(name: 'ASSAY_POOL_META', defaultValue: 'assay_pool_meta.txt', description: 'File in BUILD_DIR containing assay pool metadata')
+
+        // Additional parameters ordered by when they first appear
+        string(name: 'BARCODE_COL', defaultValue: 'forward_read_cl_barcode', description: 'Used in COLLATE_FASTQ_READS, the name of the column containing the read')
+        string(name: 'LOW_ABUNDANCE_THRESHOLD', defaultValue: '20', description: 'Used in COLLATE_FASTQ_READS, threshold for unknown barcodes')
+        string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Used in CBNORMALIZE, the pesudocount value for log transformations.')
+        string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Used in COMPUTE_LFC, the name of the numeric column to use for calculations')
+        string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'Used in COMPUTE_LFC, the value in trt_type that indicates the negative controls')
+        string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Used in COMPUTE_LFC, the count threshold for the collapsed negative controls. Cell lines in the negative controls below this threshold will be dropped from log2 fold change calculations.')
+
+        // Files created by sushi
+        string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts')
+        string(name: 'UNKNOWN_BARCODE_COUNTS', defaultValue: 'unknown_barcode_counts.csv', description: 'Filename in BUILD_DIR containing unknown barcode counts')
+        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'Filename in BUILD_DIR containing annotated counts')
+        string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'Filename in BUILD_DIR containing filtered counts')
+        string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'Filename in BUILD_DIR containing normalized counts')
+        string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'Filename containing log2 fold change values')
+        string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values')
+        // Other
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
     }
 
@@ -203,9 +215,6 @@ pipeline {
                         if (params.FILTER_COUNTS) {
                             scriptsToRun.add('filter_counts.sh')
                         }
-                        if (params.FILTER_COUNTS_QC) {
-                            scriptsToRun.add('filteredCounts_QC.sh')
-                        }
                         if (params.CBNORMALIZE) {
                             scriptsToRun.add('CBnormalize.sh')
                         }
@@ -214,6 +223,12 @@ pipeline {
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates.sh')
+                        }
+                        if (params.QC_IMAGES) {
+                            scriptsToRun.add('filteredCounts_QC.sh')
+                        }
+                        if (params.JOIN_METADATA) {
+                            scriptsToRun.add('join_metadata.sh')
                         }
                         if (params.RUN_EPS_QC) {
                             scriptsToRun.add('eps_qc.sh')
