@@ -66,10 +66,9 @@ if (cb_ladder != "cb_custom.csv"){
 }
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-cell_line_cols= c('depmap_id', 'ccle_name', 'Sequence', 'LUA')
+cell_line_cols= c('depmap_id', 'ccle_name', 'Sequence')
 cell_line_meta <- cell_lines_df %>%
-  rename("LUA" = "lua",
-         "Sequence" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
+  rename("Sequence" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
 
 # Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
 if (nrow(control_bc_df) > 0 & cb_ladder != "cb_custom.csv") {
@@ -91,20 +90,33 @@ if (length(failed_cell_sets) != 0) {
   stop("The sample_meta contains the above cell sets which are not registered in CellDB:")
 }
 
+# Pivoting cell_set_meta into long form 
+cell_set_meta_long <- cell_set_meta %>%
+  separate_rows(members, sep = ";")
+
+# Combining cell_set_meta_long + assay_pools_meta
+# Only pull pool_id if all "cell_set" values passed in sample_meta exist in "davepool_id" of assay_pools_meta
+if(all(cell_set_meta_long$cell_set %in% assay_pools_meta$davepool_id)) {
+  print("Merging cell set metadata with assay pool metadata to pull pool_id.")
+  cell_set_assay_pool_meta <- cell_set_meta_long %>%
+    inner_join(assay_pools_meta, by = c("cell_set" = "davepool_id", "members" = "depmap_id")) %>%
+    select(cell_set, pool_id, depmap_id = members)
+} else {
+  print("One or more cell sets passed in sample_meta have not been registered in CellDB. Unable to pull pool_id in cell_set_meta.")
+  cell_set_assay_pool_meta <- cell_set_meta_long %>%
+    select(cell_set, depmap_id = members)
+}
+
+
 # Writing out cell_line_meta
 cell_line_out_file = paste(args$out, 'cell_line_meta.csv', sep='/')
 print(paste("writing cell_line_meta to: ", cell_line_out_file))
 write.csv(cell_line_meta, cell_line_out_file, row.names=F, quote=F)
 
-# Writing out cell_set_meta
-cell_set_out_file = paste(args$out, 'cell_set_meta.csv', sep='/')
-print(paste("writing cell_set_meta to: ", cell_set_out_file))
-write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
-
-# Writing out assay_pool_df
-assay_pool_out_file = paste(args$out, 'assay_pool_meta.txt', sep='/')
-print(paste("writing assay_pools to: ", assay_pool_out_file))
-write.table(assay_pools_meta, assay_pool_out_file, row.names=F, quote=F, sep="\t")
+# Writing out combined cell_set_meta and assay_pool_meta
+cell_set_assay_pool_out_file = paste(args$out, 'cell_set_assay_pool_meta.csv', sep='/')
+print(paste("writing combined cell_set_meta and assay_pool_meta file to: ", cell_set_assay_pool_out_file))
+write.csv(cell_set_assay_pool_meta, cell_set_assay_pool_out_file, row.names=F, quote=F)
 
 # Writing out control_barcode_df if cb_ladder returned data in control_bc_df
 if (nrow(control_bc_df) > 0) {
