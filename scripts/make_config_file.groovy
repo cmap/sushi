@@ -24,11 +24,11 @@ pipeline {
         booleanParam(name: 'PULL_POOL_ID', defaultValue: false, description: 'Flag indicating whether to pull pool IDs from CellDB - only applicable to cell sets (i.e. EXT.PR500.CS01.1.A, EXT.PR500.CS01.1.B, etc).')
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
-        booleanParam(name: 'FILTER_COUNTS_QC', defaultValue: true, description: 'Check this to trigger the filteredCounts_QC job.')
+        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
-        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
+        booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
         booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
@@ -134,7 +134,7 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'PULL_POOL_ID', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS', 'FILTER_COUNTS_QC',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'PULL_POOL_ID', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
                         'COUNTS', 'SCREEN',
 
                         // sushi input files
