@@ -688,6 +688,9 @@ QC_images= function(raw_counts_uncollapsed_path,
   }
   
   ## 8. Control barcode trends ----
+  print(contains_cbs)
+  print(is.data.frame(normalized_counts))
+  
   if(contains_cbs & is.data.frame(normalized_counts)) {
     print('8. Generating control_barcode_trend image')
     potential_error= base::tryCatch({
