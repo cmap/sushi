@@ -145,9 +145,9 @@ def main(args):
         "sig_id": "profile_id",
         "bio_rep": "replicate",
         "day": "pert_time",
-        "treatment": "pert_iname",
-        "dose": "pert_dose",
-        "dose_unit": "pert_dose_unit",
+        "pert_name": "pert_iname",
+        "pert_dose": "pert_dose",
+        "pert_dose_unit": "pert_dose_unit",
         "l2fc": "LFC",
         "median_l2fc": "LFC"
     }
