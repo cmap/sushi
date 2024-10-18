@@ -2,23 +2,33 @@ import hudson.model.*
 import jenkins.model.*
 import groovy.json.JsonSlurper
 
-pipeline {
+String sectionHeaderStyleGreen = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
+String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
+String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
+
+ppipeline {
     agent any
     // Define parameters that can be edited via the Jenkins UI
     parameters {
+        separator(
+          name: "Group_1",
+          sectionHeader: "User Inputs",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleGreen
+        )
         // Check boxes of modules to run
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
+        booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get metadata from COMET, use only if screen is registered.')
         string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, provide the screen name from COMET.')
         booleanParam(name: 'PULL_POOL_ID', defaultValue: false, description: 'Flag indicating whether to pull pool IDs from CellDB - only applicable to cell sets (i.e. EXT.PR500.CS01.1.A, EXT.PR500.CS01.1.B, etc).')
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
-        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed before normalization. TODO: expand on this.')
-        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Check this to trigger the CBnormalize job.')
-        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Check this to trigger the compute_l2fc job.')
-        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Check this to trigger the collapse job.')
-        booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC job.')
-        booleanParam(name: 'JOIN_METADATA', defaultValue: true, description: 'Check this to trigger the join_metadata job. This should be checked you are planning on ruunning CONVERT_SUSHI.')
+        booleanParam(name: 'FILTER_COUNTS_QC', defaultValue: true, description: 'Check this to trigger the filteredCounts_QC job.')
+        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
+        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
+        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
+        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
         booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
@@ -32,6 +42,12 @@ pipeline {
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
 
         // Parameters that we don't expect users to change
+        separator(
+          name: "Group_1",
+          sectionHeader: "Do Not Edit",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleRed
+        )
         // pipeline version
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
         booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
@@ -116,8 +132,8 @@ pipeline {
             steps {
                 script {
                     def paramList = [
-                        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'PULL_POOL_ID', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
+                        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'PULL_POOL_ID', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS', 'FILTER_COUNTS_QC',
                         'COUNTS', 'SCREEN',
 
                         // sushi input files
@@ -134,7 +150,7 @@ pipeline {
                         'PSEUDOCOUNT',
 
                         // compute_l2fc paramters
-                        'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD',
+                        'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD'
                     ]
 
                     def config = [:]
@@ -209,7 +225,7 @@ pipeline {
                         if (params.CREATE_CELLDB_METADATA) {
                             scriptsToRun.add('create_celldb_metadata.sh')
                         }
-                        if (params.SCREEN?.trim()) {
+                        if (params.CREATE_SAMPLE_META) {
                             scriptsToRun.add('create_sample_meta.sh')
                         }
                         if (params.COLLATE_FASTQ_READS) {
