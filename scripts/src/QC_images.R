@@ -520,12 +520,9 @@ QC_images= function(raw_counts_uncollapsed_path,
   
   # Pull out headers to perform checks
   raw_counts_uncollapsed_headers= data.table::fread(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
-  #testing
-  print(colnames(raw_counts_uncollapsed_headers))
-  print(colnames(sample_meta))
   
   # Check that "index_1" is present. If so, calculate index summary and write out.
-  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_path)) {
+  if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_headers)) {
     # Aggregate over index_1 using chunks
     # Action is set to a data.table summarize with summing
     index1_chunks= process_in_chunks(large_file_path= raw_counts_uncollapsed_path, chunk_size= chunk_size, 
