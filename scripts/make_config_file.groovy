@@ -6,7 +6,7 @@ String sectionHeaderStyleGreen = ' color: white; background: green; font-family:
 String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
 
-ppipeline {
+pipeline {
     agent any
     // Define parameters that can be edited via the Jenkins UI
     parameters {
@@ -48,6 +48,7 @@ ppipeline {
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleRed
         )
+
         // pipeline version
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
         booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
