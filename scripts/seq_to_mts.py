@@ -138,16 +138,12 @@ def main(args):
     # Define the column renaming dictionary
     column_mapping = {
         "project_code": "screen",
-        "depmap_id": "depmap_id",
-        "ccle_name": "ccle_name",
         "prism_cell_set": "culture",
         "trt_type": "pert_type",
         "sig_id": "profile_id",
         "bio_rep": "replicate",
         "day": "pert_time",
         "pert_name": "pert_iname",
-        "pert_dose": "pert_dose",
-        "pert_dose_unit": "pert_dose_unit",
         "l2fc": "LFC",
         "median_l2fc": "LFC"
     }
@@ -189,7 +185,10 @@ def main(args):
             dataset.drop(dataset[dataset['pert_time'].isin(pert_time_to_drop)].index, inplace=True)
 
 
-    ccle_name_id = sample_meta["pert_iname"].str.upper()
+    # Setting columns
+    print("Reformatting columns...")
+    sample_meta = sample_meta.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
+                            pert_id = sample_meta["pert_iname"].str.upper(), prc_id = sample_meta["pert_iname"].str.upper())
 
     level_3 = level_3.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
                                 pert_id = level_3["pert_iname"].str.upper(), prc_id = level_3["pert_iname"].str.upper())
