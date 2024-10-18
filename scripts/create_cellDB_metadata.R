@@ -66,10 +66,9 @@ if (cb_ladder != "cb_custom.csv"){
 }
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence', 'LUA')
+cell_line_cols= c('DepMap_ID', 'CCLE_name', 'Sequence')
 cell_line_meta <- cell_lines_df %>%
-  rename("LUA" = "lua",
-         "Sequence" = "dna_sequence",
+  rename("Sequence" = "dna_sequence",
          "DepMap_ID" = "depmap_id",
          "CCLE_name" = "ccle_name") %>% dplyr::select(any_of(c(cell_line_cols)))
 
@@ -113,16 +112,6 @@ if(all(cell_set_meta_long$cell_set %in% assay_pools_meta$davepool_id)) {
 cell_line_out_file = paste(args$out, 'cell_line_meta.csv', sep='/')
 print(paste("writing cell_line_meta to: ", cell_line_out_file))
 write.csv(cell_line_meta, cell_line_out_file, row.names=F, quote=F)
-
-# Writing out cell_set_meta
-cell_set_out_file = paste(args$out, 'cell_set_meta.csv', sep='/')
-print(paste("writing cell_set_meta to: ", cell_set_out_file))
-write.csv(cell_set_meta, cell_set_out_file, row.names=F, quote=F)
-
-# Writing out assay_pool_df
-assay_pool_out_file = paste(args$out, 'assay_pool_meta.txt', sep='/')
-print(paste("writing assay_pools to: ", assay_pool_out_file))
-write.table(assay_pools_meta, assay_pool_out_file, row.names=F, quote=F, sep="\t")
 
 # Writing out combined cell_set_meta and assay_pool_meta
 cell_set_assay_pool_out_file = paste(args$out, 'cell_set_assay_pool_meta.csv', sep='/')
