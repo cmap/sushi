@@ -26,12 +26,6 @@ then
     exit -1
 fi
 
-if [ -z "$CELL_SET_META" ]
-then
-	echo CELL_SET_META parameter empty
-    exit -1
-fi
-
 #Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
 then
@@ -49,19 +43,11 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$CELL_SET_META" = /* ]]
-then
-	CELL_SET_META=$(ls $CELL_SET_META)
-else
-	CELL_SET_META=$BUILD_DIR/$CELL_SET_META
-fi
-
-#Enforces abs paths
 if [[ "$NORMALIZED_COUNTS" = /* ]]
 then
-	COUNTS=$(ls $NORMALIZED_COUNTS)
+	NORMALIZED_COUNTS=$(ls $NORMALIZED_COUNTS)
 else
-	COUNTS=$BUILD_DIR/$NORMALIZED_COUNTS
+	NORMALIZED_COUNTS=$BUILD_DIR/$NORMALIZED_COUNTS
 fi
 
 #Enforces abs paths
@@ -108,7 +94,6 @@ echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo ANNOTATED_COUNTS is: $ANNOTATED_COUNTS
 echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
-echo CELL_SET_META is: $CELL_SET_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
 echo RAW_COUNTS_UNCOLLAPSED is: $RAW_COUNTS_UNCOLLAPSED
@@ -130,6 +115,8 @@ args=(
 --id_cols "$ID_COLS"
 --barcode_col "$BARCODE_COL"
 --reverse_index2 "$REVERSE_INDEX2"
+--chunk_size "$CHUNK_SIZE"
+--cell_line_cols "$CELL_LINE_COLS"
 )
 
 echo Rscript filteredCounts_QC.R "${args[@]}"

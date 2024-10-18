@@ -21,11 +21,6 @@ then
     exit -1
 fi
 
-if [ -z "$ASSAY_POOL_META" ]
-then
-	echo ASSAY_POOL_META parameter empty
-    exit -1
-fi
 
 #Enforces abs paths
 if [[ "$LFC" = /* ]]
@@ -43,13 +38,6 @@ else
 	COLLAPSED_LFC=$BUILD_DIR/$COLLAPSED_LFC
 fi
 
-#Enforces abs paths
-if [[ "$ASSAY_POOL_META" = /* ]]
-then
-	ASSAY_POOL_META=$(ls $ASSAY_POOL_META)
-else
-	ASSAY_POOL_META=$BUILD_DIR/$ASSAY_POOL_META
-fi
 
 #Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
@@ -66,14 +54,12 @@ echo SAMPLE_META is: $SAMPLE_META
 
 echo Rscript join_metadata.R --lfc $LFC	\
 --collapsed_lfc $COLLAPSED_LFC \
---assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
 --sample_meta $SAMPLE_META
 
 Rscript join_metadata.R --lfc $LFC	\
 --collapsed_lfc $COLLAPSED_LFC \
---assay_pool_meta $ASSAY_POOL_META \
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
 --sample_meta $SAMPLE_META

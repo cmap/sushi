@@ -138,16 +138,12 @@ def main(args):
     # Define the column renaming dictionary
     column_mapping = {
         "project_code": "screen",
-        "DepMap_ID": "depmap_id",
-        "CCLE_name": "ccle_name",
         "prism_cell_set": "culture",
         "trt_type": "pert_type",
         "sig_id": "profile_id",
         "bio_rep": "replicate",
         "day": "pert_time",
-        "treatment": "pert_iname",
-        "dose": "pert_dose",
-        "dose_unit": "pert_dose_unit",
+        "pert_name": "pert_iname",
         "l2fc": "LFC",
         "median_l2fc": "LFC"
     }
