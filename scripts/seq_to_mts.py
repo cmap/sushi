@@ -189,7 +189,7 @@ def main(args):
             dataset.drop(dataset[dataset['pert_time'].isin(pert_time_to_drop)].index, inplace=True)
 
 
-   ccle_name_id = sample_meta["pert_iname"].str.upper()
+    ccle_name_id = sample_meta["pert_iname"].str.upper()
 
     level_3 = level_3.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit, 
                                 pert_id = level_3["pert_iname"].str.upper(), prc_id = level_3["pert_iname"].str.upper())
