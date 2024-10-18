@@ -120,11 +120,14 @@ def main(args):
         os.makedirs(args.out)
 
     try:
+        fstr = os.path.join(args.build_path, 'l2fc_with_meta_columns.csv')
+        fmatch = glob.glob(fstr)
+        assert (len(fmatch) == 1) , "Too many files found"
         print("Reading in data")
         sample_meta = read_build_file("sample_meta.csv", args)
         level_3 = read_build_file("normalized_counts.csv", args)
-        level_4 = read_build_file("l2fc.csv", args)
-        level_5 = read_build_file("collapsed_l2fc.csv", args)
+        level_4 = read_build_file("l2fc_with_meta_columns.csv", args)
+        level_5 = read_build_file("collapsed_l2fc_with_meta_columns.csv", args)
 
     except IndexError as err:
         logger.error(err)
@@ -135,16 +138,12 @@ def main(args):
     # Define the column renaming dictionary
     column_mapping = {
         "project_code": "screen",
-        "DepMap_ID": "depmap_id",
-        "CCLE_name": "ccle_name",
         "prism_cell_set": "culture",
         "trt_type": "pert_type",
         "sig_id": "profile_id",
         "bio_rep": "replicate",
         "day": "pert_time",
-        "treatment": "pert_iname",
-        "dose": "pert_dose",
-        "dose_unit": "pert_dose_unit",
+        "pert_name": "pert_iname",
         "l2fc": "LFC",
         "median_l2fc": "LFC"
     }

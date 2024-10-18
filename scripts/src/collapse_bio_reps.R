@@ -1,34 +1,20 @@
-#' validate_columns_exist
-#' 
-#' This function checks that a list of columns are present in a dataframe.
-#' 
-#' @param selected_columns A vector of strings each representing a column name
-#' @param df A dataframe to check against
-#' @return Boolean
-validate_columns_exist= function(selected_columns, df) {
-  # Check that all of selected_columns are in df
-  if(any(!selected_columns %in% colnames(df))) {
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
-}
-
 #' validate_num_bio_reps
 #' 
-#' This function checks that all the expected flowcells are present in a table of detected flowcells.
-#' There can be more detected flowcells than there are expected flowcells.
+#' Function that checks if biological replicates were collapsed by comparing the 
+#' number of unique bio_rep annotations (for example 1, 2, 3 or A, B, C) to the
+#' maximum number of biological replicates that were collapsed into a value.
 #' 
-#' @param detected_flowcells A dataframe with the columns "flowcell_name" and "flowcell_lane".
-#' @param expected_flowcells A dataframe with the columns "flowcell_name" and "flowcell_lane".
-validate_num_bio_reps= function(max_bio_rep_id, max_bio_rep_count) {
-  if(max_bio_rep_id > 1 & max_bio_rep_count == 1) {
-    stop('Unable to collapse bio_reps over the specified sig_cols.')
-  } else if(max_bio_rep_id < max_bio_rep_count) {
+#' @param num_unique_bio_reps A dataframe with the columns "flowcell_name" and "flowcell_lane".
+#' @param max_bio_rep_count A dataframe with the columns "flowcell_name" and "flowcell_lane".
+validate_num_bio_reps= function(num_unique_bio_reps, max_bio_rep_count) {
+  if(num_unique_bio_reps > 1 & max_bio_rep_count == 1) {
+    print('Warning - Detecting unique bio_rep annotations, but each cell line + condition only has one biological replicate.')
+    print('Check the sample meta and the l2fc file to make sure this is the intended behavior!')
+  } else if(num_unique_bio_reps < max_bio_rep_count) {
     stop('Bio_reps were incorrectly collapsed resulting in more replicates than specified.')
-  } else if(max_bio_rep_id > 1 & max_bio_rep_id > max_bio_rep_count) {
-    print('Warning - Number of replicates that were collapses is smaller than the expected number of replicates.')
-    print('This could be due to a problem in processing or from poor data/sequencing quality.')
+  } else if(num_unique_bio_reps > 1 & num_unique_bio_reps > max_bio_rep_count) {
+    print('Warning - Number of replicates that were collapses is smaller than the number of unique bio_rep annotations.')
+    print('This could be due to a problem in processing or from poorer data/sequencing quality.')
   } else {}
 }
 
@@ -38,12 +24,12 @@ validate_num_bio_reps= function(max_bio_rep_id, max_bio_rep_count) {
 #' computes the MAD/sqrt(n).
 #'
 #' @param l2fc Dataframe of l2fc values The following columns are required -
-#'              DepMap_ID, CCLE_name, counts_flag, mean_n, mean_normalized_n, and l2fc.
+#'              depmap_id, ccle_name, counts_flag, mean_n, mean_normalized_n, and l2fc.
 #' @param sig_cols List of columns that define an individual condition. This should not include any replicates.
 #'                  The columns in this list should be present in the l2fc dataframe.
-#' @param cell_line_cols List of columns that define a cell line. Defaults to project_code, DepMap_ID, and CCLE_name
+#' @param cell_line_cols List of columns that define a cell line. Defaults to "project_code" and "depmap_id"
 #' @returns - collapsed_counts
-collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'DepMap_ID', 'CCLE_name')) {
+collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'depmap_id')) {
   # Validation: Check that sig_cols are present in l2fc ----
   if(validate_columns_exist(sig_cols, l2fc) == FALSE) {
     print(sig_cols)
@@ -67,9 +53,9 @@ collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'D
   
   # Validation: Check that replicates were collapsed ----
   if('bio_rep' %in% colnames(l2fc)) {
-    max_bio_rep_id= max(unique(l2fc$bio_rep))
+    num_unique_bio_reps= length(unique(l2fc$bio_rep))
     max_bio_rep_count= max(unique(collapsed_counts$num_bio_reps))
-    validate_num_bio_reps(max_bio_rep_id, max_bio_rep_count)
+    validate_num_bio_reps(num_unique_bio_reps, max_bio_rep_count)
   }
   
   return(collapsed_counts)

@@ -5,6 +5,7 @@ library(tidyverse)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(dplyr))
 source("./src/compute_l2fc.R")
+source("./src/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
@@ -20,7 +21,7 @@ parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day
                     help = "columns used to generate signature ids")
 parser$add_argument("--ctrl_cols", default="cell_set,day", 
                     help = "columns used to collapse controls to generate l2fc")
-parser$add_argument("--cell_line_cols", default="project_code,DepMap_ID,CCLE_name", 
+parser$add_argument("--cell_line_cols", default="project_code,depmap_id,ccle_name", 
                     help = "Columns that can describe a cell line")
 parser$add_argument("-ccn", "--count_col_name", default="normalized_n", 
                     help = "column containing counts with which to calculate l2fc")

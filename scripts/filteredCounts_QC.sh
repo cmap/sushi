@@ -26,12 +26,6 @@ then
     exit -1
 fi
 
-if [ -z "$CELL_SET_META" ]
-then
-	echo CELL_SET_META parameter empty
-    exit -1
-fi
-
 #Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
 then
@@ -49,27 +43,43 @@ else
 fi
 
 #Enforces abs paths
-if [[ "$CELL_SET_META" = /* ]]
-then
-	CELL_SET_META=$(ls $CELL_SET_META)
-else
-	CELL_SET_META=$BUILD_DIR/$CELL_SET_META
-fi
-
-#Enforces abs paths
 if [[ "$NORMALIZED_COUNTS" = /* ]]
 then
-	COUNTS=$(ls $NORMALIZED_COUNTS)
+	NORMALIZED_COUNTS=$(ls $NORMALIZED_COUNTS)
 else
-	COUNTS=$BUILD_DIR/$NORMALIZED_COUNTS
+	NORMALIZED_COUNTS=$BUILD_DIR/$NORMALIZED_COUNTS
 fi
 
 #Enforces abs paths
-if [[ "$RAW_COUNTS" = /* ]]
+if [[ "$PRISM_BARCODE_COUNTS" = /* ]]
 then
-	RAW_COUNTS=$(ls $RAW_COUNTS)
+	PRISM_BARCODE_COUNTS=$(ls $PRISM_BARCODE_COUNTS)
 else
-	RAW_COUNTS=$BUILD_DIR/$RAW_COUNTS
+	PRISM_BARCODE_COUNTS=$BUILD_DIR/$PRISM_BARCODE_COUNTS
+fi
+
+#Enforces abs paths
+if [[ "$UNKNOWN_BARCODE_COUNTS" = /* ]]
+then
+	UNKNOWN_BARCODE_COUNTS=$(ls $UNKNOWN_BARCODE_COUNTS)
+else
+	UNKNOWN_BARCODE_COUNTS=$BUILD_DIR/$UNKNOWN_BARCODE_COUNTS
+fi
+
+#Enforces abs paths
+if [[ "$RAW_COUNTS_UNCOLLAPSED" = /* ]]
+then
+	RAW_COUNTS_UNCOLLAPSED=$(ls $RAW_COUNTS_UNCOLLAPSED)
+else
+	RAW_COUNTS_UNCOLLAPSED=$BUILD_DIR/$RAW_COUNTS_UNCOLLAPSED
+fi
+
+#Enforces abs paths
+if [[ "$LFC" = /* ]]
+then
+	LFC=$(ls $LFC)
+else
+	LFC=$BUILD_DIR/$LFC
 fi
 
 #Enforces abs paths
@@ -84,11 +94,10 @@ echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo ANNOTATED_COUNTS is: $ANNOTATED_COUNTS
 echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
-echo CELL_SET_META is: $CELL_SET_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
-echo COUNT_COL_NAME is: $COUNT_COL_NAME
-echo RAW_COUNTS is: $RAW_COUNTS
+echo RAW_COUNTS_UNCOLLAPSED is: $RAW_COUNTS_UNCOLLAPSED
+echo LFC is: $LFC
 echo REVERSE_INDEX2 is: $REVERSE_INDEX2
 
 args=(
@@ -96,29 +105,20 @@ args=(
 --annotated_counts "$ANNOTATED_COUNTS"
 --normalized_counts "$NORMALIZED_COUNTS"
 --sig_cols "$SIG_COLS"
---cell_set_meta "$CELL_SET_META"
---CB_meta "$CONTROL_BARCODE_META"
 --out "$BUILD_DIR"
 --count_threshold "$COUNT_THRESHOLD"
---count_col_name "$COUNT_COL_NAME"
 --control_type "$CTL_TYPES"
---raw_counts "$RAW_COUNTS"
+--raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
+--prism_barcode_counts "$PRISM_BARCODE_COUNTS"
+--unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
+--lfc "$LFC"
 --id_cols "$ID_COLS"
+--barcode_col "$BARCODE_COL"
 --reverse_index2 "$REVERSE_INDEX2"
+--chunk_size "$CHUNK_SIZE"
+--cell_line_cols "$CELL_LINE_COLS"
 )
 
-echo Rscript filteredCounts_QC.R --sample_meta $SAMPLE_META \
---annotated_counts $ANNOTATED_COUNTS \
---normalized_counts $NORMALIZED_COUNTS \
---cell_set_meta $CELL_SET_META \
---CB_meta $CONTROL_BARCODE_META \
---sig_cols $SIG_COLS \
---out $BUILD_DIR \
---count_threshold $COUNT_THRESHOLD \
---count_col_name $COUNT_COL_NAME \
---reverse_index2 $REVERSE_INDEX2 \
---control_type $CTL_TYPES \
---raw_counts $RAW_COUNTS \
---id_cols $ID_COLS
+echo Rscript filteredCounts_QC.R "${args[@]}"
 
 Rscript filteredCounts_QC.R "${args[@]}"
