@@ -520,6 +520,9 @@ QC_images= function(raw_counts_uncollapsed_path,
   
   # Pull out headers to perform checks
   raw_counts_uncollapsed_headers= data.table::fread(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
+  #testing
+  print(colnames(raw_counts_uncollapsed_headers))
+  print(colnames(sample_meta))
   
   # Check that "index_1" is present. If so, calculate index summary and write out.
   if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_path)) {
