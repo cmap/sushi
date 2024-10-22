@@ -6,7 +6,7 @@ String sectionHeaderStyleGreen = ' color: white; background: green; font-family:
 String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
 
-ppipeline {
+pipeline {
     agent any
     // Define parameters that can be edited via the Jenkins UI
     parameters {
