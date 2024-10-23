@@ -62,10 +62,10 @@ pipeline {
         string(name: 'LOW_ABUNDANCE_THRESHOLD', defaultValue: '20', description: 'Used in COLLATE_FASTQ_READS, threshold for unknown barcodes')
         string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Used in CBNORMALIZE, the pesudocount value for log transformations.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Used in COMPUTE_LFC, the name of the numeric column to use for calculations')
-        string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'Used in COMPUTE_LFC, the value in trt_type that indicates the negative controls')
         string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Used in COMPUTE_LFC, the count threshold for the collapsed negative controls. Cell lines in the negative controls below this threshold will be dropped from log2 fold change calculations.')
 
         // Files created by sushi
+        string(name: 'RAW_COUNTS_UNCOLLAPSED', defaultValue: 'raw_counts_uncollapsed.csv', description: 'Filename in BUILD_DIR containing raw counts uncollapsed')
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts')
         string(name: 'UNKNOWN_BARCODE_COUNTS', defaultValue: 'unknown_barcode_counts.csv', description: 'Filename in BUILD_DIR containing unknown barcode counts')
         string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'Filename in BUILD_DIR containing annotated counts')
@@ -130,8 +130,8 @@ pipeline {
                         'SAMPLE_META', 'CONTROL_BARCODE_META', 'CTL_TYPES', 'ID_COLS', 'SIG_COLS',
                         'CONTROL_COLS', 'COUNT_THRESHOLD', 'COUNT_COL_NAME', 'BUILD_NAME', 'CONVERT_SUSHI',
                         'CREATE_CELLDB_METADATA', 'RUN_EPS_QC', 'PSEUDOCOUNT', 'REMOVE_DATA', 'DAYS', 'SEQUENCING_INDEX_COLS',
-                        'RAW_COUNTS', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
-                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL', 'FILTER_COUNTS_QC', 'ASSAY_POOL_META', 'SCREEN'
+                        'RAW_COUNTS_UNCOLLAPSED', 'CELL_SET_META', 'CELL_LINE_META', 'FILTERED_COUNTS', 'LFC', 'COUNTS', 'ANNOTATED_COUNTS',
+                        'COLLAPSED_VALUES', 'NORMALIZED_COUNTS', 'API_URL', 'FILTER_COUNTS_QC', 'ASSAY_POOL_META', 'SCREEN',
                     ]
 
                     def config = [:]
