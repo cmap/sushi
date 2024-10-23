@@ -76,6 +76,11 @@ chmod +x "$WORKSPACE/scripts/$SCRIPT_NAME"
 echo "Running in container:"
 /usr/bin/podman run --rm --user root \
   --entrypoint /bin/bash \
+  -e BUILD_NAME="$BUILD_NAME" \
+  -e REMOVE_DATA="$REMOVE_DATA" \
+  -e CONVERT_SUSHI="$CONVERT_SUSHI" \
+  -e RUN_EPS_QC="$RUN_EPS_QC" \
+  -e DAYS="$DAYS" \
   -e SEQ_TYPE="$SEQ_TYPE" \
   -e API_URL="$API_URL" \
   -e API_KEY="$API_KEY" \
@@ -88,7 +93,6 @@ echo "Running in container:"
   -e CELL_SET_AND_POOL_META="$CELL_SET_AND_POOL_META" \
   -e CELL_LINE_META="$CELL_LINE_META" \
   -e CONTROL_BARCODE_META="$CONTROL_BARCODE_META" \
-  -e ASSAY_POOL_META="$ASSAY_POOL_META" \
   -e RAW_COUNTS_UNCOLLAPSED="$RAW_COUNTS_UNCOLLAPSED"\
   -e PRISM_BARCODE_COUNTS="$PRISM_BARCODE_COUNTS"\
   -e UNKNOWN_BARCODE_COUNTS="$UNKNOWN_BARCODE_COUNTS"\
@@ -99,23 +103,16 @@ echo "Running in container:"
   -e COLLAPSED_LFC="$COLLAPSED_LFC" \
   -e SEQUENCING_INDEX_COLS="$SEQUENCING_INDEX_COLS" \
   -e ID_COLS="$ID_COLS" \
+  -e LOW_ABUNDANCE_THRESHOLD="$LOW_ABUNDANCE_THRESHOLD" \
+  -e CHUNK_SIZE="$CHUNK_SIZE" \
+  -e BARCODE_COL="$BARCODE_COL" \
+  -e PSEUDOCOUNT="$PSEUDOCOUNT" \
   -e CELL_LINE_COLS="$CELL_LINE_COLS" \
   -e SIG_COLS="$SIG_COLS" \
   -e CONTROL_COLS="$CONTROL_COLS" \
-  -e BARCODE_COL="$BARCODE_COL" \
-  -e PSEUDOCOUNT="$PSEUDOCOUNT" \
   -e COUNT_COL_NAME="$COUNT_COL_NAME" \
   -e CTL_TYPES="$CTL_TYPES" \
-  -e CHUNK_SIZE="$CHUNK_SIZE" \
   -e COUNT_THRESHOLD="$COUNT_THRESHOLD" \
-  -e LOW_ABUNDANCE_THRESHOLD="$LOW_ABUNDANCE_THRESHOLD" \
-  -e BUILD_NAME="$BUILD_NAME" \
-  -e CONVERT_SUSHI="$CONVERT_SUSHI" \
-  -e PULL_POOL_ID="$PULL_POOL_ID" \
-  -e RUN_EPS_QC="$RUN_EPS_QC" \
-  -e REMOVE_DATA="$REMOVE_DATA" \
-  -e DAYS="$DAYS" \
-  -e COUNTS="$COUNTS" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \
