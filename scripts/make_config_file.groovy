@@ -21,7 +21,6 @@ pipeline {
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get metadata from COMET, use only if screen is registered.')
         string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, provide the screen name from COMET.')
-        booleanParam(name: 'PULL_POOL_ID', defaultValue: false, description: 'Flag indicating whether to pull pool IDs from CellDB - only applicable to cell sets (i.e. EXT.PR500.CS01.1.A, EXT.PR500.CS01.1.B, etc).')
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
@@ -134,7 +133,7 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'PULL_POOL_ID', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
                         'COUNTS', 'SCREEN',
 
                         // sushi input files
