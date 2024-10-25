@@ -84,8 +84,7 @@ filter_raw_reads= function(prism_barcode_counts,
   
   # Drop cell lines that appear in more than one pool of a cell set
   cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id) %>%
-    dplyr::mutate(depmap_id= ifelse(dplyr::n() > 1, paste0('dup_', depmap_id), depmap_id)) %>%
-    dplyr::slice(1) %>% dplyr::ungroup()
+    dplyr::summarise(pool_id= paste(sort(unique(pool_id)), collapse= ';')) %>% dplyr::ungroup()
   
   # Creating a template of all expected reads in the run ----
   # Use all 4 metadata files to create a "template" dataframe where
