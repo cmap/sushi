@@ -12,7 +12,8 @@ validate_cell_set= function(cell_set_and_pool_meta) {
   if(nrow(duplicate_cls) > 0) {
     print('WARNING: The following CLs appear more than once in a cell set!!!')
     print(duplicate_cls)
-    print('The module will continue after dropping these cell lines.')
+    print('The module will add the prefix dup_ to the depmap_ids of these cell lines.')
+    print('They will be dropped before normalization!')
   }
 }
 
@@ -83,7 +84,8 @@ filter_raw_reads= function(prism_barcode_counts,
   
   # Drop cell lines that appear in more than one pool of a cell set
   cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id) %>%
-    dplyr::filter(dplyr::n() == 1) %>% dplyr::ungroup()
+    dplyr::mutate(depmap_id= ifelse(dplyr::n() > 1, paste0('dup_', depmap_id), depmap_id)) %>%
+    dplyr::slice(1) %>% dplyr::ungroup()
   
   # Creating a template of all expected reads in the run ----
   # Use all 4 metadata files to create a "template" dataframe where

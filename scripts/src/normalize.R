@@ -23,6 +23,9 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   # Create log2_n with pseudocount ----
   X %<>% dplyr::mutate(log2_n = log2(n + pseudocount))
   
+  # Filter out any cell lines with the duplicate prefix "dup_" ----
+  X %<>% dplyr::filter(!grepl('^dup_', depmap_id))
+  
   # Validation: Check that id_cols are present in the dataframe ----
   if(!validate_columns_exist(id_cols, X)) {
     stop('One or more id_cols (printed above) is NOT present in the supplied dataframe.')
