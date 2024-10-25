@@ -59,7 +59,8 @@ cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_k
 assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
 assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
 if (cb_ladder != "cb_custom.csv"){
-  control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, filter = list(where = list(set = cb_ladder), fields = c("sequence", "cb_name", "cb_log10_dose")))
+  control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, 
+                                     filter = list(where = list(set = cb_ladder), fields = c("sequence", "cb_name", "cb_log10_dose")))
 } else {
   file_path <- file.path(args$out, cb_ladder)
   control_bc_df <- read.csv(file_path)
@@ -114,7 +115,7 @@ print(paste("writing cell_line_meta to: ", cell_line_out_file))
 write.csv(cell_line_meta, cell_line_out_file, row.names=F, quote=F)
 
 # Writing out combined cell_set_meta and assay_pool_meta
-cell_set_assay_pool_out_file = paste(args$out, 'cell_set_assay_pool_meta.csv', sep='/')
+cell_set_assay_pool_out_file = paste(args$out, 'cell_set_and_pool_meta.csv', sep='/')
 print(paste("writing combined cell_set_meta and assay_pool_meta file to: ", cell_set_assay_pool_out_file))
 write.csv(cell_set_assay_pool_meta, cell_set_assay_pool_out_file, row.names=F, quote=F)
 
