@@ -77,6 +77,7 @@ echo "Running in container:"
 /usr/bin/podman run --rm --user root \
   --entrypoint /bin/bash \
   -e BUILD_NAME="$BUILD_NAME" \
+  -e SCREEN="$SCREEN" \
   -e REMOVE_DATA="$REMOVE_DATA" \
   -e CONVERT_SUSHI="$CONVERT_SUSHI" \
   -e RUN_EPS_QC="$RUN_EPS_QC" \
