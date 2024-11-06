@@ -222,11 +222,11 @@ pipeline {
                 script {
                     if (params.TRIGGER_BUILD) {
                         def scriptsToRun = []
-                        if (params.CREATE_CELLDB_METADATA) {
-                            scriptsToRun.add('create_celldb_metadata.sh')
-                        }
                         if (params.CREATE_SAMPLE_META) {
                             scriptsToRun.add('create_sample_meta.sh')
+                        }
+                        if (params.CREATE_CELLDB_METADATA) {
+                            scriptsToRun.add('create_celldb_metadata.sh')
                         }
                         if (params.COLLATE_FASTQ_READS) {
                             scriptsToRun.add('collate_fastq_reads.sh')
