@@ -37,6 +37,12 @@ def rename_columns(df):
     return df.rename(columns=rename_map)
 
 
+def add_control_barcodes(df, control_barcodes):
+    control_barcode_df = df.copy()
+    control_barcode_df["control_barcodes"] = control_barcodes
+    return control_barcode_df
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fetch data from API and save to a CSV file."
@@ -54,15 +60,26 @@ def main():
         required=True,
         help="Directory to save the CSV file",
     )
+    parser.add_argument(
+        "--control_barcodes",
+        "-cb",
+        type=str,
+        required=True,
+        help="Type of control barcode ladder, defaults to h-b",
+    )
 
     args = parser.parse_args()
     screen = args.screen
     api_key = args.api_key
     build_dir = args.build_dir
+    control_barcodes = args.control_barcodes
 
     try:
         df = fetch_data(screen, api_key)
         df = rename_columns(df)
+        df = add_control_barcodes(df, control_barcodes)
+        print("Retrieved following sample_metadata from COMET: ")
+        print(df.head())
         save_dataframe(df, build_dir)
     except Exception as e:
         print(f"An error occurred: {e}")
