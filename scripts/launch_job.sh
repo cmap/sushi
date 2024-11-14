@@ -25,6 +25,7 @@ fi
 PARAMS=(
   SEQ_TYPE BUILD_DIR INDEX_1 INDEX_2 BARCODE_SUFFIX REVERSE_INDEX2 BUILD_NAME
   CONVERT_SUSHI PULL_POOL_ID RUN_EPS_QC REMOVE_DATA DAYS COUNTS API_URL SCREEN
+  CONTROL_BARCODES
   # sushi input files
   RAW_COUNTS_UNCOLLAPSED SAMPLE_META CELL_SET_AND_POOL_META CELL_LINE_META CONTROL_BARCODE_META
   # susi files
@@ -114,6 +115,7 @@ echo "Running in container:"
   -e COUNT_COL_NAME="$COUNT_COL_NAME" \
   -e CTL_TYPES="$CTL_TYPES" \
   -e COUNT_THRESHOLD="$COUNT_THRESHOLD" \
+  -e CONTROL_BARCODES="$CONTROL_BARCODES" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \
