@@ -105,7 +105,9 @@ validate_unique_samples= function(selected_columns, df) {
 #' 
 #' @param file_path Path to a file to check
 check_file_exists <- function(file_path) {
-  if (!file.exists(file_path)) {
-    stop(paste("Error: File ", file_path, " does not exist, check the output of the module."))
+  if (file.exists(file_path)) {
+    message(paste("File ", file_path, " was successfully generated."))
+  } else {
+    stop(paste("Error: File ", file_path, " does not exist, please check the output of this module."))
   }
 }

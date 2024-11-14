@@ -53,3 +53,6 @@ l2fc= compute_l2fc(normalized_counts= normalized_counts,
 l2fc_outpath= paste(args$out, "l2fc.csv", sep= "/")
 print(paste0('Writing out l2fc file to ', l2fc_outpath))
 write.csv(l2fc, l2fc_outpath, row.names= FALSE, quote= FALSE)
+
+# Ensure that l2fc file was successfully generated ----
+check_file_exists(l2fc_outpath)

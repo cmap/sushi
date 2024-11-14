@@ -126,4 +126,8 @@ if (nrow(control_bc_df) > 0) {
   control_barcode_out_file = paste(args$out, 'CB_meta.csv', sep='/')
   print(paste("writing CB_meta to: ", control_barcode_out_file))
   write.csv(CB_meta, control_barcode_out_file, row.names=F, quote=F)
-} 
+}
+
+# Ensure that cell_line_meta and cell_set_assay_pool_meta were successfully generated
+check_file_exists(cell_line_out_file)
+check_file_exists(cell_set_assay_pool_out_file)

@@ -106,3 +106,7 @@ module_outputs$annotated_counts %>% write.csv(annot_out_file, row.names= FALSE)
 filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
 print(paste("Writing filtered counts csv to: ", filtrc_out_file))
 write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
+
+# Ensure that files were successfully generated ----
+check_file_exists(annot_out_file)
+check_file_exists(filtrc_out_file)

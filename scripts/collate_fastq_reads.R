@@ -91,6 +91,12 @@ out_file= paste(args$out, 'prism_barcode_counts.csv', sep='/')
 print(paste("Writing prism_barcode_counts.csv to ", out_file))
 write.csv(prism_barcode_counts, out_file, row.names= FALSE, quote= FALSE)
 
+# Ensure that files were successfully generated ----
+check_file_exists(out_file)
+
 out_file= paste(args$out, 'unknown_barcode_counts.csv', sep='/')
 print(paste("Writing unknown_barcode_counts.csv to ", out_file))
 write.csv(unknown_barcode_counts, out_file, row.names= FALSE, quote= FALSE)
+
+# Ensure that files were successfully generated ----
+check_file_exists(out_file)
