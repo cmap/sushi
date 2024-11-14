@@ -29,7 +29,7 @@ parser$add_argument('--annotated_counts', default= 'annotated_counts.csv', help=
 parser$add_argument('--normalized_counts', default= 'normalized_counts.csv', help= 'Path to normalized_counts.csv')
 parser$add_argument('--lfc', default= 'l2fc.csv', help= 'Path to l2fc.csv')
 parser$add_argument('-s', '--sample_meta', default= 'sample_meta.csv', help= 'Path to sample_meta.csv')
-parser$add_argument("--barcode_col", default= "forward_read_cl_barcode", 
+parser$add_argument("--barcode_col", default= "forward_read_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well', help= 'Sample meta columns used to identify every PCR well')
 parser$add_argument('--cell_line_cols', default= 'DepMap_ID', help= 'Sushi columns used to identify a read')

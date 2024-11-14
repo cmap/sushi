@@ -25,7 +25,7 @@ parser$add_argument('--cell_line_meta', default= 'cell_line_meta.csv', help= 'Pa
 parser$add_argument('--CB_meta', default= 'CB_meta.csv', help= 'Path to CB_meta.csv')
 parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well', 
                     help= 'List of sample_meta column names used to identify every PCR well')
-parser$add_argument("--barcode_col", default= "forward_read_cl_barcode", 
+parser$add_argument("--barcode_col", default= "forward_read_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")

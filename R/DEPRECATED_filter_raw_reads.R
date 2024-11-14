@@ -41,11 +41,11 @@ filter_raw_reads = function(
   print("Filtering cell lines")
   cell_line_filtered = index_filtered %>%
     merge(sample_meta, by.x=c("index_1", "index_2"), by.y=c("IndexBarcode1", "IndexBarcode2")) %>%
-    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="dna_sequence", all.x=T) %>% # NEW  
+    merge(cell_line_meta, by.x="forward_read_barcode", by.y="dna_sequence", all.x=T) %>% # NEW
     merge(cell_set_meta, by="cell_set", all.x=T) %>%
     dplyr::filter(mapply(grepl, lua, members) | # NEW
                     (mapply(grepl, lua, cell_set) & is.na(members)) | # NEW
-                    (forward_read_cl_barcode %in% CB_meta$Sequence))
+                    (forward_read_barcode %in% CB_meta$Sequence))
   cell_line_purity = sum(cell_line_filtered$n)/ sum(index_filtered$n)
   
   print("Generating QC table ...")
@@ -71,11 +71,11 @@ filter_raw_reads = function(
   # annotating reads now takes much longer
   print("Annotating reads ...")
   annotated_counts= raw_counts %>%
-    merge(cell_line_meta, by.x="forward_read_cl_barcode", by.y="dna_sequence", all.x=T) %>% # NEW
-    merge(CB_meta, by.x="forward_read_cl_barcode", by.y="Sequence", all.x=T) %>%
+    merge(cell_line_meta, by.x="forward_read_barcode", by.y="dna_sequence", all.x=T) %>% # NEW
+    merge(CB_meta, by.x="forward_read_barcode", by.y="Sequence", all.x=T) %>%
     merge(sample_meta, by.x= c('index_1', 'index_2'), by.y= c('IndexBarcode1', 'IndexBarcode2'), all.x=T) %>%
     merge(template %>% dplyr::mutate(expected_read= T), 
-          by.x= c('index_1', 'index_2', 'forward_read_cl_barcode', intersect(colnames(template), colnames(.))), 
+          by.x= c('index_1', 'index_2', 'forward_read_barcode', intersect(colnames(template), colnames(.))),
           by.y= c('IndexBarcode1', 'IndexBarcode2', 'dna_sequence', intersect(colnames(template), colnames(.))), # NEW
           all.x=T, all.y=T) %>% 
     dplyr::mutate(n= replace_na(n, 0),

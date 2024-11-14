@@ -470,7 +470,7 @@ QC_images= function(raw_counts_uncollapsed_path,
                     prism_barcode_counts, unknown_barcode_counts,
                     annotated_counts, normalized_counts= NA, l2fc, 
                     sample_meta,
-                    barcode_col= 'forward_read_cl_barcode',
+                    barcode_col= 'forward_read_barcode',
                     id_cols= c('pcr_plate', 'pcr_well'),
                     cell_line_cols= c('depmap_id'), 
                     sig_cols,
@@ -644,7 +644,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   potential_error= base::tryCatch({
     contams= annotated_counts %>% dplyr::filter(expected_read == FALSE) %>%
       dplyr::mutate(barcode_id= ifelse(is.na(depmap_id), cb_name, depmap_id)) %>%
-      dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
+      dplyr::group_by(forward_read_barcode, barcode_id) %>%
       dplyr::summarise(num_wells= n(), median_n= median(n), max_n= max(n)) %>% ungroup() %>%
       dplyr::arrange(desc(num_wells))
     

@@ -70,13 +70,13 @@ if (!str_detect(cb_ladder, ".csv")){
 }
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-cell_line_cols= c('depmap_id', 'ccle_name', 'forward_read_cl_barcode')
+cell_line_cols= c('depmap_id', 'ccle_name', 'forward_read_barcode')
 cell_line_meta <- cell_lines_df %>%
-  rename("forward_read_cl_barcode" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
+  rename("forward_read_barcode" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
 
 # Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
 if (nrow(control_bc_df) > 0 & !str_detect(cb_ladder, ".csv") ) {
-  CB_meta <- control_bc_df %>% rename("forward_read_cl_barcode" = "sequence", "cb_name" = "name")
+  CB_meta <- control_bc_df %>% rename("forward_read_barcode" = "sequence", "cb_name" = "name")
   # one caveat in the above is that "name" comes from the database, but should be changed to cb_name, so
   #in the future, this renaming shouldn't be necessary
 } else {

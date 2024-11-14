@@ -30,7 +30,7 @@ write_df_from_fastq(
 }
 \value{
 \itemize{
-\item cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_cl_barcode
+\item cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_barcode
 }
 }
 \description{

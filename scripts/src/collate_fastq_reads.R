@@ -25,7 +25,7 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #' maps the sequencing index columns to the ID columns.
 #' 
 #' @param uncollapsed_raw_counts Dataframe of reads from all the fastq files with the following columns -
-#'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", "forward_read_cl_barcode", and "n".
+#'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", "forward_read_barcode", and "n".
 #'                    The flowcell columns are optional. If they do not exists, flowcell filters will be skipped.
 #' @param sample_meta Sample metadata generate for the project which may contain the following columns - 
 #'                    "flowcell_names", "flowcell_lanes", "index_1", "index_2". The sample meta MUST contain
@@ -52,7 +52,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                               id_cols= c('pcr_plate', 'pcr_well'),
                               known_barcodes,
                               reverse_index2= FALSE,
-                              barcode_col= 'forward_read_cl_barcode',
+                              barcode_col= 'forward_read_barcode',
                               low_abundance_threshold= 20) {
   require(tidyverse)
   require(data.table)
