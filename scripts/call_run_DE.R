@@ -17,9 +17,9 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing filtered counts")
-parser$add_argument("--sample_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep", 
+parser$add_argument("--sample_cols", default="cell_set,treatment,pert_dose,pert_dose_unit,day,bio_rep",
                     help = "columns used to generate sample ids")
-parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day", 
+parser$add_argument("--sig_cols", default="cell_set,treatment,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
 parser$add_argument("-ct", "--control_type", default="negcon", help="trt_type to use as control")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")

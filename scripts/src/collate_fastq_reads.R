@@ -38,7 +38,7 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #' @param id_cols ID columns from the sample meta that uniquely identify every PCR well. These columns should not 
 #'                include any sequencing related columns. This parameter defaults onto "pcr_plate", "pcr_well". This 
 #'                parameter can also be a list of the sample conditions columns as long as they uniquely identify every
-#'                PCR well. For example "cell_set", "treatment", "dose", "day", "bio_rep", "tech_rep" can also be used.
+#'                PCR well. For example "cell_set", "pert_name", "dose", "day", "bio_rep", "tech_rep" can also be used.
 #' @param known_barcodes A vector of known PRISM barcodes. If a read does not match a barcode in this list,
 #'                       then its sequence is reassigned to "unknown_reads".
 #' @param reverse_index2 Index 2 should be reversed if the sequencer uses a reverse complement workflow. 

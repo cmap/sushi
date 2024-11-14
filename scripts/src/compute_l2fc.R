@@ -7,7 +7,7 @@
 #' @param control_type - string that denotes which samples to compute log fold change against. Matches pert_type field.
 #'          negcon by default.
 #' @param sig_cols - a vector of column names denoting which values specify each individual signature
-#'                    cell_set,treatment,dose,dose_unit,day by default.
+#'                    cell_set,pert_name,dose,dose_unit,day by default.
 #' @param ctrl_cols - a vector of column names denoting which values specify each individual control condition
 #'                    cell_set,day by default.
 #' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. 
@@ -18,7 +18,7 @@
 #' @export
 compute_l2fc= function(normalized_counts,
                        control_type = "negcon",
-                       sig_cols=c('cell_set','treatment','dose','dose_unit','day'),
+                       sig_cols=c('cell_set','pert_name','pert_dose','pert_dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
                        count_col_name="normalized_n", count_threshold= 40,
                        cell_line_cols= c('project_code', 'depmap_id')) {

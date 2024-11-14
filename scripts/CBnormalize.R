@@ -13,7 +13,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing filtered counts")
-parser$add_argument("--id_cols", default="cell_set,treatment,dose,dose_unit,day,bio_rep,tech_rep",
+parser$add_argument("--id_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day,bio_rep,tech_rep",
                     help = "Columns to identify each PCR well")
 parser$add_argument("--CB_meta", default="CB_meta.csv", help= "Control Barcode metadata")
 parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults to working directory")

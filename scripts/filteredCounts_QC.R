@@ -33,7 +33,7 @@ parser$add_argument("--barcode_col", default= "forward_read_cl_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well', help= 'Sample meta columns used to identify every PCR well')
 parser$add_argument('--cell_line_cols', default= 'DepMap_ID', help= 'Sushi columns used to identify a read')
-parser$add_argument('--sig_cols', default= 'cell_set,treatment,dose,dose_unit,day', 
+parser$add_argument('--sig_cols', default= 'cell_set,pert_name,pert_dose,pert_dose_unit,day',
                     help= 'Sample meta columns used to identify unique treatment conditions')
 parser$add_argument('--control_type', default= 'negcon', help= 'Value used in pert_type column to denote negative controls')
 parser$add_argument('--count_threshold', default= 40, help= 'Low counts theshold used in some plots')
