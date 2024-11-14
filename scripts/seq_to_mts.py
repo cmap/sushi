@@ -139,7 +139,6 @@ def main(args):
     column_mapping = {
         "project_code": "screen",
         "prism_cell_set": "culture",
-        "trt_type": "pert_type",
         "sig_id": "profile_id",
         "bio_rep": "replicate",
         "day": "pert_time",
@@ -219,13 +218,13 @@ def main(args):
     level_5["pert_idose"] = level_5["pert_dose"].astype(str) + " " + level_5["pert_dose_unit"]
 
     # Define a mapping for renaming values
-    trt_type_mapping = {
+    pert_type_mapping = {
         'poscon': 'trt_poscon',
         'negcon': 'ctl_vehicle'}
 
     # Replace values in the 'pert_type' column using the mapping
-    sample_meta["pert_type"] = sample_meta["pert_type"].replace(trt_type_mapping)
-    level_3["pert_type"] = level_3["pert_type"].replace(trt_type_mapping)
+    sample_meta["pert_type"] = sample_meta["pert_type"].replace(pert_type_mapping)
+    level_3["pert_type"] = level_3["pert_type"].replace(pert_type_mapping)
 
     # Sorting columns to resemble MTS style
     level_4.sort_index(axis=1, inplace=True)

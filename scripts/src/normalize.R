@@ -34,7 +34,7 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   }
   
   # Identify valid profiles and valid control barcodes to determine intercept ----
-  # Drop wells with invalid trt_type, wells without control barcodes, cell line entries or other CBs, 
+  # Drop wells with invalid pert_type, wells without control barcodes, cell line entries or other CBs,
   # cbs with zero reads, and profiles with fewer than 4 CBs.
   valid_profiles= X %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0, 
                                       cb_ladder %in% unique(CB_meta$cb_ladder), 

@@ -461,7 +461,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @param id_cols Vector of sample meta column names used to identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
 #' @param sig_cols Vector of sample meta column names used to identify a unique treatment condition.
-#' @param control_type String of how the negative controls are designated in the trt_type column in the sample_meta.
+#' @param control_type String of how the negative controls are designated in the pert_type column in the sample_meta.
 #' @param count_threshold Threshold for low read counts.
 #' @param reverse_index2 Boolean set to TRUE if the sequencing involved the reverse complement workflow.
 #' @param out Path to the directory to save the QC images.

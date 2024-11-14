@@ -2,9 +2,9 @@
 #' 
 #' takes normalized counts and computes log-fold change values as compared to the designated control condition
 #'
-#' @param normalized_counts - table with normalized_n column and trt_type column that designates the 
+#' @param normalized_counts - table with normalized_n column and pert_type column that designates the
 #'          the control sample
-#' @param control_type - string that denotes which samples to compute log fold change against. Matches trt_type field. 
+#' @param control_type - string that denotes which samples to compute log fold change against. Matches pert_type field.
 #'          negcon by default.
 #' @param sig_cols - a vector of column names denoting which values specify each individual signature
 #'                    cell_set,treatment,dose,dose_unit,day by default.

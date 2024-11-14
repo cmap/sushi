@@ -33,7 +33,7 @@ def save_dataframe(df, build_dir):
 
 
 def rename_columns(df):
-    rename_map = {"index1": "index_1", "index2": "index_2", "pert_id": "compound_id"}
+    rename_map = {"index1": "index_1", "index2": "index_2", "pert_id": "compound_id", "trt_type": "pert_type"}
     return df.rename(columns=rename_map)
 
 
@@ -43,8 +43,8 @@ def add_control_barcodes(df, control_barcodes):
     return control_barcode_df
 
 
-def replace_trt_type(df):
-    df["trt_type"] = df["trt_type"].replace(
+def replace_pert_type(df):
+    df["pert_type"] = df["pert_type"].replace(
         {"trt_poscon": "poscon", "ctl_vehicle": "negcon"}
     )
     return df
@@ -86,7 +86,7 @@ def main():
             fetch_data(screen, api_key)
             .pipe(rename_columns)
             .pipe(add_control_barcodes, control_barcodes)
-            .pipe(replace_trt_type)
+            .pipe(replace_pert_type)
         )
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())

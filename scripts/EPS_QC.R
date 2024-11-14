@@ -18,7 +18,7 @@ parser <- ArgumentParser()
 parser$add_argument("-b", "--build_dir", default="", help="Input Directory with data from whole screen")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 parser$add_argument("-n", "--name", default="", help = "Build name. Default is none")
-parser$add_argument("--control_type", default = "ctl_vehicle", help = "how negative control wells are distinguished in the trt_type column")
+parser$add_argument("--control_type", default = "ctl_vehicle", help = "how negative control wells are distinguished in the pert_type column")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-d","--days",default="", help='Day timepoints to drop from output data separated by commas.')
 
@@ -49,7 +49,7 @@ if (length(norm_count_files) == 1) {
 cell_counts_negcon <- norm_counts %>% 
     dplyr::filter(!is.na(ccle_name)) %>% 
     dplyr::filter(!(day %in% days_to_drop)) %>% 
-    dplyr::filter(trt_type==control_type)
+    dplyr::filter(pert_type_type==control_type)
 
 # validation: only one day should in QC table to pass to portal
 if(length(cell_counts_negcon$day %>% unique())!=1) {

@@ -12,12 +12,12 @@ compute_l2fc(
 }
 \arguments{
 \item{normalized_counts}{\itemize{
-\item table with normalized_n column and trt_type column that designates the
+\item table with normalized_n column and pert_type column that designates the
 the control sample
 }}
 
 \item{control_type}{\itemize{
-\item string that denotes which samples to compute log fold change against. Matches trt_type field. negcon by default.
+\item string that denotes which samples to compute log fold change against. Matches pert_type field. negcon by default.
 }}
 
 \item{sig_cols}{sig_cols - a vector of column names denoting which values specify each individual signature

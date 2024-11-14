@@ -35,7 +35,7 @@ parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well', help= 'Sample me
 parser$add_argument('--cell_line_cols', default= 'DepMap_ID', help= 'Sushi columns used to identify a read')
 parser$add_argument('--sig_cols', default= 'cell_set,treatment,dose,dose_unit,day', 
                     help= 'Sample meta columns used to identify unique treatment conditions')
-parser$add_argument('--control_type', default= 'negcon', help= 'Value used in trt_type column to denote negative controls')
+parser$add_argument('--control_type', default= 'negcon', help= 'Value used in pert_type column to denote negative controls')
 parser$add_argument('--count_threshold', default= 40, help= 'Low counts theshold used in some plots')
 parser$add_argument('--reverse_index2', type= "logical", default= FALSE,
                     help= 'Switch to reverse complement index_2 for some sequencers')
