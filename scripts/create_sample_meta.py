@@ -43,6 +43,13 @@ def add_control_barcodes(df, control_barcodes):
     return control_barcode_df
 
 
+def replace_pert_type(df):
+    df["pert_type"] = df["pert_type"].replace(
+        {"trt_poscon": "poscon", "ctl_vehicle": "negcon"}
+    )
+    return df
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fetch data from API and save to a CSV file."
@@ -75,9 +82,12 @@ def main():
     control_barcodes = args.control_barcodes
 
     try:
-        df = fetch_data(screen, api_key)
-        df = rename_columns(df)
-        df = add_control_barcodes(df, control_barcodes)
+        df = (
+            fetch_data(screen, api_key)
+            .pipe(rename_columns)
+            .pipe(add_control_barcodes, control_barcodes)
+            .pipe(replace_pert_type)
+        )
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
         save_dataframe(df, build_dir)
