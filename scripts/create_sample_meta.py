@@ -39,7 +39,7 @@ def rename_columns(df):
 
 def add_control_barcodes(df, control_barcodes):
     control_barcode_df = df.copy()
-    control_barcode_df["control_barcodes"] = control_barcodes
+    control_barcode_df["cb_ladder"] = control_barcodes
     return control_barcode_df
 
 
