@@ -33,7 +33,7 @@ def save_dataframe(df, build_dir):
 
 
 def rename_columns(df):
-    rename_map = {"index1": "index_1", "index2": "index_2", "pert_id": "compound_id", "trt_type": "pert_type",
+    rename_map = {"index1": "index_1", "index2": "index_2", "trt_type": "pert_type",
                   "treatment": "pert_name", "dose": "pert_dose", "dose_unit": "pert_dose_unit"}
     return df.rename(columns=rename_map)
 
