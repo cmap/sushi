@@ -49,7 +49,7 @@ if (length(norm_count_files) == 1) {
 cell_counts_negcon <- norm_counts %>% 
     dplyr::filter(!is.na(ccle_name)) %>% 
     dplyr::filter(!(day %in% days_to_drop)) %>% 
-    dplyr::filter(pert_type_type==control_type)
+    dplyr::filter(pert_type==control_type)
 
 # validation: only one day should in QC table to pass to portal
 if(length(cell_counts_negcon$day %>% unique())!=1) {

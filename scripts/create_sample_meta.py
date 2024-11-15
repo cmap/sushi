@@ -44,13 +44,6 @@ def add_control_barcodes(df, control_barcodes):
     return control_barcode_df
 
 
-def replace_pert_type(df):
-    df["pert_type"] = df["pert_type"].replace(
-        {"trt_poscon": "poscon", "ctl_vehicle": "negcon"}
-    )
-    return df
-
-
 def filter_nan_flowcells(df):
     return df.dropna(subset=["flowcell_names"])
 
@@ -91,7 +84,6 @@ def main():
             fetch_data(screen, api_key)
             .pipe(rename_columns)
             .pipe(add_control_barcodes, control_barcodes)
-            .pipe(replace_pert_type)
             .pipe(filter_nan_flowcells)
         )
         print("Retrieved following sample_metadata from COMET: ")
