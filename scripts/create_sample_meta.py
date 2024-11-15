@@ -6,7 +6,7 @@ import os
 
 def fetch_data(screen, api_key):
     url = f"https://api.clue.io/api/v_eps_metadata?filter=%7B%22where%22%3A%7B%22project_code%22%3A%22{screen}%22%7D%7D"
-    headers = {"Accept": "application/json", "user_key": api_key}
+    headers = {"Accept": "application/json", "user_key": api_key, 'prism_key' : 'prism_mts'}
 
     response = requests.get(url, headers=headers)
 
@@ -51,6 +51,10 @@ def replace_pert_type(df):
     return df
 
 
+def filter_nan_flowcells(df):
+    return df.dropna(subset=["flowcell_names"])
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fetch data from API and save to a CSV file."
@@ -88,6 +92,7 @@ def main():
             .pipe(rename_columns)
             .pipe(add_control_barcodes, control_barcodes)
             .pipe(replace_pert_type)
+            .pipe(filter_nan_flowcells)
         )
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
