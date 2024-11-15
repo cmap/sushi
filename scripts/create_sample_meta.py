@@ -45,6 +45,14 @@ def add_control_barcodes(df, control_barcodes):
 
 
 def filter_nan_flowcells(df):
+    # Count rows with NaN in "flowcell_names"
+    nan_count = df["flowcell_names"].isna().sum()
+
+    # Print the count if any rows are dropped
+    if nan_count > 0:
+        print(f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped.")
+
+    # Drop rows with NaN in "flowcell_names"
     return df.dropna(subset=["flowcell_names"])
 
 
