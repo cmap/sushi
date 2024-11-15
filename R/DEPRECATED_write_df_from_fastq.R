@@ -7,7 +7,7 @@
 #' @param index_1_files - vector of fastq file paths
 #' @param index_2_files - vector of fastq file paths
 #' @param write_interval - integer for how often a temp count file is written, NA by default. 
-#' @return - cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_cl_barcode
+#' @return - cumulative_count_df A data.frame of readcounts by index_1, index_2 and forward_read_barcode
 #' @export 
 write_df_from_fastq <- function(
   forward_read_fastq_files, 
@@ -68,7 +68,7 @@ write_df_from_fastq <- function(
       forward_reads_cl_barcode = as.character(forward_reads_cl_barcode)
       index_1 = as.character(index_1)
       index_2 = as.character(index_2)
-      chunk_df <- data.frame(forward_read_cl_barcode = forward_reads_cl_barcode, index_1 = index_1, index_2 = index_2)
+      chunk_df <- data.frame(forward_read_barcode = forward_reads_cl_barcode, index_1 = index_1, index_2 = index_2)
       
       matches_df <- chunk_df %>%
         dplyr::mutate(index_number = 1:dplyr::n()) 
@@ -79,10 +79,10 @@ write_df_from_fastq <- function(
         next
       } else if (lp > length(cumulative_count_df)) { 
         cumulative_count_df[[lp]] = (matches_df %>% 
-                                     dplyr::count(index_1, index_2, forward_read_cl_barcode))
+                                     dplyr::count(index_1, index_2, forward_read_barcode))
       } else {
         cumulative_count_df[[lp]] = (matches_df %>% 
-          dplyr::count(index_1, index_2, forward_read_cl_barcode) %>% rbind(cumulative_count_df[[lp]])) # new
+          dplyr::count(index_1, index_2, forward_read_barcode) %>% rbind(cumulative_count_df[[lp]])) # new
       }
     }
     close(forward_stream)
@@ -107,7 +107,7 @@ write_df_from_fastq <- function(
   
   cumulative_count_df <- cumulative_count_df %>%
     dplyr::bind_rows() %>% # new 
-    dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
+    dplyr::group_by(index_1, index_2, forward_read_barcode) %>%
     dplyr::summarise(n = sum(n, na.rm = T)) %>%
     dplyr::ungroup()
   
@@ -170,7 +170,7 @@ write_df_from_fastq_DRAGEN <- function(
       index_1 <- indeces$index1
       index_2 <- indeces$index2
       
-      chunk_df <- data.frame(forward_read_cl_barcode = forward_reads_cl_barcode, index_1 = index_1, index_2 = index_2)
+      chunk_df <- data.frame(forward_read_barcode = forward_reads_cl_barcode, index_1 = index_1, index_2 = index_2)
       
       matches_df <- chunk_df %>%
         dplyr::mutate(index_number = 1:dplyr::n()) 
@@ -181,10 +181,10 @@ write_df_from_fastq_DRAGEN <- function(
         next
       } else if (lp > length(cumulative_count_df)) { 
         cumulative_count_df[[lp]] = (matches_df %>% 
-                                       dplyr::count(index_1, index_2, forward_read_cl_barcode))
+                                       dplyr::count(index_1, index_2, forward_read_barcode))
       } else {
         cumulative_count_df[[lp]] = (matches_df %>% 
-                                       dplyr::count(index_1, index_2, forward_read_cl_barcode) %>% 
+                                       dplyr::count(index_1, index_2, forward_read_barcode) %>%
                                        rbind(cumulative_count_df[[lp]])) # new
       }
     }
@@ -200,7 +200,7 @@ write_df_from_fastq_DRAGEN <- function(
   
   cumulative_count_df <- cumulative_count_df %>%
     dplyr::bind_rows() %>% # new 
-    dplyr::group_by(index_1, index_2, forward_read_cl_barcode) %>%
+    dplyr::group_by(index_1, index_2, forward_read_barcode) %>%
     dplyr::summarise(n = sum(n, na.rm = T)) %>%
     dplyr::ungroup()
   

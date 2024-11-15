@@ -16,8 +16,8 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
-parser$add_argument("-ct", "--control_type", default="negcon", help="trt_type to use as control")
-parser$add_argument("--sig_cols", default="cell_set,treatment,dose,dose_unit,day", 
+parser$add_argument("-ct", "--control_type", default="negcon", help="pert_type to use as control")
+parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
 parser$add_argument("--ctrl_cols", default="cell_set,day", 
                     help = "columns used to collapse controls to generate l2fc")
@@ -53,3 +53,6 @@ l2fc= compute_l2fc(normalized_counts= normalized_counts,
 l2fc_outpath= paste(args$out, "l2fc.csv", sep= "/")
 print(paste0('Writing out l2fc file to ', l2fc_outpath))
 write.csv(l2fc, l2fc_outpath, row.names= FALSE, quote= FALSE)
+
+# Ensure that l2fc file was successfully generated ----
+check_file_exists(l2fc_outpath)

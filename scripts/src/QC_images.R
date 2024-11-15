@@ -461,7 +461,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @param id_cols Vector of sample meta column names used to identify each PCR well. 
 #'                This defaults to "pcr_plate", "pcr_well".
 #' @param sig_cols Vector of sample meta column names used to identify a unique treatment condition.
-#' @param control_type String of how the negative controls are designated in the trt_type column in the sample_meta.
+#' @param control_type String of how the negative controls are designated in the pert_type column in the sample_meta.
 #' @param count_threshold Threshold for low read counts.
 #' @param reverse_index2 Boolean set to TRUE if the sequencing involved the reverse complement workflow.
 #' @param out Path to the directory to save the QC images.
@@ -470,7 +470,7 @@ QC_images= function(raw_counts_uncollapsed_path,
                     prism_barcode_counts, unknown_barcode_counts,
                     annotated_counts, normalized_counts= NA, l2fc, 
                     sample_meta,
-                    barcode_col= 'forward_read_cl_barcode',
+                    barcode_col= 'forward_read_barcode',
                     id_cols= c('pcr_plate', 'pcr_well'),
                     cell_line_cols= c('depmap_id'), 
                     sig_cols,
@@ -644,7 +644,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   potential_error= base::tryCatch({
     contams= annotated_counts %>% dplyr::filter(expected_read == FALSE) %>%
       dplyr::mutate(barcode_id= ifelse(is.na(depmap_id), cb_name, depmap_id)) %>%
-      dplyr::group_by(forward_read_cl_barcode, barcode_id) %>% 
+      dplyr::group_by(forward_read_barcode, barcode_id) %>%
       dplyr::summarise(num_wells= n(), median_n= median(n), max_n= max(n)) %>% ungroup() %>%
       dplyr::arrange(desc(num_wells))
     

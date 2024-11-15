@@ -15,7 +15,7 @@ suppressPackageStartupMessages(library(stringr))
 ## returns normalized counts table, filtered for good replicates, and writes out file reporting bad replicates
 ## 
 ## takes:
-##      normmalized_counts - dataframe of normalized counts that must included trt_type column 
+##      normmalized_counts - dataframe of normalized counts that must included pert_type column
 ##          with at least one negcon sample and normalized_n column
 check_replicate_cor = function(normalized_counts, out) {
   tech_rep_cor = normalized_counts %>% 

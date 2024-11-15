@@ -37,8 +37,9 @@ pipeline {
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_dose,pert_dose_unit,day', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
-        string(name: 'CTL_TYPES', defaultValue: 'negcon', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"negcon\" and is used in COMPUTE_LFC.')
+        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
+        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline. This defaults to \"h-b\".')
 
         // Parameters that we don't expect users to change
         separator(
@@ -61,7 +62,7 @@ pipeline {
         string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes')
 
         // Additional parameters ordered by when they first appear
-        string(name: 'BARCODE_COL', defaultValue: 'forward_read_cl_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_cl_barcode\", and the paramter is first used in COLLATE_FASTQ_READS.')
+        string(name: 'BARCODE_COL', defaultValue: 'forward_read_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_barcode\", and the paramter is first used in COLLATE_FASTQ_READS.')
         string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'List of sequencing related columns found in the sample meta. These columns are used to uniquely identify every PCR well in the run. Default value is \"flowcell_names,index_1,index_2\", and the parameter is used in COLLATE_FASTQ_READS.')
         string(name: 'ID_COLS', defaultValue: 'pcr_plate,pcr_well', description: 'List of columns found in the sample meta that are used to create a unique ID for each sample-replicate. This defaults to \"pcr_plate,pcr_well\", but could be any combination sample meta columns that uniquely identifies every well in the run. This parameter is first used in COLLATE_FASTQ_READS.')
         string(name: 'CHUNK_SIZE', defaultValue: '10000000', description: 'Number of rows for a chunk. Due to the large size of the Nori output, some actions are performed in chunks to conserve memory. This parameter sets the size of a chunk and defaults to 10^6 or \"10000000\". This paramter is first used in COLLATE_FASTQ_READS.')
@@ -134,7 +135,7 @@ pipeline {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
-                        'COUNTS', 'SCREEN',
+                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',

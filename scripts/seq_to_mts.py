@@ -120,14 +120,11 @@ def main(args):
         os.makedirs(args.out)
 
     try:
-        fstr = os.path.join(args.build_path, 'l2fc_with_meta_columns.csv')
-        fmatch = glob.glob(fstr)
-        assert (len(fmatch) == 1) , "Too many files found"
         print("Reading in data")
         sample_meta = read_build_file("sample_meta.csv", args)
         level_3 = read_build_file("normalized_counts.csv", args)
-        level_4 = read_build_file("l2fc_with_meta_columns.csv", args)
-        level_5 = read_build_file("collapsed_l2fc_with_meta_columns.csv", args)
+        level_4 = read_build_file("l2fc.csv", args)
+        level_5 = read_build_file("collapsed_l2fc.csv", args)
 
     except IndexError as err:
         logger.error(err)
@@ -139,7 +136,6 @@ def main(args):
     column_mapping = {
         "project_code": "screen",
         "prism_cell_set": "culture",
-        "trt_type": "pert_type",
         "sig_id": "profile_id",
         "bio_rep": "replicate",
         "day": "pert_time",
@@ -217,15 +213,6 @@ def main(args):
 
     level_5["pert_time"] = level_5["pert_time"].astype(str) + " " + level_5["pert_time_unit"]
     level_5["pert_idose"] = level_5["pert_dose"].astype(str) + " " + level_5["pert_dose_unit"]
-
-    # Define a mapping for renaming values
-    trt_type_mapping = {
-        'poscon': 'trt_poscon',
-        'negcon': 'ctl_vehicle'}
-
-    # Replace values in the 'pert_type' column using the mapping
-    sample_meta["pert_type"] = sample_meta["pert_type"].replace(trt_type_mapping)
-    level_3["pert_type"] = level_3["pert_type"].replace(trt_type_mapping)
 
     # Sorting columns to resemble MTS style
     level_4.sort_index(axis=1, inplace=True)

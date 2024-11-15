@@ -22,7 +22,7 @@ parser$add_argument("--id_cols", default= "pcr_plate,pcr_well",
                     help = "Columns that identify a unique PCR well")
 parser$add_argument("--reverse_index2", type="logical", default=FALSE,
                     help= "Reverse complement of index 2 for NovaSeq and NextSeq")
-parser$add_argument("--barcode_col", default= "forward_read_cl_barcode", 
+parser$add_argument("--barcode_col", default= "forward_read_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument('--low_abundance_threshold', default= 20, 
                     help= 'For unknown barcodes, counts below this threshold will be marked as an unknown barcode.')
@@ -54,6 +54,22 @@ if(!validate_columns_exist(sequencing_index_cols, sample_meta)) {
 # Validation: Check that id_cols are present in the sample meta ----
 if(!validate_columns_exist(id_cols, sample_meta)) {
   stop('One or more id_cols is NOT present in the sample meta.')
+}
+
+# Validation: Check that barcode_col is present in the CB_meta ----
+if(!args$barcode_col %in% colnames(CB_meta)) {
+  stop('barcode_col is NOT present in the CB_meta.')
+}
+
+# Validation: Check that barcode_col is present in the cell_line_meta ----
+if(!args$barcode_col %in% colnames(cell_line_meta)) {
+  stop('barcode_col is NOT present in the cell_line_meta.')
+}
+
+# Validation: Check that barcode_col is present in the raw_counts_uncollapsed ----
+raw_counts_uncollapsed_header <- data.table::fread(args$raw_counts_uncollapsed, header= TRUE, sep= ',', nrows = 0)
+if (!args$barcode_col %in% colnames(raw_counts_uncollapsed_header)) {
+  stop('barcode_col is NOT present in the raw_counts_uncollapsed.')
 }
 
 # Run collate_fastq_reads on chunks of raw_counts_uncollapsed.csv ----
@@ -91,6 +107,12 @@ out_file= paste(args$out, 'prism_barcode_counts.csv', sep='/')
 print(paste("Writing prism_barcode_counts.csv to ", out_file))
 write.csv(prism_barcode_counts, out_file, row.names= FALSE, quote= FALSE)
 
+# Ensure that files were successfully generated ----
+check_file_exists(out_file)
+
 out_file= paste(args$out, 'unknown_barcode_counts.csv', sep='/')
 print(paste("Writing unknown_barcode_counts.csv to ", out_file))
 write.csv(unknown_barcode_counts, out_file, row.names= FALSE, quote= FALSE)
+
+# Ensure that files were successfully generated ----
+check_file_exists(out_file)

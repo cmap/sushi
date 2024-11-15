@@ -18,6 +18,7 @@ parameters=(
   "BUILD_DIR:$BUILD_DIR"
   "SCREEN:$SCREEN"
   "API_KEY:$API_KEY"
+  "CONTROL_BARCODES:$CONTROL_BARCODES"
 )
 
 echo $R_LIBS
@@ -26,6 +27,7 @@ args=(
 --screen "$SCREEN"
 --build_dir "$BUILD_DIR"
 --api_key "$API_KEY"
+--control_barcodes "$CONTROL_BARCODES"
 )
 
 echo python3 create_sample_meta.py "${args[@]}"

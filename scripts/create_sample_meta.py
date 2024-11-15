@@ -6,7 +6,7 @@ import os
 
 def fetch_data(screen, api_key):
     url = f"https://api.clue.io/api/v_eps_metadata?filter=%7B%22where%22%3A%7B%22project_code%22%3A%22{screen}%22%7D%7D"
-    headers = {"Accept": "application/json", "user_key": api_key}
+    headers = {"Accept": "application/json", "user_key": api_key, 'prism_key' : 'prism_mts'}
 
     response = requests.get(url, headers=headers)
 
@@ -33,8 +33,27 @@ def save_dataframe(df, build_dir):
 
 
 def rename_columns(df):
-    rename_map = {"index1": "index_1", "index2": "index_2", "pert_id": "compound_id"}
+    rename_map = {"index1": "index_1", "index2": "index_2", "trt_type": "pert_type",
+                  "treatment": "pert_name", "dose": "pert_dose", "dose_unit": "pert_dose_unit"}
     return df.rename(columns=rename_map)
+
+
+def add_control_barcodes(df, control_barcodes):
+    control_barcode_df = df.copy()
+    control_barcode_df["cb_ladder"] = control_barcodes
+    return control_barcode_df
+
+
+def filter_nan_flowcells(df):
+    # Count rows with NaN in "flowcell_names"
+    nan_count = df["flowcell_names"].isna().sum()
+
+    # Print the count if any rows are dropped
+    if nan_count > 0:
+        print(f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped.")
+
+    # Drop rows with NaN in "flowcell_names"
+    return df.dropna(subset=["flowcell_names"])
 
 
 def main():
@@ -54,15 +73,29 @@ def main():
         required=True,
         help="Directory to save the CSV file",
     )
+    parser.add_argument(
+        "--control_barcodes",
+        "-cb",
+        type=str,
+        required=True,
+        help="Type of control barcode ladder, defaults to h-b",
+    )
 
     args = parser.parse_args()
     screen = args.screen
     api_key = args.api_key
     build_dir = args.build_dir
+    control_barcodes = args.control_barcodes
 
     try:
-        df = fetch_data(screen, api_key)
-        df = rename_columns(df)
+        df = (
+            fetch_data(screen, api_key)
+            .pipe(rename_columns)
+            .pipe(add_control_barcodes, control_barcodes)
+            .pipe(filter_nan_flowcells)
+        )
+        print("Retrieved following sample_metadata from COMET: ")
+        print(df.head())
         save_dataframe(df, build_dir)
     except Exception as e:
         print(f"An error occurred: {e}")

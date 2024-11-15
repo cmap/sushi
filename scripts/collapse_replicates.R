@@ -16,7 +16,7 @@ parser$add_argument("-q", "--quietly", action= "store_false", dest= "verbose",
                     help= "Print little output")
 parser$add_argument("-c", "--lfc", default= "l2fc.csv",
                     help= "path to file containing l2fc values")
-parser$add_argument("--sig_cols", default= "cell_set,treatment,dose,dose_unit,day", 
+parser$add_argument("--sig_cols", default= "cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help= "columns used to identify a unique condition")
 parser$add_argument("--cell_line_cols", default= "project_code,depmap_id,ccle_name", 
                     help= "Columns that can describe a cell line")
@@ -37,3 +37,6 @@ collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values, sig_cols= sig_cols, cell_lin
 collapsed_l2fc_outpath= paste(args$out, 'collapsed_l2fc.csv', sep='/')
 print(paste0('Writing out collapsed l2fc file to ', collapsed_l2fc_outpath))
 write.csv(x= collapsed_l2fc, file= collapsed_l2fc_outpath, row.names= FALSE, quote= FALSE)
+
+# Ensure that collapsed file was successfully generated ----
+check_file_exists(collapsed_l2fc_outpath)

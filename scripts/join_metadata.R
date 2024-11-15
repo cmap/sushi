@@ -9,7 +9,7 @@ parser <- ArgumentParser()
 parser$add_argument('--sample_meta', default= 'sample_meta.csv', help= 'Sample meta data for the sequencing run.')
 parser$add_argument('--lfc', default= 'l2fc.csv', help= 'L2FC data.') # level 4
 parser$add_argument('--collapsed_lfc', default= 'collapsed_l2fc.csv', help= 'Collapsed l2fc data.') # level 5
-parser$add_argument('--sig_cols', default= 'cell_set,treatment,dose,dose_unit,day', 
+parser$add_argument('--sig_cols', default= 'cell_set,pert_name,pert_dose,pert_dose_unit,day',
                     help= 'Columns that uniquely identify a condition.') 
 parser$add_argument('--out', default= getwd(), help= 'Path to the output directory.')
 

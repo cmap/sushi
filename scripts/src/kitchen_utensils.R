@@ -97,3 +97,17 @@ validate_unique_samples= function(selected_columns, df) {
     return(TRUE)
   }
 }
+
+#' check_file_exists
+#' 
+#' This function checks that a given file exists, and if not, stops execution.
+#' This is meant to be used at the end of a module to validate that outputs have been generated.
+#' 
+#' @param file_path Path to a file to check
+check_file_exists <- function(file_path) {
+  if (file.exists(file_path)) {
+    message(paste("File ", file_path, " was successfully generated."))
+  } else {
+    stop(paste("Error: File ", file_path, " does not exist, please check the output of this module."))
+  }
+}

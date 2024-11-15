@@ -1,6 +1,7 @@
 options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
 source("./src/cellDB_metadata.R")
+source("./src/kitchen_utensils.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(readr)) #write_delim
@@ -69,13 +70,13 @@ if (!str_detect(cb_ladder, ".csv")){
 }
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-cell_line_cols= c('depmap_id', 'ccle_name', 'Sequence')
+cell_line_cols= c('depmap_id', 'ccle_name', 'forward_read_barcode')
 cell_line_meta <- cell_lines_df %>%
-  rename("Sequence" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
+  rename("forward_read_barcode" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
 
 # Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
 if (nrow(control_bc_df) > 0 & !str_detect(cb_ladder, ".csv") ) {
-  CB_meta <- control_bc_df %>% rename("Sequence" = "sequence", "cb_name" = "name")
+  CB_meta <- control_bc_df %>% rename("forward_read_barcode" = "sequence", "cb_name" = "name")
   # one caveat in the above is that "name" comes from the database, but should be changed to cb_name, so
   #in the future, this renaming shouldn't be necessary
 } else {
@@ -126,4 +127,8 @@ if (nrow(control_bc_df) > 0) {
   control_barcode_out_file = paste(args$out, 'CB_meta.csv', sep='/')
   print(paste("writing CB_meta to: ", control_barcode_out_file))
   write.csv(CB_meta, control_barcode_out_file, row.names=F, quote=F)
-} 
+}
+
+# Ensure that cell_line_meta and cell_set_assay_pool_meta were successfully generated
+check_file_exists(cell_line_out_file)
+check_file_exists(cell_set_assay_pool_out_file)

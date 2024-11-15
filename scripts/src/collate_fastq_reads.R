@@ -25,7 +25,7 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #' maps the sequencing index columns to the ID columns.
 #' 
 #' @param uncollapsed_raw_counts Dataframe of reads from all the fastq files with the following columns -
-#'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", "forward_read_cl_barcode", and "n".
+#'                    "flowcell_name", "flowcell_lane", "index_1", "index_2", "forward_read_barcode", and "n".
 #'                    The flowcell columns are optional. If they do not exists, flowcell filters will be skipped.
 #' @param sample_meta Sample metadata generate for the project which may contain the following columns - 
 #'                    "flowcell_names", "flowcell_lanes", "index_1", "index_2". The sample meta MUST contain
@@ -38,7 +38,7 @@ validate_detected_flowcells= function(detected_flowcells, expected_flowcells) {
 #' @param id_cols ID columns from the sample meta that uniquely identify every PCR well. These columns should not 
 #'                include any sequencing related columns. This parameter defaults onto "pcr_plate", "pcr_well". This 
 #'                parameter can also be a list of the sample conditions columns as long as they uniquely identify every
-#'                PCR well. For example "cell_set", "treatment", "dose", "day", "bio_rep", "tech_rep" can also be used.
+#'                PCR well. For example "cell_set", "pert_name", "dose", "day", "bio_rep", "tech_rep" can also be used.
 #' @param known_barcodes A vector of known PRISM barcodes. If a read does not match a barcode in this list,
 #'                       then its sequence is reassigned to "unknown_reads".
 #' @param reverse_index2 Index 2 should be reversed if the sequencer uses a reverse complement workflow. 
@@ -52,7 +52,7 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                               id_cols= c('pcr_plate', 'pcr_well'),
                               known_barcodes,
                               reverse_index2= FALSE,
-                              barcode_col= 'forward_read_cl_barcode',
+                              barcode_col= 'forward_read_barcode',
                               low_abundance_threshold= 20) {
   require(tidyverse)
   require(data.table)

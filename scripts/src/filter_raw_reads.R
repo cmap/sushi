@@ -23,13 +23,13 @@ validate_cell_set= function(cell_set_and_pool_meta) {
 #' using the given metadata.
 #'
 #' @param prism_barcode_counts Dataframe of reads. The columns of this dataframe should include the id_cols,
-#'                   "forward_read_cl_barcode", and "n".
+#'                   "forward_read_barcode", and "n".
 #' @param sample_meta Dataframe of the metadata for the sequencing run. This file should contain the id_cols,
 #'                    "cell_set", "control_barcodes", etc.
 #' @param cell_set_and_pool_meta Metadata of cell sets and their contents with the following required columns -
 #'                      "cell_set" and "depmap_id".
 #' @param cell_line_meta Master metadata of cell lines with the following required columns -
-#'                       "depmap_id" and "forward_read_cl_barcode".
+#'                       "depmap_id" and "forward_read_barcode".
 #' @param CB_meta Master metadata of control barcodes, their sequences, and their doses. The file should contain 
 #'                the columns - "cb_ladder", "cb_name", and "cb_log10_dose" or "cb_log2_dose".
 #' @param id_cols Columns present in both raw_counts and sample_meta that uniquely identify each PCR well. 
@@ -44,7 +44,7 @@ validate_cell_set= function(cell_set_and_pool_meta) {
 filter_raw_reads= function(prism_barcode_counts, 
                            sample_meta, cell_set_and_pool_meta, cell_line_meta, CB_meta,
                            id_cols= c('pcr_plate', 'pcr_well'),
-                           barcode_col= 'forward_read_cl_barcode') {
+                           barcode_col= 'forward_read_barcode') {
   require(magrittr)
   require(tidyverse)
   require(data.table)
@@ -149,7 +149,7 @@ filter_raw_reads= function(prism_barcode_counts,
   print("Filtering reads ...")
   filtered_counts= annotated_counts[expected_read == TRUE, ] %>%
     dplyr::select(!any_of(c('flowcell_names', 'flowcell_lanes', 'index_1', 'index_2', 
-                            'forward_read_cl_barcode', 'expected_read')))
+                            'forward_read_barcode', 'expected_read')))
   
   # Calculate cell line purity ----
   cell_line_purity= sum(filtered_counts$n)/ sum(prism_barcode_counts$n)
