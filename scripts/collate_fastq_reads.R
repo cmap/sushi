@@ -67,7 +67,8 @@ if(!args$barcode_col %in% colnames(cell_line_meta)) {
 }
 
 # Validation: Check that barcode_col is present in the raw_counts_uncollapsed ----
-if(!args$barcode_col %in% colnames(raw_counts_uncollapsed)) {
+raw_counts_uncollapsed_header <- data.table::fread(args$raw_counts_uncollapsed, header= TRUE, sep= ',', nrows = 0)
+if (!args$barcode_col %in% colnames(raw_counts_uncollapsed_header)) {
   stop('barcode_col is NOT present in the raw_counts_uncollapsed.')
 }
 
