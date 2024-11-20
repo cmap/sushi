@@ -1,3 +1,4 @@
+options(cli.unicode = FALSE)
 library(tidyverse)
 library(data.table)
 library(magrittr)
