@@ -1,13 +1,12 @@
 #!/bin/bash
 
-echo Starting compute_l2fc...
+echo Starting generate_qc_tables...
 
 if [ -z "$BUILD_DIR" ]
 then
 	echo BUILD_DIR not specified
     exit -1
 fi
-
 
 
 #Enforces abs paths
@@ -37,5 +36,5 @@ args=(
 --out "$BUILD_DIR"
 )
 
-echo Rscript compute_l2fc.R "${args[@]}"
-Rscript compute_l2fc.R "${args[@]}"
+echo Rscript generate_qc_tables.R "${args[@]}"
+Rscript qc.R "${args[@]}"
