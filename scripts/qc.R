@@ -16,7 +16,7 @@ parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default
 parser$add_argument("-n", "--negcon_type", default= "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default= "trt_poscon")
 
-parser <- parser$parse_args()
+args <- parser$parse_args()
 
 # Read in metadata files as data.table objects ----
 cell_set_meta= data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep= ',')
