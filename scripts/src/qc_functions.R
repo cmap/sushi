@@ -43,6 +43,8 @@ compute_expected_lines <- function(cell_set_meta) {
 create_id_cols_table <- function(annotated_counts, cell_set_meta, group_cols, metric) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta)
+  # Convert to a dataframe
+  expected_lines <- as.data.table(expected_lines)
 
   # Main annotated counts summarization
   result <- annotated_counts %>%
