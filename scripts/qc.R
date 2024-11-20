@@ -46,7 +46,7 @@ error_rates <- compute_error_rate(
 
 # Merge and compute poscon LFC
 plate_cell_table <- medians_and_mad %>%
-  left_join(error_rates, by = group_cols) %>%
+  left_join(error_rates, by = cell_line_plate_grouping) %>%
   compute_control_lfc(negcon = args$negcon_type, poscon = args$poscon_type)
 
 # Write to file ----------
