@@ -57,7 +57,7 @@ check_file_exists(plate_cell_outpath)
 
 # BY ID_COLS (PCR_PLATE, PCR_WELL) ----------
 
-id_cols_grouping = c("pcr_plate", "pcr_well") # Define columns to group by
+id_cols_grouping <- c("pcr_plate", "pcr_well") # Define columns to group by
 id_cols_table <- create_id_cols_table(annotated_counts = annotated_counts, group_cols = id_cols_grouping,
                                       cell_set_meta = cell_set_meta, metric = 'n')
 
