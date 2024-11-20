@@ -23,6 +23,11 @@ cell_set_meta= data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep=
 normalized_counts= data.table::fread(args$normalized_counts, header= TRUE, sep= ',')
 annotated_counts= data.table::fread(args$annotated_counts, header= TRUE, sep= ',')
 
+# Create qc_table output directory if it doesn't exist ----
+if (!dir.exists(paste0(args$out, "/qc_tables"))) {
+  dir.create(paste0(args$out, "/qc_tables"))
+}
+
 # CELL LINE BY PLATE (pcr_plate,depmap_id) ----------
 
 cell_line_plate_grouping <- c("depmap_id", "pcr_plate") # Define columns to group by
