@@ -2,6 +2,7 @@ library(tidyverse)
 library(data.table)
 library(magrittr)
 library(data.table)
+library (PRROC)
 
 # BY ID_COLS (PCR_PLATE, PCR_WELL) ----------
 
@@ -38,7 +39,7 @@ compute_expected_lines <- function(cell_set_meta) {
 }
 
 # Main function ----------
-id_cols_table <- function(annotated_counts, cell_set_meta, group_cols, metric) {
+create_id_cols_table <- function(annotated_counts, cell_set_meta, group_cols, metric) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta)
 
@@ -75,13 +76,62 @@ id_cols_table <- function(annotated_counts, cell_set_meta, group_cols, metric) {
   return(result)
 }
 
+# CELL LINE BY PLATE (PCR_PLATE, CELL LINE) ----------
 
-# Testing ----------
+# Helper functions ----------
 
-filtered_counts <- data.table::fread("/Users/jdavis/Downloads/MTS_SEQ003/filtered_counts.csv", header= TRUE, sep = ',')
-sample_meta <- data.table::fread("/Users/jdavis/Downloads/MTS_SEQ003/sample_meta.csv", header= TRUE, sep = ',')
-cell_set_meta <- data.table::fread("/Users/jdavis/Downloads/MTS_SEQ003/cell_set_and_pool_meta.csv", header= TRUE, sep = ',')
-annotated_counts <- data.table::fread("/Users/jdavis/Downloads/MTS_SEQ003/annotated_counts.csv", header= TRUE, sep = ',')
-normalized_counts <- data.table::fread("/Users/jdavis/Downloads/MTS_SEQ003/normalized_counts.csv", header= TRUE, sep = ',')
+# Compute error rate
+compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c("depmap_id", "pcr_plate"),
+                               negcon = "ctl_vehicle", poscon = "trt_poscon") {
+  df %>%
+    filter(
+      pert_type %in% c(negcon, poscon),
+      is.finite(.data[[metric]]),
+      !is.na(pool_id)
+    ) %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      error_rate = {
+        roc_data <- PRROC::roc.curve(
+          scores.class0 = .data[[metric]],
+          weights.class0 = pert_type == negcon,
+          curve = TRUE
+        )
+        min(roc_data$curve[, 1] + 1 - roc_data$curve[, 2]) / 2
+      },
+      .groups = "drop"
+    )
+}
 
-table_out <- id_cols_table(annotated_counts = annotated_counts, cell_set_meta = cell_set_meta, group_cols = c("pcr_plate", "pcr_well", "cell_set"), metric = "n")
+
+# Compute vehicle and positive control median and MAD for both raw and normalized data
+compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_plate"),
+                                    negcon = "ctl_vehicle", poscon = "trt_poscon") {
+  # Group and compute medians/MADs
+  df %>%
+    filter(pert_type %in% c(negcon, poscon)) %>%
+    group_by(across(all_of(c(group_cols, "pert_type")))) %>%
+    summarise(
+      median_normalized = median(log2_normalized_n, na.rm = TRUE),
+      mad_normalized = mad(log2_normalized_n, na.rm = TRUE),
+      median_raw = median(log2_n, na.rm = TRUE),
+      mad_raw = mad(log2_n, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    pivot_wider(
+      names_from = pert_type,
+      values_from = c(median_normalized, mad_normalized, median_raw, mad_raw),
+      names_sep = "_"
+    )
+}
+
+# Compute log fold change
+compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon") {
+  df %>%
+    mutate(
+      lfc_normalized = .data[[paste0("median_normalized_", poscon)]] -
+                       .data[[paste0("median_normalized_", negcon)]],
+      lfc_raw = .data[[paste0("median_raw_", poscon)]] -
+                .data[[paste0("median_raw_", negcon)]]
+    )
+}
