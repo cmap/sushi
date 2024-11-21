@@ -1,9 +1,11 @@
 options(cli.unicode = FALSE)
-library(argparse)
-library(magrittr)
-library(tidyverse)
-library(data.table)
-library(jsonlite)
+suppressPackageStartupMessages({
+  library(argparse)
+  library(magrittr)
+  library(tidyverse)
+  library(data.table)
+  library(jsonlite)
+})
 source ("./src/qc_functions.R")
 source ("./src/kitchen_utensils.R")
 

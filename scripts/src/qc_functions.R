@@ -108,6 +108,7 @@ compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c(
 compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_plate"),
                                     negcon = "ctl_vehicle", poscon = "trt_poscon") {
   paste0("Adding control median and MAD values for ", negcon, " and ", poscon, ".....")
+  paste0("Computing falses sensitivity probability for ", negcon, ".....")
   # Group and compute medians/MADs
   df %>%
     dplyr::filter(pert_type %in% c(negcon, poscon)) %>%
@@ -125,7 +126,6 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
       values_from = c(median_normalized, mad_normalized, median_raw, mad_raw, n_replicates),
       names_sep = "_"
     ) %>%
-    paste0("Computing falses sensitivity probability for ", negcon, ".....")
     dplyr::rowwise() %>%
     dplyr::mutate(
       false_sensitivity_probability_50 = pnorm(
