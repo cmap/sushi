@@ -64,7 +64,7 @@ poscon_lfc <- compute_control_lfc(
 # Compute cell line fractions per plate
 cell_line_fractions <- compute_cl_fractions(
   df = filtered_counts,
-  group_cols = cell_line_plate_grouping
+  grouping_cols = cell_line_plate_grouping
 )
 
 # Merge all tables together
