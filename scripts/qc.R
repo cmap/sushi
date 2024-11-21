@@ -71,7 +71,6 @@ cell_line_fractions <- compute_cl_fractions(
 paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together.....")
 plate_cell_table <- medians_and_mad %>%
   dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
-  dplyr::left_join(false_sensitivity, by = cell_line_plate_grouping) %>%
   dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
   dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
 
