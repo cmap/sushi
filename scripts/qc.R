@@ -33,6 +33,7 @@ if (!dir.exists(paste0(args$out, "/qc_tables"))) {
 # CELL LINE BY PLATE (pcr_plate,depmap_id) ----------
 
 cell_line_plate_grouping <- c("depmap_id", "pcr_plate") # Define columns to group by
+paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
 
 # Compute control medians and MAD
 medians_and_mad <- compute_ctl_medians_and_mad(
@@ -51,12 +52,6 @@ error_rates <- compute_error_rate(
   poscon = "trt_poscon"
 )
 
-# Compute false sensitivity probability
-false_sensitivity <- compute_false_sensitivity(
-  df = medians_and_mad,
-  negcon_type = args$negcon_type
-)
-
 # Compute poscon LFC
 poscon_lfc <- compute_control_lfc(
   df = medians_and_mad,
@@ -70,12 +65,13 @@ cell_line_fractions <- compute_cl_fractions(
   group_cols = cell_line_plate_grouping
 )
 
-# Merge and compute poscon LFC
+# Merge all tables together
+paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together.....")
 plate_cell_table <- medians_and_mad %>%
-  left_join(error_rates, by = cell_line_plate_grouping) %>%
-  left_join(false_sensitivity, by = cell_line_plate_grouping) %>%
-  left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
-  left_join(cell_line_fractions, by = cell_line_plate_grouping)
+  dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
+  dplyr::left_join(false_sensitivity, by = cell_line_plate_grouping) %>%
+  dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
+  dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
 
 # Write to file ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
@@ -86,6 +82,7 @@ check_file_exists(plate_cell_outpath)
 # BY ID_COLS (PCR_PLATE, PCR_WELL) ----------
 
 id_cols_grouping <- c("pcr_plate", "pcr_well")
+paste0("Computing QC metrics grouping by ", paste0(id_cols_grouping, collapse = ","), ".....")
 
 read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = c("pcr_plate", "pcr_well"),
                                  cell_set_meta= cell_set_meta, metric = "n")
@@ -93,10 +90,13 @@ read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols
 skew <- compute_skew(annotated_counts, group_cols = c("pcr_plate", "pcr_well"), metric = "n")
 
 id_cols_table <- read_stats %>%
-  left_join(skew, by = id_cols_grouping)
+  dplyr::left_join(skew, by = id_cols_grouping)
 
 # Write to file ----------
+paste0("Merging ", paste0(id_cols_grouping, collapse = ","), " QC tables together.....")
 id_cols_outpath <- paste0(args$out, "/qc_tables/id_cols_qc_table.csv")
 print(paste0("Writing out id_cols_qc_table to ", id_cols_outpath))
 write.csv(x = id_cols_table, file = id_cols_outpath, row.names = FALSE, quote = FALSE)
 check_file_exists(id_cols_outpath)
+
+paste0("QC module completed.")
