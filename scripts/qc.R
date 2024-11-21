@@ -12,6 +12,7 @@ parser <- ArgumentParser()
 parser$add_argument("--cell_set_and_pool_meta", default="cell_set_and_pool_meta.csv", help= "Cell line metadata")
 parser$add_argument("--normalized_counts", default= "normalized_counts.csv", help= "normalized counts file")
 parser$add_argument("--annotated_counts", default= "annotated_counts.csv", help= "annotated counts file")
+parser$add_argument("--filtered_counts", default= "filtered_counts.csv", help= "filtered counts file")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 parser$add_argument("-n", "--negcon_type", default= "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default= "trt_poscon")
@@ -19,9 +20,10 @@ parser$add_argument("-p", "--poscon_type", default= "trt_poscon")
 args <- parser$parse_args()
 
 # Read in metadata files as data.table objects ----
-cell_set_meta= data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep= ',')
-normalized_counts= data.table::fread(args$normalized_counts, header= TRUE, sep= ',')
-annotated_counts= data.table::fread(args$annotated_counts, header= TRUE, sep= ',')
+cell_set_meta <- data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep= ',')
+normalized_counts <- data.table::fread(args$normalized_counts, header= TRUE, sep= ',')
+annotated_counts <- data.table::fread(args$annotated_counts, header= TRUE, sep= ',')
+filtered_counts <- data.table::fread(args$filtered_counts, header= TRUE, sep= ',')
 
 # Create qc_table output directory if it doesn't exist ----
 if (!dir.exists(paste0(args$out, "/qc_tables"))) {
@@ -62,11 +64,18 @@ poscon_lfc <- compute_control_lfc(
   poscon = args$poscon_type
 )
 
+# Compute cell line fractions per plate
+cell_line_fractions <- compute_cl_fractions(
+  df = filtered_counts,
+  group_cols = cell_line_plate_grouping
+)
+
 # Merge and compute poscon LFC
 plate_cell_table <- medians_and_mad %>%
   left_join(error_rates, by = cell_line_plate_grouping) %>%
   left_join(false_sensitivity, by = cell_line_plate_grouping) %>%
-  left_join(poscon_lfc, by = cell_line_plate_grouping)
+  left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
+  left_join(cell_line_fractions, by = cell_line_plate_grouping)
 
 # Write to file ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
