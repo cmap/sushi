@@ -49,25 +49,25 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
     dplyr::group_by(across(all_of(group_cols))) %>%
     dplyr::summarise(
       # Total reads
-      n_total_reads = dplyr::sum(.data[[metric]], na.rm = TRUE),
+      n_total_reads = sum(.data[[metric]], na.rm = TRUE),
       # Reads mapping to cell lines
-      n_cl_reads = dplyr::sum(.data[[metric]][expected_read], na.rm = TRUE),
+      n_cl_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
       # Fraction of reads mapping to cell lines
       fraction_expected_reads = n_cl_reads / n_total_reads,
       # Reads mapping to control barcodes
-      n_cb_reads = dplyr::sum(!is.na(cb_name) & cb_name != "", na.rm = TRUE),
+      n_cb_reads = sum(!is.na(cb_name) & cb_name != "", na.rm = TRUE),
       # Spearman correlation of control barcodes
-      cb_spearman = if (dplyr::sum(!is.na(cb_name) & !is.finite(cb_log2_dose)) > 1) cor(
+      cb_spearman = if (sum(!is.na(cb_name) & !is.finite(cb_log2_dose)) > 1) cor(
         cb_log2_dose[!is.na(cb_name) & !is.finite(cb_log2_dose)],
         .data[[metric]][!is.na(cb_name) & !is.finite(cb_log2_dose)],
         method = "spearman",
         use = "complete.obs"
       ),
       # Number of cell lines with coverage below 50 and 90 reads
-      n_cl_below_50 = dplyr::sum(.data[[metric]] < 50, na.rm = TRUE),
-      n_cl_below_95 = dplyr::sum(.data[[metric]] < 90, na.rm = TRUE),
+      n_cl_below_50 = sum(.data[[metric]] < 50, na.rm = TRUE),
+      n_cl_below_95 = sum(.data[[metric]] < 90, na.rm = TRUE),
       # Number of cell lines with coverage above 40 reads
-      n_lines_recovered = dplyr::sum(.data[[metric]] >= 40 & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
+      n_lines_recovered = sum(.data[[metric]] >= 40 & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
       # Number of expected lines based on metadata
       n_expected_lines = max(n_expected_lines, na.rm = TRUE), # Bring forward from join
       # Fraction of cell lines with coverage above 40 reads
