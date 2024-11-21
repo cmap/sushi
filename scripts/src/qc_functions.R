@@ -39,8 +39,8 @@ compute_expected_lines <- function(cell_set_meta) {
     )
 }
 
-# Main function ----------
-create_id_cols_table <- function(annotated_counts, cell_set_meta, group_cols, metric) {
+compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("pcr_plate","pcr_well"),
+                               metric = "n") {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta)
   # Convert to a dataframe
@@ -68,15 +68,6 @@ create_id_cols_table <- function(annotated_counts, cell_set_meta, group_cols, me
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
       .groups = "drop"
     )
-
-  # Compute skew
-  skew <- compute_skew(annotated_counts, group_cols, metric)
-
-  # Merge skew into result
-  result <- result %>%
-    left_join(skew, by = group_cols)
-
-  return(result)
 }
 
 # CELL LINE BY PLATE (PCR_PLATE, CELL LINE) ----------
@@ -137,4 +128,21 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
       lfc_raw = .data[[paste0("median_raw_", poscon)]] -
                 .data[[paste0("median_raw_", negcon)]]
     )
+}
+
+compute_false_sensitivity <- function(df, negcon_type = "ctl_vehicle") {
+  # Define column to use
+  col <- paste0("mad_normalized_", negcon_type)
+  print(paste0("Computing false sensitivity probability using column: ", col))
+
+  # Group by the specified columns and calculate the probability
+  result <- df %>%
+    mutate(
+      false_sensitivity_probability = pnorm(
+        -2,
+        sd = .data[[col]] * sqrt((1/32 + 1/3) * pi/2)
+      )
+    )
+
+  return(result)
 }

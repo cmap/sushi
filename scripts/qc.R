@@ -49,10 +49,24 @@ error_rates <- compute_error_rate(
   poscon = "trt_poscon"
 )
 
+# Compute false sensitivity probability
+false_sensitivity <- compute_false_sensitivity(
+  df = medians_and_mad,
+  negcon_type = args$negcon_type
+)
+
+# Compute poscon LFC
+poscon_lfc <- compute_control_lfc(
+  df = medians_and_mad,
+  negcon = args$negcon_type,
+  poscon = args$poscon_type
+)
+
 # Merge and compute poscon LFC
 plate_cell_table <- medians_and_mad %>%
   left_join(error_rates, by = cell_line_plate_grouping) %>%
-  compute_control_lfc(negcon = args$negcon_type, poscon = args$poscon_type)
+  left_join(false_sensitivity, by = cell_line_plate_grouping) %>%
+  left_join(poscon_lfc, by = cell_line_plate_grouping)
 
 # Write to file ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
@@ -62,9 +76,15 @@ check_file_exists(plate_cell_outpath)
 
 # BY ID_COLS (PCR_PLATE, PCR_WELL) ----------
 
-id_cols_grouping <- c("pcr_plate", "pcr_well") # Define columns to group by
-id_cols_table <- create_id_cols_table(annotated_counts = annotated_counts, group_cols = id_cols_grouping,
-                                      cell_set_meta = cell_set_meta, metric = 'n')
+id_cols_grouping <- c("pcr_plate", "pcr_well")
+
+read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = c("pcr_plate", "pcr_well"),
+                                 cell_set_meta= cell_set_meta, metric = "n")
+
+skew <- compute_skew(annotated_counts, group_cols = c("pcr_plate", "pcr_well"), metric = "n")
+
+id_cols_table <- read_stats %>%
+  left_join(skew, by = id_cols_grouping)
 
 # Write to file ----------
 id_cols_outpath <- paste0(args$out, "/qc_tables/id_cols_qc_table.csv")
