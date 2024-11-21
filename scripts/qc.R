@@ -22,12 +22,17 @@ parser$add_argument("-p", "--poscon_type", default= "trt_poscon")
 args <- parser$parse_args()
 
 # Read in metadata files as data.table objects ----
+paste0("Reading in ", args$cell_set_and_pool_meta, ".....")
 cell_set_meta <- data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep= ',')
+paste0("Reading in ", args$normalized_counts, ".....")
 normalized_counts <- data.table::fread(args$normalized_counts, header= TRUE, sep= ',')
+paste0("Reading in ", args$annotated_counts, ".....")
 annotated_counts <- data.table::fread(args$annotated_counts, header= TRUE, sep= ',')
+paste0("Reading in ", args$filtered_counts, ".....")
 filtered_counts <- data.table::fread(args$filtered_counts, header= TRUE, sep= ',')
 
 # Create qc_table output directory if it doesn't exist ----
+paste0("Creating output directory ", args$out, "/qc_tables.....")
 if (!dir.exists(paste0(args$out, "/qc_tables"))) {
   dir.create(paste0(args$out, "/qc_tables"))
 }
