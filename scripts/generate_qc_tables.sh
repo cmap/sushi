@@ -36,6 +36,8 @@ args=(
 --poscon_type "$POSCON_TYPE"
 --cell_set_and_pool_meta "$CELL_SET_AND_POOL_META"
 --out "$BUILD_DIR"
+--id_cols "$ID_COLS"
+--cell_line_cols "$CELL_LINE_COLS"
 )
 
 echo Rscript generate_qc_tables.R "${args[@]}"

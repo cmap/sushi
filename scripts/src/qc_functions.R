@@ -26,15 +26,15 @@ compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n
     dplyr::ungroup()
 }
 
-compute_expected_lines <- function(cell_set_meta) {
+compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
   # Get number of expected cell lines for each cell_set
   cell_set_meta %>%
-    dplyr::group_by(depmap_id) %>%
+    dplyr::group_by(cell_line_cols) %>%
     dplyr::filter(n() == 1) %>%
     dplyr::ungroup() %>%
     dplyr::group_by(cell_set) %>%
     dplyr::summarise(
-      n_expected_lines = dplyr::n_distinct(depmap_id), # Count unique depmap_id for each cell_set
+      n_expected_lines = dplyr::n_distinct(cell_line_cols), # Count unique cell_lines for each cell_set
     ) %>%
     dplyr::ungroup()
 }
@@ -42,7 +42,7 @@ compute_expected_lines <- function(cell_set_meta) {
 compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("pcr_plate","pcr_well"),
                                metric = "n") {
   # Compute expected lines from cell_set_meta
-  expected_lines <- compute_expected_lines(cell_set_meta)
+  expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
   result <- annotated_counts %>%
     dplyr::left_join(expected_lines, by = "cell_set") %>% # Add n_expected_lines from lookup
@@ -51,27 +51,39 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
       # Total reads
       n_total_reads = sum(.data[[metric]], na.rm = TRUE),
       # Reads mapping to cell lines
-      n_cl_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
+      n_bc_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
       # Fraction of reads mapping to cell lines
-      fraction_expected_reads = n_cl_reads / n_total_reads,
+      fraction_expected_reads = n_bc_reads / n_total_reads,
       # Reads mapping to control barcodes
       n_cb_reads = sum(!is.na(cb_name) & cb_name != "", na.rm = TRUE),
       # Spearman correlation of control barcodes
+      # TODO: This should go to normaliation module
       cb_spearman = if (sum(!is.na(cb_name) & !is.finite(cb_log2_dose)) > 1) cor(
         cb_log2_dose[!is.na(cb_name) & !is.finite(cb_log2_dose)],
         .data[[metric]][!is.na(cb_name) & !is.finite(cb_log2_dose)],
         method = "spearman",
-        use = "complete.obs"
+        use = "pairwise.complete.obs"
       ),
-      # Number of cell lines with coverage below 50 and 90 reads
-      n_cl_below_50 = sum(.data[[metric]] < 50, na.rm = TRUE),
-      n_cl_below_95 = sum(.data[[metric]] < 90, na.rm = TRUE),
       # Number of cell lines with coverage above 40 reads
+      #TODO: Can get 40 from jenkins param
       n_lines_recovered = sum(.data[[metric]] >= 40 & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
       # Number of expected lines based on metadata
       n_expected_lines = max(n_expected_lines, na.rm = TRUE), # Bring forward from join
       # Fraction of cell lines with coverage above 40 reads
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
+    ) %>%
+    dplyr::ungroup()
+}
+
+# Compute how manny cell lines are below 90% and 50% viability
+# TODO: requires that pcr_well be included in l2fc table (pre-collapse)
+# TODO: May not need this at all, will not need to move
+compute_fraction_cl_below <- function(l2fc, group_cols = c("pcr_plate", "pcr_well"), metric = "l2fc") {
+  l2fc %>%
+    dplyr::group_by(across(all_of(group_cols))) %>%
+    dplyr::summarise(
+      n_below_50 = sum(.data[[metric]] < -5.64386, na.rm = TRUE),
+      n_below_90 = sum(.data[[metric]] < -6.49185, na.rm = TRUE),
     ) %>%
     dplyr::ungroup()
 }

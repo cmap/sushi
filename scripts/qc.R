@@ -18,6 +18,8 @@ parser$add_argument("--filtered_counts", default= "filtered_counts.csv", help= "
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 parser$add_argument("-n", "--negcon_type", default= "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default= "trt_poscon")
+parser$add_argument("--cell_line_cols", default= "depmap_id,pool_id")
+parser$add_argument("--id_cols", default= "pcr_plate,pcr_well")
 
 args <- parser$parse_args()
 
@@ -37,9 +39,10 @@ if (!dir.exists(paste0(args$out, "/qc_tables"))) {
   dir.create(paste0(args$out, "/qc_tables"))
 }
 
-# CELL LINE BY PLATE (pcr_plate,depmap_id) ----------
+# CELL LINE BY PLATE (pcr_plate,depmap_id) ---------
 
-cell_line_plate_grouping <- c("depmap_id", "pcr_plate") # Define columns to group by
+cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
+cell_line_plate_grouping <- c(cell_line_list,"pcr_plate") # Define columns to group by
 paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
 
 # Compute control medians and MAD
@@ -55,8 +58,8 @@ error_rates <- compute_error_rate(
   df = normalized_counts,
   metric = "log2_normalized_n",
   group_cols = cell_line_plate_grouping,
-  negcon = "ctl_vehicle",
-  poscon = "trt_poscon"
+  negcon = args$negcon_type,
+  poscon = args$poscon_type
 )
 
 # Compute poscon LFC
@@ -85,21 +88,21 @@ print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(x = plate_cell_table, file = plate_cell_outpath, row.names = FALSE, quote = FALSE)
 check_file_exists(plate_cell_outpath)
 
-# BY ID_COLS (PCR_PLATE, PCR_WELL) ----------
+# BY WELL (PCR_PLATE, PCR_WELL) ----------
 
-id_cols_grouping <- c("pcr_plate", "pcr_well")
-paste0("Computing QC metrics grouping by ", paste0(id_cols_grouping, collapse = ","), ".....")
+id_cols_list <- strsplit(id_cols, ",")[[1]]
+paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
 
-read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = c("pcr_plate", "pcr_well"),
+read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = id_cols_list,
                                  cell_set_meta= cell_set_meta, metric = "n")
 
-skew <- compute_skew(annotated_counts, group_cols = c("pcr_plate", "pcr_well"), metric = "n")
+skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
 
 id_cols_table <- read_stats %>%
-  dplyr::left_join(skew, by = id_cols_grouping)
+  dplyr::left_join(skew, by = id_cols_list)
 
 # Write to file ----------
-paste0("Merging ", paste0(id_cols_grouping, collapse = ","), " QC tables together.....")
+paste0("Merging ", paste0(id_cols_list, collapse = ","), " QC tables together.....")
 id_cols_outpath <- paste0(args$out, "/qc_tables/id_cols_qc_table.csv")
 print(paste0("Writing out id_cols_qc_table to ", id_cols_outpath))
 write.csv(x = id_cols_table, file = id_cols_outpath, row.names = FALSE, quote = FALSE)
