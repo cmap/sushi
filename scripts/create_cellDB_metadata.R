@@ -63,7 +63,7 @@ assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
 #if custom cb_ladder is not provided, pull from CellDB
 if (!str_detect(cb_ladder, ".csv")){ 
   control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, 
-                                     filter = list(where = list(set = cb_ladder), fields = c("sequence", "cb_name", "cb_log10_dose")))
+                                     filter = list(where = list(set = cb_ladder), fields = c("sequence", "name", "log_dose", "set")))
 } else {
   file_path <- file.path(args$out, cb_ladder)
   control_bc_df <- read.csv(file_path)
@@ -76,7 +76,8 @@ cell_line_meta <- cell_lines_df %>%
 
 # Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
 if (nrow(control_bc_df) > 0 & !str_detect(cb_ladder, ".csv") ) {
-  CB_meta <- control_bc_df %>% rename("forward_read_barcode" = "sequence", "cb_name" = "name")
+  CB_meta <- control_bc_df %>% rename("forward_read_barcode" = "sequence", "cb_name" = "name", "ladder" = "set",
+                                      "log_10_dose" = "log_dose")
   # one caveat in the above is that "name" comes from the database, but should be changed to cb_name, so
   #in the future, this renaming shouldn't be necessary
 } else {
