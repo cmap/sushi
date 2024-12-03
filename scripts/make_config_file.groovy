@@ -40,7 +40,7 @@ pipeline {
         string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_dose,pert_dose_unit,day', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
-        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline. This defaults to \"h-b\".')
+        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline. This defaults to \"h-b\". This is only necessary to change if you are not getting your control barcodes from cellDB.')
 
         // Parameters that we don't expect users to change
         separator(
