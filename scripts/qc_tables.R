@@ -57,6 +57,7 @@ if (!dir.exists(paste0(args$out, "/qc_tables")))
 # DEFINE COLUMNS
 cell_line_cols <- args$cell_line_cols
 cell_line_cols_list <- strsplit(cell_line_cols, ",")[[1]]
+cell_plate_list <- c(cell_line_cols, "pcr_plate")
 
 id_cols <- args$id_cols
 id_cols_list <- strsplit(id_cols, ",")[[1]]
@@ -66,8 +67,8 @@ count_threshold <- as.numeric(args$count_threshold)
 # CELL LINE BY PLATE (pcr_plate,depmap_id) ---------
 plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts, filtered_counts = filtered_counts,
-    cell_line_cols = cell_line_cols_list
-)
+    cell_line_cols = cell_plate_list)
+
 # Write to file ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
 print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))

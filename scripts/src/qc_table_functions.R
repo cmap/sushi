@@ -338,8 +338,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   medians_and_mad <- compute_ctl_medians_and_mad(
     df = normalized_counts,
     group_cols = cell_line_plate_grouping,
-    negcon = "ctl_vehicle",
-    poscon = "trt_poscon"
+    negcon = args$negcon_type,
+    poscon = args$poscon_type
   )
 
   # Compute error rate
