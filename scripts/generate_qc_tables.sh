@@ -38,6 +38,7 @@ args=(
 --out "$BUILD_DIR"
 --id_cols "$ID_COLS"
 --cell_line_cols "$CELL_LINE_COLS"
+--count_threshold "$COUNT_THRESHOLD"
 )
 
 echo Rscript qc_tables.R "${args[@]}"

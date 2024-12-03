@@ -73,8 +73,10 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
                   mean_y= mean(cb_log2_dose),
                   residual2= (cb_log2_dose- log2_normalized_n)^2,
                   squares2= (cb_log2_dose- mean_y)^2,
-                  norm_r2= 1- sum(residual2)/sum(squares2)) %>% dplyr::ungroup() %>%
-    dplyr::distinct(pick(all_of(c(id_cols, 'cb_intercept', 'norm_mae', 'norm_r2'))))
+                  norm_r2= 1- sum(residual2)/sum(squares2),
+                  cb_spearman= cor(cb_log2_dose, log2_n, method= 'spearman', use= 'pairwise.complete.obs')) %>%
+    dplyr::ungroup() %>%
+    dplyr::distinct(pick(all_of(c(id_cols, 'cb_intercept', 'norm_mae', 'norm_r2', 'cb_spearman'))))
   
   # Normalize entries ----
   normalized= X %>% dplyr::inner_join(fit_stats, by=id_cols) %>%

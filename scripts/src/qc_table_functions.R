@@ -40,7 +40,7 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 }
 
 compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("pcr_plate","pcr_well"),
-                               metric = "n", cell_line_cols = c("depmap_id", "pool_id")) {
+                               metric = "n", cell_line_cols = c("depmap_id", "pool_id"), count_threshold = 40) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
@@ -56,38 +56,31 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
       fraction_expected_reads = n_bc_reads / n_total_reads,
       # Reads mapping to control barcodes
       n_cb_reads = sum(!is.na(cb_name) & cb_name != "", na.rm = TRUE),
-      # Spearman correlation of control barcodes
-      # TODO: This should go to normaliation module
-      cb_spearman = if (sum(!is.na(cb_name) & !is.finite(cb_log2_dose)) > 1) cor(
-        cb_log2_dose[!is.na(cb_name) & !is.finite(cb_log2_dose)],
-        .data[[metric]][!is.na(cb_name) & !is.finite(cb_log2_dose)],
-        method = "spearman",
-        use = "pairwise.complete.obs"
-      ),
       # Number of cell lines with coverage above 40 reads
-      #TODO: Can get 40 from jenkins param
-      n_lines_recovered = sum(.data[[metric]] >= 40 & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
+      n_lines_recovered = sum(.data[[metric]] >= count_threshold & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
       # Number of expected lines based on metadata
       n_expected_lines = max(n_expected_lines, na.rm = TRUE), # Bring forward from join
-      # Fraction of cell lines with coverage above 40 reads
+      # Fraction of cell lines with coverage above count threshold
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
     ) %>%
     dplyr::ungroup()
 }
 
 # Get control barcode metrics from normalized counts
-get_cb_metrics <- function(normalized_counts, group_cols = c("pcr_plate", "pcr_well"), metrics = c("cb_intercept", "norm_mae", "norm_r2")) {
+get_cb_metrics <- function(normalized_counts, group_cols = c("pcr_plate", "pcr_well"), metrics = c("cb_intercept", "norm_mae", "norm_r2", "cb_spearman")) {
   normalized_counts %>%
     select(all_of(c(group_cols, metrics))) %>%
     unique()
 }
 
 # Table generation function
-generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, id_cols_list, cell_line_cols) {
+generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, id_cols_list, cell_line_cols,
+                                   count_threshold= 40) {
   paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
 
   read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = id_cols_list,
-                                   cell_set_meta= cell_set_meta, metric = "n", cell_line_cols = cell_line_cols)
+                                   cell_set_meta= cell_set_meta, metric = "n", cell_line_cols = cell_line_cols,
+  count_threshold = count_threshold)
 
   skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
 
