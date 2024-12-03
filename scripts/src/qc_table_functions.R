@@ -304,9 +304,9 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
   paste0("Computing cell line fractions for ", metric, ".....")
   df %>%
     dplyr::group_by(across(all_of(grouping_cols))) %>%
-    dplyr::mutate(
+    dplyr::summarise(
       total_reads = sum(.data[[metric]], na.rm = TRUE),  # Total reads per group
-      fraction_of_reads = .data[[metric]] / total_reads  # Fraction of reads for each entry
+      fraction_of_reads = sum(.data[[metric]], na.rm = TRUE) / sum(.data[[metric]], na.rm = TRUE)  # Fraction of reads for each entry
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(all_of(grouping_cols), total_reads, fraction_of_reads)
