@@ -39,67 +39,26 @@ if (!dir.exists(paste0(args$out, "/qc_tables"))) {
   dir.create(paste0(args$out, "/qc_tables"))
 }
 
+# DEFINE COLUMNS
+cell_line_cols <- args$cell_line_cols
+cell_line_cols_list <- strsplit(cell_line_cols, ",")[[1]]
+
+id_cols <- args$id_cols
+id_cols_list <- strsplit(id_cols, ",")[[1]]
+
 # CELL LINE BY PLATE (pcr_plate,depmap_id) ---------
-
-cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
-cell_line_plate_grouping <- c(cell_line_list,"pcr_plate") # Define columns to group by
-paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
-
-# Compute control medians and MAD
-medians_and_mad <- compute_ctl_medians_and_mad(
-  df = normalized_counts,
-  group_cols = cell_line_plate_grouping,
-  negcon = "ctl_vehicle",
-  poscon = "trt_poscon"
-)
-
-# Compute error rate
-error_rates <- compute_error_rate(
-  df = normalized_counts,
-  metric = "log2_normalized_n",
-  group_cols = cell_line_plate_grouping,
-  negcon = args$negcon_type,
-  poscon = args$poscon_type
-)
-
-# Compute poscon LFC
-poscon_lfc <- compute_control_lfc(
-  df = medians_and_mad,
-  negcon = args$negcon_type,
-  poscon = args$poscon_type
-)
-
-# Compute cell line fractions per plate
-cell_line_fractions <- compute_cl_fractions(
-  df = filtered_counts,
-  grouping_cols = cell_line_plate_grouping
-)
-
-# Merge all tables together
-paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together.....")
-plate_cell_table <- medians_and_mad %>%
-  dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
-  dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
-  dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
-
+plate_cell_table <- generate_cell_plate_table(normalized_counts = normalized_counts, filtered_counts = filtered_counts,
+                          cell_line_cols = cell_line_cols_list)
 # Write to file ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
 print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(x = plate_cell_table, file = plate_cell_outpath, row.names = FALSE, quote = FALSE)
 check_file_exists(plate_cell_outpath)
 
+
 # BY WELL (PCR_PLATE, PCR_WELL) ----------
-
-id_cols_list <- strsplit(id_cols, ",")[[1]]
-paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
-
-read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = id_cols_list,
-                                 cell_set_meta= cell_set_meta, metric = "n")
-
-skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
-
-id_cols_table <- read_stats %>%
-  dplyr::left_join(skew, by = id_cols_list)
+id_cols_table <- generate_id_cols_table(normalized_counts = normalized_counts, annotated_counts = annotated_counts,
+                                        cell_set_meta = cell_set_meta, id_cols_list = id_cols_list, cell_line_cols = cell_line_cols_list)
 
 # Write to file ----------
 paste0("Merging ", paste0(id_cols_list, collapse = ","), " QC tables together.....")

@@ -40,5 +40,5 @@ args=(
 --cell_line_cols "$CELL_LINE_COLS"
 )
 
-echo Rscript generate_qc_tables.R "${args[@]}"
-Rscript qc.R "${args[@]}"
+echo Rscript qc_tables.R "${args[@]}"
+Rscript qc_tables.R "${args[@]}"

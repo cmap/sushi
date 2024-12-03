@@ -29,18 +29,18 @@ compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n
 compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
   # Get number of expected cell lines for each cell_set
   cell_set_meta %>%
-    dplyr::group_by(cell_line_cols) %>%
+    dplyr::group_by(across(all_of(cell_line_cols))) %>%
     dplyr::filter(n() == 1) %>%
     dplyr::ungroup() %>%
     dplyr::group_by(cell_set) %>%
     dplyr::summarise(
-      n_expected_lines = dplyr::n_distinct(cell_line_cols), # Count unique cell_lines for each cell_set
+      n_expected_lines = dplyr::n_distinct(across(all_of(cell_line_cols))), # Count unique cell_lines for each cell_set
     ) %>%
     dplyr::ungroup()
 }
 
 compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("pcr_plate","pcr_well"),
-                               metric = "n") {
+                               metric = "n", cell_line_cols = c("depmap_id", "pool_id")) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
@@ -75,17 +75,27 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
     dplyr::ungroup()
 }
 
-# Compute how manny cell lines are below 90% and 50% viability
-# TODO: requires that pcr_well be included in l2fc table (pre-collapse)
-# TODO: May not need this at all, will not need to move
-compute_fraction_cl_below <- function(l2fc, group_cols = c("pcr_plate", "pcr_well"), metric = "l2fc") {
-  l2fc %>%
-    dplyr::group_by(across(all_of(group_cols))) %>%
-    dplyr::summarise(
-      n_below_50 = sum(.data[[metric]] < -5.64386, na.rm = TRUE),
-      n_below_90 = sum(.data[[metric]] < -6.49185, na.rm = TRUE),
-    ) %>%
-    dplyr::ungroup()
+# Get control barcode metrics from normalized counts
+get_cb_metrics <- function(normalized_counts, group_cols = c("pcr_plate", "pcr_well"), metrics = c("cb_intercept", "norm_mae", "norm_r2")) {
+  normalized_counts %>%
+    select(all_of(c(group_cols, metrics))) %>%
+    unique()
+}
+
+# Table generation function
+generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, id_cols_list, cell_line_cols) {
+  paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
+
+  read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = id_cols_list,
+                                   cell_set_meta= cell_set_meta, metric = "n", cell_line_cols = cell_line_cols)
+
+  skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
+
+  cb_metrics <- get_cb_metrics(normalized_counts, group_cols = id_cols_list)
+
+  id_cols_table <- read_stats %>%
+    dplyr::left_join(skew, by = id_cols_list) %>%
+    dplyr::left_join(cb_metrics, by = id_cols_list)
 }
 
 # CELL LINE BY PLATE (PCR_PLATE, CELL LINE) ----------
@@ -173,4 +183,48 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(all_of(grouping_cols), !!metric)  # Retain relevant columns
+}
+
+# Table generation function
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols) {
+  cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
+  cell_line_plate_grouping <- c(cell_line_list,"pcr_plate") # Define columns to group by
+  paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
+
+  # Compute control medians and MAD
+  medians_and_mad <- compute_ctl_medians_and_mad(
+    df = normalized_counts,
+    group_cols = cell_line_plate_grouping,
+    negcon = "ctl_vehicle",
+    poscon = "trt_poscon"
+  )
+
+  # Compute error rate
+  error_rates <- compute_error_rate(
+    df = normalized_counts,
+    metric = "log2_normalized_n",
+    group_cols = cell_line_plate_grouping,
+    negcon = args$negcon_type,
+    poscon = args$poscon_type
+  )
+
+  # Compute poscon LFC
+  poscon_lfc <- compute_control_lfc(
+    df = medians_and_mad,
+    negcon = args$negcon_type,
+    poscon = args$poscon_type
+  )
+
+  # Compute cell line fractions per plate
+  cell_line_fractions <- compute_cl_fractions(
+    df = filtered_counts,
+    grouping_cols = cell_line_plate_grouping
+  )
+
+  # Merge all tables together
+  paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together.....")
+  plate_cell_table <- medians_and_mad %>%
+    dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
+    dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
+    dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
 }
