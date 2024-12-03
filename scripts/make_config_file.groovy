@@ -18,8 +18,8 @@ pipeline {
         )
         // Check boxes of modules to run
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
-        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
-        string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes. If your control barcode ladder exists in cellDB, this field can simply contain the scheme that matches those entries (ie, H-a).')
+        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job. Use only if your cell set and control barcodes exist in cellDB.')
+        string(name: 'CONTROL_BARCODE_META', defaultValue: 'H-b', description: 'Metadata file for control barcodes. If your control barcode ladder exists in cellDB, this field can simply contain the scheme that matches those entries (ie, H-a or H-b).')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get metadata from COMET, use only if screen is registered.')
         string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, provide the screen name from COMET.')
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
