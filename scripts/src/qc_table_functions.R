@@ -275,7 +275,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
 #' - `lfc_raw`: Log fold change for raw data.
 #'
 #' @import dplyr
-compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon") {
+compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon", grouping_cols = c("depmap_id", "pcr_plate")) {
   paste0("Computing log fold change for ", negcon, " and ", poscon, ".....")
   df %>%
     dplyr::mutate(
@@ -283,7 +283,8 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
                        .data[[paste0("median_normalized_", negcon)]],
       lfc_raw = .data[[paste0("median_raw_", poscon)]] -
                 .data[[paste0("median_raw_", negcon)]]
-    )
+    ) %>%
+    dplyr::select(all_of(grouping_cols), lfc_normalized, lfc_raw)
 }
 
 #' Compute cell line fractions
@@ -308,7 +309,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
       fraction_of_reads = .data[[metric]] / total_reads  # Fraction of reads for each entry
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::select(all_of(grouping_cols), !!metric)  # Retain relevant columns
+    dplyr::select(all_of(grouping_cols), total_reads, fraction_of_reads)
 }
 
 # TABLE GENERATION FUNCTION ----------
@@ -354,7 +355,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   poscon_lfc <- compute_control_lfc(
     df = medians_and_mad,
     negcon = args$negcon_type,
-    poscon = args$poscon_type
+    poscon = args$poscon_type,
+    grouping_cols = cell_line_plate_grouping
   )
 
   # Compute cell line fractions per plate
