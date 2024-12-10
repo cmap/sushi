@@ -308,7 +308,7 @@ create_drc_table <- function(l2fc = "l2fc.csv",
   require(rlang)
 
   # load l2fc.csv
-  LFC <- data.table::fread(l2fc)
+  LFC <- l2fc
 
   # check if the input table populated
   if(nrow(LFC) == 0){
