@@ -90,7 +90,7 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
       # Reads mapping to cell lines
       n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
       # Fraction of reads mapping to cell lines
-      fraction_expected_reads = n_expected_reads_reads / n_total_reads,
+      fraction_expected_reads = n_expected_reads / n_total_reads,
       # Reads mapping to control barcodes
       n_cb_reads = sum(.data[[metric]][cb_name != ""], na.rm = TRUE),
       # Number of cell lines with coverage above 40 reads
