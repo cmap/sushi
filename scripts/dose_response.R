@@ -25,11 +25,6 @@ parser$add_argument("--build_dir", default= "", help = "Path to the build direct
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
 
-# set output to working directory if none is specified
-if (args$out == "") {
-  args$out = args$wkdir
-}
-
 # Read in l2fc file ----
 l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
 
