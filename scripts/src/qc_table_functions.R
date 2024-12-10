@@ -20,7 +20,7 @@ library (PRROC)
 #'
 #' @import dplyr
 compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n") {
-  df %>%
+  result <- df %>%
     dplyr::group_by(across(all_of(group_cols))) %>%
     arrange(desc(.data[[metric]])) %>%  # Sort by metric in descending order
     mutate(
@@ -35,6 +35,7 @@ compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n
       }
     ) %>%
     dplyr::ungroup()
+  return(result)
 }
 
 #' Compute expected cell lines
@@ -49,7 +50,7 @@ compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n
 #' @import dplyr
 compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
   # Get number of expected cell lines for each cell_set
-  cell_set_meta %>%
+  result <- cell_set_meta %>%
     dplyr::group_by(across(all_of(cell_line_cols))) %>%
     dplyr::filter(n() == 1) %>%
     dplyr::ungroup() %>%
@@ -58,6 +59,7 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
       n_expected_lines = dplyr::n_distinct(across(all_of(cell_line_cols))), # Count unique cell_lines for each cell_set
     ) %>%
     dplyr::ungroup()
+  return(result)
 }
 
 #' Compute read stats
@@ -101,6 +103,7 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
     ) %>%
     dplyr::ungroup()
+  return(result)
 }
 
 #' Calculate CB metrics
@@ -166,6 +169,8 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = id_cols_list) %>%
     dplyr::left_join(cb_metrics, by = id_cols_list)
+
+  return(id_cols_table)
 }
 
 # CELL LINE BY PLATE (PCR_PLATE, CELL LINE) ----------
@@ -202,7 +207,7 @@ compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c(
                                negcon = "ctl_vehicle", poscon = "trt_poscon") {
   paste0("Computing error rate using ", negcon, " and ", poscon, ".....")
   paste0("Grouping by ", paste0(group_cols, collapse = ","), ".....")
-  df %>%
+  result <- df %>%
     dplyr::filter(
       pert_type %in% c(negcon, poscon),
       is.finite(.data[[metric]]),
@@ -220,6 +225,7 @@ compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c(
       },
     ) %>%
     dplyr::ungroup()
+  return(result)
 }
 
 #' Compute control median and MAD
@@ -245,7 +251,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
   paste0("Adding control median and MAD values for ", negcon, " and ", poscon, ".....")
   paste0("Computing falses sensitivity probability for ", negcon, ".....")
   # Group and compute medians/MADs
-  df %>%
+  result <- df %>%
     dplyr::filter(pert_type %in% c(negcon, poscon)) %>%
     dplyr::group_by(across(all_of(c(group_cols, "pert_type")))) %>%
     dplyr::summarise(
@@ -272,6 +278,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
         sd = .data[[paste0('mad_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
       )
     )
+  return(result)
 }
 
 #' Compute log fold change of positive controls
@@ -290,7 +297,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
 #' @import dplyr
 compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon", grouping_cols = c("depmap_id", "pcr_plate")) {
   paste0("Computing log fold change for ", negcon, " and ", poscon, ".....")
-  df %>%
+  result <- df %>%
     dplyr::mutate(
       lfc_normalized = .data[[paste0("median_normalized_", poscon)]] -
                        .data[[paste0("median_normalized_", negcon)]],
@@ -298,6 +305,7 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
                 .data[[paste0("median_raw_", negcon)]]
     ) %>%
     dplyr::select(all_of(grouping_cols), lfc_normalized, lfc_raw)
+  return(result)
 }
 
 #' Compute cell line fractions
@@ -315,7 +323,7 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
 #' @import dplyr
 compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate", "depmap_id")) {
   paste0("Computing cell line fractions for ", metric, ".....")
-  df %>%
+  result <- df %>%
     dplyr::group_by(across(all_of(grouping_cols))) %>%
     dplyr::summarise(
       total_reads = sum(.data[[metric]], na.rm = TRUE),  # Total reads per group
@@ -323,6 +331,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(all_of(grouping_cols), total_reads, fraction_of_reads)
+  return(result)
 }
 
 # TABLE GENERATION FUNCTION ----------
@@ -384,4 +393,5 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
     dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
     dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
+  return(plate_cell_table)
 }
