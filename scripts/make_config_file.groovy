@@ -27,6 +27,7 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
+        booleanParam(name: 'DRC', defaultValue: true, description: 'Generate dose response curves.')
         booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
@@ -73,6 +74,7 @@ pipeline {
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,ccle_name', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,ccle_name\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
         string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Threshold for filtering the negative controls. In the negative control conditions, cell lines whose median counts are below this threshold are not confidently detected and thus are dropped. This defaults to \"40\" and is used in COMPUTE_LFC.')
+        string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
 
         // Files created by sushi
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts. This file is created by COLLATE_FASTQ_READS.')
@@ -137,7 +139,7 @@ pipeline {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
-                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES', 'GENERATE_QC_TABLES', 'POSCON_TYPE',
+                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN'
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
@@ -245,6 +247,9 @@ pipeline {
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates.sh')
+                        }
+                        if (params.DRC) {
+                            scriptsToRun.add('dose_response.sh')
                         }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filteredCounts_QC.sh')
