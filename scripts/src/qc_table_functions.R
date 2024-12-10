@@ -2,7 +2,6 @@ options(cli.unicode = FALSE)
 library(tidyverse)
 library(data.table)
 library(magrittr)
-library(data.table)
 library (PRROC)
 
 # BY ID_COLS (PCR_PLATE, PCR_WELL) ----------
@@ -89,11 +88,11 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
       # Total reads
       n_total_reads = sum(.data[[metric]], na.rm = TRUE),
       # Reads mapping to cell lines
-      n_bc_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
+      n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
       # Fraction of reads mapping to cell lines
-      fraction_expected_reads = n_bc_reads / n_total_reads,
+      fraction_expected_reads = n_expected_reads_reads / n_total_reads,
       # Reads mapping to control barcodes
-      n_cb_reads = sum(!is.na(cb_name) & cb_name != "", na.rm = TRUE),
+      n_cb_reads = sum(.data[[metric]][cb_name != ""], na.rm = TRUE),
       # Number of cell lines with coverage above 40 reads
       n_lines_recovered = sum(.data[[metric]] >= count_threshold & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
       # Number of expected lines based on metadata
@@ -104,29 +103,43 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
     dplyr::ungroup()
 }
 
-#' Extract CB metrics
+#' Calculate CB metrics
 #'
-#' This function extracts precomputed control barcode metrics from the normalized counts table.
+#' This function calculates control metrics.
 #'
 #' @param normalized_counts A data frame containing normalized read counts and associated metrics.
 #' @param group_cols A character vector specifying the grouping columns (default: `c("pcr_plate", "pcr_well")`).
-#' @param metrics A character vector specifying the metric column names to include in the output
-#'   (default: `c("cb_intercept", "norm_mae", "norm_r2", "cb_spearman")`).
+#' @param cb_meta A data frame containing control barcode metadata.
 #'
-#' @return A data frame containing unique combinations of `group_cols` and the specified `metrics`.
+#' @return A data frame containing unique combinations of `group_cols` and the calculated metrics.
 #'
 #' @import dplyr
-get_cb_metrics <- function(normalized_counts, group_cols = c("pcr_plate", "pcr_well"), metrics = c("cb_intercept", "norm_mae", "norm_r2", "cb_spearman")) {
-  normalized_counts %>%
-    select(all_of(c(group_cols, metrics))) %>%
-    unique()
+#'
+calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_plate", "pcr_well")) {
+  valid_profiles= normalized_counts %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
+                                                      cb_ladder %in% unique(cb_meta$cb_ladder),
+                                                      cb_name %in% unique(cb_meta$cb_name)) %>%
+    dplyr::group_by(across(all_of(group_cols))) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
+  fit_stats= valid_profiles %>%
+    dplyr::group_by(across(all_of(group_cols))) %>%
+    dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
+                  cb_mae= median(abs(cb_log2_dose- log2_normalized_n)),
+                  mean_y= mean(cb_log2_dose),
+                  residual2= (cb_log2_dose- log2_normalized_n)^2,
+                  squares2= (cb_log2_dose- mean_y)^2,
+                  cb_r2= 1- sum(residual2)/sum(squares2),
+                  cb_spearman= cor(cb_log2_dose, log2_n, method= 'spearman', use= 'pairwise.complete.obs')) %>%
+    dplyr::ungroup() %>%
+    dplyr::distinct(across(all_of(c(group_cols, 'cb_mae', 'cb_r2', 'cb_spearman', 'cb_intercept'))))
+  return(fit_stats)
 }
 
 # TABLE GENERATION FUNCTION ----------
 #' Generate ID column QC metrics table
 #'
 #' This function computes and combines various quality control (QC) metrics, such as read statistics, skew,
-#' and control barcode metrics, grouped by a specified list of id_cols.
+#' and control barcode metrics, grouped by a specified list of id_cols. For standard sequencing runs, this should always
+#' be "pcr_plate" and "pcr_well".
 #'
 #' @param annotated_counts A data frame containing annotated read counts with metadata.
 #' @param normalized_counts A data frame containing normalized read counts and associated metrics/metadata.
@@ -138,7 +151,7 @@ get_cb_metrics <- function(normalized_counts, group_cols = c("pcr_plate", "pcr_w
 #' @return A data frame (`id_cols_table`) that combines QC metrics, including read statistics, skew, and control barcode metrics, grouped by the specified id_cols.
 #'
 #' @import dplyr
-generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, id_cols_list, cell_line_cols,
+generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
                                    count_threshold= 40) {
   paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
 
@@ -148,7 +161,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set
 
   skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
 
-  cb_metrics <- get_cb_metrics(normalized_counts, group_cols = id_cols_list)
+  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = id_cols_list)
 
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = id_cols_list) %>%

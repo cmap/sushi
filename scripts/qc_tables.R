@@ -29,6 +29,9 @@ parser$add_argument(
 parser$add_argument(
     "-o", "--out", default = getwd(), help = "Output path. Default is working directory"
 )
+parser$add_argument(
+    "--control_barcode_meta", default = "CB_meta.csv", help = "Control barcode metadata"
+)
 parser$add_argument("-n", "--negcon_type", default = "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default = "trt_poscon")
 parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id")
@@ -46,6 +49,8 @@ paste0("Reading in ", args$annotated_counts, ".....")
 annotated_counts <- data.table::fread(args$annotated_counts, header = TRUE, sep = ",")
 paste0("Reading in ", args$filtered_counts, ".....")
 filtered_counts <- data.table::fread(args$filtered_counts, header = TRUE, sep = ",")
+paste0("Reading in ", args$cb_meta, ".....")
+cb_meta <- data.table::fread(args$control_barcode_meta, header = TRUE, sep = ",")
 
 # Create qc_table output directory if it doesn't exist ----
 paste0("Creating output directory ", args$out, "/qc_tables.....")
@@ -83,7 +88,7 @@ check_file_exists(plate_cell_outpath)
 id_cols_table <- generate_id_cols_table(
     normalized_counts = normalized_counts, annotated_counts = annotated_counts,
     cell_set_meta = cell_set_meta, id_cols_list = id_cols_list, cell_line_cols = cell_line_cols_list,
-    count_threshold = count_threshold
+    count_threshold = count_threshold, cb_meta = cb_meta
 )
 
 # Write to file ----------

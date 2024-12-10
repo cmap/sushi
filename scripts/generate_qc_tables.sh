@@ -39,6 +39,7 @@ args=(
 --id_cols "$ID_COLS"
 --cell_line_cols "$CELL_LINE_COLS"
 --count_threshold "$COUNT_THRESHOLD"
+--control_barcode_meta "$CONTROL_BARCODE_META"
 )
 
 echo Rscript qc_tables.R "${args[@]}"
