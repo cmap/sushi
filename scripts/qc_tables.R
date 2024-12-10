@@ -49,7 +49,7 @@ paste0("Reading in ", args$annotated_counts, ".....")
 annotated_counts <- data.table::fread(args$annotated_counts, header = TRUE, sep = ",")
 paste0("Reading in ", args$filtered_counts, ".....")
 filtered_counts <- data.table::fread(args$filtered_counts, header = TRUE, sep = ",")
-paste0("Reading in ", args$cb_meta, ".....")
+paste0("Reading in ", args$control_barcode_meta, ".....")
 cb_meta <- data.table::fread(args$control_barcode_meta, header = TRUE, sep = ",")
 
 # Create qc_table output directory if it doesn't exist ----
