@@ -15,12 +15,20 @@ then
 fi
 
 #Enforces abs paths
-if [[ "$LFC" = /* ]]
-then
-	LFC=$(ls $LFC)
-else
-	LFC=$LFC/$LFC
-fi
+
+enforce_abs_path() {
+  local var_name=$1
+  local value=${!var_name}
+
+  if [[ "$value" = /* ]]; then
+    eval "$var_name=$(ls "$value")"
+  else
+    eval "$var_name=$BUILD_DIR/$value"
+  fi
+  echo "$var_name is: ${!var_name}"
+}
+
+enforce_abs_path LFC
 
 echo Build dir is: $BUILD_DIR
 echo LFC is: $LFC
