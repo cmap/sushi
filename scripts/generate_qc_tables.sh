@@ -27,6 +27,7 @@ enforce_abs_path NORMALIZED_COUNTS
 enforce_abs_path ANNOTATED_COUNTS
 enforce_abs_path CELL_SET_AND_POOL_META
 enforce_abs_path FILTERED_COUNTS
+enforce_abs_path CONTROL_BARCODE_META
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
