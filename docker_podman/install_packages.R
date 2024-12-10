@@ -1,4 +1,6 @@
 # Install CRAN packages
+install.packages("dr4pl", dependencies = TRUE)
+install.packages("drc", dependencies = TRUE)
 install.packages("argparse", dependencies = TRUE)
 install.packages("magrittr", dependencies = TRUE)
 install.packages("tidyverse", dependencies = TRUE)
