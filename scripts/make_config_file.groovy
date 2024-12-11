@@ -27,7 +27,7 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
-        booleanParam(name: 'DRC', defaultValue: true, description: 'Generate dose response curves.')
+        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
         booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
