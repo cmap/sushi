@@ -28,6 +28,8 @@ pipeline {
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
         booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
+        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
+        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
         booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
@@ -156,7 +158,10 @@ pipeline {
                         'PSEUDOCOUNT',
 
                         // compute_l2fc paramters
-                        'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP'
+                        'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
+
+                        // biomarker parameters
+                        'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE'
                     ]
 
                     def config = [:]
@@ -251,6 +256,9 @@ pipeline {
                         }
                         if (params.DRC) {
                             scriptsToRun.add('dose_response.sh')
+                        }
+                        if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
+                            scriptsToRun.add('biomarker.sh')
                         }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filteredCounts_QC.sh')

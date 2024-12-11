@@ -38,6 +38,8 @@ PARAMS=(
   # compute_l2fc parameters
   CELL_LINE_COLS SIG_COLS CONTROL_COLS COUNT_COL_NAME CTL_TYPES COUNT_THRESHOLD
   VIABILITY_CAP
+  # biomarker parameters
+  UNIVARIATE_BIOMARKER MULTIVARIATE_BIOMARKER BIOMARKER_FILE
 )
 
 # Load parameters
@@ -121,6 +123,9 @@ echo "Running in container:"
   -e POSCON_TYPE="$POSCON_TYPE" \
   -e L2FC_COLUMN="$L2FC_COLUMN" \
   -e VIABILITY_CAP="$VIABILITY_CAP" \
+  -e UNIVARIATE_BIOMARKER="$UNIVARIATE_BIOMARKER" \
+  -e MULTIVARIATE_BIOMARKER="$MULTIVARIATE_BIOMARKER" \
+  -e BIOMARKER_FILE="$BIOMARKER_FILE" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \
