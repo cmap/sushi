@@ -28,7 +28,7 @@ args <- parser$parse_args()
 # Read in l2fc file ----
 l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
 
-# Parse some parameters into vectors ----
+# Parse some parameters ----
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 dose_col= args$dose_col
@@ -37,11 +37,14 @@ type_col= args$type_col
 cap_for_viability= as.numeric(args$cap_for_viability)
 build_dir = args$build_dir
 
+# Create treatment_columns by filtering out elements containing "dose"
+treatment_cols <- sig_cols[!grepl("dose", sig_cols)]
+
 # Calculate dose response ----
 print("Calculating dose response ...")
-dose_response= create_drc_table(l2fc= l2fc,
+dose_response= create_drc_table(LFC= l2fc,
                                 cell_line_cols= cell_line_cols,
-                                sig_cols= sig_cols,
+                                treatment_cols= treatment_cols,
                                 dose_col= dose_col,
                                 l2fc_column= l2fc_column,
                                 type_col= type_col,

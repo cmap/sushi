@@ -288,7 +288,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 #' @param l2fc : The path to look for the log fold change input file.
 #' @param out_path : Where to write the output file, make sure it ends with a "/". If left NULL it will write the output file to in_path.
 #' @param cell_line_cols : List of columns to identify each cell line (model). Default: c("depmap_id", "cell_set", "pool_id").
-#' @param sig_cols : List of columns to idenfity each treatment. Default:  c("pert_id", "x_project_id", "pert_name", "pert_plate")
+#' @param treatment_cols : List of columns to idenfity each treatment. Default:  c("pert_id", "x_project_id", "pert_name", "pert_plate")
 #' @param dose_column : Name of the column that represents the dose information. Default: "pert_dose"
 #' @param l2fc_column : Name of the column that holds log2-viability values. Default: "l2fc"
 #' @param type_column : Name of the column that contains the perturbation type. Only the rows that has value "trt_cp" will be kept in the calculations. Default: "pert_type"
@@ -298,28 +298,25 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 #' @export
 #'
 #' @examples create_drc_table(in_path = "data/sushi_io/testing_MTS-SEQ002-KF/test/")
-create_drc_table <- function(l2fc = "l2fc.csv",
+create_drc_table <- function(LFC = l2fc,
                               cell_line_cols =  c("depmap_id", "cell_set", "pool_id"),
-                              sig_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
+                              treatment_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
                               dose_column = "pert_dose", l2fc_column = "l2fc", type_column = "pert_type",
                               cap_for_viability = 1.5) {
   require(data.table)
   require(tidyverse)
   require(rlang)
 
-  # load l2fc.csv
-  LFC <- l2fc
-
   # check if the input table populated
   if(nrow(LFC) == 0){
-    stop(paste0(l2fc, " is empty!"))
+    stop(paste0(LFC, " is empty!"))
   }
 
   # check for missing critical columns
-  necessary_columns <- unique(c(dose_column, l2fc_column, type_column, sig_cols, cell_line_cols))
+  necessary_columns <- unique(c(dose_column, l2fc_column, type_column, treatment_cols, cell_line_cols))
   if(any(!necessary_columns %in% colnames(LFC))){
     stop(paste0(paste0(setdiff(necessary_columns, colnames(LFC)), collapse = ", "),
-                " are missing in ", l2fc))
+                " are missing in ", LFC))
   }
 
   # Check pert_type contains trt_cp
@@ -336,7 +333,7 @@ create_drc_table <- function(l2fc = "l2fc.csv",
     dplyr::mutate(dose_ = as.numeric(.data[[dose_column]]),
                   l2fc_ = as.numeric(.data[[l2fc_column]])) %>%
     dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
-    dplyr::group_by_at(vars(union(cell_line_cols, sig_cols))) %>%
+    dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
     dplyr::filter(length(unique(dose_)) > 4) %>%
     dplyr::summarise(get_best_fit(FC = pmin(2^l2fc_, cap_for_viability),
                                   dose = dose_)) %>%

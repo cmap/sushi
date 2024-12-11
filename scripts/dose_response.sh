@@ -39,6 +39,7 @@ args=(
 --sig_cols "$SIG_COLS"
 --cell_line_cols "$CELL_LINE_COLS"
 --l2fc_column "$L2FC_COLUMN"
+--cap_for_viability "$VIABILITY_CAP"
 )
 
 echo Rscript dose_response.R "${args[@]}"
