@@ -30,8 +30,8 @@ l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 response_column= args$collapsed_l2fc_column
 build_dir = args$build_dir
-univariate_biomarker = args$univariate_biomarker
-multivariate_biomarker = args$multivariate_biomarker
+univariate_biomarker = as.logical(args$univariate_biomarker)
+multivariate_biomarker = as.logical(args$multivariate_biomarker)
 bio_file = args$biomarker_file
 
 # Create treatment_columns by filtering out elements containing "dose"
