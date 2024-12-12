@@ -89,6 +89,9 @@ pipeline {
         string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values. This file is created by COLLAPSED_LFC.')
         // Other
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
+
+        // Biomarker
+        string(name: 'BIOMARKER_FILE', defaultValue: 'depmap_datasets_public.h5', description: 'Biomarker reference file.')
     }
 
     environment {

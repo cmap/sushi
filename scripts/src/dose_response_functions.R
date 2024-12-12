@@ -249,7 +249,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
     results.df[[ix]] <- tibble( fit_name = "dr4pl_initL_constrained",
                                 Lower_Limit = as.numeric(dr4pl_initL$parameters[[4]]),
-                                Upper_Limit = as.numeric(dr4pl_initL$parameters[[1]]),
+                                U1pper_Limit = as.numeric(dr4pl_initL$parameters[[1]]),
                                 Slope = as.numeric(dr4pl_initL$parameters[[3]]),
                                 Inflection = as.numeric(dr4pl_initL$parameters[[2]]),
                                 MSE = mse_mad$mse, MAD = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)

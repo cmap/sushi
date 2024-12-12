@@ -23,8 +23,20 @@ enforce_abs_path() {
   echo "$var_name is: ${!var_name}"
 }
 
+enforce_abs_path_biomarker() {
+  local var_name=$1
+  local value=${!var_name}
+
+  if [[ "$value" = /* ]]; then
+    eval "$var_name=$(ls "$value")"
+  else
+    eval "$var_name=/cmap_obelix/pod/prismSeq/data/biomarker/current/$value"
+  fi
+  echo "$var_name is: ${!var_name}"
+}
+
 enforce_abs_path COLLAPSED_LFC
-enforce_abs_path BIOMARKER_FILE
+enforce_abs_path_biomarker BIOMARKER_FILE
 
 args=(
 --collapsed_lfc "$COLLAPSED_LFC"
