@@ -354,7 +354,7 @@ read_features <- function(file = 'https://assets.clue.io/testing/depmap_datasets
 #' @export
 #'
 #' @examples
-RF_feature_sets <- function(Y, W = NULL, file = 'https://assets.clue.io/testing/depmap_datasets.h5') {
+RF_feature_sets <- function(Y, W = NULL, file = 'https://biomarker.clue.io/r5/current/depmap_datasets_public.h5') {
   require(magrittr)
 
   if(!is.null(W)){
@@ -424,7 +424,7 @@ RF_feature_sets <- function(Y, W = NULL, file = 'https://assets.clue.io/testing/
 #' @export
 #'
 #' @examples
-multivariate_biomarker_table <- function(Y, W = NULL, file = 'https://assets.clue.io/testing/depmap_datasets.h5', k = 10) {
+multivariate_biomarker_table <- function(Y, W = NULL, file = 'https://biomarker.clue.io/r5/current/depmap_datasets_public.h5', k = 10) {
   X <- RF_feature_sets(Y, W = W, file = file)
   cl <- intersect(rownames(X$X.DNA), rownames(X$X.RNA))
 
