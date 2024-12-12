@@ -272,6 +272,7 @@ univariate_biomarker_table <- function(Y, file = 'https://assets.clue.io/biomark
 read_dataset <- function(file = 'https://assets.clue.io/biomarker/current/depmap_datasets_public.h5', dataset,
                          rownames_depmap_ids = TRUE) {
   require(rhdf5)
+  print("testing")
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
     s3 = TRUE
     print(paste0("Reading ", file, " from S3"))
