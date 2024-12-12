@@ -51,6 +51,7 @@ if (univariate_biomarker) {
                                                         output_file_name = "l2fc_univariate_biomarkers.csv",
                                                         treatment_columns = treatment_columns,
                                                         response_column = response_column,
+                                                        depmap_file = bio_file
   )
 }
 
@@ -65,5 +66,6 @@ if (multivariate_biomarker) {
                                                             output_file_name = "l2fc_multivariate_biomarkers.csv",
                                                             treatment_columns = treatment_columns,
                                                             response_column = response_column,
+                                                            depmap_file = bio_file
   )
 }
