@@ -30,7 +30,7 @@ enforce_abs_path_biomarker() {
   if [[ "$value" = /* ]]; then
     eval "$var_name=$(ls "$value")"
   else
-    eval "$var_name=/cmap_obelix/pod/prismSeq/data/biomarker/current/$value"
+    eval "$var_name=/cmap/obelix/pod/prismSeq/data/biomarker/current/$value"
   fi
   echo "$var_name is: ${!var_name}"
 }
