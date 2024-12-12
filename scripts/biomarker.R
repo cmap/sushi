@@ -37,10 +37,11 @@ bio_file = args$biomarker_file
 # Create treatment_columns by filtering out elements containing "dose"
 treatment_columns <- sig_cols[!grepl("dose", sig_cols)]
 
+# Construct output path
+out_path <- paste0(build_dir, "/biomarker")
+
 # Run univariate biomarker analysis if requested
 if (univariate_biomarker) {
-  # Construct output path
-  out_path <- paste0(build_dir, "/biomarker")
   # Check if the output directory exists, if not create it
   if (!dir.exists(out_path)) {
       dir.create(out_path)
@@ -50,5 +51,19 @@ if (univariate_biomarker) {
                                                         output_file_name = "l2fc_univariate_biomarkers.csv",
                                                         treatment_columns = treatment_columns,
                                                         response_column = response_column,
+  )
+}
+
+# Run multivariate biomarker analysis if requested
+if (multivariate_biomarker) {
+  # Check if the output directory exists, if not create it
+  if (!dir.exists(out_path)) {
+      dir.create(out_path)
+  }
+  multivariate_table <- create_multivariate_biomarker_table(in_path = build_dir,
+                                                            out_path = out_path,
+                                                            output_file_name = "l2fc_multivariate_biomarkers.csv",
+                                                            treatment_columns = treatment_columns,
+                                                            response_column = response_column,
   )
 }

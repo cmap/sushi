@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo Starting compute_l2fc...
+echo Starting dose response...
 
 if [ -z "$BUILD_DIR" ]
 then

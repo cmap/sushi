@@ -491,7 +491,7 @@ multivariate_biomarker_table <- function(Y, W = NULL, file = 'https://assets.clu
 #'
 create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
                                                 input_file_name = "collapsed_l2fc.csv", output_file_name = "l2fc_multivariate_biomarkers",
-                                                cell_line_column =  "depmap_id", depmap_file,
+                                                depmap_file,
                                                 treatment_columns = c("pert_id", "x_project_id", "pert_name", "pert_plate", "pert_dose"),
                                                 response_column = "median_l2fc", aggregate_function = median, transform_function = function(x){x}) {
   require(data.table)
