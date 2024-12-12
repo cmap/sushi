@@ -91,7 +91,7 @@ pipeline {
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
 
         // Biomarker
-        string(name: 'BIOMARKER_FILE', defaultValue: 'https://s3.us-east-1.amazonaws.com/biomarker.clue.io/h5/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
+        string(name: 'BIOMARKER_FILE', defaultValue: 'https://assets.clue.io/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
     }
 
     environment {

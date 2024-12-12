@@ -18,7 +18,7 @@ parser$add_argument("--collapsed_l2fc_column", default="median_l2fc",
 parser$add_argument("--build_dir", default= "", help = "Path to the build directory")
 parser$add_argument("--univariate_biomarker", default="true", help="Whether to calculate univariate biomarkers")
 parser$add_argument("--multivariate_biomarker", default="true", help="Whether to calculate multivariate biomarkers")
-parser$add_argument("--biomarker_file", default="https://biomarker.clue.io/r5/current/depmap_datasets_public.h5", help="File containing depmap data")
+parser$add_argument("--biomarker_file", default="https://assets.clue.io/biomarker/current/depmap_datasets_public.h5", help="File containing depmap data")
 
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
