@@ -179,7 +179,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 #'
 #' @examples
 #'
-univariate_biomarker_table <- function(Y, file = 'https://assets.clue.io/testing/depmap_datasets.h5',
+univariate_biomarker_table <- function(Y, file = 'https://s3.us-east-1.amazonaws.com/biomarker.clue.io/h5/current/depmap_datasets_public.h5',
                                        features = NULL,
                                        homoskedastic = TRUE, n.X.min = 100,
                                        ns.min = 3, q.val.max = .2,
@@ -269,7 +269,7 @@ univariate_biomarker_table <- function(Y, file = 'https://assets.clue.io/testing
 #' @export
 #'
 #' @examples
-read_dataset <- function(file = 'https://assets.clue.io/testing/depmap_datasets.h5', dataset,
+read_dataset <- function(file = 'https://s3.us-east-1.amazonaws.com/biomarker.clue.io/h5/current/depmap_datasets_public.h5', dataset,
                          rownames_depmap_ids = TRUE) {
   require(rhdf5)
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
@@ -304,7 +304,7 @@ read_dataset <- function(file = 'https://assets.clue.io/testing/depmap_datasets.
 #' @export
 #'
 #' @examples
-read_features <- function(file = 'https://assets.clue.io/testing/depmap_datasets.h5',
+read_features <- function(file = 'https://s3.us-east-1.amazonaws.com/biomarker.clue.io/h5/current/depmap_datasets_public.h5',
                           dataset, feature_names = NULL,
                           rownames_depmap_ids = TRUE) {
   require(rhdf5)
@@ -354,7 +354,7 @@ read_features <- function(file = 'https://assets.clue.io/testing/depmap_datasets
 #' @export
 #'
 #' @examples
-RF_feature_sets <- function(Y, W = NULL, file = 'https://biomarker.clue.io/r5/current/depmap_datasets_public.h5') {
+RF_feature_sets <- function(Y, W = NULL, file = 'https://s3.us-east-1.amazonaws.com/biomarker.clue.io/h5/current/depmap_datasets_public.h5') {
   require(magrittr)
 
   if(!is.null(W)){
@@ -424,7 +424,7 @@ RF_feature_sets <- function(Y, W = NULL, file = 'https://biomarker.clue.io/r5/cu
 #' @export
 #'
 #' @examples
-multivariate_biomarker_table <- function(Y, W = NULL, file = 'https://biomarker.clue.io/r5/current/depmap_datasets_public.h5', k = 10) {
+multivariate_biomarker_table <- function(Y, W = NULL, file = 'https://s3.us-east-1.amazonaws.com/biomarker.clue.io/h5/current/depmap_datasets_public.h5', k = 10) {
   X <- RF_feature_sets(Y, W = W, file = file)
   cl <- intersect(rownames(X$X.DNA), rownames(X$X.RNA))
 
