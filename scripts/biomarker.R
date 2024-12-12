@@ -16,8 +16,8 @@ parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dos
 parser$add_argument("--collapsed_l2fc_column", default="median_l2fc",
                     help = "column containing replicate collapsed log fold change values")
 parser$add_argument("--build_dir", default= "", help = "Path to the build directory")
-parser$add_argument("--univariate_biomarker", default=true, help="Whether to calculate univariate biomarkers")
-parser$add_argument("--multivariate_biomarker", default=true, help="Whether to calculate multivariate biomarkers")
+parser$add_argument("--univariate_biomarker", default="true", help="Whether to calculate univariate biomarkers")
+parser$add_argument("--multivariate_biomarker", default="true", help="Whether to calculate multivariate biomarkers")
 parser$add_argument("--biomarker_file", default="", help="File containing depmap data")
 
 # Get command line options, if help option encountered p3rint help and exit
@@ -30,8 +30,8 @@ l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 response_column= args$collapsed_l2fc_column
 build_dir = args$build_dir
-univariate_biomarker = as.logical(args$univariate_biomarker)
-multivariate_biomarker = as.logical(args$multivariate_biomarker)
+univariate_biomarker = as.logical(toupper(args$univariate_biomarker))
+multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 bio_file = args$biomarker_file
 
 # Create treatment_columns by filtering out elements containing "dose"
