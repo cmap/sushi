@@ -513,13 +513,8 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
     stop("Output path does not exist!")
   }
 
-  # check if the input_file_name is in the input directory
-  if(! input_file_name %in% dir(in_path)){
-    stop(paste0(input_file_name, " is not in the input directory!"))
-  }
-
   # load the input file
-  input_file <- data.table::fread(paste0(in_path, input_file_name))
+  input_file <- data.table::fread(in_path)
 
   # check if the input table populated
   if(nrow(input_file) == 0){
@@ -595,6 +590,21 @@ create_univariate_biomarker_table <- function(in_path, out_path = NULL,
   require(data.table)
   require(tidyverse)
   require(rlang)
+
+  # if the output path is not provided, use the input path
+  if(is.null(out_path)){
+    out_path <- in_path
+  }
+
+  # check if the input path exists
+  if(!file.exists(in_path)){
+    stop("Input path does not exist!")
+  }
+
+  # check if the input path exists
+  if(!file.exists(out_path)){
+    stop("Output path does not exist!")
+  }
 
   # load the input file
   input_file <- data.table::fread(in_path)

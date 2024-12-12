@@ -8,7 +8,7 @@ source("./src/kitchen_utensils.R")
 # Argument parser ----
 parser <- ArgumentParser()
 # specify desired options
-parser$add_argument("--collapsed_l2fc", default="l2fc.csv", help="file containing replicate collapsed log fold change values")
+parser$add_argument("--collapsed_lfc", default="collapsed_l2fc.csv", help="file containing replicate collapsed log fold change values")
 parser$add_argument("--cell_line_cols", default="pool_id,depmap_id",
                     help = "Columns that can describe a cell line")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
@@ -23,9 +23,6 @@ parser$add_argument("--biomarker_file", default="", help="File containing depmap
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
 
-# Read in l2fc file ----
-l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
-
 # Parse some parameters ----
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 response_column= args$collapsed_l2fc_column
@@ -33,6 +30,7 @@ build_dir = args$build_dir
 univariate_biomarker = as.logical(toupper(args$univariate_biomarker))
 multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 bio_file = args$biomarker_file
+in_path = args$collapsed_lfc
 
 # Create treatment_columns by filtering out elements containing "dose"
 treatment_columns <- sig_cols[!grepl("dose", sig_cols)]
@@ -46,7 +44,7 @@ if (univariate_biomarker) {
   if (!dir.exists(out_path)) {
       dir.create(out_path)
   }
-  univariate_table <- create_univariate_biomarker_table(in_path = build_dir,
+  univariate_table <- create_univariate_biomarker_table(in_path = in_path,
                                                         out_path = out_path,
                                                         output_file_name = "l2fc_univariate_biomarkers.csv",
                                                         treatment_columns = treatment_columns,
@@ -61,7 +59,7 @@ if (multivariate_biomarker) {
   if (!dir.exists(out_path)) {
       dir.create(out_path)
   }
-  multivariate_table <- create_multivariate_biomarker_table(in_path = build_dir,
+  multivariate_table <- create_multivariate_biomarker_table(in_path = in_path,
                                                             out_path = out_path,
                                                             output_file_name = "l2fc_multivariate_biomarkers.csv",
                                                             treatment_columns = treatment_columns,
