@@ -274,8 +274,10 @@ read_dataset <- function(file = 'https://assets.clue.io/biomarker/current/depmap
   require(rhdf5)
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
     s3 = TRUE
+    print(paste0("Reading ", file, " from S3"))
   } else{
     s3 = FALSE
+    print(paste0("Reading ", file, " from local"))
   }
   X <- h5read(file, name = paste0(dataset, "/mat"), s3 = s3)
   row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3)
