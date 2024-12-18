@@ -104,7 +104,8 @@ if(all(cell_set_meta_long$cell_set %in% assay_pools_meta$davepool_id)) {
   print("Merging cell set metadata with assay pool metadata to pull pool_id.")
   cell_set_assay_pool_meta <- cell_set_meta_long %>%
     inner_join(assay_pools_meta, by = c("cell_set" = "davepool_id", "members" = "depmap_id")) %>%
-    select(cell_set, pool_id, lua, depmap_id = members)
+    select(cell_set, pool_id, barcode_id, depmap_id = members) %>%
+    rename("lua" = "barcode_id")
 } else {
   print("One or more cell sets passed in sample_meta have not been registered in CellDB. Unable to pull pool_id in cell_set_meta.")
   cell_set_assay_pool_meta <- cell_set_meta_long %>%
