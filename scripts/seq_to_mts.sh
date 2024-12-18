@@ -24,6 +24,7 @@ args=(
 --build_name "$BUILD_NAME"
 --days "$DAYS"
 --config "config.json"
+--api_key "$API_KEY"
 )
 
 echo python3 seq_to_mts.py "${args[@]}"
