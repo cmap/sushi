@@ -35,7 +35,7 @@ normalized_counts = normalize(X= filtered_counts, id_cols= input_id_cols,
 
 # Write out file ----
 normcounts_outpath = paste(args$out, "normalized_counts.csv", sep='/')
-print(paste0("Writing normalized count file to ", normcounts_outpath))
+chrprint(paste0("Writing normalized count file to ", normcounts_outpath))
 write.csv(normalized_counts, normcounts_outpath, row.names= FALSE, quote= FALSE)
 
 # Ensure that normalized file was sucessfully generated ----
