@@ -31,6 +31,7 @@ pipeline {
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
         booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
+        booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
 
         // Parameters we expect users to change
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
@@ -38,6 +39,7 @@ pipeline {
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_dose,pert_dose_unit,day', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
+        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls. This defaults to \"trt_poscon\" and is used in several QC metrics.')
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
         string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline. This defaults to \"h-b\".')
 
@@ -135,7 +137,7 @@ pipeline {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
-                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES',
+                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES', 'GENERATE_QC_TABLES', 'POSCON_TYPE',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
@@ -252,6 +254,9 @@ pipeline {
                         }
                         if (params.RUN_EPS_QC) {
                             scriptsToRun.add('eps_qc.sh')
+                        }
+                        if (params.GENERATE_QC_TABLES) {
+                            scriptsToRun.add('generate_qc_tables.sh')
                         }
                         if (params.CONVERT_SUSHI) {
                             scriptsToRun.add('seq_to_mts.sh')
