@@ -63,10 +63,9 @@ compute_l2fc= function(normalized_counts,
   print('Collapsing control conditions on the following columns: ')
   print(unique(c(cell_line_cols, ctrl_cols)))
   controls= collapsed_tech_rep %>% dplyr::filter(pert_type== control_type) %>% 
-    dplyr::group_by(pick(all_of(c(cell_line_cols, ctrl_cols)))) %>%
+    dplyr::group_by(pick(all_of(union(cell_line_cols, ctrl_cols)))) %>%
     dplyr::summarise(control_median_n= median(mean_n),
                      control_median_normalized_n = median(mean_normalized_n),
-                     control_mad_sqrtN = mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
                      num_ctrl_bio_reps = dplyr::n()) %>% dplyr::ungroup()
   
   # Validation: Check that negative controls were extracted ----
@@ -76,9 +75,10 @@ compute_l2fc= function(normalized_counts,
   
   # Join neg_cons and compute l2fc ----
   l2fc= collapsed_tech_rep %>% dplyr::filter(!pert_type %in% c(control_type, 'day_0')) %>% 
-    dplyr::inner_join(controls, by= c(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
+    dplyr::inner_join(controls, by= union(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
     dplyr::mutate(l2fc= log2(mean_normalized_n / control_median_normalized_n),
-                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA))
+                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
+    select(-mean_n, -control_median_n)
   
   return(l2fc)
 }
