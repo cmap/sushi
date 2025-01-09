@@ -125,13 +125,13 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
     dplyr::group_by(across(all_of(group_cols))) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
   fit_stats= valid_profiles %>%
     dplyr::group_by(across(all_of(group_cols))) %>%
-    dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
+    dplyr::mutate(log2_normalized_n= log2(n) + cb_intercept,
                   cb_mae= median(abs(cb_log2_dose- log2_normalized_n)),
                   mean_y= mean(cb_log2_dose),
                   residual2= (cb_log2_dose- log2_normalized_n)^2,
                   squares2= (cb_log2_dose- mean_y)^2,
                   cb_r2= 1- sum(residual2)/sum(squares2),
-                  cb_spearman= cor(cb_log2_dose, log2_n, method= 'spearman', use= 'pairwise.complete.obs')) %>%
+                  cb_spearman= cor(cb_log2_dose, log2(n), method= 'spearman', use= 'pairwise.complete.obs')) %>%
     dplyr::ungroup() %>%
     dplyr::distinct(across(all_of(c(group_cols, 'cb_mae', 'cb_r2', 'cb_spearman', 'cb_intercept'))))
   return(fit_stats)
@@ -258,8 +258,8 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
       median_normalized = median(log2_normalized_n, na.rm = TRUE),
       n_replicates = n(),
       mad_normalized = mad(log2_normalized_n, na.rm = TRUE),
-      median_raw = median(log2_n, na.rm = TRUE),
-      mad_raw = mad(log2_n, na.rm = TRUE)
+      median_raw = median(log2(n), na.rm = TRUE),
+      mad_raw = mad(log2(n), na.rm = TRUE)
     ) %>%
     dplyr::ungroup() %>%
     pivot_wider(
