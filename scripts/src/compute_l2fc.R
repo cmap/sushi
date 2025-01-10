@@ -20,7 +20,8 @@ compute_l2fc= function(normalized_counts,
                        control_type = "negcon",
                        sig_cols=c('cell_set','pert_name','pert_dose','pert_dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
-                       count_col_name="log2_normalized_n", count_threshold= 40,
+                       count_col_name="log2_normalized_n",
+                       count_threshold= 40,
                        cell_line_cols= c('project_code', 'depmap_id')) {
   
   # Validation: Check that sig_cols are in normalized_counts ----
@@ -52,7 +53,7 @@ compute_l2fc= function(normalized_counts,
     dplyr::filter(!(pert_type %in% c('empty', '', 'CB_only', NA)), !is.na(depmap_id)) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'pert_type', bio_rep_id_cols, ctrl_cols)))) %>%
     dplyr::summarise(mean_n= mean(n),
-                     mean_normalized_n= mean(!!rlang::sym(2^count_col_name))) %>% dplyr::ungroup()
+                     mean_normalized_n= mean(2^(!!rlang::sym(count_col_name))) %>% dplyr::ungroup()
   
   # Print out the occurrence of each count of tech_reps
   # print('Number of technical replicate collapsed across all cell lines and biological replicates:')
