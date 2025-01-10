@@ -183,17 +183,13 @@ def main(args):
 
     # Setting columns
     print("Reformatting columns...")
-    sample_meta = sample_meta.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit,
-                                     pert_iname=sample_meta['pert_name'].str.upper())
+    sample_meta = sample_meta.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit)
 
-    level_3 = level_3.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit,
-                                   pert_iname=level_3['pert_name'].str.upper())
+    level_3 = level_3.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit)
 
-    level_4 = level_4.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit,
-                                   pert_iname=level_4['pert_name'].str.upper())
+    level_4 = level_4.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit)
 
-    level_5 = level_5.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit,
-                                   pert_iname=level_5['pert_name'].str.upper())
+    level_5 = level_5.assign(pert_vehicle=pert_vehicle, pert_time_unit = pert_time_unit)
 
     # Remove invalid 'pert_id' rows, currently 'NONE' and NaN
     sample_meta = remove_invalid_pert_ids(sample_meta)
