@@ -67,7 +67,8 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
 
   # Normalize entries ----
   normalized= X %>% dplyr::inner_join(fit_intercepts, by=id_cols) %>%
-    dplyr::mutate(log2_normalized_n= log2_n + cb_intercept) %>%
+    dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
+                  normalized_n= 2^log2_normalized_n) %>%
     select(-log2_n)
   
   return(normalized)
