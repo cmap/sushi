@@ -300,7 +300,10 @@ def main(args):
 
     for file_name, df in output_files.items():
         output_path = os.path.join(args.out, file_name)
-        df.to_csv(output_path, index=False)
+        if 'csv' in output_path:
+            df.to_csv(output_path, index=False)
+        elif 'txt' in output_path:
+            df.to_csv(output_path, sep='\t', index=False)
         gzip_file(output_path)
 
     # Check for *_EPS_QC_TABLE.csv file and gzip if it exists
