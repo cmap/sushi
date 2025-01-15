@@ -70,7 +70,7 @@ if (!str_detect(cb_ladder, ".csv")){
 }
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
-cell_line_cols= c('depmap_id', 'ccle_name', 'forward_read_barcode')
+cell_line_cols= c('depmap_id', 'forward_read_barcode', 'lua')
 cell_line_meta <- cell_lines_df %>%
   rename("forward_read_barcode" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols)))
 
@@ -104,7 +104,8 @@ if(all(cell_set_meta_long$cell_set %in% assay_pools_meta$davepool_id)) {
   print("Merging cell set metadata with assay pool metadata to pull pool_id.")
   cell_set_assay_pool_meta <- cell_set_meta_long %>%
     inner_join(assay_pools_meta, by = c("cell_set" = "davepool_id", "members" = "depmap_id")) %>%
-    select(cell_set, pool_id, depmap_id = members)
+    select(cell_set, pool_id, barcode_id, depmap_id = members) %>%
+    rename("lua" = "barcode_id")
 } else {
   print("One or more cell sets passed in sample_meta have not been registered in CellDB. Unable to pull pool_id in cell_set_meta.")
   cell_set_assay_pool_meta <- cell_set_meta_long %>%
