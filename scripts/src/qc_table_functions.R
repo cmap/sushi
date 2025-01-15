@@ -118,7 +118,7 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
 #'
 #' @import dplyr
 #'
-calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_plate", "pcr_well", pseudocount = 20)) {
+calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_plate", "pcr_well"), pseudocount = 20) {
   valid_profiles= normalized_counts %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
                                                       cb_ladder %in% unique(cb_meta$cb_ladder),
                                                       cb_name %in% unique(cb_meta$cb_name)) %>%
