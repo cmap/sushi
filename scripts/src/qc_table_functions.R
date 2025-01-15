@@ -155,7 +155,7 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
 #'
 #' @import dplyr
 generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
-                                   count_threshold= 40) {
+                                   count_threshold= 40, pseudocount= 20) {
   paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
 
   read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = id_cols_list,
@@ -164,7 +164,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set
 
   skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
 
-  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = id_cols_list, pseudocount = 20)
+  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = id_cols_list, pseudocount = pseudocount)
 
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = id_cols_list) %>%
