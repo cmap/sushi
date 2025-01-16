@@ -37,6 +37,7 @@ parser$add_argument("-p", "--poscon_type", default = "trt_poscon")
 parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id")
 parser$add_argument("--id_cols", default = "pcr_plate,pcr_well")
 parser$add_argument("--count_threshold", default = 40)
+parser$add_argument("--pseudocount", default = 20)
 
 args <- parser$parse_args()
 
@@ -69,10 +70,12 @@ id_cols_list <- strsplit(id_cols, ",")[[1]]
 
 count_threshold <- as.numeric(args$count_threshold)
 
+pseudocount <- as.numeric(args$pseudocount)
+
 # CELL LINE BY PLATE (pcr_plate,depmap_id) ---------
 plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts, filtered_counts = filtered_counts,
-    cell_line_cols = cell_plate_list)
+    cell_line_cols = cell_plate_list, pseudocount = pseudocount)
 
 # Write to file ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
@@ -88,7 +91,7 @@ check_file_exists(plate_cell_outpath)
 id_cols_table <- generate_id_cols_table(
     normalized_counts = normalized_counts, annotated_counts = annotated_counts,
     cell_set_meta = cell_set_meta, id_cols_list = id_cols_list, cell_line_cols = cell_line_cols_list,
-    count_threshold = count_threshold, cb_meta = cb_meta
+    count_threshold = count_threshold, cb_meta = cb_meta, pseudocount = pseudocount
 )
 
 # Write to file ----------

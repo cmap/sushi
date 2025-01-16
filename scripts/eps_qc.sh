@@ -88,6 +88,7 @@ parameters=(
   "BUILD_NAME:$BUILD_NAME"
   "CONTROL_TYPES:$CTL_TYPES"
   "DAYS:$DAYS"
+  "PSEUDOCOUNT:$PSEUDOCOUNT"
 )
 
 args=(
@@ -95,6 +96,7 @@ args=(
 --build_dir "$BUILD_DIR"
 --control_type "$CTL_TYPES"
 --count_threshold "$COUNT_THRESHOLD"
+--pseudocount "$PSEUDOCOUNT"
 --days "$DAYS"
 --name "$BUILD_NAME"
 )
