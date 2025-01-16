@@ -9,6 +9,8 @@ import gzip
 import shutil
 import boto3
 from botocore.exceptions import NoCredentialsError
+import requests
+import urllib
 
 logger = logging.getLogger('seq_to_mts')
 pert_vehicle = "DMSO"
@@ -29,6 +31,7 @@ def build_parser():
     parser.add_argument('--build_name', '-n', help='Build name.', required=True)
     parser.add_argument('--days', '-d', help='Day timepoints to drop from output data separated by commas.')
     parser.add_argument('--config', '-c', help='Config file for project.', required=True, default='config.json')
+    parser.add_argument('--api_key', '-a', help='API key for cellDB', required=True)
     return parser
 
 
@@ -111,6 +114,46 @@ def remove_invalid_pert_ids(df):
     clean_df = df[~df['pert_id'].isna() & (df['pert_id'] != 'NONE')]
 
     return clean_df
+
+
+def get_cell_api_info(api_url, api_key, filter=None):
+    """
+    Fetch data from a cell API endpoint with optional filtering.
+
+    Parameters:
+        api_url (str): The base URL of the API.
+        api_key (str): The API key for authentication.
+        filter (dict, optional): A dictionary representing the filter criteria.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the API response data if successful.
+    """
+    if filter is not None:
+        # Convert the filter dictionary to a JSON string and URL-encode it
+        filter_json = json.dumps(filter)
+        filter_encoded = urllib.parse.quote(filter_json)
+        api_url = f"{api_url}?filter={filter_encoded}"
+
+    # Define headers
+    headers = {
+        "Accept": "application/json",
+        "user_key": api_key,
+        "prism_key": "prism_mts"
+    }
+
+    # Send the GET request
+    response = requests.get(api_url, headers=headers)
+
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        # Parse the JSON response and convert it to a DataFrame
+        response_json = response.json()
+        dataframe = pd.json_normalize(response_json)  # Flatten nested JSON if necessary
+        return dataframe
+    else:
+        print(f"API request failed with status code: {response.status_code}")
+        print(f"Response content:\n{response.text}")
+        return None
 
 
 def main(args):
@@ -209,6 +252,21 @@ def main(args):
 
     level_5["pert_time"] = level_5["pert_time"].astype(str) + " " + level_5["pert_time_unit"]
     level_5["pert_idose"] = level_5["pert_dose"].astype(str) + " " + level_5["pert_dose_unit"]
+
+    # Get luas from cellDB
+    print(f"Fetching cell line information from cellDB...")
+    cell_line_api_url = "https://api.clue.io/api/cell_lines"
+    print(f"API URL is {cell_line_api_url}...")
+    api_key = args.api_key
+    print(f"Using API key {api_key}...")
+    cell_line_df = get_cell_api_info(cell_line_api_url, api_key)[["lua","ccle_name"]]
+
+    # Add luas to datasets
+    print(f"Adding ccle_name to datasets, matching on lua...")
+    level_3 = level_3.merge(cell_line_df, on="lua", how="left")
+    level_4 = level_4.merge(cell_line_df, on="lua", how="left")
+    level_5 = level_5.merge(cell_line_df, on="lua", how="left")
+
 
     # Sorting columns to resemble MTS style
     level_4.sort_index(axis=1, inplace=True)

@@ -24,7 +24,7 @@ validate_num_bio_reps= function(num_unique_bio_reps, max_bio_rep_count) {
 #' computes the MAD/sqrt(n).
 #'
 #' @param l2fc Dataframe of l2fc values The following columns are required -
-#'              depmap_id, ccle_name, counts_flag, mean_n, mean_normalized_n, and l2fc.
+#'              depmap_id, lua, counts_flag, mean_n, mean_normalized_n, and l2fc.
 #' @param sig_cols List of columns that define an individual condition. This should not include any replicates.
 #'                  The columns in this list should be present in the l2fc dataframe.
 #' @param cell_line_cols List of columns that define a cell line. Defaults to "project_code" and "depmap_id"
@@ -46,10 +46,8 @@ collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'd
   collapsed_counts= l2fc %>% dplyr::filter(is.na(counts_flag)) %>% 
     tidyr::unite(col= 'sig_id', all_of(sig_cols), sep= ':', na.rm= FALSE, remove= FALSE) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'sig_id', sig_cols)))) %>%
-    dplyr::summarise(trt_median_n= median(mean_n), trt_median_normalized_n= median(mean_normalized_n),
-                     trt_mad_sqrtN= mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
-                     median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup() %>% 
-    dplyr::mutate(trt_MAD_QC= (trt_mad_sqrtN <= 0.5/log10(2))) # Adjusted cut off from log10 to log2
+    dplyr::summarise(trt_median_normalized_n= median(mean_normalized_n),
+                     median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup()
   
   # Validation: Check that replicates were collapsed ----
   if('bio_rep' %in% colnames(l2fc)) {

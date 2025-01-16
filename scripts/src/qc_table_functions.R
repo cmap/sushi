@@ -118,20 +118,20 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
 #'
 #' @import dplyr
 #'
-calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_plate", "pcr_well")) {
+calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_plate", "pcr_well"), pseudocount = 20) {
   valid_profiles= normalized_counts %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
                                                       cb_ladder %in% unique(cb_meta$cb_ladder),
                                                       cb_name %in% unique(cb_meta$cb_name)) %>%
     dplyr::group_by(across(all_of(group_cols))) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
   fit_stats= valid_profiles %>%
     dplyr::group_by(across(all_of(group_cols))) %>%
-    dplyr::mutate(log2_normalized_n= log2_n + cb_intercept,
+    dplyr::mutate(log2_normalized_n= log2(n+pseudocount) + cb_intercept,
                   cb_mae= median(abs(cb_log2_dose- log2_normalized_n)),
                   mean_y= mean(cb_log2_dose),
                   residual2= (cb_log2_dose- log2_normalized_n)^2,
                   squares2= (cb_log2_dose- mean_y)^2,
                   cb_r2= 1- sum(residual2)/sum(squares2),
-                  cb_spearman= cor(cb_log2_dose, log2_n, method= 'spearman', use= 'pairwise.complete.obs')) %>%
+                  cb_spearman= cor(cb_log2_dose, log2(n+pseudocount), method= 'spearman', use= 'pairwise.complete.obs')) %>%
     dplyr::ungroup() %>%
     dplyr::distinct(across(all_of(c(group_cols, 'cb_mae', 'cb_r2', 'cb_spearman', 'cb_intercept'))))
   return(fit_stats)
@@ -155,7 +155,7 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
 #'
 #' @import dplyr
 generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
-                                   count_threshold= 40) {
+                                   count_threshold= 40, pseudocount= 20) {
   paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
 
   read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = id_cols_list,
@@ -164,7 +164,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set
 
   skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
 
-  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = id_cols_list)
+  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = id_cols_list, pseudocount = pseudocount)
 
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = id_cols_list) %>%
@@ -247,7 +247,7 @@ compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c(
 #' @importFrom tidyr pivot_wider
 #' @importFrom stats mad pnorm
 compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_plate"),
-                                    negcon = "ctl_vehicle", poscon = "trt_poscon") {
+                                    negcon = "ctl_vehicle", poscon = "trt_poscon", pseudocount = 20) {
   paste0("Adding control median and MAD values for ", negcon, " and ", poscon, ".....")
   paste0("Computing falses sensitivity probability for ", negcon, ".....")
   # Group and compute medians/MADs
@@ -258,8 +258,8 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
       median_normalized = median(log2_normalized_n, na.rm = TRUE),
       n_replicates = n(),
       mad_normalized = mad(log2_normalized_n, na.rm = TRUE),
-      median_raw = median(log2_n, na.rm = TRUE),
-      mad_raw = mad(log2_n, na.rm = TRUE)
+      median_raw = median(log2(n+pseudocount), na.rm = TRUE),
+      mad_raw = mad(log2(n+pseudocount), na.rm = TRUE)
     ) %>%
     dplyr::ungroup() %>%
     pivot_wider(
@@ -351,7 +351,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols) {
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list,"pcr_plate") # Define columns to group by
   paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
@@ -361,7 +361,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     df = normalized_counts,
     group_cols = cell_line_plate_grouping,
     negcon = args$negcon_type,
-    poscon = args$poscon_type
+    poscon = args$poscon_type,
+    pseudocount = pseudocount
   )
 
   # Compute error rate
