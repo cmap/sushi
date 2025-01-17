@@ -40,25 +40,28 @@ treatment_columns <- sig_cols[!grepl("dose", sig_cols)]
 # Construct output path
 out_path <- paste0(build_dir, "/biomarker")
 
-# Set up AWS credentials
-creds <- read_credentials(file = "/root/.aws/credentials")  # Adjust the path if necessary
-print("Reading AWS credentials...")
-print(creds)
+# Read s3 credentials from the default file or a specified path
+creds <- read_credentials(file = "/root/.aws/credentials")
 
-aws_access_key <- creds[["default"]][["AWS_ACCESS_KEY_ID"]]
-aws_secret_key <- creds[["default"]][["AWS_SECRET_ACCESS_KEY"]]
-aws_region <- creds[["default"]][["AWS_DEFAULT_REGION"]]
+# Select the desired profile (e.g., "default")
+profile <- "default"
 
-# Set environment variables for AWS
-Sys.setenv(
-  AWS_ACCESS_KEY_ID = aws_access_key,
-  AWS_SECRET_ACCESS_KEY = aws_secret_key,
-  AWS_DEFAULT_REGION = ifelse(is.null(aws_region), "us-east-1", aws_region) # Default to 'us-east-1' if not set
+# Extract credentials for the selected profile
+aws_region <- creds[[profile]][["AWS_DEFAULT_REGION"]] # Optional: Use a default value
+access_key_id <- creds[[profile]][["AWS_ACCESS_KEY_ID"]]
+secret_access_key <- creds[[profile]][["AWS_SECRET_ACCESS_KEY"]]
+
+# Validate that the credentials are present
+if (is.null(access_key_id) || is.null(secret_access_key)) {
+  stop(paste("Missing AWS credentials for profile:", profile))
+}
+
+# Construct the s3_cred list
+s3_cred <- list(
+  aws_region = ifelse(is.null(aws_region), "us-east-1", aws_region), # Default to 'us-east-1' if region is missing
+  access_key_id = access_key_id,
+  secret_access_key = secret_access_key
 )
-
-# Test S3 connection (optional, for debugging)
-print("Testing S3 access...")
-print(bucketlist())  # Ensure credentials work
 
 # Run univariate biomarker analysis if requested
 if (univariate_biomarker) {
@@ -71,7 +74,8 @@ if (univariate_biomarker) {
                                                         output_file_name = "l2fc_univariate_biomarkers.csv",
                                                         treatment_columns = treatment_columns,
                                                         response_column = response_column,
-                                                        depmap_file = bio_file
+                                                        depmap_file = bio_file,
+                                                        creds = s3_cred
   )
 }
 
@@ -86,6 +90,7 @@ if (multivariate_biomarker) {
                                                             output_file_name = "l2fc_multivariate_biomarkers.csv",
                                                             treatment_columns = treatment_columns,
                                                             response_column = response_column,
-                                                            depmap_file = bio_file
+                                                            depmap_file = bio_file,
+                                                            creds = s3_cred
   )
 }
