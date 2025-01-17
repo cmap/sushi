@@ -280,9 +280,9 @@ read_dataset <- function(file = 's3://assets.clue.io/biomarker/current/depmap_da
     s3 = FALSE
     print(paste0("Reading ", file, " from local"))
   }
-  X <- h5read(file, name = paste0(dataset, "/mat"), s3 = s3)
-  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3)
-  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3)
+  X <- h5read(file, name = paste0(dataset, "/mat"), s3 = s3, s3_credentials = creds)
+  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3, s3_credentials = creds)
+  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3, s3_credentials = creds)
   colnames(X) <- column_meta$column_name
   if(rownames_depmap_ids){
     rownames(X) <- row_meta$ModelID
@@ -317,8 +317,8 @@ read_features <- function(file = 's3://assets.clue.io/biomarker/current/depmap_d
     s3 = FALSE
   }
 
-  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3)
-  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3)
+  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3, s3_credentials = creds)
+  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3, s3_credentials = creds)
 
   if(!is.null(feature_names)){
     column_meta <- dplyr::filter(column_meta, column_name %in% feature_names)
@@ -326,7 +326,7 @@ read_features <- function(file = 's3://assets.clue.io/biomarker/current/depmap_d
 
   if(nrow(column_meta) > 0){
     X <- h5read(file, name = paste0(dataset, "/mat"),
-                index = list(NULL, column_meta$ix), s3 = s3)
+                index = list(NULL, column_meta$ix), s3 = s3, s3_credentials = creds)
     colnames(X) <- column_meta$column_name
     if(rownames_depmap_ids){
       rownames(X) <- row_meta$ModelID
