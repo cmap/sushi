@@ -6,7 +6,7 @@ options(cli.unicode = FALSE)
 #' 
 #' @param cell_set_meta The cell_set_meta df with the columns "cell_set" and "members".
 validate_cell_set= function(cell_set_and_pool_meta) {
-  duplicate_cls= cell_set_and_pool_meta %>% dplyr::count(cell_set, depmap_id, name= 'count') %>% 
+  duplicate_cls= cell_set_and_pool_meta %>% dplyr::count(cell_set, depmap_id, lua, name= 'count') %>%
     dplyr::filter(count > 1)
   
   if(nrow(duplicate_cls) > 0) {
@@ -83,7 +83,7 @@ filter_raw_reads= function(prism_barcode_counts,
   validate_cell_set(cell_set_and_pool_meta)
   
   # Drop cell lines that appear in more than one pool of a cell set
-  cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id) %>%
+  cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id, lua) %>%
     dplyr::summarise(pool_id= paste(sort(unique(pool_id)), collapse= ';')) %>% dplyr::ungroup()
   
   # Creating a template of all expected reads in the run ----
@@ -96,7 +96,7 @@ filter_raw_reads= function(prism_barcode_counts,
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
   # Left join barcode sequence using data.table inplace merge
-  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= 'depmap_id']
+  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
   
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {

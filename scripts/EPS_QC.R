@@ -21,7 +21,7 @@ parser$add_argument("-n", "--name", default="", help = "Build name. Default is n
 parser$add_argument("--control_type", default = "ctl_vehicle", help = "how negative control wells are distinguished in the pert_type column")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-d","--days",default="", help='Day timepoints to drop from output data separated by commas.')
-
+parser$add_argument("--pseudocount", default=20, help = "pseudocount for normalization")
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
@@ -32,6 +32,7 @@ control_type <- args$control_type
 days_to_drop.arg <- args$days
 count_threshold <- as.numeric(args$count_threshold) #default is 40 
 days_to_drop <- as.numeric(unlist(strsplit(days_to_drop.arg, ","))) ## convert from string to numeric vector
+pseudocount= as.numeric(args$pseudocount)
 
 if (!dir.exists(out_dir)) {dir.create(out_dir, recursive = T)} ## create output dir if it doesn't exist
 
@@ -47,7 +48,7 @@ if (length(norm_count_files) == 1) {
 
 ## get negcon counts at day in QC table to pass to portal
 cell_counts_negcon <- norm_counts %>% 
-    dplyr::filter(!is.na(ccle_name)) %>% 
+    dplyr::filter(!is.na(depmap_id)) %>%
     dplyr::filter(!(day %in% days_to_drop)) %>% 
     dplyr::filter(pert_type==control_type)
 
@@ -63,15 +64,15 @@ if(nrow(cell_counts_negcon) <1) {
     stop("Error: no negcon data at this day")
 }
 # validation: columns required in QC table should be present
-if (!all(c("ccle_name", "depmap_id", "cell_set", "day", "pert_plate") %in% colnames(cell_counts_negcon))){
-    stop("All columns required in QC table not found, i.e: ccle_name, depmap_id, cell_set, day, pert_plate")
+if (!all(c("depmap_id", "cell_set", "day", "pert_plate") %in% colnames(cell_counts_negcon))){
+    stop("All columns required in QC table not found, i.e: depmap_id, cell_set, day, pert_plate")
 }
 
 
 ## get median counts in negcon and apply count threshold to generate the QC table
 med_cell_counts_qc <- cell_counts_negcon %>% 
-    dplyr::group_by(ccle_name, depmap_id, cell_set, day, pert_plate) %>% 
-    dplyr::summarize(med_log_raw_counts=median(log2_n), 
+    dplyr::group_by(lua, depmap_id, cell_set, day, pert_plate) %>%
+    dplyr::summarize(med_log_raw_counts=median(log2(n+pseudocount)), 
                      med_log_norm_counts= median(log2_normalized_n),
                      med_raw_counts= median(n)) %>% 
     dplyr::mutate(pass_raw_count_qc=med_raw_counts>count_threshold) %>% 

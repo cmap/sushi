@@ -426,7 +426,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
   reps_piv= reps_piv %>%
     pivot_wider(id_cols= all_of(c(cell_line_cols, 'replicate_group')),
                 names_from= replicate_col, names_prefix= replicate_col, values_from= value_col) %>%
-    dplyr::mutate(type= ifelse(!is.na(ccle_name), "cell line", "control barcode")) %>% dplyr::ungroup()
+    dplyr::mutate(type= ifelse(!is.na(lua), "cell line", "control barcode")) %>% dplyr::ungroup()
   
   # Create names of the columns to plot on xy axes
   x_col_name= paste0(replicate_col, x_axis_rep)

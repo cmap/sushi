@@ -11,17 +11,17 @@
 #' @param ctrl_cols - a vector of column names denoting which values specify each individual control condition
 #'                    cell_set,day by default.
 #' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. 
-#'          Generally normalized_n if running on normalied_counts or n if running on filtered_counts
+#'          Generally log2_normalized_n if running on normalized_counts or n if running on filtered_counts
 #' @param count_threshold - threshold for determining low counts, defaults to 40.
-#' @param cell_line_cols - Vector of columns that define a cell line. Defaults to project_code, depmap_id, and ccle_name
+#' @param cell_line_cols - Vector of columns that define a cell line. Defaults to lua, depmap_id, and pool_id
 #' @return - l2fc data.frame with l2fc column
 #' @export
 compute_l2fc= function(normalized_counts,
                        control_type = "negcon",
                        sig_cols=c('cell_set','pert_name','pert_dose','pert_dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
-                       count_col_name="normalized_n", count_threshold= 40,
-                       cell_line_cols= c('project_code', 'depmap_id')) {
+                       count_col_name="log2_normalized_n", count_threshold= 40,
+                       cell_line_cols= c('lua', 'depmap_id', 'pool_id')) {
   
   # Validation: Check that sig_cols are in normalized_counts ----
   if(validate_columns_exist(sig_cols, normalized_counts) == FALSE) {
@@ -52,7 +52,7 @@ compute_l2fc= function(normalized_counts,
     dplyr::filter(!(pert_type %in% c('empty', '', 'CB_only', NA)), !is.na(depmap_id)) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'pert_type', bio_rep_id_cols, ctrl_cols)))) %>%
     dplyr::summarise(mean_n= mean(n),
-                     mean_normalized_n= mean(!!rlang::sym(count_col_name))) %>% dplyr::ungroup()
+                     mean_normalized_n= mean(2^(!!rlang::sym(count_col_name)))) %>% dplyr::ungroup()
   
   # Print out the occurrence of each count of tech_reps
   # print('Number of technical replicate collapsed across all cell lines and biological replicates:')
@@ -63,10 +63,9 @@ compute_l2fc= function(normalized_counts,
   print('Collapsing control conditions on the following columns: ')
   print(unique(c(cell_line_cols, ctrl_cols)))
   controls= collapsed_tech_rep %>% dplyr::filter(pert_type== control_type) %>% 
-    dplyr::group_by(pick(all_of(c(cell_line_cols, ctrl_cols)))) %>%
+    dplyr::group_by(pick(all_of(union(cell_line_cols, ctrl_cols)))) %>%
     dplyr::summarise(control_median_n= median(mean_n),
                      control_median_normalized_n = median(mean_normalized_n),
-                     control_mad_sqrtN = mad(log2(mean_normalized_n)) / sqrt(dplyr::n()),
                      num_ctrl_bio_reps = dplyr::n()) %>% dplyr::ungroup()
   
   # Validation: Check that negative controls were extracted ----
@@ -76,9 +75,10 @@ compute_l2fc= function(normalized_counts,
   
   # Join neg_cons and compute l2fc ----
   l2fc= collapsed_tech_rep %>% dplyr::filter(!pert_type %in% c(control_type, 'day_0')) %>% 
-    dplyr::inner_join(controls, by= c(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
+    dplyr::inner_join(controls, by= union(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
     dplyr::mutate(l2fc= log2(mean_normalized_n / control_median_normalized_n),
-                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA))
+                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
+    dplyr::select(-mean_n, -control_median_n)
   
   return(l2fc)
 }
