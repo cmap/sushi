@@ -179,7 +179,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 #'
 #' @examples
 #'
-univariate_biomarker_table <- function(Y, file = 's3://assets.clue.io/biomarker/current/depmap_datasets_public.h5',
+univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap_datasets_public.h5',
                                        features = NULL,
                                        homoskedastic = TRUE, n.X.min = 100,
                                        ns.min = 3, q.val.max = .2,
@@ -269,8 +269,8 @@ univariate_biomarker_table <- function(Y, file = 's3://assets.clue.io/biomarker/
 #' @export
 #'
 #' @examples
-read_dataset <- function(file = 's3://assets.clue.io/biomarker/current/depmap_datasets_public.h5', dataset,
-                         rownames_depmap_ids = TRUE, creds = creds) {
+read_dataset <- function(file = '/data/biomarker/current/depmap_datasets_public.h5', dataset,
+                         rownames_depmap_ids = TRUE) {
   require(rhdf5)
   print("testing")
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
@@ -280,9 +280,9 @@ read_dataset <- function(file = 's3://assets.clue.io/biomarker/current/depmap_da
     s3 = FALSE
     print(paste0("Reading ", file, " from local"))
   }
-  X <- h5read(file, name = paste0(dataset, "/mat"), s3 = s3, s3credentials = creds)
-  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3, s3credentials = creds)
-  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3, s3credentials = creds)
+  X <- h5read(file, name = paste0(dataset, "/mat"), s3 = s3)
+  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3)
+  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3)
   colnames(X) <- column_meta$column_name
   if(rownames_depmap_ids){
     rownames(X) <- row_meta$ModelID
@@ -307,10 +307,9 @@ read_dataset <- function(file = 's3://assets.clue.io/biomarker/current/depmap_da
 #' @export
 #'
 #' @examples
-read_features <- function(file = 's3://assets.clue.io/biomarker/current/depmap_datasets_public.h5',
+read_features <- function(file = '/data/biomarker/current/depmap_datasets_public.h5',
                           dataset, feature_names = NULL,
-                          rownames_depmap_ids = TRUE,
-                          creds = creds) {
+                          rownames_depmap_ids = TRUE) {
   require(rhdf5)
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
     s3 = TRUE
@@ -318,8 +317,8 @@ read_features <- function(file = 's3://assets.clue.io/biomarker/current/depmap_d
     s3 = FALSE
   }
 
-  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3, s3credentials = creds)
-  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3, s3credentials = creds)
+  row_meta <- h5read(file, name = paste0(dataset, "/row_meta"), s3 = s3)
+  column_meta <- h5read(file, name = paste0(dataset, "/column_meta"), s3 = s3)
 
   if(!is.null(feature_names)){
     column_meta <- dplyr::filter(column_meta, column_name %in% feature_names)
@@ -327,7 +326,7 @@ read_features <- function(file = 's3://assets.clue.io/biomarker/current/depmap_d
 
   if(nrow(column_meta) > 0){
     X <- h5read(file, name = paste0(dataset, "/mat"),
-                index = list(NULL, column_meta$ix), s3 = s3, s3credentials = creds)
+                index = list(NULL, column_meta$ix), s3 = s3)
     colnames(X) <- column_meta$column_name
     if(rownames_depmap_ids){
       rownames(X) <- row_meta$ModelID
@@ -358,7 +357,7 @@ read_features <- function(file = 's3://assets.clue.io/biomarker/current/depmap_d
 #' @export
 #'
 #' @examples
-RF_feature_sets <- function(Y, W = NULL, file = 's3://assets.clue.io/biomarker/current/depmap_datasets_public.h5') {
+RF_feature_sets <- function(Y, W = NULL, file = '/data/biomarker/current/depmap_datasets_public.h5') {
   require(magrittr)
 
   if(!is.null(W)){
@@ -428,7 +427,7 @@ RF_feature_sets <- function(Y, W = NULL, file = 's3://assets.clue.io/biomarker/c
 #' @export
 #'
 #' @examples
-multivariate_biomarker_table <- function(Y, W = NULL, file = 's3://assets.clue.io/biomarker/current/depmap_datasets_public.h5', k = 10) {
+multivariate_biomarker_table <- function(Y, W = NULL, file = '/data/biomarker/current/depmap_datasets_public.h5', k = 10) {
   X <- RF_feature_sets(Y, W = W, file = file)
   cl <- intersect(rownames(X$X.DNA), rownames(X$X.RNA))
 
