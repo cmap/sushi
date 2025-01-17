@@ -2,6 +2,8 @@ options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 library(tidyverse)
+library(aws.signature)
+library(aws.s3)
 source("./src/biomarker_functions.R")
 source("./src/kitchen_utensils.R")
 
@@ -18,7 +20,7 @@ parser$add_argument("--collapsed_l2fc_column", default="median_l2fc",
 parser$add_argument("--build_dir", default= "", help = "Path to the build directory")
 parser$add_argument("--univariate_biomarker", default="true", help="Whether to calculate univariate biomarkers")
 parser$add_argument("--multivariate_biomarker", default="true", help="Whether to calculate multivariate biomarkers")
-parser$add_argument("--biomarker_file", default="https://assets.clue.io/biomarker/current/depmap_datasets_public.h5", help="File containing depmap data")
+parser$add_argument("--biomarker_file", default="s3://assets.clue.io/biomarker/current/depmap_datasets_public.h5", help="File containing depmap data")
 
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
@@ -37,6 +39,21 @@ treatment_columns <- sig_cols[!grepl("dose", sig_cols)]
 
 # Construct output path
 out_path <- paste0(build_dir, "/biomarker")
+
+# Set up AWS credentials
+creds <- read_credentials(file = "/root/.aws/credentials")  # Adjust the path if necessary
+aws_access_key <- creds[["default"]][["AWS_ACCESS_KEY_ID"]]
+aws_secret_key <- creds[["default"]][["AWS_SECRET_ACCESS_KEY"]]
+aws_region <- creds[["default"]][["AWS_DEFAULT_REGION"]]
+
+# Set environment variables for AWS
+Sys.setenv(AWS_ACCESS_KEY_ID = aws_access_key,
+           AWS_SECRET_ACCESS_KEY = aws_secret_key,
+           AWS_DEFAULT_REGION = aws_region)
+
+# Test S3 connection (optional, for debugging)
+print("Testing S3 access...")
+print(bucketlist())  # Ensure credentials work
 
 # Run univariate biomarker analysis if requested
 if (univariate_biomarker) {
