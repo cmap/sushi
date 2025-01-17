@@ -50,9 +50,11 @@ aws_secret_key <- creds[["default"]][["AWS_SECRET_ACCESS_KEY"]]
 aws_region <- creds[["default"]][["AWS_DEFAULT_REGION"]]
 
 # Set environment variables for AWS
-Sys.setenv(AWS_ACCESS_KEY_ID = aws_access_key,
-           AWS_SECRET_ACCESS_KEY = aws_secret_key,
-           AWS_DEFAULT_REGION = aws_region)
+Sys.setenv(
+  AWS_ACCESS_KEY_ID = aws_access_key,
+  AWS_SECRET_ACCESS_KEY = aws_secret_key,
+  AWS_DEFAULT_REGION = ifelse(is.null(aws_region), "us-east-1", aws_region) # Default to 'us-east-1' if not set
+)
 
 # Test S3 connection (optional, for debugging)
 print("Testing S3 access...")
