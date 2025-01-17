@@ -270,7 +270,7 @@ univariate_biomarker_table <- function(Y, file = 's3://assets.clue.io/biomarker/
 #'
 #' @examples
 read_dataset <- function(file = 's3://assets.clue.io/biomarker/current/depmap_datasets_public.h5', dataset,
-                         rownames_depmap_ids = TRUE) {
+                         rownames_depmap_ids = TRUE, creds = creds) {
   require(rhdf5)
   print("testing")
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
@@ -309,7 +309,8 @@ read_dataset <- function(file = 's3://assets.clue.io/biomarker/current/depmap_da
 #' @examples
 read_features <- function(file = 's3://assets.clue.io/biomarker/current/depmap_datasets_public.h5',
                           dataset, feature_names = NULL,
-                          rownames_depmap_ids = TRUE) {
+                          rownames_depmap_ids = TRUE,
+                          creds = creds) {
   require(rhdf5)
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
     s3 = TRUE
