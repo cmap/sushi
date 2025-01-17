@@ -42,6 +42,9 @@ out_path <- paste0(build_dir, "/biomarker")
 
 # Set up AWS credentials
 creds <- read_credentials(file = "/root/.aws/credentials")  # Adjust the path if necessary
+print("Reading AWS credentials...")
+print(creds)
+
 aws_access_key <- creds[["default"]][["AWS_ACCESS_KEY_ID"]]
 aws_secret_key <- creds[["default"]][["AWS_SECRET_ACCESS_KEY"]]
 aws_region <- creds[["default"]][["AWS_DEFAULT_REGION"]]
