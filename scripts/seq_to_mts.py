@@ -194,6 +194,7 @@ def main(args):
     # Add profile_id to levels 3,4 and 5
     level_3 = create_profile_id_column(level_3, config)
     level_4 = create_profile_id_column(level_4, config)
+    level_5 = create_profile_id_column(level_5, config)
 
     # Define the list of datasets
     datasets = [sample_meta, level_3, level_4, level_5]
