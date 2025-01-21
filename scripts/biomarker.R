@@ -33,7 +33,7 @@ bio_file = args$biomarker_file
 in_path = args$collapsed_lfc
 
 # Create treatment_columns by filtering out elements containing "dose"
-treatment_columns <- sig_cols[!grepl("dose", sig_cols)]
+treatment_columns <- sig_cols[!grepl("cell_set", sig_cols)]
 
 # Construct output path
 out_path <- paste0(build_dir, "/biomarker")
