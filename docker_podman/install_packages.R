@@ -1,4 +1,5 @@
 # Install CRAN packages
+install.packages("ranger", dependencies = TRUE)
 install.packages("dr4pl", dependencies = TRUE)
 install.packages("drc", dependencies = TRUE)
 install.packages("argparse", dependencies = TRUE)
