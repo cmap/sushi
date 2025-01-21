@@ -2,8 +2,6 @@ options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 library(tidyverse)
-library(aws.signature)
-library(aws.s3)
 source("./src/biomarker_functions.R")
 source("./src/kitchen_utensils.R")
 
