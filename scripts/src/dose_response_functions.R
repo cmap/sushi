@@ -121,6 +121,12 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
 
   # FIT 1 ---
+  print("Input data for drc::drm():")
+  print(data.frame(FC = FC, dose = dose))
+  print("Bounds for drm():")
+  print(list(slope_bound = slope_bound, UL_low = UL_low, UL_up = UL_up))
+
+
   drc_model <-  tryCatch(drc::drm(FC ~ dose, data= data.frame(FC = FC, dose = dose),
                                   fct=LL.4(names = c("Slope", "Lower Limit", "Upper Limit", "ED50")),
                                   lowerl = c(-slope_bound,0.0, UL_low, -Inf),upperl = c(Inf,1.01,UL_up, Inf)),
