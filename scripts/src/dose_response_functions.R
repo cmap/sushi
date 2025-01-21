@@ -130,9 +130,6 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
 
   if (drc_model$fit$convergence & all(is.finite(unlist(drc_model$coefficients)))){
-    print("fit 1 parameters ...")
-    print(drc_model$coefficients)
-
     mse_mad <- compute_MSE_MAD(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
                                -as.numeric(drc_model$coefficients[[1]]), as.numeric(drc_model$coefficients[[4]]))
     # "slope" in drc package is -ve of slope in dr4pl package and so -ve sign needs to be put in here.
@@ -158,9 +155,6 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
 
   if (drc_model$fit$convergence & all(is.finite(unlist(drc_model$coefficients)))){
-    print("fit 2 parameters ...")
-    print(drc_model$coefficients)
-
     if((!slope_decreasing) | (as.numeric(drc_model$coefficients[[1]]) > 0)){
       mse_mad <- compute_MSE_MAD(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
                                  -as.numeric(drc_model$coefficients[[1]]), as.numeric(drc_model$coefficients[[4]]))
@@ -194,9 +188,6 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   }
 
   if (dr4pl_initMan_optNM$convergence & all(is.finite(unlist(dr4pl_initMan_optNM$parameters)))){
-    print("fit 3 parameters ...")
-    print(dr4pl_initMan_optNM$parameters)
-
     mse_mad <- compute_MSE_MAD(FC, dose, dr4pl_initMan_optNM$parameters[[1]], dr4pl_initMan_optNM$parameters[[4]],
                                dr4pl_initMan_optNM$parameters[[3]], dr4pl_initMan_optNM$parameters[[2]])
 
@@ -226,9 +217,6 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
   param <- tryCatch(dr4pl_unconstrained$parameters, error = function(e) return(NA))
   if (!all(is.na(param))){
-    print("fit 4 parameters ...")
-    print(dr4pl_unconstrained$parameters)
-
     if(as.numeric(dr4pl_unconstrained$parameters[[3]])<slope_bound){ ### while slope bound is not passed to this last optimizer, we do not accept a solution not within the bound
       mse_mad <- compute_MSE_MAD(FC, dose, dr4pl_unconstrained$parameters[[1]], dr4pl_unconstrained$parameters[[4]],
                                  dr4pl_unconstrained$parameters[[3]], dr4pl_unconstrained$parameters[[2]])
@@ -258,9 +246,6 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   }
 
   if (dr4pl_initL$convergence & all(is.finite(unlist(dr4pl_initL$parameters)))){
-    print("fit 5 parameters ...")
-    print(dr4pl_initL$parameters)
-
     mse_mad <- compute_MSE_MAD(FC,dose, dr4pl_initL$parameters[[1]], dr4pl_initL$parameters[[4]],
                                dr4pl_initL$parameters[[3]], dr4pl_initL$parameters[[2]])
 
