@@ -19,6 +19,7 @@ install.packages("reshape2", dependencies = TRUE)
 install.packages("R.utils", dependencies = TRUE)
 install.packages("PRROC", dependencies = TRUE)
 devtools::install_github("https://github.com/broadinstitute/taigr")
+devtools::install_bitbucket("dittmerlab/dr4pl")
 
 # Install other necessary Bioconductor packages explicitly
 BiocManager::install("S4Vectors")
