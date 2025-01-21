@@ -32,6 +32,8 @@ compute_auc <- function(LL, UL, Inflection, Slope, md, MD) {
 #'
 #' @examples
 compute_log_ic50 <- function(LL, UL, Inflection, Slope, md, MD) {
+  print("Computing IC50 parameters ...")
+  print(list(LL, UL, Inflection, Slope, md, MD))
   if((LL >= 0.5) | (UL <= 0.5)) {
     return(NA)
   } else {
