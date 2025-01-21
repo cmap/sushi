@@ -135,7 +135,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   # "slope" in drc package is -ve of slope in dr4pl package
 
 
-  if (drc_model$fit$convergence){
+  if (drc_model$fit$convergence & all(is.finite(unlist(drc_model$coefficients)))){
     mse_mad <- compute_MSE_MAD(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
                                -as.numeric(drc_model$coefficients[[1]]), as.numeric(drc_model$coefficients[[4]]))
     # "slope" in drc package is -ve of slope in dr4pl package and so -ve sign needs to be put in here.
@@ -160,7 +160,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   # "slope" in drc package is -ve of slope in dr4pl package
 
 
-  if (drc_model$fit$convergence){
+  if (drc_model$fit$convergence & all(is.finite(unlist(drc_model$coefficients)))){
     if((!slope_decreasing) | (as.numeric(drc_model$coefficients[[1]]) > 0)){
       mse_mad <- compute_MSE_MAD(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
                                  -as.numeric(drc_model$coefficients[[1]]), as.numeric(drc_model$coefficients[[4]]))
@@ -193,7 +193,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
     }
   }
 
-  if (dr4pl_initMan_optNM$convergence){
+  if (dr4pl_initMan_optNM$convergence & all(is.finite(unlist(dr4pl_initMan_optNM$parameters)))){
     mse_mad <- compute_MSE_MAD(FC, dose, dr4pl_initMan_optNM$parameters[[1]], dr4pl_initMan_optNM$parameters[[4]],
                                dr4pl_initMan_optNM$parameters[[3]], dr4pl_initMan_optNM$parameters[[2]])
 
@@ -215,7 +215,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
                                   error = function(e) {print(e); return(NA)})
 
   if (!all(is.na(dr4pl_unconstrained))) {
-    if (!dr4pl_unconstrained$convergence) {
+    if (!dr4pl_unconstrained$convergence & all(is.finite(unlist(dr4pl_unconstrained$parameters)))){ {
       dr4pl_unconstrained <- dr4pl_unconstrained$dr4pl.robust
     }
   }
@@ -245,7 +245,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
                           error= function(e){return(list(convergence=FALSE, error=TRUE))}
   )
 
-  if (!dr4pl_initL$convergence){
+  if (!dr4pl_initL$convergence & all(is.finite(unlist(dr4pl_initL$parameters)))){
     if (!is.null(dr4pl_initL$dr4pl.robust)) {
       dr4pl_initL <- dr4pl_initL$dr4pl.robust
     }
