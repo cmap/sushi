@@ -32,8 +32,6 @@ compute_auc <- function(LL, UL, Inflection, Slope, md, MD) {
 #'
 #' @examples
 compute_log_ic50 <- function(LL, UL, Inflection, Slope, md, MD) {
-  print("Debugging compute_log_ic50 inputs...")
-  print(list(LL = LL, UL = UL, Inflection = Inflection, Slope = Slope, md = md, MD = MD))
   if((LL >= 0.5) | (UL <= 0.5)) {
     return(NA)
   } else {
@@ -121,12 +119,6 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
 
   # FIT 1 ---
-  print("Input data for drc::drm():")
-  print(data.frame(FC = FC, dose = dose))
-  print("Bounds for drm():")
-  print(list(slope_bound = slope_bound, UL_low = UL_low, UL_up = UL_up))
-
-
   drc_model <-  tryCatch(drc::drm(FC ~ dose, data= data.frame(FC = FC, dose = dose),
                                   fct=LL.4(names = c("Slope", "Lower Limit", "Upper Limit", "ED50")),
                                   lowerl = c(-slope_bound,0.0, UL_low, -Inf),upperl = c(Inf,1.01,UL_up, Inf)),
@@ -215,7 +207,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
                                   error = function(e) {print(e); return(NA)})
 
   if (!all(is.na(dr4pl_unconstrained))) {
-    if (!dr4pl_unconstrained$convergence & all(is.finite(unlist(dr4pl_unconstrained$parameters)))){ {
+    if (!dr4pl_unconstrained$convergence) {
       dr4pl_unconstrained <- dr4pl_unconstrained$dr4pl.robust
     }
   }
@@ -245,13 +237,13 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
                           error= function(e){return(list(convergence=FALSE, error=TRUE))}
   )
 
-  if (!dr4pl_initL$convergence & all(is.finite(unlist(dr4pl_initL$parameters)))){
+  if (!dr4pl_initL$convergence){
     if (!is.null(dr4pl_initL$dr4pl.robust)) {
       dr4pl_initL <- dr4pl_initL$dr4pl.robust
     }
   }
 
-  if (dr4pl_initL$convergence){
+  if (dr4pl_initL$convergence & all(is.finite(unlist(dr4pl_initL$parameters)))){
     mse_mad <- compute_MSE_MAD(FC,dose, dr4pl_initL$parameters[[1]], dr4pl_initL$parameters[[4]],
                                dr4pl_initL$parameters[[3]], dr4pl_initL$parameters[[2]])
 
