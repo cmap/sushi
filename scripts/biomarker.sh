@@ -16,20 +16,29 @@ enforce_abs_path() {
   local value=${!var_name}
 
   if [[ "$value" = /* ]]; then
-    eval "$var_name=$(ls "$value")"
-  elif [[ -d "$BUILD_DIR/$value" ]]; then
-    eval "$var_name=$BUILD_DIR/$value"
-  elif [[ -d "$BUILD_DIR/drc/$value" ]]; then
-    eval "$var_name=$BUILD_DIR/drc/$value"
-  elif [[ -d "$BUILD_DIR/biomarker/$value" ]]; then
-    eval "$var_name=$BUILD_DIR/biomarker/$value"
+    # Absolute path
+    if [[ -e "$value" ]]; then
+      eval "$var_name=\"$value\""
+    else
+      echo "Error: Path $value does not exist."
+      return 1
+    fi
   else
-    echo "Error: Path $value does not exist."
+    # Try resolving relative paths
+    for base_path in "$BUILD_DIR" "$BUILD_DIR/drc" "$BUILD_DIR/biomarker"; do
+      if [[ -e "$base_path/$value" ]]; then
+        eval "$var_name=\"$base_path/$value\""
+        echo "$var_name resolved to: ${!var_name}"
+        return 0
+      fi
+    done
+
+    # If no match, error out
+    echo "Error: Path $value does not exist under any base directory."
     return 1
   fi
-
-  echo "$var_name is: ${!var_name}"
 }
+
 
 
 enforce_abs_path COLLAPSED_LFC
