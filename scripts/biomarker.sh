@@ -46,9 +46,6 @@ enforce_abs_path() {
   return 1
 }
 
-
-
-
 enforce_abs_path COLLAPSED_LFC
 enforce_abs_path DRC_PATH
 

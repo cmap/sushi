@@ -86,7 +86,7 @@ if (univariate_biomarker || multivariate_biomarker) {
   # Pick the datasets and their corresponding response columns
   datasets <- list()
   if (lfc_biomarker) datasets <- c(datasets, list(list(path = lfc_path, response = lfc_column)))
-  if (auc_biomarker) datasets <- c(datasets, list(list(path = drc_path, response = auc_column)))
+  if (auc_biomarker) datasets <- c(datasets, list(list(path = auc_path, response = auc_column)))
 
   # Loop through the selected datasets
   for (dataset in datasets) {
