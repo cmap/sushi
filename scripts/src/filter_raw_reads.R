@@ -44,7 +44,8 @@ validate_cell_set= function(cell_set_and_pool_meta, cell_line_cols) {
 filter_raw_reads= function(prism_barcode_counts, 
                            sample_meta, cell_set_and_pool_meta, cell_line_meta, CB_meta,
                            id_cols= c('pcr_plate', 'pcr_well'),
-                           barcode_col= 'forward_read_barcode') {
+                           barcode_col= 'forward_read_barcode',
+                           cell_line_cols= cell_line_cols) {
   require(magrittr)
   require(tidyverse)
   require(data.table)
