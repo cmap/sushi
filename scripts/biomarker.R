@@ -58,8 +58,24 @@ if (!dir.exists(out_path)) {
     dir.create(out_path)
 }
 
+# Function to determine treatment columns
+get_treatment_columns <- function(response_column, sig_cols) {
+  if (response_column == args$collapsed_l2fc_column) {
+    # Exclude "cell_set" for lfc biomarker
+    return(sig_cols[!grepl("cell_set", sig_cols)])
+  } else if (response_column == args$auc_column) {
+    # Exclude "cell_set" and "dose" for auc biomarker
+    return(sig_cols[!grepl("cell_set|dose", sig_cols)])
+  } else {
+    stop("Unknown response column specified.")
+  }
+}
+
 # Function to call the creation of biomarker tables
-create_biomarker_table <- function(in_path, out_path, response_column, treatment_columns, depmap_file, biomarker_type) {
+create_biomarker_table <- function(in_path, out_path, response_column, sig_cols, depmap_file, biomarker_type) {
+  # Dynamically determine treatment columns
+  treatment_columns <- get_treatment_columns(response_column, sig_cols)
+
   # Choose the appropriate function based on biomarker type
   biomarker_function <- ifelse(biomarker_type == "univariate",
                                create_univariate_biomarker_table,
@@ -99,7 +115,7 @@ if (univariate_biomarker || multivariate_biomarker) {
         in_path = in_path,
         out_path = out_path,
         response_column = response_column,
-        treatment_columns = treatment_columns,
+        sig_cols = sig_cols,
         depmap_file = bio_file,
         biomarker_type = "univariate"
       )
@@ -111,12 +127,11 @@ if (univariate_biomarker || multivariate_biomarker) {
         in_path = in_path,
         out_path = out_path,
         response_column = response_column,
-        treatment_columns = treatment_columns,
+        sig_cols = sig_cols,
         depmap_file = bio_file,
         biomarker_type = "multivariate"
       )
     }
   }
 }
-
 
