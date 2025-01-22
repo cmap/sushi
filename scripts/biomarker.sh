@@ -17,11 +17,20 @@ enforce_abs_path() {
 
   if [[ "$value" = /* ]]; then
     eval "$var_name=$(ls "$value")"
-  else
+  elif [[ -d "$BUILD_DIR/$value" ]]; then
     eval "$var_name=$BUILD_DIR/$value"
+  elif [[ -d "$BUILD_DIR/drc/$value" ]]; then
+    eval "$var_name=$BUILD_DIR/drc/$value"
+  elif [[ -d "$BUILD_DIR/biomarker/$value" ]]; then
+    eval "$var_name=$BUILD_DIR/biomarker/$value"
+  else
+    echo "Error: Path $value does not exist."
+    return 1
   fi
+
   echo "$var_name is: ${!var_name}"
 }
+
 
 enforce_abs_path COLLAPSED_LFC
 enforce_abs_path DRC_PATH
