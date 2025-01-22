@@ -271,6 +271,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
                     md = md, MD = MD) %>%
       dplyr::rowwise() %>%
       dplyr::mutate(AUC = compute_auc(Lower_Limit, Upper_Limit, Inflection, Slope, md, MD),
+                    log2_auc = log2(AUC),
                     log2.IC50 = compute_log_ic50(Lower_Limit, Upper_Limit, Inflection, Slope, md, MD))
 
   }else{

@@ -32,6 +32,7 @@ args=(
 --univariate_biomarker "$UNIVARIATE_BIOMARKER"
 --multivariate_biomarker "$MULTIVARIATE_BIOMARKER"
 --biomarker_file "$BIOMARKER_FILE"
+--auc_column "$AUC_COLUMN"
 )
 
 echo Rscript biomarker.R "${args[@]}"

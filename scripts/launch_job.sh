@@ -39,7 +39,7 @@ PARAMS=(
   CELL_LINE_COLS SIG_COLS CONTROL_COLS COUNT_COL_NAME CTL_TYPES COUNT_THRESHOLD
   VIABILITY_CAP
   # biomarker parameters
-  UNIVARIATE_BIOMARKER MULTIVARIATE_BIOMARKER BIOMARKER_FILE
+  UNIVARIATE_BIOMARKER MULTIVARIATE_BIOMARKER BIOMARKER_FILE AUC_COLUMN LFC_BIOMARKER AUC_BIOMARKER
 )
 
 # Load parameters
@@ -127,6 +127,9 @@ echo "Running in container:"
   -e MULTIVARIATE_BIOMARKER="$MULTIVARIATE_BIOMARKER" \
   -e BIOMARKER_FILE="$BIOMARKER_FILE" \
   -e DRC="$DRC" \
+  -e AUC_COLUMN="$AUC_COLUMN" \
+  -e LFC_BIOMARKER="$LFC_BIOMARKER" \
+  -e AUC_BIOMARKER="$AUC_BIOMARKER" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \

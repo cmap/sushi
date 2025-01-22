@@ -30,6 +30,8 @@ pipeline {
         booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
         booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
         booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
+        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Run LFC biomarker analysis.')
+        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Run AUC biomarker analysis.')
         booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
@@ -92,6 +94,7 @@ pipeline {
 
         // Biomarker
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
+        string(name: 'AUC_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis. This defaults to \"log2_auc\".')
     }
 
     environment {
@@ -164,7 +167,7 @@ pipeline {
                         'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
 
                         // biomarker parameters
-                        'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE'
+                        'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE', 'AUC_COLUMN', 'LFC_BIOMARKER', 'AUC_BIOMARKER'
                     ]
 
                     def config = [:]
