@@ -15,29 +15,37 @@ enforce_abs_path() {
   local var_name=$1
   local value=${!var_name}
 
+  echo "DEBUG: Resolving path for $var_name (value: '$value')"
+
+  # Check if value is already an absolute path
   if [[ "$value" = /* ]]; then
-    # Absolute path
+    echo "DEBUG: Absolute path detected: $value"
     if [[ -e "$value" ]]; then
       eval "$var_name=\"$value\""
+      echo "DEBUG: $var_name resolved to absolute path: ${!var_name}"
+      return 0
     else
-      echo "Error: Path $value does not exist."
+      echo "ERROR: Absolute path '$value' does not exist."
       return 1
     fi
-  else
-    # Try resolving relative paths
-    for base_path in "$BUILD_DIR" "$BUILD_DIR/drc" "$BUILD_DIR/biomarker"; do
-      if [[ -e "$base_path/$value" ]]; then
-        eval "$var_name=\"$base_path/$value\""
-        echo "$var_name resolved to: ${!var_name}"
-        return 0
-      fi
-    done
-
-    # If no match, error out
-    echo "Error: Path $value does not exist under any base directory."
-    return 1
   fi
+
+  # Try appending to possible base directories
+  for base_path in "$BUILD_DIR" "$BUILD_DIR/drc" "$BUILD_DIR/biomarker"; do
+    local full_path="$base_path/$value"
+    echo "DEBUG: Checking relative path: $full_path"
+    if [[ -e "$full_path" ]]; then
+      eval "$var_name=\"$full_path\""
+      echo "DEBUG: $var_name resolved to: ${!var_name}"
+      return 0
+    fi
+  done
+
+  # If no path is found
+  echo "ERROR: Path '$value' could not be resolved under any base directory."
+  return 1
 }
+
 
 
 
