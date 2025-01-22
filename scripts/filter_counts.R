@@ -29,6 +29,8 @@ parser$add_argument("--barcode_col", default= "forward_read_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
+parser$add_argument("--cell_line_cols", default= "pool_id,depmap_id,lua",
+                    help= "Name of the columns in cell_line_meta that contain the cell line identifiers.")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -65,7 +67,8 @@ module_outputs= filter_raw_reads(prism_barcode_counts= prism_barcode_counts,
                                  cell_line_meta= cell_line_meta,
                                  CB_meta= CB_meta,
                                  id_cols= id_cols,
-                                 barcode_col= args$barcode_col)
+                                 barcode_col= args$barcode_col,
+                                 cell_line_cols= unlist(strsplit(cell_line_cols, ",\\s*")))
 
 # Validation: Basic file size check ----
 if(sum(module_outputs$filtered_counts$n) == 0) {

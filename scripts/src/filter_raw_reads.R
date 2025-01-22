@@ -5,8 +5,8 @@ options(cli.unicode = FALSE)
 #' This function checks for duplicate cell lines within each cell set.
 #' 
 #' @param cell_set_meta The cell_set_meta df with the columns "cell_set" and "members".
-validate_cell_set= function(cell_set_and_pool_meta) {
-  duplicate_cls= cell_set_and_pool_meta %>% dplyr::count(cell_set, depmap_id, lua, name= 'count') %>%
+validate_cell_set= function(cell_set_and_pool_meta, cell_line_cols) {
+  duplicate_cls= cell_set_and_pool_meta %>% dplyr::count(across(all_of(cell_line_cols)), name= 'count') %>%
     dplyr::filter(count > 1)
   
   if(nrow(duplicate_cls) > 0) {
@@ -80,10 +80,10 @@ filter_raw_reads= function(prism_barcode_counts,
   # Validation: Check that cell sets do not contain duplicate depmap ids ----
   # This will produce a warning if a depmap_id appears in a cell set more than once!
   # This currently does NOT error out
-  validate_cell_set(cell_set_and_pool_meta)
+  validate_cell_set(cell_set_and_pool_meta, cell_line_cols)
   
   # Drop cell lines that appear in more than one pool of a cell set
-  cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id, lua) %>%
+  cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, across(all_of(cell_line_cols))) %>%
     dplyr::summarise(pool_id= paste(sort(unique(pool_id)), collapse= ';')) %>% dplyr::ungroup()
   
   # Creating a template of all expected reads in the run ----
@@ -96,7 +96,7 @@ filter_raw_reads= function(prism_barcode_counts,
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
   # Left join barcode sequence using data.table inplace merge
-  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
+  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= setNames(cell_line_cols, cell_line_cols)]
   
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {
