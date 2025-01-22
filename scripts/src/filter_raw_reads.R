@@ -97,8 +97,13 @@ filter_raw_reads= function(prism_barcode_counts,
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
   # Left join barcode sequence using data.table inplace merge
-  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= setNames(cell_line_cols, cell_line_cols)]
-  
+  # Dynamically filter cell_line_cols to exclude 'pool_id' for the join
+  valid_join_cols <- setdiff(cell_line_cols, "pool_id")
+
+  # Use the filtered list for the `on` argument
+  template[cell_line_meta, c(barcode_col) := get(barcode_col),
+           on = setNames(valid_join_cols, valid_join_cols)]
+
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {
     # From the sample meta, identify all expected control barcode sequences
