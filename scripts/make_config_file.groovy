@@ -95,7 +95,7 @@ pipeline {
         // Biomarker
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
         string(name: 'AUC_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis. This defaults to \"log2_auc\".')
-        string(name: 'DRC_PATH', defaultValue: 'drc/dose_reponse.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
+        string(name: 'DRC_PATH', defaultValue: 'drc/dose_response.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
     }
 
     environment {
