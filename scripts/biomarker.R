@@ -38,7 +38,7 @@ DR_PATH = args$dose_response
 # Paths and columns to use
 lfc_path = args$collapsed_lfc
 lfc_column= args$collapsed_l2fc_column
-DR_COLUMN = args$DR_COLUMN
+dr_column = args$dr_column
 drc_file = args$drc_file
 
 # Parameters for determining which biomarker(s) to calculate
@@ -63,7 +63,7 @@ get_treatment_columns <- function(response_column, sig_cols) {
   if (response_column == args$collapsed_l2fc_column) {
     # Exclude "cell_set" for lfc biomarker
     return(sig_cols[!grepl("cell_set", sig_cols)])
-  } else if (response_column == args$DR_COLUMN) {
+  } else if (response_column == args$dr_column) {
     # Exclude "cell_set" and "dose" for auc biomarker
     return(sig_cols[!grepl("cell_set|dose", sig_cols)])
   } else {
@@ -102,7 +102,7 @@ if (univariate_biomarker || multivariate_biomarker) {
   # Pick the datasets and their corresponding response columns
   datasets <- list()
   if (lfc_biomarker) datasets <- c(datasets, list(list(path = lfc_path, response = lfc_column)))
-  if (auc_biomarker) datasets <- c(datasets, list(list(path = drc_file, response = DR_COLUMN)))
+  if (auc_biomarker) datasets <- c(datasets, list(list(path = drc_file, response = dr_column)))
 
   # Loop through the selected datasets
   for (dataset in datasets) {
