@@ -208,7 +208,7 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
 #' @param contains_cb Boolean. If control barcodes are used, this can be set to TRUE so that points 
 #'                    corresponding to the control barcodes will be colored on the plot. Defaults to FALSE.
 #' @param order_aucs Boolean, when there are multiple facets, this can be set to TRUE to sort the facets by 
-#'                   the AUC value. The AUCs will be sorted in descending order. Defaults to FALSE.
+#'                   the auc value. The aucs will be sorted in descending order. Defaults to FALSE.
 #' @returns Returns a ggplot object.
 create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2= 0.95, 
                           contains_cbs= FALSE, order_aucs= FALSE) {
@@ -236,7 +236,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
     dplyr::filter(row_number() == 1) %>% dplyr::ungroup() %>% 
     dplyr::select(all_of(id_cols), rank_pct= rank_pct, mark1_rank= rank, mark1_loc= rank_pct)
   mark2_values= calc_cummulative %>% dplyr::group_by(pick(all_of(id_cols))) %>% 
-    dplyr::mutate(auc= sum(cum_pct * (1 / expected_num_cls))) %>% # calculate AUCs
+    dplyr::mutate(auc= sum(cum_pct * (1 / expected_num_cls))) %>% # calculate aucs
     dplyr::filter(cum_pct >= mark2) %>% dplyr::arrange(cum_pct) %>%
     dplyr::filter(row_number() == 1) %>% dplyr::ungroup() %>% 
     dplyr::select(all_of(id_cols), rank_pct= rank_pct, mark2_rank= rank, mark2_loc= rank_pct, auc)
@@ -268,9 +268,9 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
     geom_segment(aes(x= -Inf , y= mark2, xend= mark2_loc, yend= mark2), color= 'black', linetype= 2) +
     geom_segment(aes(x= mark2_loc, y= -Inf, xend= mark2_loc, yend= mark2), color= 'black', linetype= 2) +
     geom_label(aes(x= mark2_loc, y= 0.75, label= mark2_rank), hjust= 0, color= 'black') +
-    # label for AUC
-    #geom_label(aes(x= mark2_loc, y= 0.1, label= paste0('AUC ', round(auc, 3))), hjust= 'inward', color= 'black') +
-    geom_label(. %>% dplyr::filter(!is.na(auc)), mapping= aes(label= paste0('AUC ', round(auc, 3))), 
+    # label for auc
+    #geom_label(aes(x= mark2_loc, y= 0.1, label= paste0('auc ', round(auc, 3))), hjust= 'inward', color= 'black') +
+    geom_label(. %>% dplyr::filter(!is.na(auc)), mapping= aes(label= paste0('auc ', round(auc, 3))),
                x= 1, y= 0.25, hjust= 'inward', vjust= 'inward', color= 'black') +
     facet_wrap(~facet_name) + 
     labs(x= '% rank of unique reads', y= 'Cumulative percentage', color= 'CBs') + theme_bw()

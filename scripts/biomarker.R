@@ -16,15 +16,15 @@ parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dos
                     help = "columns used to generate signature ids")
 parser$add_argument("--collapsed_l2fc_column", default="median_l2fc",
                     help = "column containing replicate collapsed log fold change values")
-parser$add_argument("--auc_column", default="log2_auc",
-                    help = "column containing AUC values from dose response")
+parser$add_argument("--dr_column", default="log2_auc",
+                    help = "column containing auc values from dose response")
 parser$add_argument("--build_dir", default= "", help = "Path to the build directory")
 parser$add_argument("--univariate_biomarker", default="true", help="Whether to calculate univariate biomarkers")
 parser$add_argument("--multivariate_biomarker", default="true", help="Whether to calculate multivariate biomarkers")
 parser$add_argument("--lfc_biomarker", default="true", help="Whether to calculate lfc biomarkers")
 parser$add_argument("--auc_biomarker", default="true", help="Whether to calculate auc biomarkers")
 parser$add_argument("--biomarker_file", default="/data/biomarker/current/depmap_datasets_public.h5", help="File containing depmap data")
-parser$add_argument("--auc_path", default="dose_response.csv", help="File containing AUC values from dose response")
+parser$add_argument("--drc_file", default="dose_response.csv", help="File containing auc values from dose response")
 
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
@@ -33,13 +33,13 @@ args <- parser$parse_args()
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 build_dir = args$build_dir
 bio_file = args$biomarker_file
-drc_path = args$dose_response
+DR_PATH = args$dose_response
 
 # Paths and columns to use
 lfc_path = args$collapsed_lfc
 lfc_column= args$collapsed_l2fc_column
-auc_column = args$auc_column
-auc_path = args$auc_path
+DR_COLUMN = args$DR_COLUMN
+drc_file = args$drc_file
 
 # Parameters for determining which biomarker(s) to calculate
 lfc_biomarker = as.logical(toupper(args$lfc_biomarker))
@@ -63,7 +63,7 @@ get_treatment_columns <- function(response_column, sig_cols) {
   if (response_column == args$collapsed_l2fc_column) {
     # Exclude "cell_set" for lfc biomarker
     return(sig_cols[!grepl("cell_set", sig_cols)])
-  } else if (response_column == args$auc_column) {
+  } else if (response_column == args$DR_COLUMN) {
     # Exclude "cell_set" and "dose" for auc biomarker
     return(sig_cols[!grepl("cell_set|dose", sig_cols)])
   } else {
@@ -102,7 +102,7 @@ if (univariate_biomarker || multivariate_biomarker) {
   # Pick the datasets and their corresponding response columns
   datasets <- list()
   if (lfc_biomarker) datasets <- c(datasets, list(list(path = lfc_path, response = lfc_column)))
-  if (auc_biomarker) datasets <- c(datasets, list(list(path = auc_path, response = auc_column)))
+  if (auc_biomarker) datasets <- c(datasets, list(list(path = drc_file, response = DR_COLUMN)))
 
   # Loop through the selected datasets
   for (dataset in datasets) {

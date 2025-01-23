@@ -9,14 +9,14 @@ library (PRROC)
 #' Compute Skew
 #'
 #' This function computes the skew, which measures the cumulative fraction of barcode read counts taken up by each cell
-#' line. It is computed as the AUC of that CDF function and has a range of (0.5,1).
+#' line. It is computed as the auc of that CDF function and has a range of (0.5,1).
 #' A lower skew indicates a more even distribution of reads across cell lines.
 #'
 #' @param df A data frame containing the data to compute skew, generally annotated_counts.
 #' @param group_cols A character vector specifying the column names to group by (default: `c("pcr_plate", "pcr_well")`).
 #' @param metric A string indicating the column name of the metric to use for calculations (default: `"n"`).
 #'
-#' @return A data frame with one row per group and a column `skew` containing the computed skew (AUC).
+#' @return A data frame with one row per group and a column `skew` containing the computed skew (auc).
 #'
 #' @import dplyr
 compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n") {
@@ -29,7 +29,7 @@ compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n
     ) %>%
     summarise(
       skew = if (n() > 1) {
-        # Compute AUC
+        # Compute auc
         sum((rank_fraction[-1] - rank_fraction[-n()]) *
               (cumulative_fraction_reads[-1] + cumulative_fraction_reads[-n()]) / 2, na.rm = TRUE)
       }

@@ -42,7 +42,7 @@ pipeline {
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_dose,pert_dose_unit,day', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
         string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls. This defaults to \"trt_poscon\" and is used in several QC metrics.')
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
@@ -94,8 +94,8 @@ pipeline {
 
         // Biomarker
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
-        string(name: 'AUC_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis. This defaults to \"log2_auc\".')
-        string(name: 'DRC_PATH', defaultValue: 'dose_response.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
+        string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis. This defaults to \"log2_auc\".')
+        string(name: 'DR_PATH', defaultValue: 'dose_response.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
     }
 
     environment {
@@ -168,8 +168,8 @@ pipeline {
                         'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
 
                         // biomarker parameters
-                        'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE', 'AUC_COLUMN', 'LFC_BIOMARKER', 'AUC_BIOMARKER',
-                        'DRC_PATH'
+                        'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE', 'DR_COLUMN', 'LFC_BIOMARKER', 'AUC_BIOMARKER',
+                        'DR_PATH'
                     ]
 
                     def config = [:]

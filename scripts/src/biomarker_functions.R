@@ -488,7 +488,7 @@ multivariate_biomarker_table <- function(Y, W = NULL, file = '/data/biomarker/cu
 #' create_multivariate_biomarker_table( in_path = "data/MTS_SEQ003_KF/", input_file_name = "drc.csv",
 #'                                      output_file_name = "l2auc_multivariate_biomarkers",
 #'                                      treatment_columns = c("x_project_id", "pert_plate", "pert_name"),
-#'                                      response_column = "AUC", transform_function = log2,
+#'                                      response_column = "auc", transform_function = log2,
 #'                                      depmap_file = "~/Downloads/mts_sequencing_analysis/data/depmap_datasets_internal_24q4.h5")
 #'
 create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
@@ -576,7 +576,7 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
 #' create_univariate_biomarker_table( in_path = "data/MTS_SEQ003_KF/", input_file_name = "drc.csv",
 #'                                    output_file_name = "l2auc_univariate_biomarkers",
 #'                                    treatment_columns = c("x_project_id", "pert_plate", "pert_name"),
-#'                                    response_column = "AUC", transform_function = log2,
+#'                                    response_column = "auc", transform_function = log2,
 #'                                    depmap_file = "~/Downloads/mts_sequencing_analysis/data/depmap_datasets_internal_24q4.h5",
 #'                                    parallel = TRUE)
 #'

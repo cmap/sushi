@@ -47,17 +47,17 @@ enforce_abs_path() {
 }
 
 enforce_abs_path COLLAPSED_LFC
-enforce_abs_path DRC_PATH
+enforce_abs_path DR_PATH
 
 args=(
 --collapsed_lfc "$COLLAPSED_LFC"
---auc_path "$DRC_PATH"
+--drc_file "$DR_PATH"
 --build_dir "$BUILD_DIR"
 --sig_cols "$SIG_COLS"
 --univariate_biomarker "$UNIVARIATE_BIOMARKER"
 --multivariate_biomarker "$MULTIVARIATE_BIOMARKER"
 --biomarker_file "$BIOMARKER_FILE"
---auc_column "$AUC_COLUMN"
+--dr_column "$DR_COLUMN"
 --lfc_biomarker "$LFC_BIOMARKER"
 --auc_biomarker "$AUC_BIOMARKER"
 )

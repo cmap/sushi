@@ -2,18 +2,18 @@
 #'
 #' @param LL : Lower asymptote
 #' @param UL : Upper asymptote
-#' @param Inflection : Inflection point (EC50)
-#' @param Slope : Hill slope ( > 0 for decreasing curves)
-#' @param md : Minimum dose
-#' @param MD : Maximum dose
+#' @param inflection : inflection point (EC50)
+#' @param slope : Hill slope ( > 0 for decreasing curves)
+#' @param minimum_dose : Minimum dose
+#' @param maximum_dose : Maximum dose
 #'
-#' @return AUC value of the dose-response function (x: log2(dose), y: response) scaled to the dose range.
+#' @return auc value of the dose-response function (x: log2(dose), y: response) scaled to the dose range.
 #' @export
 #'
 #' @examples
-compute_auc <- function(LL, UL, Inflection, Slope, md, MD) {
-  f1 = function(x) pmax(pmin((UL + (LL - UL)/(1 + (2^x/Inflection)^Slope)), 1, na.rm = T), 0, na.rm = T)
-  return(tryCatch(integrate(f1, log2(md), log2(MD))$value/(log2(MD/md)),
+compute_auc <- function(LL, UL, inflection, slope, minimum_dose, maximum_dose) {
+  f1 = function(x) pmax(pmin((UL + (LL - UL)/(1 + (2^x/inflection)^slope)), 1, na.rm = T), 0, na.rm = T)
+  return(tryCatch(integrate(f1, log2(minimum_dose), log2(maximum_dose))$value/(log2(maximum_dose/minimum_dose)),
                   error = function(e) {print(e); NA}))
 }
 
@@ -22,23 +22,23 @@ compute_auc <- function(LL, UL, Inflection, Slope, md, MD) {
 #'
 #' @param LL : Lower asymptote
 #' @param UL : Upper asymptote
-#' @param Inflection : Inflection point (EC50)
-#' @param Slope : Hill slope ( > 0 for decreasing curves)
-#' @param md : Minimum dose
-#' @param MD : Maximum dose
+#' @param inflection : inflection point (EC50)
+#' @param slope : Hill slope ( > 0 for decreasing curves)
+#' @param minimum_dose : Minimum dose
+#' @param maximum_dose : Maximum dose
 #'
 #' @return IC50 : The dose value where the curve intersects with y = 0.5, NA returned if they don't intersect in the given dose range.
 #' @export
 #'
 #' @examples
-compute_log_ic50 <- function(LL, UL, Inflection, Slope, md, MD) {
+compute_log_ic50 <- function(LL, UL, inflection, slope, minimum_dose, maximum_dose) {
   print("Computing IC50 parameters ...")
-  print(list(LL, UL, Inflection, Slope, md, MD))
+  print(list(LL, UL, inflection, slope, minimum_dose, maximum_dose))
   if((LL >= 0.5) | (UL <= 0.5)) {
     return(NA)
   } else {
-    f1 = function(x) (UL + (LL - UL)/(1 + (2^x/Inflection)^Slope)- 0.5)
-    return(tryCatch(uniroot(f1, c(log2(md), log2(MD)))$root,  error = function(x) NA))
+    f1 = function(x) (UL + (LL - UL)/(1 + (2^x/inflection)^slope)- 0.5)
+    return(tryCatch(uniroot(f1, c(log2(minimum_dose), log2(maximum_dose)))$root,  error = function(x) NA))
   }
 }
 
@@ -48,15 +48,15 @@ compute_log_ic50 <- function(LL, UL, Inflection, Slope, md, MD) {
 #' @param dose : Dose vector corresponding to FC
 #' @param UL : Upper asymptote
 #' @param LL : Lower asymptote
-#' @param Slope : Hill slope
-#' @param Inflection : Inflection point (EC50)
+#' @param slope : Hill slope
+#' @param inflection : inflection point (EC50)
 #'
 #' @return List of mse and mad values.
 #' @export
 #'
 #' @examples
-compute_MSE_MAD <- function(FC, dose,  UL, LL,  Slope, Inflection) {
-  FC.pred = UL  + (LL -UL )/(1 + (dose/Inflection)^Slope)
+compute_mse_mad <- function(FC, dose,  UL, LL,  slope, inflection) {
+  FC.pred = UL  + (LL -UL )/(1 + (dose/inflection)^slope)
   residuals = FC - FC.pred
   return(list(mse = mean(residuals^2), mad = median(abs(residuals))))
 }
@@ -64,7 +64,7 @@ compute_MSE_MAD <- function(FC, dose,  UL, LL,  Slope, Inflection) {
 
 #' Fitting a dose response curve to the given dose and viability (FC) values.
 #' This function fits 5 different dose-response functiosn to the given dose, viability pairs using dr4pl and drc packages and returns
-#' the best one (lowest MSE) among them.
+#' the best one (lowest mse) among them.
 #'
 #' @param FC : Measured viability vector
 #' @param dose : Dose vector corresponding to FC
@@ -73,20 +73,20 @@ compute_MSE_MAD <- function(FC, dose,  UL, LL,  Slope, Inflection) {
 #' @param slope_decreasing: Should the curve to be constrained to be decreasing or not.
 #'
 #' @return Returns a single row data-frame with following columns:
-#'          fit_name : Name of the fitting method with the highest explained variance (lowest MSE)
-#'          Lower_Limit : Lower asmpytote for the selected fit
-#'          Upper_Limit : Upper asymptote for the selected fit
-#'          Slope : The Hill slope for the selected fit
-#'          Inflection : Inflection point of the selected fit (EC50)
-#'          MSE : MSE of the selected fit
-#'          MAD : MAD of the selected fit
+#'          fit_name : Name of the fitting method with the highest explained variance (lowest mse)
+#'          lower_limit : Lower asmpytote for the selected fit
+#'          upper_limit : Upper asymptote for the selected fit
+#'          slope : The Hill slope for the selected fit
+#'          inflection : inflection point of the selected fit (EC50)
+#'          mse : mse of the selected fit
+#'          mad : mad of the selected fit
 #'          frac_var_explained : Explained variance for the best fit
 #'          successful_fit: If any of the fitting methods has positive frac_var_explained
-#'          AUC_Riemann : The average measured viability value across doses
-#'          md : Minimum measured dose
-#'          MD : Maximum measured dose
-#'          AUC : AUC of the log-dose vs viability curve normalized to the measured dose-range (takes values between 0 and 1)
-#'          log2.IC50 : Log2 of IC50 for the fitted curve
+#'          auc_riemann : The average measured viability value across doses
+#'          minimum_dose : Minimum measured dose
+#'          maximum_dose : Maximum measured dose
+#'          auc : auc of the log-dose vs viability curve normalized to the measured dose-range (takes values between 0 and 1)
+#'          log2_ic50 : Log2 of IC50 for the fitted curve
 #' @export
 #'
 #' @examples
@@ -102,27 +102,27 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   # UL low is the lowerbound of UL we pass to the optimizer and UL_up is the upper bound of UL that we pass to the optimizer
   # fomat of output will be:-
   # results.df <- data.frame("fit_name"=character(),
-  #                          "Lower_Limit"=double(),
-  #                          "Upper_Limit"=double(),
-  #                          "Slope"=double(),
-  #                          "Inflection"=double(),
-  #                          "MSE"=double(), "MAD" =double(),
+  #                          "lower_limit"=double(),
+  #                          "upper_limit"=double(),
+  #                          "slope"=double(),
+  #                          "inflection"=double(),
+  #                          "mse"=double(), "mad" =double(),
   #                          "frac_var_explained"=double())
 
   dose = as.numeric(dose)
   FC = as.numeric(FC)
   slope_bound <- ifelse(slope_decreasing, 1e-5, Inf)  # bound the slopes by default unless passed another option
-  riemann_AUC <- mean(pmin(1,FC)) ## mean fold-change after rounding FC to 1.
+  riemann_auc <- mean(pmin(1,FC)) ## mean fold-change after rounding FC to 1.
   var_data = var(FC)
 
-  md = min(dose); MD = max(dose)
+  minimum_dose = min(dose); maximum_dose = max(dose)
 
   results.df <- list(); ix = 1
 
 
   # FIT 1 ---
   drc_model <-  tryCatch(drc::drm(FC ~ dose, data= data.frame(FC = FC, dose = dose),
-                                  fct=LL.4(names = c("Slope", "Lower Limit", "Upper Limit", "ED50")),
+                                  fct=LL.4(names = c("slope", "Lower Limit", "Upper Limit", "ED50")),
                                   lowerl = c(-slope_bound,0.0, UL_low, -Inf),upperl = c(Inf,1.01,UL_up, Inf)),
                          error = function(e)
                          {return(list(convergence=FALSE, error=TRUE,fit=list(convergence=FALSE)))})
@@ -130,16 +130,16 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
 
   if (drc_model$fit$convergence & all(is.finite(unlist(drc_model$coefficients)))){
-    mse_mad <- compute_MSE_MAD(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
+    mse_mad <- compute_mse_mad(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
                                -as.numeric(drc_model$coefficients[[1]]), as.numeric(drc_model$coefficients[[4]]))
     # "slope" in drc package is -ve of slope in dr4pl package and so -ve sign needs to be put in here.
 
     results.df[[ix]] <- tibble( fit_name = "drc_drm_constrained",
-                                Lower_Limit = as.numeric(drc_model$coefficients[[2]]),
-                                Upper_Limit = as.numeric(drc_model$coefficients[[3]]),
-                                Slope = -as.numeric(drc_model$coefficients[[1]]),
-                                Inflection = as.numeric(drc_model$coefficients[[4]]),
-                                MSE = mse_mad$mse, MAD = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
+                                lower_limit = as.numeric(drc_model$coefficients[[2]]),
+                                upper_limit = as.numeric(drc_model$coefficients[[3]]),
+                                slope = -as.numeric(drc_model$coefficients[[1]]),
+                                inflection = as.numeric(drc_model$coefficients[[4]]),
+                                mse = mse_mad$mse, mad = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
     ix = ix + 1
   }
 
@@ -147,7 +147,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
   # FIT 2 ---
   drc_model <-  tryCatch(drc::drm(FC ~ dose, data= data.frame(FC = FC, dose = dose),
-                                  fct=LL.4(names = c("Slope", "Lower Limit", "Upper Limit", "ED50")),
+                                  fct=LL.4(names = c("slope", "Lower Limit", "Upper Limit", "ED50")),
                                   lowerl = c(-Inf,0.0, UL_low, -Inf),upperl = c(Inf,1.01,UL_up, Inf)),
                          error = function(e)
                          {return(list(convergence=FALSE, error=TRUE,fit=list(convergence=FALSE)))})
@@ -156,16 +156,16 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 
   if (drc_model$fit$convergence & all(is.finite(unlist(drc_model$coefficients)))){
     if((!slope_decreasing) | (as.numeric(drc_model$coefficients[[1]]) > 0)){
-      mse_mad <- compute_MSE_MAD(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
+      mse_mad <- compute_mse_mad(FC, dose, as.numeric(drc_model$coefficients[[3]]), as.numeric(drc_model$coefficients[[2]]),
                                  -as.numeric(drc_model$coefficients[[1]]), as.numeric(drc_model$coefficients[[4]]))
       # "slope" in drc package is -ve of slope in dr4pl package and so -ve sign needs to be put in here.
 
       results.df[[ix]] <- tibble( fit_name = "drc_drm_unconstrained",
-                                  Lower_Limit = as.numeric(drc_model$coefficients[[2]]),
-                                  Upper_Limit = as.numeric(drc_model$coefficients[[3]]),
-                                  Slope = -as.numeric(drc_model$coefficients[[1]]),
-                                  Inflection = as.numeric(drc_model$coefficients[[4]]),
-                                  MSE = mse_mad$mse, MAD = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
+                                  lower_limit = as.numeric(drc_model$coefficients[[2]]),
+                                  upper_limit = as.numeric(drc_model$coefficients[[3]]),
+                                  slope = -as.numeric(drc_model$coefficients[[1]]),
+                                  inflection = as.numeric(drc_model$coefficients[[4]]),
+                                  mse = mse_mad$mse, mad = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
       ix = ix + 1
     }
   }
@@ -188,15 +188,15 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   }
 
   if (dr4pl_initMan_optNM$convergence & all(is.finite(unlist(dr4pl_initMan_optNM$parameters)))){
-    mse_mad <- compute_MSE_MAD(FC, dose, dr4pl_initMan_optNM$parameters[[1]], dr4pl_initMan_optNM$parameters[[4]],
+    mse_mad <- compute_mse_mad(FC, dose, dr4pl_initMan_optNM$parameters[[1]], dr4pl_initMan_optNM$parameters[[4]],
                                dr4pl_initMan_optNM$parameters[[3]], dr4pl_initMan_optNM$parameters[[2]])
 
     results.df[[ix]] <- tibble( fit_name = "dr4pl_initMan_constrained_optNM",
-                                Lower_Limit = as.numeric(dr4pl_initMan_optNM$parameters[[4]]),
-                                Upper_Limit = as.numeric(dr4pl_initMan_optNM$parameters[[1]]),
-                                Slope = as.numeric(dr4pl_initMan_optNM$parameters[[3]]),
-                                Inflection = as.numeric(dr4pl_initMan_optNM$parameters[[2]]),
-                                MSE = mse_mad$mse, MAD = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
+                                lower_limit = as.numeric(dr4pl_initMan_optNM$parameters[[4]]),
+                                upper_limit = as.numeric(dr4pl_initMan_optNM$parameters[[1]]),
+                                slope = as.numeric(dr4pl_initMan_optNM$parameters[[3]]),
+                                inflection = as.numeric(dr4pl_initMan_optNM$parameters[[2]]),
+                                mse = mse_mad$mse, mad = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
     ix = ix + 1
   }
 
@@ -218,14 +218,14 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   param <- tryCatch(dr4pl_unconstrained$parameters, error = function(e) return(NA))
   if (!all(is.na(param))){
     if(as.numeric(dr4pl_unconstrained$parameters[[3]])<slope_bound){ ### while slope bound is not passed to this last optimizer, we do not accept a solution not within the bound
-      mse_mad <- compute_MSE_MAD(FC, dose, dr4pl_unconstrained$parameters[[1]], dr4pl_unconstrained$parameters[[4]],
+      mse_mad <- compute_mse_mad(FC, dose, dr4pl_unconstrained$parameters[[1]], dr4pl_unconstrained$parameters[[4]],
                                  dr4pl_unconstrained$parameters[[3]], dr4pl_unconstrained$parameters[[2]])
       results.df[[ix]] <- tibble( fit_name = "dr4pl_initL_unconstrained",
-                                  Lower_Limit = as.numeric(dr4pl_unconstrained$parameters[[4]]),
-                                  Upper_Limit = as.numeric(dr4pl_unconstrained$parameters[[1]]),
-                                  Slope = as.numeric(dr4pl_unconstrained$parameters[[3]]),
-                                  Inflection = as.numeric(dr4pl_unconstrained$parameters[[2]]),
-                                  MSE = mse_mad$mse, MAD = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
+                                  lower_limit = as.numeric(dr4pl_unconstrained$parameters[[4]]),
+                                  upper_limit = as.numeric(dr4pl_unconstrained$parameters[[1]]),
+                                  slope = as.numeric(dr4pl_unconstrained$parameters[[3]]),
+                                  inflection = as.numeric(dr4pl_unconstrained$parameters[[2]]),
+                                  mse = mse_mad$mse, mad = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
       ix = ix + 1
     }
   }
@@ -246,15 +246,15 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   }
 
   if (dr4pl_initL$convergence & all(is.finite(unlist(dr4pl_initL$parameters)))){
-    mse_mad <- compute_MSE_MAD(FC,dose, dr4pl_initL$parameters[[1]], dr4pl_initL$parameters[[4]],
+    mse_mad <- compute_mse_mad(FC,dose, dr4pl_initL$parameters[[1]], dr4pl_initL$parameters[[4]],
                                dr4pl_initL$parameters[[3]], dr4pl_initL$parameters[[2]])
 
     results.df[[ix]] <- tibble( fit_name = "dr4pl_initL_constrained",
-                                Lower_Limit = as.numeric(dr4pl_initL$parameters[[4]]),
-                                Upper_Limit = as.numeric(dr4pl_initL$parameters[[1]]),
-                                Slope = as.numeric(dr4pl_initL$parameters[[3]]),
-                                Inflection = as.numeric(dr4pl_initL$parameters[[2]]),
-                                MSE = mse_mad$mse, MAD = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
+                                lower_limit = as.numeric(dr4pl_initL$parameters[[4]]),
+                                upper_limit = as.numeric(dr4pl_initL$parameters[[1]]),
+                                slope = as.numeric(dr4pl_initL$parameters[[3]]),
+                                inflection = as.numeric(dr4pl_initL$parameters[[2]]),
+                                mse = mse_mad$mse, mad = mse_mad$mad, frac_var_explained = 1-mse_mad$mse/var_data)
     ix = ix + 1
   }
 
@@ -267,17 +267,17 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
       dplyr::arrange(desc(frac_var_explained)) %>%
       head(1) %>%
       dplyr::mutate(successful_fit = TRUE,
-                    AUC_Riemann = as.numeric(riemann_AUC),
-                    md = md, MD = MD) %>%
+                    auc_riemann = as.numeric(riemann_auc),
+                    minimum_dose = minimum_dose, maximum_dose = maximum_dose) %>%
       dplyr::rowwise() %>%
-      dplyr::mutate(AUC = compute_auc(Lower_Limit, Upper_Limit, Inflection, Slope, md, MD),
-                    log2_auc = log2(AUC),
-                    log2.IC50 = compute_log_ic50(Lower_Limit, Upper_Limit, Inflection, Slope, md, MD))
+      dplyr::mutate(auc = compute_auc(lower_limit, upper_limit, inflection, slope, minimum_dose, maximum_dose),
+                    log2_auc = log2(auc),
+                    log2_ic50 = compute_log_ic50(lower_limit, upper_limit, inflection, slope, minimum_dose, maximum_dose))
 
   }else{
     results.df  <- data.frame(successful_fit=FALSE,
-                              AUC_Riemann = as.numeric(riemann_AUC),
-                              md = md, MD = MD, AUC = NA, log2.IC50 = NA)
+                              auc_riemann = as.numeric(riemann_auc),
+                              minimum_dose = minimum_dose, maximum_dose = maximum_dose, auc = NA, log2_ic50 = NA)
   }
 
   return (results.df)
