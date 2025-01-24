@@ -24,7 +24,7 @@ parser$add_argument("--multivariate_biomarker", default="true", help="Whether to
 parser$add_argument("--lfc_biomarker", default="true", help="Whether to calculate lfc biomarkers")
 parser$add_argument("--auc_biomarker", default="true", help="Whether to calculate auc biomarkers")
 parser$add_argument("--biomarker_file", default="/data/biomarker/current/depmap_datasets_public.h5", help="File containing depmap data")
-parser$add_argument("--drc_file", default="dose_response.csv", help="File containing auc values from dose response")
+parser$add_argument("--drc_file", default="DRC_TABLE.csv", help="File containing auc values from dose response")
 
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()

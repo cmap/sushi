@@ -61,7 +61,7 @@ if (!dir.exists(paste0(build_dir, "/drc"))) {
 }
 
 # Write out the DRC table ----
-drc_outpath= paste0(build_dir, "/drc/dose_response.csv")
+drc_outpath= paste0(build_dir, "/drc/DRC_TABLE.csv")
 write.csv(dose_response, drc_outpath, row.names= FALSE)
 
 # Check to make sure that the file was generated
