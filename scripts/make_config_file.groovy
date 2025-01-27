@@ -3,8 +3,9 @@ import jenkins.model.*
 import groovy.json.JsonSlurper
 
 String sectionHeaderStyleGreen = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px '
-String sectionHeaderStyleBlue = ' color: white; background: blue; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 15px'
+String sectionHeaderStyleBlue = ' color: white; background: blue; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 18px'
 String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px'
+String sectionHeaderStyleYellow = ' color: white; background: yellow; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 12px'
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
 
 pipeline {
@@ -25,6 +26,19 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build jobs below. If unchecked, the build will not be triggered and only the config.json will be generated.')
+
+        separator(
+          name: "build_details",
+          sectionHeader: "Build Details",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        // Parameters we expect users to change
+        string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
+        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files.')
+        string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
+
         separator(
           name: "metadata",
           sectionHeader: "Metadata",
@@ -47,6 +61,7 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
+
         separator(
           name: "analytics_modules",
           sectionHeader: "Analytics Modules",
@@ -58,6 +73,15 @@ pipeline {
         booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
         booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Run LFC biomarker analysis.')
         booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Run AUC biomarker analysis.')
+
+        separator(
+          name: "qc_modules",
+          sectionHeader: "QC Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
+        booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
         booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
 
         separator(
@@ -70,25 +94,11 @@ pipeline {
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
 
         separator(
-          name: "qc_modules",
-          sectionHeader: "QC Modules",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
+            name: "controls",
+            sectionHeader: "Controls",
+            separatorStyle: separatorStyleCss,
+            sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
-        booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
-
-        separator(
-          name: "build_details",
-          sectionHeader: "Build Details",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
-        )
-        // Parameters we expect users to change
-        string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
-        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files.')
-        string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
         string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls. This defaults to \"trt_poscon\" and is used in several QC metrics.')
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
@@ -96,8 +106,8 @@ pipeline {
 
         // Parameters that we don't expect users to change
         separator(
-          name: "Group_1",
-          sectionHeader: "Do Not Edit",
+          name: "do_not_edit",
+          sectionHeader: "WARNING: ADVANCED USERS ONLY. DO NOT EDIT",
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleRed
         )
