@@ -33,11 +33,12 @@ pipeline {
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        // Parameters we expect users to change
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build & the path where the nori output lives. Sample and cell set metadata must also be here if not pulling from COMET & cellDB. Format of the path should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions.This defaults to \"cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
+
+        separator(
           name: "metadata",
           sectionHeader: "Metadata",
           separatorStyle: separatorStyleCss,
