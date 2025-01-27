@@ -33,9 +33,8 @@ pipeline {
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build & the path where the nori output lives. Sample and cell set metadata must also be here if not pulling from COMET & cellDB. Format of the path should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions.This defaults to \"cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
 
         separator(
@@ -98,10 +97,10 @@ pipeline {
             separatorStyle: separatorStyleCss,
             sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
-        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls. This defaults to \"trt_poscon\" and is used in several QC metrics.')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
-        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline. This defaults to \"h-b\".')
+        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols.')
+        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls.')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
+        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline.')
 
         // Parameters that we don't expect users to change
         separator(
@@ -149,7 +148,7 @@ pipeline {
 
         // Biomarker
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
-        string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis. This defaults to \"log2_auc\".')
+        string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis.')
         string(name: 'DR_PATH', defaultValue: 'dose_response.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
     }
 
