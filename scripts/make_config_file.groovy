@@ -43,7 +43,7 @@ pipeline {
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
 
         // Active Choice Parameter for dynamically fetched screens
-        activeChoiceParam(
+        activeChoice(
             name: 'SCREEN',
             description: 'Select the screen name from COMET. Dynamically fetched from the API.',
             choiceType: 'SINGLE_SELECT',
