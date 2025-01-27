@@ -2,8 +2,8 @@ import hudson.model.*
 import jenkins.model.*
 import groovy.json.JsonSlurper
 
-String sectionHeaderStyleGreen = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px '
-String sectionHeaderStyleBlue = ' color: white; background: blue; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 18px'
+String sectionHeaderStyleGreen = ' color: white; background: #dbdb8e; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px '
+String sectionHeaderStyleBlue = ' color: white; background: #7ea6d3; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 18px'
 String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px'
 String sectionHeaderStyleYellow = ' color: white; background: yellow; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 12px'
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
