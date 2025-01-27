@@ -9,11 +9,13 @@ String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; backgrou
 
 pipeline {
     agent any
+
+    parameters {
         separator(
-          name: "analytics_modules",
-          sectionHeader: "Analytics Modules",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
+            name: "analytics_modules",
+            sectionHeader: "Analytics Modules",
+            separatorStyle: separatorStyleCss,
+            sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
         booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
@@ -23,65 +25,74 @@ pipeline {
         booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
 
         separator(
-          name: "portal_prep",
-          sectionHeader: "Portal Prep",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
+            name: "portal_prep",
+            sectionHeader: "Portal Prep",
+            separatorStyle: separatorStyleCss,
+            sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
 
         separator(
-          name: "qc_modules",
-          sectionHeader: "QC Modules",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
+            name: "metadata",
+            sectionHeader: "Metadata",
+            separatorStyle: separatorStyleCss,
+            sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
-        booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
+        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB.')
+        booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
+
+        // Active Choice Parameter for dynamically fetched screens
+        activeChoiceParam(
+            name: 'SCREEN',
+            description: 'Select the screen name from COMET. Dynamically fetched from the API.',
+            choiceType: 'SINGLE_SELECT',
+            script: [
+                classpath: [],
+                script: '''
+                    import groovy.json.JsonSlurper
+                    import java.net.URL
+                    import java.net.HttpURLConnection
+
+                    try {
+                        // API endpoint
+                        String apiUrl = 'https://api.clue.io/api/prism_screens'
+
+                        // Make the HTTP GET request
+                        URL url = new URL(apiUrl)
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection()
+                        connection.setRequestMethod('GET')
+
+                        if (connection.responseCode == 200) {
+                            String response = url.text
+                            def json = new JsonSlurper().parseText(response)
+                            return json.collect { it.name } // Extract screen names
+                        } else {
+                            return ["Error: Unable to fetch screens (HTTP ${connection.responseCode})"]
+                        }
+                    } catch (Exception e) {
+                        return ["Error fetching screens: ${e.message}"]
+                    }
+                '''
+            ]
+        )
 
         separator(
-          name: "build_details",
-          sectionHeader: "Build Details",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
+            name: "build_details",
+            sectionHeader: "Build Details",
+            separatorStyle: separatorStyleCss,
+            sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        // Parameters we expect users to change
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files.')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
-        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
-        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls. This defaults to \"trt_poscon\" and is used in several QC metrics.')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
-        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline. This defaults to \"h-b\".')
-
-        // Parameters that we don't expect users to change
-        separator(
-          name: "Group_1",
-          sectionHeader: "Do Not Edit",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleRed
-        )
-
-        // pipeline version
-        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
-        booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
-        string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch or if already specified in the config file.)')
-
-        // Sushi Input files
-        string(name: 'RAW_COUNTS_UNCOLLAPSED', defaultValue: 'raw_counts_uncollapsed.csv', description: 'File name in BUILD_DIR containing the uncollapsed raw counts. This should be the file generated by Nori.')
-        string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name in BUILD_DIR of the sample meta.')
-        string(name: 'CELL_SET_AND_POOL_META', defaultValue: 'cell_set_and_pool_meta.csv', description: 'Cell set and pool information for this run.')
-        string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
-        string(name: 'CONTROL_BARCODE_META', defaultValue: 'CB_meta.csv', description: 'Metadata for control barcodes')
 
         // Additional parameters ordered by when they first appear
-        string(name: 'BARCODE_COL', defaultValue: 'forward_read_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_barcode\", and the paramter is first used in COLLATE_FASTQ_READS.')
+        string(name: 'BARCODE_COL', defaultValue: 'forward_read_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_barcode\", and the parameter is first used in COLLATE_FASTQ_READS.')
         string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'List of sequencing related columns found in the sample meta. These columns are used to uniquely identify every PCR well in the run. Default value is \"flowcell_names,index_1,index_2\", and the parameter is used in COLLATE_FASTQ_READS.')
         string(name: 'ID_COLS', defaultValue: 'pcr_plate,pcr_well', description: 'List of columns found in the sample meta that are used to create a unique ID for each sample-replicate. This defaults to \"pcr_plate,pcr_well\", but could be any combination sample meta columns that uniquely identifies every well in the run. This parameter is first used in COLLATE_FASTQ_READS.')
-        string(name: 'CHUNK_SIZE', defaultValue: '10000000', description: 'Number of rows for a chunk. Due to the large size of the Nori output, some actions are performed in chunks to conserve memory. This parameter sets the size of a chunk and defaults to 10^6 or \"10000000\". This paramter is first used in COLLATE_FASTQ_READS.')
-        string(name: 'LOW_ABUNDANCE_THRESHOLD', defaultValue: '20', description: 'Threshold for unknown barcodes. Unknown barcodes below this threshold will be deidentified and their counts will be included under the term unknown_low_abundance_barcode. This paramter defaults to \"20\" and is used in COLLATE_FASTQ_READS.')
+        string(name: 'CHUNK_SIZE', defaultValue: '10000000', description: 'Number of rows for a chunk. Due to the large size of the Nori output, some actions are performed in chunks to conserve memory. This parameter sets the size of a chunk and defaults to 10^6 or \"10000000\". This parameter is first used in COLLATE_FASTQ_READS.')
+        string(name: 'LOW_ABUNDANCE_THRESHOLD', defaultValue: '20', description: 'Threshold for unknown barcodes. Unknown barcodes below this threshold will be deidentified and their counts will be included under the term unknown_low_abundance_barcode. This parameter defaults to \"20\" and is used in COLLATE_FASTQ_READS.')
         string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Pseudocount value added to all reads before log transformations. This defaults to \"20\" and is used in CBNORMALIZE.')
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
@@ -92,18 +103,12 @@ pipeline {
         // Files created by sushi
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts. This file is created by COLLATE_FASTQ_READS.')
         string(name: 'UNKNOWN_BARCODE_COUNTS', defaultValue: 'unknown_barcode_counts.csv', description: 'Filename in BUILD_DIR containing unknown barcode counts. This file is created by COLLATE_FASTQ_READS.')
-        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'Filename in BUILD_DIR containing annotated counts. This file is creaed by FILTER_COUNTS.')
+        string(name: 'ANNOTATED_COUNTS', defaultValue: 'annotated_counts.csv', description: 'Filename in BUILD_DIR containing annotated counts. This file is created by FILTER_COUNTS.')
         string(name: 'FILTERED_COUNTS', defaultValue: 'filtered_counts.csv', description: 'Filename in BUILD_DIR containing filtered counts. This file is created by FILTER_COUNTS.')
         string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'Filename in BUILD_DIR containing normalized counts. This file is created by CBNORMALIZE.')
         string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'Filename containing log2 fold change values. This file is created by COMPUTE_LFC.')
         string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values. This file is created by COLLAPSED_LFC.')
-        // Other
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
-
-        // Biomarker
-        string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
-        string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis. This defaults to \"log2_auc\".')
-        string(name: 'DR_PATH', defaultValue: 'dose_response.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
     }
 
     environment {
@@ -114,39 +119,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    def config = [:]
-                    if (fileExists(env.CONFIG_FILE_PATH)) {
-                        def configText = readFile(file: env.CONFIG_FILE_PATH)
-                        config = new HashMap(new JsonSlurper().parseText(configText))
-                    }
-
-                    if (params.USE_LATEST) {
-                        // Checkout the latest commit from the specified branch
-                        checkout([$class: 'GitSCM',
-                                  branches: [[name: "*/${params.GIT_BRANCH}"]],
-                                  doGenerateSubmoduleConfigurations: false,
-                                  extensions: [],
-                                  userRemoteConfigs: scm.userRemoteConfigs
-                        ])
-                        // Overwrite the commit ID in the config with the latest commit
-                        def latestCommitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                        config.COMMIT = latestCommitID
-                        echo "Using latest commit: ${latestCommitID}"
-                    } else {
-                        // Use the commit ID specified in the config.json
-                        if (config.COMMIT) {
-                            checkout([$class: 'GitSCM',
-                                      branches: [[name: config.COMMIT]],
-                                      doGenerateSubmoduleConfigurations: false,
-                                      extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: '']],
-                                      submoduleCfg: [],
-                                      userRemoteConfigs: scm.userRemoteConfigs
-                            ])
-                            echo "Using commit from config.json: ${config.COMMIT}"
-                        } else {
-                            error("COMMIT not specified in config.json and USE_LATEST is false.")
-                        }
-                    }
+                    echo "Checking out the repository..."
                 }
             }
         }
@@ -154,92 +127,14 @@ pipeline {
         stage('Generate JSON Config') {
             steps {
                 script {
-                    def paramList = [
-                        'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
-                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN',
-
-                        // sushi input files
-                        'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
-
-                        // sushi output files
-                        'PRISM_BARCODE_COUNTS', 'UNKNOWN_BARCODE_COUNTS', 'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS', 
-                        'LFC', 'COLLAPSED_LFC',
-
-                        // collate_fastq_reads parameters
-                        'SEQUENCING_INDEX_COLS', 'ID_COLS', 'BARCODE_COL', 'LOW_ABUNDANCE_THRESHOLD', 'CHUNK_SIZE', 'REVERSE_INDEX2',
-
-                        // normalize parameters
-                        'PSEUDOCOUNT',
-
-                        // compute_l2fc paramters
-                        'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
-
-                        // biomarker parameters
-                        'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE', 'DR_COLUMN', 'LFC_BIOMARKER', 'AUC_BIOMARKER',
-                        'DR_PATH'
-                    ]
-
                     def config = [:]
 
-                    // Load existing config if it exists
-                    if (fileExists(env.CONFIG_FILE_PATH)) {
-                        def configText = readFile(file: env.CONFIG_FILE_PATH)
-                        config = new HashMap(new JsonSlurper().parseText(configText))
-                    }
+                    // Add parameters to the config
+                    config['SCREEN'] = params.SCREEN
+                    config['CREATE_SAMPLE_META'] = params.CREATE_SAMPLE_META
 
-                    // Add parameters from Jenkins UI only if they don't exist in the config
-                    paramList.each { paramName ->
-                        if (!config.containsKey(paramName) && params.containsKey(paramName)) {
-                            config[paramName] = params[paramName]
-                        }
-                    }
-
-                    // Add or overwrite specific keys
-                    if (!config.containsKey('API_KEY')) {
-                        config.API_KEY = sh(script: 'cat /local/jenkins/.clue_api_key', returnStdout: true).trim()
-                    }
-
-                    // Explicit settings that are programmatically derived
-                    config.REVERSE_INDEX2 = config.SEQ_TYPE == 'DRAGEN'
-
-                    // Write the config back to file after all updates
                     writeFile file: env.CONFIG_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
-                    echo "Generated config.json: ${config}"
-                }
-            }
-        }
-
-        stage('Add Commit ID to Config') {
-            steps {
-                script {
-                    def commitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    def configFilePath = env.CONFIG_FILE_PATH
-                    sh """
-                        jq --arg commit "$commitID" '. + {COMMIT: \$commit}' $configFilePath > ${configFilePath}.tmp && mv ${configFilePath}.tmp $configFilePath
-                    """
-                    echo "Added commit ID to config.json: $commitID"
-                }
-            }
-        }
-
-        stage('Add Timestamp to Config') {
-            steps {
-                script {
-                    def buildtime = sh(script: 'date -u +"%Y-%m-%dT%H:%M:%SZ"', returnStdout: true).trim()
-                    def configFilePath = env.CONFIG_FILE_PATH
-                    sh """
-                        jq --arg buildtime "$buildtime" '. + {TIMESTAMP: \$buildtime}' $configFilePath > ${configFilePath}.tmp && mv ${configFilePath}.tmp $configFilePath
-                    """
-                    echo "Added build timestamp to config.json: $buildtime"
-                }
-            }
-        }
-
-        stage('Show available podman containers') {
-            steps {
-                script {
-                    sh '/usr/bin/podman images'
+                    echo "Configuration generated: ${config}"
                 }
             }
         }
@@ -247,59 +142,11 @@ pipeline {
         stage('Run Scripts in Container') {
             steps {
                 script {
-                    if (params.TRIGGER_BUILD) {
-                        def scriptsToRun = []
-                        if (params.CREATE_SAMPLE_META) {
-                            scriptsToRun.add('create_sample_meta.sh')
-                        }
-                        if (params.CREATE_CELLDB_METADATA) {
-                            scriptsToRun.add('create_celldb_metadata.sh')
-                        }
-                        if (params.COLLATE_FASTQ_READS) {
-                            scriptsToRun.add('collate_fastq_reads.sh')
-                        }
-                        if (params.FILTER_COUNTS) {
-                            scriptsToRun.add('filter_counts.sh')
-                        }
-                        if (params.CBNORMALIZE) {
-                            scriptsToRun.add('CBnormalize.sh')
-                        }
-                        if (params.COMPUTE_LFC) {
-                            scriptsToRun.add('compute_l2fc.sh')
-                        }
-                        if (params.COLLAPSE) {
-                            scriptsToRun.add('collapse_replicates.sh')
-                        }
-                        if (params.DRC) {
-                            scriptsToRun.add('dose_response.sh')
-                        }
-                        if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
-                            scriptsToRun.add('biomarker.sh')
-                        }
-                        if (params.QC_IMAGES) {
-                            scriptsToRun.add('filteredCounts_QC.sh')
-                        }
-                        if (params.JOIN_METADATA) {
-                            scriptsToRun.add('join_metadata.sh')
-                        }
-                        if (params.RUN_EPS_QC) {
-                            scriptsToRun.add('eps_qc.sh')
-                        }
-                        if (params.GENERATE_QC_TABLES) {
-                            scriptsToRun.add('generate_qc_tables.sh')
-                        }
-                        if (params.CONVERT_SUSHI) {
-                            scriptsToRun.add('seq_to_mts.sh')
-                        }
-
-                        scriptsToRun.each { scriptName ->
-                            echo "Running script: ${scriptName}"
-
-                            sh """
-                                chmod +x $WORKSPACE/scripts/launch_job.sh
-                                $WORKSPACE/scripts/launch_job.sh $scriptName
-                            """
-                        }
+                    if (params.CREATE_SAMPLE_META) {
+                        echo "Running create_sample_meta script with screen: ${params.SCREEN}"
+                        sh """
+                            ./scripts/create_sample_meta.sh --screen ${params.SCREEN}
+                        """
                     }
                 }
             }
@@ -307,25 +154,11 @@ pipeline {
     }
 
     post {
-        always {
-            script {
-                def buildDir = params.BUILD_DIR
-                def buildName = params.BUILD_NAME ?: "default_build_name"
-                def logFilePath = "${buildDir}/${buildName}_console_output.log"
-
-                // Capture the entire console log
-                def log = currentBuild.rawBuild.getLog(999999)
-
-                // Write the log to the specified file
-                writeFile file: logFilePath, text: log.join("\n")
-
-                echo "Console output has been saved to ${logFilePath}"
-            }
-        }
         success {
-            script {
-                echo 'Build completed successfully.'
-            }
+            echo "Pipeline completed successfully."
+        }
+        failure {
+            echo "Pipeline failed."
         }
     }
 }
