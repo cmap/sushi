@@ -34,20 +34,18 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         // Parameters we expect users to change
-        string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
-        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files.')
+        string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build & the path where the nori output lives. Sample and cell set metadata must also be here if not pulling from COMET & cellDB. Format of the path should be /directory/PROJECT_CODE/BUILD_NAME')
+        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions.This defaults to \"cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
-
-        separator(
           name: "metadata",
           sectionHeader: "Metadata",
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB.')
+        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB. Requires that all sample_meta column entries for cell_set exist in cellDB.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
-        string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, provide the screen name from COMET.')
+        string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, you must provide the screen name from COMET.')
 
         separator(
           name: "core_modules",
@@ -55,12 +53,12 @@ pipeline {
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
-        booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
-        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
-        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
-        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
-        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
+        booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Checks to ensure raw reads come from expected flowcells and lanes and then sums the counts across samples (SEQUENCING_INDEX_COLS).')
+        booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Assigns raw reads to the appropriate treatment conditions and cell lines; filters those that do not match. Removes cell lines that are duplicated in a cell set.')
+        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Uses a data_to_remove.csv files to remove data. Runs as part of filter counts.')
+        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
+        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
+        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
 
         separator(
           name: "analytics_modules",
@@ -71,8 +69,8 @@ pipeline {
         booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
         booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
         booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
-        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Run LFC biomarker analysis.')
-        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Run AUC biomarker analysis.')
+        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
+        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
 
         separator(
           name: "qc_modules",
@@ -91,7 +89,7 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
-        string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
+        string(name: 'DAYS', defaultValue: '', description: 'Provide any days/timepoints (separated by commas) that should be dropped from the portal output data. Note that the portal does not currently support multiple timepoints. No quotes needed (ie, 2,8).')
 
         separator(
             name: "controls",
