@@ -9,6 +9,44 @@ String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; backgrou
 
 pipeline {
     agent any
+    // Define parameters that can be edited via the Jenkins UI
+    parameters {
+        separator(
+          name: "user_inputs",
+          sectionHeader: "User Inputs",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleGreen
+        )
+
+        separator(
+          name: "run_sushi",
+          sectionHeader: "Run Sushi",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build jobs below. If unchecked, the build will not be triggered and only the config.json will be generated.')
+        separator(
+          name: "metadata",
+          sectionHeader: "Metadata",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB.')
+        booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
+        string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, provide the screen name from COMET.')
+
+        separator(
+          name: "core_modules",
+          sectionHeader: "Core Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
+        booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
+        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
+        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
+        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
+        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
         separator(
           name: "analytics_modules",
           sectionHeader: "Analytics Modules",
@@ -329,4 +367,3 @@ pipeline {
         }
     }
 }
-
