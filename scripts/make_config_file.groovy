@@ -3,7 +3,8 @@ import jenkins.model.*
 import groovy.json.JsonSlurper
 
 String sectionHeaderStyleGreen = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px '
-String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
+String sectionHeaderStyleBlue = ' color: white; background: blue; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 15px'
+String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px'
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
 
 pipeline {
@@ -11,36 +12,81 @@ pipeline {
     // Define parameters that can be edited via the Jenkins UI
     parameters {
         separator(
-          name: "Group_1",
+          name: "user_inputs",
           sectionHeader: "User Inputs",
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleGreen
         )
-        // Check boxes of modules to run
+
+        separator(
+          name: "run_sushi",
+          sectionHeader: "Run Sushi",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
+        separator(
+          name: "metadata",
+          sectionHeader: "Metadata",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get metadata from COMET, use only if screen is registered.')
         string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, provide the screen name from COMET.')
+
+        separator(
+          name: "core_modules",
+          sectionHeader: "Core Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
+        separator(
+          name: "analytics_modules",
+          sectionHeader: "Analytics Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
         booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
         booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
         booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Run LFC biomarker analysis.')
         booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Run AUC biomarker analysis.')
         booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
+
+        separator(
+          name: "portal_prep",
+          sectionHeader: "Portal Prep",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
+
+        separator(
+          name: "qc_modules",
+          sectionHeader: "QC Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
 
+        separator(
+          name: "build_details",
+          sectionHeader: "Build Details",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         // Parameters we expect users to change
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
-        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
+        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files.')
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
