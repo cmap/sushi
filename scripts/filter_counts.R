@@ -25,6 +25,7 @@ parser$add_argument('--cell_line_meta', default= 'cell_line_meta.csv', help= 'Pa
 parser$add_argument('--CB_meta', default= 'CB_meta.csv', help= 'Path to CB_meta.csv')
 parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well', 
                     help= 'List of sample_meta column names used to identify every PCR well')
+parser$add_argument('--cell_line_cols', default= 'cell_set,depmap_id,lua,pool_id')
 parser$add_argument("--barcode_col", default= "forward_read_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
@@ -48,6 +49,7 @@ CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 
 # Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
+cell_line_cols = unlist(strsplit(args$cell_line_cols, ","))
 
 # Remove any duplicate DepMap IDs in cell_set_meta ----
 duplicate_ids= cell_line_meta %>% dplyr::count(depmap_id, name= 'count') %>% 
@@ -65,7 +67,8 @@ module_outputs= filter_raw_reads(prism_barcode_counts= prism_barcode_counts,
                                  cell_line_meta= cell_line_meta,
                                  CB_meta= CB_meta,
                                  id_cols= id_cols,
-                                 barcode_col= args$barcode_col)
+                                 barcode_col= args$barcode_col,
+                                 cell_line_cols= cell_line_cols)
 
 # Validation: Basic file size check ----
 if(sum(module_outputs$filtered_counts$n) == 0) {

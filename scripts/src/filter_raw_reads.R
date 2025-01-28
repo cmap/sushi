@@ -5,17 +5,20 @@ options(cli.unicode = FALSE)
 #' This function checks for duplicate cell lines within each cell set.
 #' 
 #' @param cell_set_meta The cell_set_meta df with the columns "cell_set" and "members".
-validate_cell_set= function(cell_set_and_pool_meta) {
-  duplicate_cls= cell_set_and_pool_meta %>% dplyr::count(cell_set, depmap_id, lua, name= 'count') %>%
+validate_cell_set = function(cell_set_and_pool_meta, cell_line_cols) {
+  # Dynamically select the columns from the list
+  duplicate_cls = cell_set_and_pool_meta %>%
+    dplyr::count(!!!rlang::syms(cell_line_cols), name = 'count') %>%
     dplyr::filter(count > 1)
-  
-  if(nrow(duplicate_cls) > 0) {
+
+  if (nrow(duplicate_cls) > 0) {
     print('WARNING: The following CLs appear more than once in a cell set!!!')
     print(duplicate_cls)
     print('The module will add the prefix dup_ to the depmap_ids of these cell lines.')
     print('They will be dropped before normalization!')
   }
 }
+
 
 #' filter raw reads
 #' 
@@ -44,7 +47,8 @@ validate_cell_set= function(cell_set_and_pool_meta) {
 filter_raw_reads= function(prism_barcode_counts, 
                            sample_meta, cell_set_and_pool_meta, cell_line_meta, CB_meta,
                            id_cols= c('pcr_plate', 'pcr_well'),
-                           barcode_col= 'forward_read_barcode') {
+                           barcode_col= 'forward_read_barcode',
+                           cell_line_cols= c('cell_set','depmap_id','lua','pool_id')) {
   require(magrittr)
   require(tidyverse)
   require(data.table)
@@ -80,11 +84,13 @@ filter_raw_reads= function(prism_barcode_counts,
   # Validation: Check that cell sets do not contain duplicate depmap ids ----
   # This will produce a warning if a depmap_id appears in a cell set more than once!
   # This currently does NOT error out
-  validate_cell_set(cell_set_and_pool_meta)
+  validate_cell_set(cell_set_and_pool_meta, cell_line_cols)
   
   # Drop cell lines that appear in more than one pool of a cell set
-  cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id, lua) %>%
-    dplyr::summarise(pool_id= paste(sort(unique(pool_id)), collapse= ';')) %>% dplyr::ungroup()
+  cell_set_and_pool_meta %<>%
+    dplyr::group_by(!!!rlang::syms(cell_line_cols)) %>%
+    dplyr::summarise(pool_id = paste(sort(unique(pool_id)), collapse = ';'), .groups = 'drop')
+
   
   # Creating a template of all expected reads in the run ----
   # Use all 4 metadata files to create a "template" dataframe where
@@ -96,7 +102,7 @@ filter_raw_reads= function(prism_barcode_counts,
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
   # Left join barcode sequence using data.table inplace merge
-  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
+  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= setNames(cell_line_cols, cell_line_cols)]
   
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {

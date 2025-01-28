@@ -65,6 +65,7 @@ echo CELL_LINE_META is: $CELL_LINE_META
 echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
 echo CELL_SET_AND_POOL_META is: $CELL_SET_AND_POOL_META
 echo ID_COLS is: $ID_COLS
+echo CELL_LINE_COLS is: $CELL_LINE_COLS
 
 args=(
 --prism_barcode_counts "$PRISM_BARCODE_COUNTS"
@@ -73,6 +74,7 @@ args=(
 --CB_meta "$CONTROL_BARCODE_META"
 --cell_set_and_pool_meta "$CELL_SET_AND_POOL_META"
 --id_cols "$ID_COLS"
+--cell_line_cols "$CELL_LINE_COLS"
 --out "$BUILD_DIR"
 --rm_data "$REMOVE_DATA"
 )
