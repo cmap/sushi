@@ -131,7 +131,8 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
                   residual2= (cb_log2_dose- log2_normalized_n)^2,
                   squares2= (cb_log2_dose- mean_y)^2,
                   cb_r2= 1- sum(residual2)/sum(squares2),
-                  cb_spearman= cor(cb_log2_dose, log2(n+pseudocount), method= 'spearman', use= 'pairwise.complete.obs')) %>%
+                  cb_spearman= cor(cb_log2_dose, log2(n+pseudocount), method= 'spearman', use= 'pairwise.complete.obs'),
+                  cb_tc= (log2_normalized_n + cb_intercept)) %>%
     dplyr::ungroup() %>%
     dplyr::distinct(across(all_of(c(group_cols, 'cb_mae', 'cb_r2', 'cb_spearman', 'cb_intercept'))))
   return(fit_stats)
@@ -332,6 +333,11 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
     dplyr::ungroup() %>%
     dplyr::select(all_of(grouping_cols), total_reads, fraction_of_reads)
   return(result)
+}
+
+compute_viability_fractions <- function(df, grouping_cols = c("pcr_plate", "depmap_id")) {
+  paste0("Computing the fractions of controls that fall outside various viability thresholds.....")
+
 }
 
 # TABLE GENERATION FUNCTION ----------
