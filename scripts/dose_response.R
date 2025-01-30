@@ -21,6 +21,7 @@ parser$add_argument("--type_col", default="pert_type",
                     help = "column containing perturbation type, only those with trt_cp will be considered.")
 parser$add_argument("--cap_for_viability", default= 1.5, help = "The upper threshold for the viability values for before fitting the curves. Default is 1.5, any viability value above this value will be made equal to 1.5")
 parser$add_argument("--build_dir", default= "", help = "Path to the build directory")
+parser$add_argument("--out_dir", default= "", help = "Path to the output directory")
 
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
@@ -56,12 +57,12 @@ if(nrow(dose_response) == 0) {
 }
 
 # Check if the output durectory exists, if not create it
-if (!dir.exists(paste0(build_dir, "/drc"))) {
-  dir.create(paste0(build_dir, "/drc"))
+if (!dir.exists(paste0(out_dir))) {
+  dir.create(paste0(out_dir))
 }
 
 # Write out the DRC table ----
-drc_outpath= paste0(build_dir, "/drc/DRC_TABLE.csv")
+drc_outpath= paste0(out_dir, "DRC_TABLE.csv")
 write.csv(dose_response, drc_outpath, row.names= FALSE)
 
 # Check to make sure that the file was generated

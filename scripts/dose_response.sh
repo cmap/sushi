@@ -40,6 +40,7 @@ args=(
 --cell_line_cols "$CELL_LINE_COLS"
 --l2fc_column "$L2FC_COLUMN"
 --cap_for_viability "$VIABILITY_CAP"
+--out_dir "$OUT_DIR"
 )
 
 echo Rscript dose_response.R "${args[@]}"
