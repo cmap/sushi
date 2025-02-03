@@ -336,6 +336,7 @@ create_drc_table <- function(LFC = l2fc,
     stop(paste0(type_column, " doesn't contain any trt_cp!"))
   }
 
+  paste0("LFC columns: ", colnames(LFC))
 
   # Fit the curves for single compounds ----
   DRC_SINGLE <- LFC %>%
