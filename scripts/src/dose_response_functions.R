@@ -364,17 +364,18 @@ create_drc_table <- function(LFC = l2fc,
     stop("Conversion to numeric resulted in NA values!")
   }
 
+  stop()
   # Fit the curves for single compounds
   DRC_SINGLE <- LFC %>%
     dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
     dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
     dplyr::filter(length(unique(dose_)) > 4) %>%
     dplyr::summarise({
-      #print("DEBUG: Values passed to get_best_fit:")
-      #print("FC values:")
-      #print(pmin(2^l2fc_, cap_for_viability))
-      #print("Dose values:")
-      #print(dose_)
+      print("DEBUG: Values passed to get_best_fit:")
+      print("FC values:")
+      print(pmin(2^l2fc_, cap_for_viability))
+      print("Dose values:")
+      print(dose_)
 
       get_best_fit(FC = pmin(2^l2fc_, cap_for_viability), dose = dose_)
     }) %>%
