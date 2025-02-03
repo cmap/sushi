@@ -364,7 +364,6 @@ create_drc_table <- function(LFC = l2fc,
     stop("Conversion to numeric resulted in NA values!")
   }
 
-  stop()
   # Fit the curves for single compounds
   DRC_SINGLE <- LFC %>%
     dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
