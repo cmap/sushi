@@ -315,6 +315,8 @@ create_drc_table <- function(LFC = l2fc,
     stop(paste0(LFC, " is empty!"))
   }
 
+  # check for missing critical columns
+  necessary_columns <- unique(c(dose_column, l2fc_column, type_column, treatment_cols, cell_line_cols))
   print("LFC columns:")
   print(colnames(LFC))
 
@@ -323,9 +325,6 @@ create_drc_table <- function(LFC = l2fc,
 
   print("Missing columns:")
   print(setdiff(necessary_columns, colnames(LFC)))
-
-  # check for missing critical columns
-  necessary_columns <- unique(c(dose_column, l2fc_column, type_column, treatment_cols, cell_line_cols))
   if(any(!necessary_columns %in% colnames(LFC))){
     stop(paste0("Missing columns in LFC: ", paste(setdiff(necessary_columns, colnames(LFC)), collapse = ", ")))
   }
