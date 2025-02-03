@@ -64,6 +64,7 @@ if (!dir.exists(paste0(out_dir))) {
 
 # Write out the DRC table ----
 drc_outpath= paste0(out_dir, "DRC_TABLE.csv")
+paste0("Writing DRC_TABLE.csv to ", drc_outpath)
 write.csv(dose_response, drc_outpath, row.names= FALSE)
 
 # Check to make sure that the file was generated
