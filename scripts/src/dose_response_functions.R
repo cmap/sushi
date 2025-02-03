@@ -304,7 +304,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 create_drc_table <- function(LFC = l2fc,
                               cell_line_cols =  c("depmap_id", "cell_set", "pool_id"),
                               treatment_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
-                              dose_column = "pert_dose", l2fc_column = "l2fc", type_column = "pert_type",
+                              dose_column = "pert_dose", l2fc_column = "median_l2fc", type_column = "pert_type",
                               cap_for_viability = 1.5) {
   require(data.table)
   require(tidyverse)
