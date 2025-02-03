@@ -302,20 +302,20 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 #'
 #' @examples create_drc_table(in_path = "data/sushi_io/testing_MTS-SEQ002-KF/test/")
 create_drc_table <- function(LFC = l2fc,
-                              cell_line_cols =  c("depmap_id", "cell_set", "pool_id"),
-                              treatment_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
-                              dose_column = "pert_dose", l2fc_column = "median_l2fc", type_column = "pert_type",
-                              cap_for_viability = 1.5) {
+                             cell_line_cols = c("depmap_id", "cell_set", "pool_id"),
+                             treatment_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
+                             dose_column = "pert_dose", l2fc_column = "median_l2fc", type_column = "pert_type",
+                             cap_for_viability = 1.5) {
   require(data.table)
   require(tidyverse)
   require(rlang)
 
-  # check if the input table populated
-  if(nrow(LFC) == 0){
-    stop(paste0(LFC, " is empty!"))
+  # Check if the input table is populated
+  if (nrow(LFC) == 0) {
+    stop("LFC is empty!")
   }
 
-  # check for missing critical columns
+  # Check for missing critical columns
   necessary_columns <- unique(c(dose_column, l2fc_column, type_column, treatment_cols, cell_line_cols))
   print("LFC columns:")
   print(colnames(LFC))
@@ -328,31 +328,57 @@ create_drc_table <- function(LFC = l2fc,
 
   # Check pert_type contains trt_cp
   LFC <- dplyr::filter(LFC, .data[[type_column]] == "trt_cp")
-
-  if(nrow(LFC) == 0){
+  if (nrow(LFC) == 0) {
     stop(paste0(type_column, " doesn't contain any trt_cp!"))
   }
 
+  # Debugging the column types and values
   print(paste0("DEBUG: l2fc_column: ", l2fc_column))
-  print(head(LFC))
+  print(paste0("DEBUG: Column type of l2fc_column (", l2fc_column, "): ", class(LFC[[l2fc_column]])))
+  print("DEBUG: First few values of l2fc_column:")
+  print(head(LFC[[l2fc_column]]))
 
-  stop()
-  # Fit the curves for single compounds ----
+  print(paste0("DEBUG: dose_column: ", dose_column))
+  print(paste0("DEBUG: Column type of dose_column (", dose_column, "): ", class(LFC[[dose_column]])))
+  print("DEBUG: First few values of dose_column:")
+  print(head(LFC[[dose_column]]))
+
+  # Convert columns to numeric explicitly and check for NA generation
+  LFC <- LFC %>%
+    dplyr::mutate(
+      dose_ = as.numeric(.data[[dose_column]]),
+      l2fc_ = as.numeric(.data[[l2fc_column]])
+    )
+
+  # Verify conversion results
+  print("DEBUG: After conversion - dose_ values:")
+  print(head(LFC$dose_))
+  print("DEBUG: After conversion - l2fc_ values:")
+  print(head(LFC$l2fc_))
+  print("DEBUG: Checking for NAs in converted columns:")
+  print(paste0("NA in dose_: ", any(is.na(LFC$dose_))))
+  print(paste0("NA in l2fc_: ", any(is.na(LFC$l2fc_))))
+
+  # Ensure no NAs before proceeding
+  if (any(is.na(LFC$dose_)) || any(is.na(LFC$l2fc_))) {
+    stop("Conversion to numeric resulted in NA values!")
+  }
+
+  # Fit the curves for single compounds
   DRC_SINGLE <- LFC %>%
-    dplyr::filter(.data[[type_column]] == "trt_cp") %>%
-    dplyr::mutate(dose_ = as.numeric(.data[[dose_column]]),
-                  l2fc_ = as.numeric(.data[[l2fc_column]])) %>%
     dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
     dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
     dplyr::filter(length(unique(dose_)) > 4) %>%
     dplyr::summarise({
-      #print("DEBUG: Checking input values for get_best_fit()")
-      #print("FC values:")
-      #print(pmin(2^l2fc_, cap_for_viability))
-      #print("Dose values:")
-      #print(dose_)
+      print("DEBUG: Values passed to get_best_fit:")
+      print("FC values:")
+      print(pmin(2^l2fc_, cap_for_viability))
+      print("Dose values:")
+      print(dose_)
 
       get_best_fit(FC = pmin(2^l2fc_, cap_for_viability), dose = dose_)
     }) %>%
     dplyr::ungroup()
+
+  return(DRC_SINGLE)
 }
