@@ -333,9 +333,7 @@ create_drc_table <- function(LFC = l2fc,
     stop(paste0(type_column, " doesn't contain any trt_cp!"))
   }
 
-  paste0("LFC columns: ", colnames(LFC))
-
-  paste0("DEBUG: l2fc_column: ", l2fc_column)
+  print(paste0("DEBUG: l2fc_column: ", l2fc_column))
   print(head(LFC))
 
   stop()
