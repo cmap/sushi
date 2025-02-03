@@ -37,6 +37,7 @@ l2fc_column= args$l2fc_column
 type_col= args$type_col
 cap_for_viability= as.numeric(args$cap_for_viability)
 build_dir = args$build_dir
+out_dir = args$out_dir
 
 # Create treatment_columns by filtering out elements containing "dose"
 treatment_cols <- sig_cols[!grepl("dose", sig_cols)]
