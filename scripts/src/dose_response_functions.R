@@ -338,6 +338,8 @@ create_drc_table <- function(LFC = l2fc,
 
   paste0("LFC columns: ", colnames(LFC))
 
+  print(head(LFC))
+
   stop()
   # Fit the curves for single compounds ----
   DRC_SINGLE <- LFC %>%
