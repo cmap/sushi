@@ -325,9 +325,6 @@ create_drc_table <- function(LFC = l2fc,
 
   print("Missing columns:")
   print(setdiff(necessary_columns, colnames(LFC)))
-  if(any(!necessary_columns %in% colnames(LFC))){
-    stop(paste0("Missing columns in LFC: ", paste(setdiff(necessary_columns, colnames(LFC)), collapse = ", ")))
-  }
 
   # Check pert_type contains trt_cp
   LFC <- dplyr::filter(LFC, .data[[type_column]] == "trt_cp")
