@@ -336,11 +336,11 @@ create_drc_table <- function(LFC = l2fc,
     stop(paste0(type_column, " doesn't contain any trt_cp!"))
   }
 
-  paste0("LFC columns: ", colnames(LFC))
-
   # Fit the curves for single compounds ----
   DRC_SINGLE <- LFC %>%
     dplyr::filter(.data[[type_column]] == "trt_cp") %>%
+    paste0("DEBUG: Checking input data columns....") %>%
+    paste0("data columns: ", colnames(.data)) %>%
     dplyr::mutate(dose_ = as.numeric(.data[[dose_column]]),
                   l2fc_ = as.numeric(.data[[l2fc_column]])) %>%
     dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
