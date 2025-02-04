@@ -600,6 +600,8 @@ create_univariate_biomarker_table <- function(in_path, out_path = NULL,
 
   # check for missing critical columns
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
+  print(paste0("DEBUG: necessary_columns: ", necessary_columns))
+  print(paste0("DEBUG: input columns: ", colnames(input_file)))
   if(any(!necessary_columns %in% colnames(input_file))){
     stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
                 " are missing in univariate biomarker input file!"))
