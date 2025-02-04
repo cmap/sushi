@@ -492,7 +492,7 @@ multivariate_biomarker_table <- function(Y, W = NULL, file = '/data/biomarker/cu
 #'                                      depmap_file = "~/Downloads/mts_sequencing_analysis/data/depmap_datasets_internal_24q4.h5")
 #'
 create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
-                                                input_file_name = "collapsed_l2fc.csv", output_file_name = "l2fc_multivariate_biomarkers",
+                                                output_file_name = "l2fc_multivariate_biomarkers",
                                                 depmap_file,
                                                 treatment_columns = c("pert_id", "x_project_id", "pert_name", "pert_plate", "pert_dose"),
                                                 response_column = "median_l2fc", aggregate_function = median, transform_function = function(x){x}) {
@@ -500,19 +500,9 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   require(tidyverse)
   require(rlang)
 
-  # if the output path is not provided, use the input path
-  if(is.null(out_path)){
-    out_path <- in_path
-  }
-
   # check if the input path exists
   if(!file.exists(in_path)){
     stop("Input path does not exist!")
-  }
-
-  # check if the input path exists
-  if(!file.exists(out_path)){
-    stop("Output path does not exist!")
   }
 
   # load the input file
@@ -520,14 +510,14 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
 
   # check if the input table populated
   if(nrow(input_file) == 0){
-    stop(paste0(input_file_name, " is empty!"))
+    stop(paste0("Input file for multivariate biomarker is empty!"))
   }
 
   # check for missing critical columns
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
   if(any(!necessary_columns %in% colnames(input_file))){
     stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
-                " are missing in ", input_file_name))
+                " are missing from multivariate biomarker input file!"))
   }
 
 
@@ -593,19 +583,9 @@ create_univariate_biomarker_table <- function(in_path, out_path = NULL,
   require(tidyverse)
   require(rlang)
 
-  # if the output path is not provided, use the input path
-  if(is.null(out_path)){
-    out_path <- in_path
-  }
-
   # check if the input path exists
   if(!file.exists(in_path)){
     stop("Input path does not exist!")
-  }
-
-  # check if the input path exists
-  if(!file.exists(out_path)){
-    stop("Output path does not exist!")
   }
 
   # load the input file
@@ -613,14 +593,14 @@ create_univariate_biomarker_table <- function(in_path, out_path = NULL,
 
   # check if the input table populated
   if(nrow(input_file) == 0){
-    stop(paste0(input_file, " is empty!"))
+    stop(paste0("Input file for univariate biomarker is empty!"))
   }
 
   # check for missing critical columns
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
   if(any(!necessary_columns %in% colnames(input_file))){
     stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
-                " are missing in ", input_file))
+                " are missing in univariate biomarker input file!"))
   }
 
 
