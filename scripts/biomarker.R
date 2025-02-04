@@ -9,7 +9,7 @@ source("./src/kitchen_utensils.R")
 parser <- ArgumentParser()
 # specify desired options
 parser$add_argument("--collapsed_lfc", default="collapsed_l2fc.csv", help="file containing replicate collapsed log fold change values")
-parser$add_argument("--dose_response", default="drc/dose_response.csv", help="file containing dose response values")
+parser$add_argument("--drc_file", default="drc/dose_response.csv", help="file containing dose response values")
 parser$add_argument("--cell_line_cols", default="pool_id,depmap_id",
                     help = "Columns that can describe a cell line")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
@@ -33,7 +33,6 @@ args <- parser$parse_args()
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 build_dir = args$build_dir
 bio_file = args$biomarker_file
-DR_PATH = args$dose_response
 
 # Paths and columns to use
 lfc_path = args$collapsed_lfc
