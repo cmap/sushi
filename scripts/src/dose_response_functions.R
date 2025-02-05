@@ -340,19 +340,6 @@ create_drc_table <- function(LFC = l2fc,
     stop(paste0(type_column, " doesn't contain any trt_cp!"))
   }
 
-  stop()
-
-  # Debugging the column types and values
-  print(paste0("DEBUG: l2fc_column: ", l2fc_column))
-  print(paste0("DEBUG: Column type of l2fc_column (", l2fc_column, "): ", class(LFC[[l2fc_column]])))
-  print("DEBUG: First few values of l2fc_column:")
-  print(head(LFC[[l2fc_column]]))
-
-  print(paste0("DEBUG: dose_column: ", dose_column))
-  print(paste0("DEBUG: Column type of dose_column (", dose_column, "): ", class(LFC[[dose_column]])))
-  print("DEBUG: First few values of dose_column:")
-  print(head(LFC[[dose_column]]))
-
   # Convert columns to numeric explicitly and check for NA generation
   LFC <- LFC %>%
     dplyr::mutate(
@@ -361,11 +348,6 @@ create_drc_table <- function(LFC = l2fc,
     )
 
   # Verify conversion results
-  print("DEBUG: After conversion - dose_ values:")
-  print(head(LFC$dose_))
-  print("DEBUG: After conversion - l2fc_ values:")
-  print(head(LFC$l2fc_))
-  print("DEBUG: Checking for NAs in converted columns:")
   print(paste0("NA in dose_: ", any(is.na(LFC$dose_))))
   print(paste0("NA in l2fc_: ", any(is.na(LFC$l2fc_))))
 
