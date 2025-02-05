@@ -315,18 +315,16 @@ create_drc_table <- function(LFC,
     stop("LFC is empty!")
   }
 
-  print(paste0("DEBUG: dose_column:", dose_column))
-  print(paste0("DEBUG: l2fc_column:", l2fc_column))
-  print(paste0("DEBUG: type_column:", type_column))
-  print(paste0("DEBUG: cell_line_cols:", cell_line_cols))
-  print(paste0("DEBUG: treatment_cols:", treatment_cols))
-  print(paste0("DEBUG: Columns in LFC:", colnames(LFC)))
-  print(paste0("DEBUG: cap_for_viability:", cap_for_viability))
+  print(paste0("dose_column:", dose_column))
+  print(paste0("l2fc_column:", l2fc_column))
+  print(paste0("type_column:", type_column))
+  print(paste0("cell_line_cols:", cell_line_cols))
+  print(paste0("treatment_cols:", treatment_cols))
+  print(paste0("cap_for_viability:", cap_for_viability))
+  print(paste0("Columns in LFC:", colnames(LFC)))
 
   # Check for missing critical columns
-  necessary_columns <- unique(c(
-  c(dose_column), c(l2fc_column), c(type_column),
-  treatment_cols, cell_line_cols))
+  necessary_columns <- unique(c(dose_column,l2fc_column,type_column,treatment_cols,cell_line_cols))
 
   print("Necessary columns:")
   print(necessary_columns)
@@ -356,24 +354,18 @@ create_drc_table <- function(LFC,
     stop("Conversion to numeric resulted in NA values!")
   }
 
-  print("DEBUG: PRINTING LFC DATAFRAME")
-  print(head(LFC))
-
   # Fit the curves for single compounds
   DRC_SINGLE <- LFC %>%
     dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
     dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
     dplyr::filter(length(unique(dose_)) > 4) %>%
     dplyr::summarise({
-      print("DEBUG: Values passed to get_best_fit:")
       print("FC values:")
       print(pmin(2^l2fc_, cap_for_viability))
       print("Dose values:")
       print(dose_)
-
       get_best_fit(FC = pmin(2^l2fc_, cap_for_viability), dose = dose_)
     }) %>%
     dplyr::ungroup()
-
   return(DRC_SINGLE)
 }
