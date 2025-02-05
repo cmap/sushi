@@ -301,7 +301,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 #' @export
 #'
 #' @examples create_drc_table(in_path = "data/sushi_io/testing_MTS-SEQ002-KF/test/")
-create_drc_table <- function(LFC = l2fc,
+create_drc_table <- function(LFC,
                              cell_line_cols = c("depmap_id", "cell_set", "pool_id"),
                              treatment_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
                              dose_column = "pert_dose", l2fc_column = "median_l2fc", type_column = "pert_type",
@@ -321,6 +321,7 @@ create_drc_table <- function(LFC = l2fc,
   print(paste0("DEBUG: cell_line_cols:", cell_line_cols))
   print(paste0("DEBUG: treatment_cols:", treatment_cols))
   print(paste0("DEBUG: Columns in LFC:", colnames(LFC)))
+  print(paste0("DEBUG: cap_for_viability:", cap_for_viability))
 
   # Check for missing critical columns
   necessary_columns <- unique(c(
