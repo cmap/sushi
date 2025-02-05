@@ -532,6 +532,7 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   multivariate_biomarker_table <- multivariate_biomarker_table(Y = M, file = depmap_file, k = 10)
 
   # Export the biomarker table -----
+  print(paste0("Writing the multivariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
     dplyr::select_at(vars(treatment_columns)) %>%
     dplyr::distinct() %>%
@@ -623,6 +624,7 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   univariate_biomarker_table <- univariate_biomarker_table(Y = M, features = features, file = depmap_file,  n.X.min = min_sample_size, parallel =  parallel)
 
   # Export the biomarker table -----
+  print(paste0("Writing the univariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
     dplyr::select_at(vars(treatment_columns)) %>%
     dplyr::distinct() %>%
