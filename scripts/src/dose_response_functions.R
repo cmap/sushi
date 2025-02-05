@@ -316,11 +316,14 @@ create_drc_table <- function(LFC = l2fc,
   }
 
   # Check for missing critical columns
-  necessary_columns <- unique(c(dose_column, l2fc_column, type_column, treatment_cols, cell_line_cols))
+  necessary_columns <- unique(c(
+  c(dose_column), c(l2fc_column), c(type_column),
+  treatment_cols, cell_line_cols))
+
   print("LFC columns:")
   print(colnames(LFC))
 
-  print("Expected columns:")
+  print("Necessary columns:")
   print(necessary_columns)
 
   print("Missing columns:")
