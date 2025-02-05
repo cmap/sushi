@@ -574,7 +574,7 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
 #'                                    treatment_columns = c("x_project_id", "pert_plate", "pert_name", "pert_dose"),
 #'                                    depmap_file = "~/Downloads/mts_sequencing_analysis/data/depmap_datasets_internal_24q4.h5",
 #'                                    parallel = TRUE)
-create_univariate_biomarker_table <- function(in_path, out_path = NULL,
+create_univariate_biomarker_table <- function(in_path, out_path,
                                               output_file_name = "l2fc_univariate_biomarkers", depmap_file,
                                                 treatment_columns = c("pert_id", "x_project_id", "pert_name", "pert_plate", "pert_dose"),
                                                 response_column = "median_l2fc", aggregate_function = median, transform_function = function(x){x},

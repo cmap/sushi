@@ -24,6 +24,7 @@ parser$add_argument("--lfc_biomarker", default="true", help="Whether to calculat
 parser$add_argument("--auc_biomarker", default="true", help="Whether to calculate auc biomarkers")
 parser$add_argument("--biomarker_file", default="/data/biomarker/current/depmap_datasets_public.h5", help="File containing depmap data")
 parser$add_argument("--drc_file", default="DRC_TABLE.csv", help="File containing auc values from dose response")
+parser$add_argument("--out_path", default= "", help = "Path to the output directory (per comppound)")
 
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
@@ -38,6 +39,7 @@ lfc_path = args$collapsed_lfc
 lfc_column= args$collapsed_l2fc_column
 dr_column = args$dr_column
 drc_file = args$drc_file
+out_path = args$out_path
 
 # Parameters for determining which biomarker(s) to calculate
 lfc_biomarker = as.logical(toupper(args$lfc_biomarker))
@@ -47,9 +49,6 @@ multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 
 # Create treatment_columns by filtering out elements containing "dose"
 treatment_columns <- sig_cols[!grepl("cell_set", sig_cols)]
-
-# Construct output path
-out_path <- paste0(build_dir, "/biomarker")
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
