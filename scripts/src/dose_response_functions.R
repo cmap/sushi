@@ -329,11 +329,6 @@ create_drc_table <- function(LFC,
   print("Necessary columns:")
   print(necessary_columns)
 
-  if(any(!necessary_columns %in% colnames(LFC))){
-    stop(paste0(paste0(setdiff(necessary_columns, colnames(LFC)), collapse = ", "),
-                " are missing in univariate biomarker input file!"))
-  }
-
   # Check pert_type contains trt_cp
   LFC <- dplyr::filter(LFC, .data[[type_column]] == "trt_cp")
   if (nrow(LFC) == 0) {
