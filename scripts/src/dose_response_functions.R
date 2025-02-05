@@ -315,6 +315,14 @@ create_drc_table <- function(LFC = l2fc,
     stop("LFC is empty!")
   }
 
+  print(paste0("DEBUG: dose_column:", dose_column))
+  print(paste0("DEBUG: l2fc_column:", l2fc_column))
+  print(paste0("DEBUG: type_column:", type_column))
+  print(paste0("DEBUG: cell_line_cols:", cell_line_cols))
+  print(paste0("DEBUG: treatment_cols:", treatment_cols))
+
+  print(paste0("DEBUG: Columns in LFC:", colnames(LFC)))
+
   # Check for missing critical columns
   necessary_columns <- unique(c(
   c(dose_column), c(l2fc_column), c(type_column),
