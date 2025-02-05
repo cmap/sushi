@@ -328,9 +328,6 @@ create_drc_table <- function(LFC = l2fc,
   c(dose_column), c(l2fc_column), c(type_column),
   treatment_cols, cell_line_cols))
 
-  print("LFC columns:")
-  print(colnames(LFC))
-
   print("Necessary columns:")
   print(necessary_columns)
 
@@ -342,6 +339,8 @@ create_drc_table <- function(LFC = l2fc,
   if (nrow(LFC) == 0) {
     stop(paste0(type_column, " doesn't contain any trt_cp!"))
   }
+
+  stop()
 
   # Debugging the column types and values
   print(paste0("DEBUG: l2fc_column: ", l2fc_column))
