@@ -320,7 +320,6 @@ create_drc_table <- function(LFC = l2fc,
   print(paste0("DEBUG: type_column:", type_column))
   print(paste0("DEBUG: cell_line_cols:", cell_line_cols))
   print(paste0("DEBUG: treatment_cols:", treatment_cols))
-
   print(paste0("DEBUG: Columns in LFC:", colnames(LFC)))
 
   # Check for missing critical columns
@@ -355,6 +354,8 @@ create_drc_table <- function(LFC = l2fc,
   if (any(is.na(LFC$dose_)) || any(is.na(LFC$l2fc_))) {
     stop("Conversion to numeric resulted in NA values!")
   }
+
+  print(paste0("DEBUG: LFC dataframe ", head(LFC)))
 
   # Fit the curves for single compounds
   DRC_SINGLE <- LFC %>%
