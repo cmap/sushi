@@ -355,7 +355,8 @@ create_drc_table <- function(LFC = l2fc,
     stop("Conversion to numeric resulted in NA values!")
   }
 
-  print(paste0("DEBUG: LFC dataframe ", head(LFC)))
+  print("DEBUG: PRINTING LFC DATAFRAME")
+  print(head(LFC))
 
   # Fit the curves for single compounds
   DRC_SINGLE <- LFC %>%
