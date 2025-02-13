@@ -1,54 +1,61 @@
 import pandas as pd
-import polars as pl
 import argparse
 import os
 import sys
 import glob
-import logging
 import json
-import gzip
-import shutil
 import boto3
 from botocore.exceptions import NoCredentialsError
-import requests
-import urllib
+
 
 class Config:
     def __init__(self, config_dict):
         for key, value in config_dict.items():
             setattr(self, key, value)
 
+
 def build_parser():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--s3_bucket', '-s', help='S3 bucket for output.', default='macchiato.clue.io')
-    parser.add_argument('--build_path', '-b', help='Path to the build directory.', required=True)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "--s3_bucket", "-s", help="S3 bucket for output.", default="macchiato.clue.io"
+    )
+    parser.add_argument(
+        "--build_path", "-b", help="Path to the build directory.", required=True
+    )
     return parser
 
+
 def read_config(config_path):
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         config_dict = json.load(f)
     return Config(config_dict)
+
 
 def read_build_file(search_pattern, args):
     fstr = os.path.join(args.build_path, search_pattern)
     fmatch = glob.glob(fstr)
-    assert (len(fmatch) == 1) , "Too many files found: {}".format(fmatch)
+    assert len(fmatch) == 1, "Too many files found: {}".format(fmatch)
     return pd.read_csv(fmatch[0])
 
 
 def generate_key(df):
     # Filter out the positive and vehicle controls
-    df = df[~df['pert_type'].isin(['trt_poscon', 'ctl_vehicle'])]
+    df = df[~df["pert_type"].isin(["trt_poscon", "ctl_vehicle"])]
 
     # Select the columns we need
-    df = df[['pert_name', 'pert_id', 'pert_plate', 'x_project_id']]
+    df = df[["pert_name", "pert_id", "pert_plate", "x_project_id"]]
 
     # Drop duplicates
     distinct_df = df.drop_duplicates().reset_index(drop=True)
     return distinct_df
 
+
 # Turn the key_df into a json object
-def key_to_json(df: pd.DataFrame, unique_by: list = None, output_path: str = None) -> str:
+def key_to_json(
+    df: pd.DataFrame, unique_by: list = None, output_path: str = None
+) -> str:
     """
     Convert a pandas DataFrame to a pretty-printed JSON string (records orientation) and write it to a file.
 
@@ -87,7 +94,7 @@ def key_to_json(df: pd.DataFrame, unique_by: list = None, output_path: str = Non
 # Sync all contents of current directory to S3
 def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
     """Sync the local directory to S3."""
-    s3 = boto3.client('s3')
+    s3 = boto3.client("s3")
 
     for root, dirs, files in os.walk(local_dir):
         for file in files:
@@ -111,14 +118,14 @@ def main(args):
     build_path = args.build_path
 
     # Read the config file
-    config_path = args.build_path + '/config.json'
+    config_path = args.build_path + "/config.json"
     config = read_config(config_path)
 
     # Get build name from config
     build_name = config.BUILD_NAME
 
     # Construct the s3 prefix
-    s3_prefix = f"builds/{build_name}/build/"
+    s3_prefix = f"builds/{build_name}/"
 
     # Read the sample_meta file
     sample_meta_path = os.path.join(build_path, config.SAMPLE_META)
@@ -128,13 +135,18 @@ def main(args):
     key_df = generate_key(sample_meta)
 
     # Convert the key_df to json and write to the build directory
-    key_to_json(key_df, output_path=os.path.join(build_path, 'compound_key.json'))
+    key_to_json(key_df, output_path=os.path.join(build_path, "compound_key.json"))
 
     # Sync the build directory to S3
-    sync_to_s3(local_dir = build_path, s3_bucket = args.s3_bucket, s3_prefix= s3_prefix,
-               exclude_pattern="raw_counts")
+    sync_to_s3(
+        local_dir=build_path,
+        s3_bucket=args.s3_bucket,
+        s3_prefix=s3_prefix,
+        exclude_pattern="raw_counts",
+    )
 
     print("Completed sync to S3.")
+
 
 if __name__ == "__main__":
     args = build_parser().parse_args(sys.argv[1:])
