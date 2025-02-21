@@ -6,7 +6,7 @@
 #' @param n.min : Minimum number of finite pairs between column of X and y, columns not satisfying this condition will be dropped.
 #'
 #' @return A data frame with: x (corresponding column of X), rho (Pearson correlation), beta (regression coefficient),
-#'         p.val.rob / q.val.rob (robust p-value / q-value), p.val / q.val (homoskedastic / traditional p-value / q-value),
+#'         p_val_rob / q_val.rob (robust p-value / q-value), p_val / q_val (homoskedastic / traditional p-value / q-value),
 #'         n (number of non-na samples), ns (a stability score to represent how many points of y needs to be replaced with
 #'         the mean value to flip the sign of regression coefficient).
 #' @export
@@ -29,21 +29,21 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
   # Estimation and inference
   beta = muS / varX
   rho = muS / sqrt(varX * varY)
-  p.val <- 2*pt(abs(sqrt(n-2) * muS/sigmaS),
+  p_val <- 2*pt(abs(sqrt(n-2) * muS/sigmaS),
                 df = n-2, lower.tail = FALSE)
-  p.val.homoskedastic <- 2*pt(sqrt( (n-2) /(1/rho^2-1)),
+  p_val.homoskedastic <- 2*pt(sqrt( (n-2) /(1/rho^2-1)),
                               df = n-2, lower.tail = FALSE)
-  p.val.homoskedastic[near(abs(rho), 1)] <- 0
+  p_val.homoskedastic[near(abs(rho), 1)] <- 0
 
   # Experimental robustness score
   ns = apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
   ns = pmin(ns, n - apply(X, 2, function(x) sort(table(x), decreasing = TRUE)[1]))
 
   res <- data.frame(x = names(beta), rho = rho, beta = beta,
-                    p.val.rob = p.val,
-                    p.val = p.val.homoskedastic,
-                    q.val.rob = p.adjust(p.val, method = "BH"),
-                    q.val = p.adjust(p.val.homoskedastic, method = "BH"),
+                    p_val_rob = p_val,
+                    p_val = p_val.homoskedastic,
+                    q_val.rob = p.adjust(p_val, method = "BH"),
+                    q_val = p.adjust(p_val.homoskedastic, method = "BH"),
                     n = n,
                     ns = ns)
 
@@ -171,7 +171,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 #' @param homoskedastic : Should homoskedastic or robust q-values be used for ranking and filtering. Default is homoskedastic.
 #' @param n.X.min : Results with less thana given sample size are dropped, default is 100
 #' @param ns.min : Results that can be flipped with less than ns.min data points are dropped, the default is 3
-#' @param q.val.max : Results with q-values less than q.val.max are dropped, default is 0.2
+#' @param q_val.max : Results with q-values less than q_val.max are dropped, default is 0.2
 #' @param parallel : Should multiple cores to be used to decrease the compute time. Default is FALSE.
 #'
 #' @return Returns a data-table with each row corresponds to a particular (feature, feature set, y) triplet. See robust_linear_model for the other columns.
@@ -183,7 +183,7 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
                                        features = NULL,
                                        homoskedastic = TRUE, n.X.min = 100,
                                        v.X.min = 0.0025,
-                                       ns.min = 3, q.val.max = .2,
+                                       ns.min = 3, q_val.max = .2,
                                        parallel = FALSE){
   require(tidyverse)
   require(magrittr)
@@ -222,16 +222,16 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
         res <- robust_linear_model(X = X[names(y), ], y = y, v.th = v.X.min, n.min = n.X.min) %>%
           as.tibble()%>%
           dplyr::rename(feature = x) %>%
-          dplyr::mutate(feature.set = feat,
+          dplyr::mutate(feature_set = feat,
                         y = colnames(Y)[ix]) %>%
           dplyr::filter(ns >= ns.min)
 
         if(homoskedastic){
           res <- res %>%
-            dplyr::filter(q.val <= q.val.max)
+            dplyr::filter(q_val <= q_val.max)
         } else{
           res <- res %>%
-            dplyr::filter(q.val.rob <= q.val.max)
+            dplyr::filter(q_val.rob <= q_val.max)
         }
 
         if(nrow(res) > 0){
