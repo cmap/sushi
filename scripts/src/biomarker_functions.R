@@ -182,6 +182,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap_datasets_public.h5',
                                        features = NULL,
                                        homoskedastic = TRUE, n.X.min = 100,
+                                       v.X.min = 0.0025,
                                        ns.min = 3, q.val.max = .2,
                                        parallel = FALSE){
   require(tidyverse)
@@ -216,7 +217,9 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
       f <- function(ix){
         y <- Y[cl, ix]; y <- y[is.finite(y)]
 
-        res <- robust_linear_model(X = X[names(y), ], y = y, v.th = 0.0025, n.min = n.X.min) %>%
+        #TODO: Need to deal with empty X values
+
+        res <- robust_linear_model(X = X[names(y), ], y = y, v.th = v.X.min, n.min = n.X.min) %>%
           as.tibble()%>%
           dplyr::rename(feature = x) %>%
           dplyr::mutate(feature.set = feat,
@@ -619,6 +622,8 @@ create_univariate_biomarker_table <- function(in_path, out_path,
     tidyr::unite(cn, treatment_columns, sep = "::") %>%
     reshape2::acast(depmap_id ~ cn, value.var = response_column, fun.aggregate = aggregate_function) %>%
     transform_function()
+
+  #TODO: Decide on agg function
 
   # generate the biomarker table
   univariate_biomarker_table <- univariate_biomarker_table(Y = M, features = features, file = depmap_file,  n.X.min = min_sample_size, parallel =  parallel)

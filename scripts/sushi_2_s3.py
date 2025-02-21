@@ -40,7 +40,7 @@ def read_build_file(search_pattern, args):
     return pd.read_csv(fmatch[0])
 
 
-def generate_key(df):
+def generate_compound_key(df):
     # Filter out the positive and vehicle controls
     df = df[~df["pert_type"].isin(["trt_poscon", "ctl_vehicle"])]
 
@@ -50,6 +50,26 @@ def generate_key(df):
     # Drop duplicates
     distinct_df = df.drop_duplicates().reset_index(drop=True)
     return distinct_df
+
+def generate_merge_key(df, merge_patterns):
+    # Filter out the positive and vehicle controls
+    df = df[~df["pert_type"].isin(["trt_poscon", "ctl_vehicle"])]
+
+    # Get a list of x_project_ids
+    project_ids = df["x_project_id"].unique()
+
+    # Creat a dataframe with each row containing a project_id and each of the merge_patterns
+    merge_keys = []
+    for project_id in project_ids:
+        for pattern in merge_patterns:
+            merge_keys.append([project_id, pattern])
+
+    # Create a dataframe from the merge_keys
+    merge_df = pd.DataFrame(merge_keys, columns=["x_project_id", "merge_pattern"])
+
+    # Return the merge_df
+    return merge_df
+
 
 
 # Turn the key_df into a json object
@@ -132,10 +152,21 @@ def main(args):
     sample_meta = pd.read_csv(sample_meta_path)
 
     # Generate the key_df
-    key_df = generate_key(sample_meta)
+    key_df = generate_compound_key(sample_meta)
+
 
     # Convert the key_df to json and write to the build directory
     key_to_json(key_df, output_path=os.path.join(build_path, "compound_key.json"))
+
+    # Get the list of merge patterns
+    merge_patterns = config.MERGE_PATTERNS
+    merge_patterns = merge_patterns.split(",")
+
+    # Generate the merge key
+    merge_key_df = generate_merge_key(sample_meta, merge_patterns)
+
+    # Convert the merge_key_df to json and write to the build directory
+    key_to_json(merge_key_df, output_path=os.path.join(build_path, "merge_key.json"))
 
     # Sync the build directory to S3
     sync_to_s3(

@@ -26,6 +26,8 @@ parser$add_argument("--biomarker_file", default="/data/biomarker/current/depmap_
 parser$add_argument("--drc_file", default="DRC_TABLE.csv", help="File containing auc values from dose response")
 parser$add_argument("--out_path", default= "", help = "Path to the output directory (per comppound)")
 
+#TODO: Update column headers
+
 # Get command line options, if help option encountered p3rint help and exit
 args <- parser$parse_args()
 
