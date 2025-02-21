@@ -154,7 +154,6 @@ def main(args):
     # Generate the key_df
     key_df = generate_compound_key(sample_meta)
 
-
     # Convert the key_df to json and write to the build directory
     key_to_json(key_df, output_path=os.path.join(build_path, "compound_key.json"))
 
