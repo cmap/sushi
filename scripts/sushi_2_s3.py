@@ -67,8 +67,14 @@ def generate_merge_key(df, merge_patterns):
     # Create a dataframe from the merge_keys
     merge_df = pd.DataFrame(merge_keys, columns=["x_project_id", "merge_pattern"])
 
+    # Ensure uniqueness
+    distinct_df = merge_df.drop_duplicates().reset_index(drop=True)
+
+    # Ensure that x_project_id is a string
+    distinct_df["x_project_id"] = distinct_df["x_project_id"].astype(str)
+
     # Return the merge_df
-    return merge_df
+    return distinct_df
 
 
 
