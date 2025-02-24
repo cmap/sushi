@@ -13,7 +13,7 @@ parser$add_argument("--cell_line_cols", default="pool_id,depmap_id",
                     help = "Columns that can describe a cell line")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
-parser$add_argument("--l2fc_column", default="median_l2fc",
+parser$add_argument("--collapsed_l2fc_column", default="median_l2fc",
                     help = "column containing replicate collapsed log fold change values")
 parser$add_argument("--dr_column", default="log2_auc",
                     help = "column containing auc values from dose response")
@@ -38,7 +38,7 @@ bio_file = args$biomarker_file
 
 # Paths and columns to use
 lfc_path = args$collapsed_lfc
-lfc_column= args$l2fc_column
+lfc_column= args$collapsed_l2fc_column
 dr_column = args$dr_column
 drc_file = args$drc_file
 out_path = args$out_path
