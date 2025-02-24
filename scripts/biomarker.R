@@ -59,7 +59,7 @@ if (!dir.exists(out_path)) {
 
 # Function to determine treatment columns
 get_treatment_columns <- function(response_column, sig_cols) {
-  if (response_column == args$l2fc_column) {
+  if (response_column == args$collapsed_l2fc_column) {
     # Exclude "cell_set" for lfc biomarker
     return(sig_cols[!grepl("cell_set", sig_cols)])
   } else if (response_column == args$dr_column) {
