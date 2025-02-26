@@ -184,7 +184,9 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
                                    count_threshold= 40, pseudocount= 20) {
   paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
 
-  read_stats <- compute_read_stats(annotated_counts = annotated_counts, unknown_counts = unknown_counts, group_cols = id_cols_list,
+  read_stats_grouping_cols <- c(id_cols_list, "pert_type")
+
+  read_stats <- compute_read_stats(annotated_counts = annotated_counts, unknown_counts = unknown_counts, group_cols = read_stats_grouping_cols,
                                    cell_set_meta= cell_set_meta, metric = "n", cell_line_cols = cell_line_cols,
   count_threshold = count_threshold)
 
