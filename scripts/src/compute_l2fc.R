@@ -17,7 +17,7 @@
 #' @return - l2fc data.frame with l2fc column
 #' @export
 compute_l2fc= function(normalized_counts,
-                       control_type = "negcon",
+                       control_type = "ctl_vehicle",
                        sig_cols=c('cell_set','pert_name','pert_dose','pert_dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
                        count_col_name="log2_normalized_n", count_threshold= 40,
@@ -78,7 +78,8 @@ compute_l2fc= function(normalized_counts,
     dplyr::inner_join(controls, by= union(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
     dplyr::mutate(l2fc= log2(mean_normalized_n / control_median_normalized_n),
                   counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
-    dplyr::select(-mean_n, -control_median_n)
+    dplyr::filter(is.na(counts_flag)) %>% # remove low count cell lines
+    dplyr::select(-mean_n, -control_median_n, -counts_flag)
   
   return(l2fc)
 }
