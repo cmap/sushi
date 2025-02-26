@@ -78,23 +78,22 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #' recovered cell lines, and their fractions.
 #'
 #' @import dplyr
-compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, group_cols = c("pcr_plate","pcr_well"),
+compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, group_cols = c("pcr_plate","pcr_well","pert_type"),
                                metric = "n", cell_line_cols = c("depmap_id", "pool_id"), count_threshold = 40) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
   # Group unknown_counts by group_cols
   unknown_counts <- unknown_counts %>%
+      dplyr::left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
+                       by = c("pcr_plate","pcr_well")) %>%
       dplyr::group_by(across(all_of(group_cols))) %>%
       dplyr::summarise(
       n = sum(.data[[metric]], na.rm = TRUE),
-      expected_read = FALSE,
-      cb_name = "unmapped",
-      cell_set = "unmapped"
-      ) %>%
-      dplyr::ungroup()
+      expected_read = FALSE
+      )
 
-  result <- annotated_counts %>%
+  plate_well <- annotated_counts %>%
     dplyr::left_join(expected_lines, by = "cell_set") %>% # Add n_expected_lines from lookup
     # Append unknown_counts, filling NA for any column not present in unknown_counts
     dplyr::bind_rows(unknown_counts) %>%
@@ -114,8 +113,22 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
       n_expected_lines = max(n_expected_lines, na.rm = TRUE), # Bring forward from join
       # Fraction of cell lines with coverage above count threshold
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
+      # Ratio of control barcode reads to cell line reads
+      cb_cl_ratio_well = n_cb_reads / (n_expected_reads - n_cb_reads),
     ) %>%
     dplyr::ungroup()
+
+  plate_pert_type <- plate_well %>%
+    dplyr::group_by(pcr_plate, pert_type) %>%
+    dplyr::summarise(
+      cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE),
+    ) %>%
+    dplyr::ungroup()
+
+    # Combine plate_well and plate_pert_type
+  result <- plate_well %>%
+    dplyr::left_join(plate_pert_type, by = c("pcr_plate", "pert_type"))
+
   return(result)
 }
 
