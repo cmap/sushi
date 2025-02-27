@@ -83,6 +83,10 @@ plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts, filtered_counts = filtered_counts,
     cell_line_cols = cell_plate_list, pseudocount = pseudocount)
 
+# Filter out control barcodes (where pool_id, depmap_id and lua are all NA)
+plate_cell_table <- plate_cell_table %>%
+    filter(!is.na(pcr_plate) & !is.na(depmap_id) & !is.na(lua))
+
 # Write to file ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
 print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))
