@@ -53,10 +53,13 @@ id_cols= unlist(strsplit(args$id_cols, ","))
 duplicate_ids <- cell_line_meta %>%
   dplyr::count(depmap_id, lua, cell_set, name = "count") %>%
   dplyr::filter(count > 1)
-print("The following duplicate combinations of depmap_id, lua, and cell_set are duplicated in the cell line meta:")
-print(duplicate_ids)
-print("FILTER_COUNTS will continue without considering these duplicate entries.")
-cell_line_meta %<>% dplyr::anti_join(duplicate_ids, by = c("depmap_id", "lua", "cell_set"))
+
+if (nrow(duplicate_ids) > 0) {
+  print("The following lua + depmap_id + cell_set combinations are duplicated in the cell line meta:")
+  print(duplicate_ids)
+  print("FILTER_COUNTS will continue without considering these duplicated IDs.")
+  cell_line_meta %<>% dplyr::anti_join(duplicate_ids, by = c("depmap_id", "lua", "cell_set"))
+}
 
 # Run filter_raw_reads -----
 print('Calling filter_raw_reads ...')
