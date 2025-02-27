@@ -51,14 +51,14 @@ id_cols= unlist(strsplit(args$id_cols, ","))
 
 # Remove any duplicate depmap_id + lua + cell_set in cell_set_meta ----
 duplicate_ids <- cell_line_meta %>%
-  dplyr::count(depmap_id, lua, cell_set, name = "count") %>%
+  dplyr::count(depmap_id, lua, name = "count") %>%
   dplyr::filter(count > 1)
 
 if (nrow(duplicate_ids) > 0) {
-  print("The following lua + depmap_id + cell_set combinations are duplicated in the cell line meta:")
+  print("The following lua + depmap_id combinations are duplicated in the cell line meta:")
   print(duplicate_ids)
   print("FILTER_COUNTS will continue without considering these duplicated IDs.")
-  cell_line_meta %<>% dplyr::anti_join(duplicate_ids, by = c("depmap_id", "lua", "cell_set"))
+  cell_line_meta %<>% dplyr::anti_join(duplicate_ids, by = c("depmap_id", "lua"))
 }
 
 # Run filter_raw_reads -----
