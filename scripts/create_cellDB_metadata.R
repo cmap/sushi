@@ -54,10 +54,10 @@ if (args$api_key != ""){
 
 print("Using CellDB to locate cell information.")
 print(api_url)
-cell_sets_df <- get_cell_api_info(paste(api_url,"e_cell_sets", sep = "/"), api_key)
-cell_pools_df <- get_cell_api_info(paste(api_url,"e_assay_pools", sep = "/"), api_key)
-cell_lines_df <- get_cell_api_info(paste(api_url,"e_cell_lines", sep = "/"), api_key)
-assay_pools_df <- get_cell_api_info(paste(api_url,"e_cell_set_definition_files", sep = "/"), api_key)
+cell_sets_df <- get_cell_api_info(paste(api_url,"cell_sets", sep = "/"), api_key)
+cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_key)
+cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
+assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
 assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
 
 #if custom cb_ladder is not provided, pull from CellDB
