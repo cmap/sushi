@@ -9,14 +9,14 @@ library (PRROC)
 #' Compute Skew
 #'
 #' This function computes the skew, which measures the cumulative fraction of barcode read counts taken up by each cell
-#' line. It is computed as the AUC of that CDF function and has a range of (0.5,1).
+#' line. It is computed as the auc of that CDF function and has a range of (0.5,1).
 #' A lower skew indicates a more even distribution of reads across cell lines.
 #'
 #' @param df A data frame containing the data to compute skew, generally annotated_counts.
 #' @param group_cols A character vector specifying the column names to group by (default: `c("pcr_plate", "pcr_well")`).
 #' @param metric A string indicating the column name of the metric to use for calculations (default: `"n"`).
 #'
-#' @return A data frame with one row per group and a column `skew` containing the computed skew (AUC).
+#' @return A data frame with one row per group and a column `skew` containing the computed skew (auc).
 #'
 #' @import dplyr
 compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n") {
@@ -29,7 +29,7 @@ compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n
     ) %>%
     summarise(
       skew = if (n() > 1) {
-        # Compute AUC
+        # Compute auc
         sum((rank_fraction[-1] - rank_fraction[-n()]) *
               (cumulative_fraction_reads[-1] + cumulative_fraction_reads[-n()]) / 2, na.rm = TRUE)
       }
@@ -78,13 +78,25 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #' recovered cell lines, and their fractions.
 #'
 #' @import dplyr
-compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("pcr_plate","pcr_well"),
+compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, group_cols = c("pcr_plate","pcr_well","pert_type"),
                                metric = "n", cell_line_cols = c("depmap_id", "pool_id"), count_threshold = 40) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
-  result <- annotated_counts %>%
+  # Group unknown_counts by group_cols
+  unknown_counts <- unknown_counts %>%
+      dplyr::left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
+                       by = c("pcr_plate","pcr_well")) %>%
+      dplyr::group_by(across(all_of(group_cols))) %>%
+      dplyr::summarise(
+      n = sum(.data[[metric]], na.rm = TRUE),
+      expected_read = FALSE
+      )
+
+  plate_well <- annotated_counts %>%
     dplyr::left_join(expected_lines, by = "cell_set") %>% # Add n_expected_lines from lookup
+    # Append unknown_counts, filling NA for any column not present in unknown_counts
+    dplyr::bind_rows(unknown_counts) %>%
     dplyr::group_by(across(all_of(group_cols))) %>%
     dplyr::summarise(
       # Total reads
@@ -101,8 +113,22 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, group_cols = c("
       n_expected_lines = max(n_expected_lines, na.rm = TRUE), # Bring forward from join
       # Fraction of cell lines with coverage above count threshold
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
+      # Ratio of control barcode reads to cell line reads
+      fraction_cb_reads_well = n_cb_reads / n_expected_reads,
     ) %>%
     dplyr::ungroup()
+
+  plate_pert_type <- plate_well %>%
+    dplyr::group_by(pcr_plate, pert_type) %>%
+    dplyr::summarise(
+      fraction_cb_reads_plate = median(fraction_cb_reads_well, na.rm = TRUE),
+    ) %>%
+    dplyr::ungroup()
+
+    # Combine plate_well and plate_pert_type
+  result <- plate_well %>%
+    dplyr::left_join(plate_pert_type, by = c("pcr_plate", "pert_type"))
+
   return(result)
 }
 
@@ -154,11 +180,13 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
 #' @return A data frame (`id_cols_table`) that combines QC metrics, including read statistics, skew, and control barcode metrics, grouped by the specified id_cols.
 #'
 #' @import dplyr
-generate_id_cols_table <- function(annotated_counts, normalized_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
+generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
                                    count_threshold= 40, pseudocount= 20) {
   paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
 
-  read_stats <- compute_read_stats(annotated_counts = annotated_counts, group_cols = id_cols_list,
+  read_stats_grouping_cols <- c(id_cols_list, "pert_type")
+
+  read_stats <- compute_read_stats(annotated_counts = annotated_counts, unknown_counts = unknown_counts, group_cols = read_stats_grouping_cols,
                                    cell_set_meta= cell_set_meta, metric = "n", cell_line_cols = cell_line_cols,
   count_threshold = count_threshold)
 

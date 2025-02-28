@@ -10,10 +10,9 @@ validate_cell_set= function(cell_set_and_pool_meta) {
     dplyr::filter(count > 1)
   
   if(nrow(duplicate_cls) > 0) {
-    print('WARNING: The following CLs appear more than once in a cell set!!!')
+    print('WARNING: The following depmap_id + lua combinations appear more than once in a single cell set!!!')
     print(duplicate_cls)
-    print('The module will add the prefix dup_ to the depmap_ids of these cell lines.')
-    print('They will be dropped before normalization!')
+    print('These cell lines will be dropped!')
   }
 }
 

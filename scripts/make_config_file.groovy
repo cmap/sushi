@@ -2,8 +2,10 @@ import hudson.model.*
 import jenkins.model.*
 import groovy.json.JsonSlurper
 
-String sectionHeaderStyleGreen = ' color: white; background: green; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
-String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; '
+String sectionHeaderStyleGreen = ' color: white; background: #dbdb8e; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px '
+String sectionHeaderStyleBlue = ' color: white; background: #7ea6d3; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 18px'
+String sectionHeaderStyleRed = ' color: white; background: red; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 30px'
+String sectionHeaderStyleYellow = ' color: white; background: yellow; font-family: Roboto, sans-serif !important; padding: 5px; text-align: center; font-size: 12px'
 String separatorStyleCss = ' border: 0; border-bottom: 1px dashed #ccc; background: #999; '
 
 pipeline {
@@ -11,45 +13,106 @@ pipeline {
     // Define parameters that can be edited via the Jenkins UI
     parameters {
         separator(
-          name: "Group_1",
+          name: "user_inputs",
           sectionHeader: "User Inputs",
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleGreen
         )
-        // Check boxes of modules to run
-        booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build. If unchecked, the build will not be triggered and only the config.json will be generated.')
-        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Check this to trigger the create_celldb_metadata job.')
-        booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get metadata from COMET, use only if screen is registered.')
-        string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, provide the screen name from COMET.')
-        booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Check this to trigger the collate_fastq_reads job.')
-        booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Check this to trigger the filter_counts job.')
-        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Select if there is experimental data that needs to be removed prior to normalization.')
-        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Run normalization.')
-        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes.')
-        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Collapse replicates.')
-        booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
-        booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
-        string(name: 'DAYS', defaultValue: '', description: 'If running the sushi_to_mts module, provide any days/timepoints (separated by commas) that should be dropped from output data. No quotes needed (ie, 2,8).')
+
+        separator(
+          name: "run_sushi",
+          sectionHeader: "Run Sushi",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build jobs below. If unchecked, the build will not be triggered and only the config.json will be generated.')
+
+        separator(
+          name: "build_details",
+          sectionHeader: "Build Details",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Directory where the build output will go. Must contain the raw counts file from Nori. If not getting your metadata from cellDB & COMET this directory must also include the sample and cell line/pool metadata.')
+        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
+
+        separator(
+          name: "metadata",
+          sectionHeader: "Metadata",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB. Requires that all sample_meta column entries for cell_set exist in cellDB.')
+        booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
+        string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, you must provide the screen name from COMET.')
+
+        separator(
+          name: "core_modules",
+          sectionHeader: "Core Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Checks to ensure raw reads come from expected flowcells and lanes and then sums the counts across samples (SEQUENCING_INDEX_COLS).')
+        booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Assigns raw reads to the appropriate treatment conditions and cell lines; filters those that do not match. Removes cell lines that are duplicated in a cell set.')
+        booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Uses a data_to_remove.csv files to remove data. Runs as part of filter counts.')
+        booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
+        booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
+        booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
+
+        separator(
+          name: "analytics_modules",
+          sectionHeader: "Analytics Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
+        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
+        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
+        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
+        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
+
+        separator(
+          name: "qc_modules",
+          sectionHeader: "QC Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
         booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
+        booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
 
-        // Parameters we expect users to change
-        string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Output path to deposit build. Format should be /directory/PROJECT_CODE/BUILD_NAME')
-        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name')
-        string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,project_code,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describeunique treatment conditions.This defaults to \"cell_set,pert_name,pert_dose,pert_dose_unit,day\". Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\". This paramter is first used in COMPUTE_LFC.')
-        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols. This defaults to \"ctl_vehicle\" and is used in COMPUTE_LFC.')
-        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls. This defaults to \"trt_poscon\" and is used in several QC metrics.')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions. This defaults to \"cell_set,day\" and can be expanded to include \"pert_vehicle\". This paramter is used in COMPUTE_LFC.')
-        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline. This defaults to \"h-b\".')
+        separator(
+          name: "portal_prep",
+          sectionHeader: "Portal Prep",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
+        string(name: 'DAYS', defaultValue: '', description: 'Provide any days/timepoints (separated by commas) that should be dropped from the portal output data. Note that the portal does not currently support multiple timepoints. No quotes needed (ie, 2,8).')
+
+        separator(
+            name: "controls",
+            sectionHeader: "Controls",
+            separatorStyle: separatorStyleCss,
+            sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols.')
+        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls.')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
+        string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline.')
 
         // Parameters that we don't expect users to change
         separator(
-          name: "Group_1",
-          sectionHeader: "Do Not Edit",
+          name: "do_not_edit",
+          sectionHeader: "WARNING: ADVANCED USERS ONLY. DO NOT EDIT",
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleRed
         )
+
+        // Sequencing tech
+        string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
+
 
         // pipeline version
         string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
@@ -73,6 +136,9 @@ pipeline {
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'log2_normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
         string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Threshold for filtering the negative controls. In the negative control conditions, cell lines whose median counts are below this threshold are not confidently detected and thus are dropped. This defaults to \"40\" and is used in COMPUTE_LFC.')
+        string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
+        string(name: 'COLLAPSED_L2FC_COLUMN', defaultValue: 'collapsed_l2fc', description: 'Name of the column containing the collapsed log2 fold change values used in biomarker. This defaults to \"collapsed_l2fc\".')
+        string(name: 'VIABILITY_CAP', defaultValue: '1.5', description: 'Cap for viability values used when computing LFC. This defaults to \"1.5\".')
 
         // Files created by sushi
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts. This file is created by COLLATE_FASTQ_READS.')
@@ -84,6 +150,12 @@ pipeline {
         string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values. This file is created by COLLAPSED_LFC.')
         // Other
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
+        string(name: 'MERGE_PATTERNS', defaultValue: 'normalized_counts*,collapsed_l2fc*,l2fc*,log2_auc_multivariate_biomarkers*,log2_auc_univariate_biomarkers*,median_l2fc_multivariate_biomarkers*,median_l2fc_univariate_biomarkers*,DRC_TABLE*', description: 'Patterns to search for when merging files by project. May be changed based on modules run.')
+
+        // Biomarker
+        string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
+        string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis.')
+        string(name: 'DR_PATH', defaultValue: 'dose_response.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
     }
 
     environment {
@@ -137,13 +209,14 @@ pipeline {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
-                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES', 'GENERATE_QC_TABLES', 'POSCON_TYPE',
+                        'COUNTS', 'SCREEN', 'CONTROL_BARCODES', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN',
+                        'COLLAPSED_L2FC_COLUMN',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
 
                         // sushi output files
-                        'PRISM_BARCODE_COUNTS', 'UNKNOWN_BARCODE_COUNTS', 'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS', 
+                        'PRISM_BARCODE_COUNTS', 'UNKNOWN_BARCODE_COUNTS', 'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS',
                         'LFC', 'COLLAPSED_LFC',
 
                         // collate_fastq_reads parameters
@@ -153,7 +226,14 @@ pipeline {
                         'PSEUDOCOUNT',
 
                         // compute_l2fc paramters
-                        'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD'
+                        'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
+
+                        // biomarker parameters
+                        'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE', 'DR_COLUMN', 'LFC_BIOMARKER', 'AUC_BIOMARKER',
+                        'DR_PATH',
+
+                        //io parameters
+                        'MERGE_PATTERNS'
                     ]
 
                     def config = [:]
@@ -246,6 +326,12 @@ pipeline {
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates.sh')
                         }
+                        if (params.DRC) {
+                            scriptsToRun.add('dose_response.sh')
+                        }
+                        if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
+                            scriptsToRun.add('biomarker.sh')
+                        }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filteredCounts_QC.sh')
                         }
@@ -259,7 +345,7 @@ pipeline {
                             scriptsToRun.add('generate_qc_tables.sh')
                         }
                         if (params.CONVERT_SUSHI) {
-                            scriptsToRun.add('seq_to_mts.sh')
+                            scriptsToRun.add('sushi_2_s3.sh')
                         }
 
                         scriptsToRun.each { scriptName ->

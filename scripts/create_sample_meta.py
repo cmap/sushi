@@ -6,7 +6,11 @@ import os
 
 def fetch_data(screen, api_key):
     url = f"https://api.clue.io/api/v_eps_metadata?filter=%7B%22where%22%3A%7B%22project_code%22%3A%22{screen}%22%7D%7D"
-    headers = {"Accept": "application/json", "user_key": api_key, 'prism_key' : 'prism_mts'}
+    headers = {
+        "Accept": "application/json",
+        "user_key": api_key,
+        "prism_key": "prism_mts",
+    }
 
     response = requests.get(url, headers=headers)
 
@@ -33,9 +37,20 @@ def save_dataframe(df, build_dir):
 
 
 def rename_columns(df):
-    rename_map = {"index1": "index_1", "index2": "index_2", "trt_type": "pert_type",
-                  "treatment": "pert_name", "dose": "pert_dose", "dose_unit": "pert_dose_unit"}
+    rename_map = {
+        "index1": "index_1",
+        "index2": "index_2",
+        "trt_type": "pert_type",
+        "treatment": "pert_name",
+        "dose": "pert_dose",
+        "dose_unit": "pert_dose_unit",
+    }
     return df.rename(columns=rename_map)
+
+
+def remove_columns(df, columns_to_remove):
+    # Remove specified columns from the DataFrame
+    return df.drop(columns=columns_to_remove, errors='ignore')
 
 
 def add_control_barcodes(df, control_barcodes):
@@ -50,7 +65,9 @@ def filter_nan_flowcells(df):
 
     # Print the count if any rows are dropped
     if nan_count > 0:
-        print(f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped.")
+        print(
+            f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped."
+        )
 
     # Drop rows with NaN in "flowcell_names"
     return df.dropna(subset=["flowcell_names"])
@@ -91,6 +108,7 @@ def main():
         df = (
             fetch_data(screen, api_key)
             .pipe(rename_columns)
+            .pipe(remove_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
             .pipe(add_control_barcodes, control_barcodes)
             .pipe(filter_nan_flowcells)
         )

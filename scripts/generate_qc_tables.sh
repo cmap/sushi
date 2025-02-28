@@ -28,6 +28,7 @@ enforce_abs_path ANNOTATED_COUNTS
 enforce_abs_path CELL_SET_AND_POOL_META
 enforce_abs_path FILTERED_COUNTS
 enforce_abs_path CONTROL_BARCODE_META
+enforce_abs_path UNKNOWN_BARCODE_COUNTS
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
@@ -41,6 +42,7 @@ args=(
 --cell_line_cols "$CELL_LINE_COLS"
 --count_threshold "$COUNT_THRESHOLD"
 --control_barcode_meta "$CONTROL_BARCODE_META"
+--unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
 )
 
 echo Rscript qc_tables.R "${args[@]}"
