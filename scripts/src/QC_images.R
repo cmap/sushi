@@ -287,7 +287,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
 #' @param id_cols Vector of column names that identify every PCR well.
 #' @param value_col Name of the column that contains the values.
 #' @returns Returns a ggplot object.
-create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log2_normalized_n') {
+create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log2_n') {
   # Validation: Check that id_cols and value_col exist in filtered counts.
   if(!validate_columns_exist(c(id_cols, value_col), normalized_counts)) {
     stop('Some input columns were not detected in normalized counts.')
@@ -302,10 +302,10 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
       dplyr::filter(!is.na(cb_name), !is.na(cb_ladder), n != 0) %>%
       dplyr::group_by(pick(all_of(id_cols))) %>%
       dplyr::mutate(mean_y= mean(cb_log2_dose),
-                    residual2= (cb_log2_dose - log2_normalized_n)^2,
+                    residual2= (cb_log2_dose - log2_n)^2,
                     squares2= (cb_log2_dose - mean_y)^2,
                     norm_r2= 1 - sum(residual2) / sum(squares2),
-                    norm_mae= median(abs(cb_log2_dose- log2_normalized_n))) %>% ungroup()
+                    norm_mae= median(abs(cb_log2_dose- log2_n))) %>% ungroup()
   } 
   
   # Filter for just the control barcodes, create a profile_id for faceting, 
@@ -692,7 +692,7 @@ QC_images= function(raw_counts_uncollapsed_path,
     print('8. Generating control_barcode_trend image')
     potential_error= base::tryCatch({
       trend_sc= create_ctrlBC_scatterplots(normalized_counts %>% dplyr::filter(!cb_ladder %in% c(NA, FALSE, 'none', '')), 
-                                           id_cols, value_col= 'log2_normalized_n')
+                                           id_cols, value_col= 'log2_n')
       
       pdf(file=paste(out, "control_barcode_trend.pdf", sep="/"),
           width= sqrt(num_profiles) * 2, height= sqrt(num_profiles) * 2)
@@ -718,11 +718,11 @@ QC_images= function(raw_counts_uncollapsed_path,
   potential_error= base::tryCatch({
     cor_df= filtered_counts %>% 
       dplyr::filter(!is.na(depmap_id), !pert_type %in% c(NA, 'empty', '', 'CB_only')) %>%
-      dplyr::mutate(log2_normalized_n= log2(n + 1))
+      dplyr::mutate(log2_n= log2(n + 1))
     cp= create_cor_heatmap(input_df= cor_df,
                            row_id_cols= c('depmap_id'),
                            col_id_cols= c(sig_cols, id_cols),
-                           value_col= 'log2_normalized_n')
+                           value_col= 'log2_n')
     
     pdf(file= paste(out, 'sample_cor.pdf', sep= '/'),
         width= sqrt(num_profiles) * 2, height= sqrt(num_profiles) * 2)
@@ -767,7 +767,7 @@ QC_images= function(raw_counts_uncollapsed_path,
                                                      cell_line_cols= unique_cell_line_cols, 
                                                      replicate_group_cols= replicate_group_cols, 
                                                      replicate_col= 'tech_rep', 
-                                                     value_col= 'log2_normalized_n')
+                                                     value_col= 'log2_n')
         if(!is.null(tech_reps_plt)) {
           pdf(file=paste(out, "tech_reps_plt.pdf", sep="/"),
               width=sqrt(num_profiles), height=sqrt(num_profiles))
