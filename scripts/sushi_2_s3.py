@@ -176,9 +176,11 @@ def main(args):
     sample_meta = pd.read_csv(sample_meta_path)
 
     # Generate the key_df
+    print("Generating compound key...")
     key_df = generate_compound_key(sample_meta)
 
     # Convert the key_df to json and write to the build directory
+    print("Writing compound key to JSON...")
     key_to_json(key_df, output_path=os.path.join(build_path, "compound_key.json"))
 
     # Get the list of merge patterns
@@ -186,9 +188,11 @@ def main(args):
     merge_patterns = merge_patterns.split(",")
 
     # Generate the merge key
+    print("Generating merge key...")
     merge_key_df = generate_merge_key(sample_meta, merge_patterns)
 
     # Convert the merge_key_df to json and write to the build directory
+    print("Writing merge key to JSON...")
     key_to_json(merge_key_df, output_path=os.path.join(build_path, "merge_key.json"))
 
     # # Zip raw_counts prior to upload
@@ -197,6 +201,7 @@ def main(args):
     #     gzip_files(search_pattern=pattern, build_path=build_path)
 
     # Sync the build directory to S3
+    print(f"Syncing {build_path} to {s3_prefix}...")
     sync_to_s3(
         local_dir=build_path,
         s3_bucket=args.s3_bucket,
