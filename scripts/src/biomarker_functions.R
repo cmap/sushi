@@ -5,7 +5,7 @@
 #' @param v.th : Minimum variance for the columns of X, columns with smaller variances will be dropped.
 #' @param n.min : Minimum number of finite pairs between column of X and y, columns not satisfying this condition will be dropped.
 #'
-#' @return A data frame with: x (corresponding column of X), rho (Pearson correlation), beta (regression coefficient),
+#' @return A data frame with: x (corresponding column of X), correlation_coeff (Pearson correlation), regression_coeff (regression coefficient),
 #'         p_val_rob / q_val.rob (robust p-value / q-value), p_val / q_val (homoskedastic / traditional p-value / q-value),
 #'         n (number of non-na samples), ns (a stability score to represent how many points of y needs to be replaced with
 #'         the mean value to flip the sign of regression coefficient).
@@ -27,25 +27,25 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
   varY = colMeans(Y^2, na.rm = T)
 
   # Estimation and inference
-  beta = muS / varX
-  rho = muS / sqrt(varX * varY)
+  regression_coeff = muS / varX
+  correlation_coeff = muS / sqrt(varX * varY)
   p_val <- 2*pt(abs(sqrt(n-2) * muS/sigmaS),
                 df = n-2, lower.tail = FALSE)
-  p_val.homoskedastic <- 2*pt(sqrt( (n-2) /(1/rho^2-1)),
+  p_val.homoskedastic <- 2*pt(sqrt( (n-2) /(1/correlation_coeff^2-1)),
                               df = n-2, lower.tail = FALSE)
-  p_val.homoskedastic[near(abs(rho), 1)] <- 0
+  p_val.homoskedastic[near(abs(correlation_coeff), 1)] <- 0
 
   # Experimental robustness score
-  ns = apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
-  ns = pmin(ns, n - apply(X, 2, function(x) sort(table(x), decreasing = TRUE)[1]))
+  stability_score = apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
+  stability_score = pmin(stability_score, n - apply(X, 2, function(x) sort(table(x), decreasing = TRUE)[1]))
 
-  res <- data.frame(x = names(beta), rho = rho, beta = beta,
+  res <- data.frame(x = names(regression_coeff), correlation_coeff = correlation_coeff, regression_coeff = regression_coeff,
                     p_val_rob = p_val,
                     p_val = p_val.homoskedastic,
                     q_val.rob = p.adjust(p_val, method = "BH"),
                     q_val = p.adjust(p_val.homoskedastic, method = "BH"),
                     n = n,
-                    ns = ns)
+                    stability_score = stability_score)
 
   return(res)
 }
@@ -224,7 +224,7 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
           dplyr::rename(feature = x) %>%
           dplyr::mutate(feature_set = feat,
                         y = colnames(Y)[ix]) %>%
-          dplyr::filter(ns >= ns.min)
+          dplyr::filter(stability_score >= stability_score.min)
 
         if(homoskedastic){
           res <- res %>%
@@ -236,10 +236,10 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
 
         if(nrow(res) > 0){
           res <- res %>%
-            dplyr::arrange(rho) %>%
-            dplyr::mutate(rank = ifelse(sign(rho) < 0, 1:n(), NA)) %>%
-            dplyr::arrange(-rho) %>%
-            dplyr::mutate(rank = pmin(rank, ifelse(sign(rho > 0), 1:n(), NA), na.rm = T))
+            dplyr::arrange(correlation_coeff) %>%
+            dplyr::mutate(rank = ifelse(sign(correlation_coeff) < 0, 1:n(), NA)) %>%
+            dplyr::arrange(-correlation_coeff) %>%
+            dplyr::mutate(rank = pmin(rank, ifelse(sign(correlation_coeff > 0), 1:n(), NA), na.rm = T))
         }
         return(res)
       }

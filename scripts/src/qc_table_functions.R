@@ -114,14 +114,14 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
       # Fraction of cell lines with coverage above count threshold
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
       # Ratio of control barcode reads to cell line reads
-      cb_cl_ratio_well = n_cb_reads / (n_expected_reads - n_cb_reads),
+      fraction_cb_reads_well = n_cb_reads / n_expected_reads,
     ) %>%
     dplyr::ungroup()
 
   plate_pert_type <- plate_well %>%
     dplyr::group_by(pcr_plate, pert_type) %>%
     dplyr::summarise(
-      cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE),
+      fraction_cb_reads_plate = median(fraction_cb_reads_well, na.rm = TRUE),
     ) %>%
     dplyr::ungroup()
 

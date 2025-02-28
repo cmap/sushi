@@ -86,27 +86,27 @@ get_treatment_columns <- function(response_column, sig_cols) {
     print(paste0("Creating ", biomarker_type, " biomarker table using ", response_column, " from ", in_path, "..."))
 
     # Call the appropriate biomarker function
-    biomarker_function(
-      in_path = in_path,
-      out_path = out_path,
-      output_file_name = output_file_name,
-      treatment_columns = treatment_columns,
-      response_column = response_column,
-      depmap_file = depmap_file
-    )
+    # biomarker_function(
+    #   in_path = in_path,
+    #   out_path = out_path,
+    #   output_file_name = output_file_name,
+    #   treatment_columns = treatment_columns,
+    #   response_column = response_column,
+    #   depmap_file = depmap_file
+    # )
   }
 
 # Process biomarkers based on user inputs
 if (univariate_biomarker || multivariate_biomarker) {
   # Pick the datasets and their corresponding response columns
-  datasets <- list()
-  if (lfc_biomarker) datasets <- c(datasets, list(list(path = lfc_path, response = lfc_column)))
-  if (auc_biomarker) datasets <- c(datasets, list(list(path = drc_file, response = dr_column)))
+  jobs <- list()
+  if (lfc_biomarker) jobs <- c(jobs, list(list(path = lfc_path, response = lfc_column)))
+  if (auc_biomarker) jobs <- c(jobs, list(list(path = drc_file, response = dr_column)))
 
   # Loop through the selected datasets
-  for (dataset in datasets) {
-    in_path <- dataset$path
-    response_column <- dataset$response
+  for (job in jobs) {
+    in_path <- job$path
+    response_column <- job$response
 
     # Run univariate analysis if requested
     if (univariate_biomarker) {
