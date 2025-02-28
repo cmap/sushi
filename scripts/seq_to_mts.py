@@ -356,13 +356,15 @@ def main(args):
             df.to_csv(output_path, sep="\t", index=False)
         gzip_file(output_path)
 
-    # Check for *_EPS_QC_TABLE.csv file and gzip if it exists
+    # Check for *_EPS_QC_TABLE.csv files, add cell line info and gzip
     eps_qc_file_pattern = os.path.join(args.build_path, "*_EPS_QC_TABLE.csv")
     eps_qc_files = glob.glob(eps_qc_file_pattern)
     if eps_qc_files:
         for eps_qc_file in eps_qc_files:
+            df = pd.read_csv(eps_qc_file)
+            df = df.merge(cell_line_df, on="lua", how="left")
             output_eps_qc_file = os.path.join(args.out, os.path.basename(eps_qc_file))
-            shutil.copy(eps_qc_file, output_eps_qc_file)
+            df.to_csv(output_eps_qc_file, index=False)
             gzip_file(output_eps_qc_file)
 
     # Sync the directory to S3

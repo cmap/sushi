@@ -16,14 +16,14 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv",
                     help="path to file containing normalized counts")
-parser$add_argument("-ct", "--control_type", default="negcon", help="pert_type to use as control")
+parser$add_argument("-ct", "--control_type", default="ctl_vehicle", help="pert_type to use as control")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
 parser$add_argument("--ctrl_cols", default="cell_set,day", 
                     help = "columns used to collapse controls to generate l2fc")
 parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
-parser$add_argument("-ccn", "--count_col_name", default="normalized_n", 
+parser$add_argument("-ccn", "--count_col_name", default="log2_normalized_n", 
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
