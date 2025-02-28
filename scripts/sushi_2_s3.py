@@ -140,21 +140,21 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
                 print(f"Excluding upload of {file}")
 
 # Function to zip files based on a pattern (replacing the original file) and leaving it in the same directory
-def zip_files(search_pattern, build_path):
+def gzip_files(search_pattern, build_path):
     # Find all matching files
     matching_files = []
     for root, dirs, files in os.walk(build_path):
         for file in files:
-            if search_pattern in file and not file.endswith(".zip"):
+            if search_pattern in file and not file.endswith(".gz"):
                 matching_files.append(os.path.join(root, file))
 
-    # Create zip files for each matching file
+    # Create gzip files for each matching file
     for file_path in matching_files:
-        zip_file_name = f"{os.path.basename(file_path)}.zip"
-        zip_path = os.path.join(os.path.dirname(file_path), zip_file_name)
-        with zipfile.ZipFile(zip_path, "w") as zipf:
-            zipf.write(file_path, os.path.relpath(file_path, build_path))
-        os.remove(file_path)  # Remove the original unzipped file
+        gzip_file_name = f"{os.path.basename(file_path)}.gz"
+        gzip_path = os.path.join(os.path.dirname(file_path), gzip_file_name)
+        with open(file_path, 'rb') as f_in, gzip.open(gzip_path, 'wb') as f_out:
+            f_out.writelines(f_in)
+        os.remove(file_path)  # Remove the original uncompressed file
 
 def main(args):
     # Get the build path
@@ -190,10 +190,10 @@ def main(args):
     # Convert the merge_key_df to json and write to the build directory
     key_to_json(merge_key_df, output_path=os.path.join(build_path, "merge_key.json"))
 
-    # Zip raw_counts prior to upload
-    patterns = ["raw_counts", "unknown", "prism", "contam", "filtered", "annotated"]
-    for pattern in patterns:
-        zip_files(search_pattern=pattern, build_path=build_path)
+    # # Zip raw_counts prior to upload
+    # patterns = ["raw_counts", "unknown", "prism", "contam", "filtered", "annotated"]
+    # for pattern in patterns:
+    #     gzip_files(search_pattern=pattern, build_path=build_path)
 
     # Sync the build directory to S3
     sync_to_s3(
