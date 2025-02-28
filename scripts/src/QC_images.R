@@ -474,7 +474,7 @@ QC_images= function(raw_counts_uncollapsed_path,
                     id_cols= c('pcr_plate', 'pcr_well'),
                     cell_line_cols= c('depmap_id'), 
                     sig_cols,
-                    control_type= 'negcon', count_threshold= 40, 
+                    control_type= 'ctl_vehicle', count_threshold= 40, 
                     chunk_size= 10^6,
                     reverse_index2= FALSE, out= NA) {
   
