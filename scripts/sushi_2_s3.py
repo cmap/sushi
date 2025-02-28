@@ -7,6 +7,7 @@ import json
 import boto3
 from botocore.exceptions import NoCredentialsError
 import logging
+
 logger = logging.getLogger("sushi_2_s3")
 
 
@@ -25,6 +26,12 @@ def build_parser():
     )
     parser.add_argument(
         "--build_path", "-b", help="Path to the build directory.", required=True
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose logging.",
     )
     return parser
 
@@ -53,6 +60,7 @@ def generate_compound_key(df):
     distinct_df = df.drop_duplicates().reset_index(drop=True)
     return distinct_df
 
+
 def generate_merge_key(df, merge_patterns):
     # Filter out the positive and vehicle controls
     df = df[~df["pert_type"].isin(["trt_poscon", "ctl_vehicle"])]
@@ -77,7 +85,6 @@ def generate_merge_key(df, merge_patterns):
 
     # Return the merge_df
     return distinct_df
-
 
 
 # Turn the key_df into a json object
@@ -141,6 +148,7 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
                     raise
             else:
                 logger.info(f"Excluding upload of {file}")
+
 
 def main(args):
     # Get the build path
