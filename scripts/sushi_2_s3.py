@@ -6,7 +6,8 @@ import glob
 import json
 import boto3
 from botocore.exceptions import NoCredentialsError
-import zipfile
+import logging
+logger = logging.getLogger("sushi_2_s3")
 
 
 class Config:
@@ -125,21 +126,21 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
 
     for root, dirs, files in os.walk(local_dir):
         for file in files:
-            print(f"Checking {file} for upload...")
+            logger.info(f"Checking {file} for upload...")
             if exclude_pattern not in file:
-                print(f"Uploading {file} to S3...")
+                logger.info(f"Uploading {file} to S3...")
                 local_path = os.path.join(root, file)
                 relative_path = os.path.relpath(local_path, local_dir)
                 s3_path = os.path.join(s3_prefix, relative_path)
                 try:
-                    print(f"Uploading {local_path} to s3://{s3_bucket}/{s3_path}")
+                    logger.info(f"Uploading {local_path} to s3://{s3_bucket}/{s3_path}")
                     s3.upload_file(local_path, s3_bucket, s3_path)
-                    print(f"Uploaded {local_path} to s3://{s3_bucket}/{s3_path}")
+                    logger.info(f"Uploaded {local_path} to s3://{s3_bucket}/{s3_path}")
                 except NoCredentialsError:
-                    print("AWS credentials not found.")
+                    logger.info("AWS credentials not found.")
                     raise
             else:
-                print(f"Excluding upload of {file}")
+                logger.info(f"Excluding upload of {file}")
 
 def main(args):
     # Get the build path
@@ -160,11 +161,11 @@ def main(args):
     sample_meta = pd.read_csv(sample_meta_path)
 
     # Generate the key_df
-    print("Generating compound key...")
+    logger.info("Generating compound key...")
     key_df = generate_compound_key(sample_meta)
 
     # Convert the key_df to json and write to the build directory
-    print("Writing compound key to JSON...")
+    logger.info("Writing compound key to JSON...")
     key_to_json(key_df, output_path=os.path.join(build_path, "compound_key.json"))
 
     # Get the list of merge patterns
@@ -172,15 +173,15 @@ def main(args):
     merge_patterns = merge_patterns.split(",")
 
     # Generate the merge key
-    print("Generating merge key...")
+    logger.info("Generating merge key...")
     merge_key_df = generate_merge_key(sample_meta, merge_patterns)
 
     # Convert the merge_key_df to json and write to the build directory
-    print("Writing merge key to JSON...")
+    logger.info("Writing merge key to JSON...")
     key_to_json(merge_key_df, output_path=os.path.join(build_path, "merge_key.json"))
 
     # Sync the build directory to S3
-    print(f"Syncing {build_path} to {s3_prefix}...")
+    logger.info(f"Syncing {build_path} to {s3_prefix}...")
     sync_to_s3(
         local_dir=build_path,
         s3_bucket=args.s3_bucket,
@@ -188,10 +189,13 @@ def main(args):
         exclude_pattern="raw_counts",
     )
 
-    print("Completed sync to S3.")
+    logger.info("Completed sync to S3.")
 
 
 if __name__ == "__main__":
     args = build_parser().parse_args(sys.argv[1:])
+    level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=level)
+    logger.info("args:  {}".format(args))
 
     main(args)
