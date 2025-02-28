@@ -49,13 +49,17 @@ CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 # Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
 
-# Remove any duplicate DepMap IDs in cell_set_meta ----
-duplicate_ids= cell_line_meta %>% dplyr::count(depmap_id, name= 'count') %>% 
+# Remove any duplicate depmap_id + lua + cell_set in cell_set_meta ----
+duplicate_ids <- cell_set_and_pool_meta %>%
+  dplyr::count(depmap_id, lua, cell_set, name = "count") %>%
   dplyr::filter(count > 1)
-print('The following DepMap IDs are duplicated in the cell line meta.')
-print(duplicate_ids)
-print('FILTER_COUNTS will continue without considering these IDs.')
-cell_line_meta %<>% dplyr::filter(!depmap_id %in% duplicate_ids$depmap_id)
+
+if (nrow(duplicate_ids) > 0) {
+  print("The following lua + depmap_id combinations are duplicated in a single cell set")
+  print(duplicate_ids)
+  print("FILTER_COUNTS will continue without considering these duplicated IDs.")
+  cell_set_and_pool_meta %<>% dplyr::anti_join(duplicate_ids, by = c("depmap_id", "lua", "cell_set"))
+}
 
 # Run filter_raw_reads -----
 print('Calling filter_raw_reads ...')
