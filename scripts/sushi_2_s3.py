@@ -125,11 +125,12 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
 
     for root, dirs, files in os.walk(local_dir):
         for file in files:
+            print(f"Checking {file} for upload...")
             if exclude_pattern not in file:
+                print(f"Uploading {file} to S3...")
                 local_path = os.path.join(root, file)
                 relative_path = os.path.relpath(local_path, local_dir)
                 s3_path = os.path.join(s3_prefix, relative_path)
-
                 try:
                     print(f"Uploading {local_path} to s3://{s3_bucket}/{s3_path}")
                     s3.upload_file(local_path, s3_bucket, s3_path)
@@ -139,23 +140,6 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
                     raise
             else:
                 print(f"Excluding upload of {file}")
-
-# Function to zip files based on a pattern (replacing the original file) and leaving it in the same directory
-def gzip_files(search_pattern, build_path):
-    # Find all matching files
-    matching_files = []
-    for root, dirs, files in os.walk(build_path):
-        for file in files:
-            if search_pattern in file and not file.endswith(".gz"):
-                matching_files.append(os.path.join(root, file))
-
-    # Create gzip files for each matching file
-    for file_path in matching_files:
-        gzip_file_name = f"{os.path.basename(file_path)}.gz"
-        gzip_path = os.path.join(os.path.dirname(file_path), gzip_file_name)
-        with open(file_path, 'rb') as f_in, gzip.open(gzip_path, 'wb') as f_out:
-            f_out.writelines(f_in)
-        os.remove(file_path)  # Remove the original uncompressed file
 
 def main(args):
     # Get the build path
@@ -194,11 +178,6 @@ def main(args):
     # Convert the merge_key_df to json and write to the build directory
     print("Writing merge key to JSON...")
     key_to_json(merge_key_df, output_path=os.path.join(build_path, "merge_key.json"))
-
-    # # Zip raw_counts prior to upload
-    # patterns = ["raw_counts", "unknown", "prism", "contam", "filtered", "annotated"]
-    # for pattern in patterns:
-    #     gzip_files(search_pattern=pattern, build_path=build_path)
 
     # Sync the build directory to S3
     print(f"Syncing {build_path} to {s3_prefix}...")
