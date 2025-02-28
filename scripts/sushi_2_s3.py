@@ -134,7 +134,7 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
     for root, dirs, files in os.walk(local_dir):
         for file in files:
             logger.info(f"Checking {file} for upload...")
-            if exclude_pattern not in file:
+            if exclude_pattern not in file and not file.startswith("."):
                 logger.info(f"Uploading {file} to S3...")
                 local_path = os.path.join(root, file)
                 relative_path = os.path.relpath(local_path, local_dir)
