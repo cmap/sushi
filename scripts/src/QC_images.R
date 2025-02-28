@@ -302,10 +302,10 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
       dplyr::filter(!is.na(cb_name), !is.na(cb_ladder), n != 0) %>%
       dplyr::group_by(pick(all_of(id_cols))) %>%
       dplyr::mutate(mean_y= mean(cb_log2_dose),
-                    residual2= (cb_log2_dose - log2_normalized_n)^2,
+                    residual2= (cb_log2_dose - log2_n)^2,
                     squares2= (cb_log2_dose - mean_y)^2,
                     norm_r2= 1 - sum(residual2) / sum(squares2),
-                    norm_mae= median(abs(cb_log2_dose- log2_normalized_n))) %>% ungroup()
+                    norm_mae= median(abs(cb_log2_dose- log2_n))) %>% ungroup()
   } 
   
   # Filter for just the control barcodes, create a profile_id for faceting, 
@@ -474,7 +474,7 @@ QC_images= function(raw_counts_uncollapsed_path,
                     id_cols= c('pcr_plate', 'pcr_well'),
                     cell_line_cols= c('depmap_id'), 
                     sig_cols,
-                    control_type= 'negcon', count_threshold= 40, 
+                    control_type= 'ctl_vehicle', count_threshold= 40, 
                     chunk_size= 10^6,
                     reverse_index2= FALSE, out= NA) {
   

@@ -43,7 +43,7 @@ collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'd
   }
   
   # Median collapsing bio replicates ----
-  collapsed_counts= l2fc %>% dplyr::filter(is.na(counts_flag)) %>% 
+  collapsed_counts= l2fc %>%
     tidyr::unite(col= 'sig_id', all_of(sig_cols), sep= ':', na.rm= FALSE, remove= FALSE) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'sig_id', sig_cols)))) %>%
     dplyr::summarise(median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup() %>%
