@@ -131,6 +131,7 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
                 s3_path = os.path.join(s3_prefix, relative_path)
 
                 try:
+                    print(f"Uploading {local_path} to s3://{s3_bucket}/{s3_path}")
                     s3.upload_file(local_path, s3_bucket, s3_path)
                     print(f"Uploaded {local_path} to s3://{s3_bucket}/{s3_path}")
                 except NoCredentialsError:
