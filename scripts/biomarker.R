@@ -49,88 +49,55 @@ auc_biomarker = as.logical(toupper(args$auc_biomarker))
 univariate_biomarker = as.logical(toupper(args$univariate_biomarker))
 multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 
-# Create treatment_columns by filtering out elements containing "dose"
-treatment_columns <- sig_cols[!grepl("cell_set", sig_cols)]
-
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
     dir.create(out_path)
 }
 
-# Function to determine treatment columns
-get_treatment_columns <- function(response_column, sig_cols) {
-  if (response_column == args$collapsed_l2fc_column) {
-    # Exclude "cell_set" for lfc biomarker
-    return(sig_cols[grepl("pert", sig_cols)])
-  } else if (response_column == args$dr_column) {
-    # Exclude "cell_set" and "dose" for auc biomarker
-    return(sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)])
-  } else {
-    stop("Unknown response column specified.")
+# Call the biomarker functions ----
+
+if (biomarker_type == "univariate") {
+  if (lfc_biomarker) {
+    create_univariate_biomarker_table(
+    in_path = in_path,
+    out_path = out_path,
+    output_file_name = output_file_name,
+    treatment_columns = sig_cols[grepl("pert", sig_cols)],
+    response_column = lfc_column,
+    depmap_file = bio_file
+    )
+  }
+  if (auc_biomarker) {
+      create_univariate_biomarker_table(
+      in_path = in_path,
+      out_path = out_path,
+      output_file_name = output_file_name,
+      treatment_columns = sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
+      response_column = dr_column,
+      depmap_file = bio_file
+      )
   }
 }
 
-# Function to call the creation of biomarker tables
-  create_biomarker_table <- function(in_path, out_path, response_column, sig_cols, depmap_file, biomarker_type) {
-    # Dynamically determine treatment columns
-    treatment_columns <- get_treatment_columns(response_column, sig_cols)
-
-    # Choose the appropriate function based on biomarker type
-    biomarker_function <- ifelse(biomarker_type == "univariate",
-                                 create_univariate_biomarker_table,
-                                 create_multivariate_biomarker_table)
-
-    # Construct the output file name
-    output_file_name <- paste0(response_column, "_", biomarker_type, "_biomarkers.csv")
-
-    print(paste0("Creating ", biomarker_type, " biomarker table using ", response_column, " from ", in_path, "..."))
-
-    # Call the appropriate biomarker function
-    # biomarker_function(
-    #   in_path = in_path,
-    #   out_path = out_path,
-    #   output_file_name = output_file_name,
-    #   treatment_columns = treatment_columns,
-    #   response_column = response_column,
-    #   depmap_file = depmap_file
-    # )
+if (biomarker_type == "multivariate") {
+  if (lfc_biomarker) {
+    create_multivariate_biomarker_table(
+      in_path = in_path,
+      out_path = out_path,
+      output_file_name = output_file_name,
+      treatment_columns = sig_cols[grepl("pert", sig_cols)],
+      response_column = lfc_column,
+      depmap_file = bio_file
+    )
   }
-
-# Process biomarkers based on user inputs
-if (univariate_biomarker || multivariate_biomarker) {
-  # Pick the datasets and their corresponding response columns
-  jobs <- list()
-  if (lfc_biomarker) jobs <- c(jobs, list(list(path = lfc_path, response = lfc_column)))
-  if (auc_biomarker) jobs <- c(jobs, list(list(path = drc_file, response = dr_column)))
-
-  # Loop through the selected datasets
-  for (job in jobs) {
-    in_path <- job$path
-    response_column <- job$response
-
-    # Run univariate analysis if requested
-    if (univariate_biomarker) {
-      create_biomarker_table(
-        in_path = in_path,
-        out_path = out_path,
-        response_column = response_column,
-        sig_cols = sig_cols,
-        depmap_file = bio_file,
-        biomarker_type = "univariate"
-      )
-    }
-
-    # Run multivariate analysis if requested
-    if (multivariate_biomarker) {
-      create_biomarker_table(
-        in_path = in_path,
-        out_path = out_path,
-        response_column = response_column,
-        sig_cols = sig_cols,
-        depmap_file = bio_file,
-        biomarker_type = "multivariate"
-      )
-    }
+  if (auc_biomarker) {
+    create_multivariate_biomarker_table(
+      in_path = in_path,
+      out_path = out_path,
+      output_file_name = output_file_name,
+      treatment_columns = sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
+      response_column = dr_column,
+      depmap_file = bio_file
+    )
   }
 }
-
