@@ -36,8 +36,8 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
   p_val.homoskedastic[near(abs(correlation_coeff), 1)] <- 0
 
   # Experimental robustness score
-  stability_score = apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
-  stability_score = pmin(stability_score, n - apply(X, 2, function(x) sort(table(x), decreasing = TRUE)[1]))
+  n_stable = apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
+  n_stable = pmin(n_stable, n - apply(X, 2, function(x) sort(table(x), decreasing = TRUE)[1]))
 
   res <- data.frame(x = names(regression_coeff), correlation_coeff = correlation_coeff, regression_coeff = regression_coeff,
                     p_val_rob = p_val,
@@ -45,7 +45,7 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
                     q_val.rob = p.adjust(p_val, method = "BH"),
                     q_val = p.adjust(p_val.homoskedastic, method = "BH"),
                     n = n,
-                    stability_score = stability_score)
+                    n_stable = n_stable)
 
   return(res)
 }
@@ -224,7 +224,7 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
           dplyr::rename(feature = x) %>%
           dplyr::mutate(feature_set = feat,
                         y = colnames(Y)[ix]) %>%
-          dplyr::filter(stability_score >= stability_score.min)
+          dplyr::filter(n_stable >= n_stable.min)
 
         if(homoskedastic){
           res <- res %>%
