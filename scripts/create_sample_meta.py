@@ -48,6 +48,11 @@ def rename_columns(df):
     return df.rename(columns=rename_map)
 
 
+def remove_columns(df, columns_to_remove):
+    # Remove specified columns from the DataFrame
+    return df.drop(columns=columns_to_remove, errors='ignore')
+
+
 def add_control_barcodes(df, control_barcodes):
     control_barcode_df = df.copy()
     control_barcode_df["cb_ladder"] = control_barcodes
@@ -103,6 +108,7 @@ def main():
         df = (
             fetch_data(screen, api_key)
             .pipe(rename_columns)
+            .pipe(remove_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
             .pipe(add_control_barcodes, control_barcodes)
             .pipe(filter_nan_flowcells)
         )

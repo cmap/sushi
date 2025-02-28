@@ -6,6 +6,7 @@ import glob
 import json
 import boto3
 from botocore.exceptions import NoCredentialsError
+import zipfile
 
 
 class Config:
@@ -138,6 +139,37 @@ def sync_to_s3(local_dir, s3_bucket, s3_prefix, exclude_pattern=None):
             else:
                 print(f"Excluding upload of {file}")
 
+# Function to zip files based on a pattern (replacing the original file) and leaving it in the same directory
+def zip_files(search_pattern, build_path):
+    """
+    Zips files in the specified directory that match the search pattern.
+
+    Parameters
+    ----------
+    search_pattern : str
+        The pattern to search for files to zip.
+    build_path : str
+        The base directory where the files are located.
+
+    Returns
+    -------
+    str
+        The path to the zip file created.
+    """
+    # Create a zip file name based on the search pattern
+    zip_file_name = f"{search_pattern}.zip"
+    zip_path = os.path.join(build_path, zip_file_name)
+
+    # Create a zip file and add matching files
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        for root, dirs, files in os.walk(build_path):
+            for file in files:
+                if search_pattern in file:
+                    file_path = os.path.join(root, file)
+                    zipf.write(file_path, os.path.relpath(file_path, build_path))
+
+    return zip_path
+
 
 def main(args):
     # Get the build path
@@ -172,6 +204,11 @@ def main(args):
 
     # Convert the merge_key_df to json and write to the build directory
     key_to_json(merge_key_df, output_path=os.path.join(build_path, "merge_key.json"))
+
+    # Zip raw_counts prior to upload
+    patterns = ["raw_counts", "unknown", "prism", "contam", "filtered", "annotated"]
+    for pattern in patterns:
+        zip_files(search_pattern=pattern, build_path=build_path)
 
     # Sync the build directory to S3
     sync_to_s3(
