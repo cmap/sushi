@@ -42,7 +42,7 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
   res <- data.frame(x = names(regression_coeff), correlation_coeff = correlation_coeff, regression_coeff = regression_coeff,
                     p_val_rob = p_val,
                     p_val = p_val.homoskedastic,
-                    q_val.rob = p.adjust(p_val, method = "BH"),
+                    q_val_rob = p.adjust(p_val, method = "BH"),
                     q_val = p.adjust(p_val.homoskedastic, method = "BH"),
                     n = n,
                     n_stable = n_stable)
