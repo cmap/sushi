@@ -111,7 +111,7 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   
   # Sum up reads 
   total_counts= filtered_counts %>%
-    dplyr::mutate(barcode_type= case_when(!is.na(depmap_id) ~ 'cell line',
+    dplyr::mutate(barcode_type= case_when(is.na(cb_name) ~ 'cell line',
                                           !is.na(cb_name) ~ 'ctrl barcode')) %>%
     tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
     dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
@@ -717,7 +717,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   print('9. Generating sample_cor image ...')
   potential_error= base::tryCatch({
     cor_df= filtered_counts %>% 
-      dplyr::filter(!is.na(depmap_id), !pert_type %in% c(NA, 'empty', '', 'CB_only')) %>%
+      dplyr::filter(is.na(cb_name), !pert_type %in% c(NA, 'empty', '', 'CB_only')) %>%
       dplyr::mutate(log2_n= log2(n + 1))
     cp= create_cor_heatmap(input_df= cor_df,
                            row_id_cols= c('depmap_id'),

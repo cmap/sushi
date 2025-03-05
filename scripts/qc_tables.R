@@ -81,9 +81,9 @@ pseudocount <- as.numeric(args$pseudocount)
 # CELL LINE BY PLATE (pcr_plate,depmap_id) ---------
 # Filter out control barcodes (where depmap_id is NA) from normalized and filtered counts
 normalized_counts_rm_ctl <- normalized_counts %>%
-    filter(!is.na(depmap_id))
+    filter(is.na(cb_name))
 filtered_counts_rm_ctl <- filtered_counts %>%
-    filter(!is.na(depmap_id))
+    filter(is.na(cb_name))
 plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
     cell_line_cols = cell_plate_list, pseudocount = pseudocount)

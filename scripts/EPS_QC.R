@@ -48,7 +48,7 @@ if (length(norm_count_files) == 1) {
 
 ## get negcon counts at day in QC table to pass to portal
 cell_counts_negcon <- norm_counts %>% 
-    dplyr::filter(!is.na(depmap_id)) %>%
+    dplyr::filter(is.na(cb_name)) %>%
     dplyr::filter(!(day %in% days_to_drop)) %>% 
     dplyr::filter(pert_type==control_type)
 
