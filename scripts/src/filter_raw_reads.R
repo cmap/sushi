@@ -95,12 +95,9 @@ filter_raw_reads= function(prism_barcode_counts,
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
 
-  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_1.csv")
-
   # Left join barcode sequence using data.table inplace merge
-  template= data.table::merge.data.table(template, cell_line_meta, by= c('depmap_id','lua'), all.x= TRUE, all.y= FALSE)
-
-  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_2.csv")
+  # template= data.table::merge.data.table(template, cell_line_meta, by= c('depmap_id','lua'), all.x= TRUE, all.y= FALSE)
+  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
 
   # Print 5 random rows of the template
     print('DEBUG: Random entries from template:')
@@ -114,14 +111,9 @@ filter_raw_reads= function(prism_barcode_counts,
                                               CB_meta, by= 'cb_ladder', allow.cartesian= TRUE)
     template= data.table::rbindlist(list(template, cb_template), fill= TRUE)
   }
-  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_3.csv")
 
-  
   # Add a column to indicate if a read was expected - this column is used by annotated counts
   template[, expected_read := TRUE]
-
-  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_4.csv")
-
   
   # Annotating reads ----
   # From prism_barcode_counts, left join metadata to annotate all reads.
@@ -129,7 +121,7 @@ filter_raw_reads= function(prism_barcode_counts,
   # cell lines not detected in sequencing.
   print("Annotating reads.")
   # Annotate prism_barcode_counts using data.table left joins performed in place!
-  mutate_cols= base::setdiff(colnames(sample_meta), id_cols) # columns to add or update
+  mutate_cols= base::setdiff(colnames(sample_meta), id_colss) # columns to add or update
   values_cols= paste0('i.', mutate_cols)# same as mutate_cols but with 'i.' prefix
   prism_barcode_counts[sample_meta, (mutate_cols) := base::mget(values_cols), on= id_cols]
   # This is equivalent to prism_barcode_counts %<>% dplyr::left_join(sample_meta, by= id_cols)
