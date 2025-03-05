@@ -95,8 +95,12 @@ filter_raw_reads= function(prism_barcode_counts,
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
 
+  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_1.csv")
+
   # Left join barcode sequence using data.table inplace merge
   template= data.table::merge.data.table(template, cell_line_meta, by= c('depmap_id','lua'), all.x= TRUE, all.y= FALSE)
+
+  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_2.csv")
 
   # Print 5 random rows of the template
     print('DEBUG: Random entries from template:')
@@ -105,14 +109,19 @@ filter_raw_reads= function(prism_barcode_counts,
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {
     # From the sample meta, identify all expected control barcode sequences
-    # Filter for just wells that have cb_ladder(s) present in CB_meta and join the CB_meta
-    # cb_template= data.table::merge.data.table(sample_meta[cb_ladder %in% unique(CB_meta$cb_ladder),],
-    #                                          CB_meta, by= 'cb_ladder', allow.cartesian= TRUE)
-    #template= data.table::rbindlist(list(template, cb_template), fill= TRUE)
+    Filter for just wells that have cb_ladder(s) present in CB_meta and join the CB_meta
+    cb_template= data.table::merge.data.table(sample_meta[cb_ladder %in% unique(CB_meta$cb_ladder),],
+                                              CB_meta, by= 'cb_ladder', allow.cartesian= TRUE)
+    template= data.table::rbindlist(list(template, cb_template), fill= TRUE)
   }
+  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_3.csv")
+
   
   # Add a column to indicate if a read was expected - this column is used by annotated counts
   template[, expected_read := TRUE]
+
+  write.csv(template, "/cmap/obelix/pod/prismSeq/TEST/MTS_SEQ003_TEST_CL_ENDPOINT/template_4.csv")
+
   
   # Annotating reads ----
   # From prism_barcode_counts, left join metadata to annotate all reads.
