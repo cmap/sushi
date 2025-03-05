@@ -94,8 +94,10 @@ filter_raw_reads= function(prism_barcode_counts,
   # Filter for just wells that have a specified cell set and join cell_set_and_pool_meta
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
+
   # Left join barcode sequence using data.table inplace merge
-  template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
+  template= data.table::merge.data.table(template, cell_line_meta, by= c('depmap_id','lua'), all.x= TRUE, all.y= FALSE)
+  # template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
   
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {
@@ -115,7 +117,7 @@ filter_raw_reads= function(prism_barcode_counts,
   # cell lines not detected in sequencing.
   print("Annotating reads.")
   # Annotate prism_barcode_counts using data.table left joins performed in place!
-  mutate_cols= base::setdiff(colnames(sample_meta), id_cols) # columns to add or update
+  mutate_cols= base::setdiff(colnames(sample_meta), id_colss) # columns to add or update
   values_cols= paste0('i.', mutate_cols)# same as mutate_cols but with 'i.' prefix
   prism_barcode_counts[sample_meta, (mutate_cols) := base::mget(values_cols), on= id_cols]
   # This is equivalent to prism_barcode_counts %<>% dplyr::left_join(sample_meta, by= id_cols)
