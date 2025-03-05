@@ -109,7 +109,7 @@ filter_raw_reads= function(prism_barcode_counts,
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {
     # From the sample meta, identify all expected control barcode sequences
-    Filter for just wells that have cb_ladder(s) present in CB_meta and join the CB_meta
+    # Filter for just wells that have cb_ladder(s) present in CB_meta and join the CB_meta
     cb_template= data.table::merge.data.table(sample_meta[cb_ladder %in% unique(CB_meta$cb_ladder),],
                                               CB_meta, by= 'cb_ladder', allow.cartesian= TRUE)
     template= data.table::rbindlist(list(template, cb_template), fill= TRUE)
