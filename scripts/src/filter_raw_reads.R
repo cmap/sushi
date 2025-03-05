@@ -97,7 +97,6 @@ filter_raw_reads= function(prism_barcode_counts,
 
   # Left join barcode sequence using data.table inplace merge
   template= data.table::merge.data.table(template, cell_line_meta, by= c('depmap_id','lua'), all.x= TRUE, all.y= FALSE)
-  # template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
 
   # Print 5 random rows of the template
     print('DEBUG: Random entries from template:')
