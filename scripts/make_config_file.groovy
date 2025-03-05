@@ -99,7 +99,7 @@ pipeline {
         )
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols.')
         string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls.')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day,pert_plate', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
         string(name: 'CONTROL_BARCODES', defaultValue: 'h-b', description: 'Type of control barcode ladder to be used in the pipeline.')
 
         // Parameters that we don't expect users to change
