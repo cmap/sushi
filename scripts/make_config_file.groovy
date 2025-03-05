@@ -80,7 +80,7 @@ pipeline {
         )
         booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
-        booleanParam(name: 'QC_IMAGES', defaultValue: true, description: 'Check this to trigger the QC images job.')
+        booleanParam(name: 'QC_IMAGES', defaultValue: false, description: 'Check this to trigger the QC images job.')
 
         separator(
           name: "portal_prep",
