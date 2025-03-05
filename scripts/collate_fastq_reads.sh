@@ -39,6 +39,12 @@ then
     echo NovaSeq
 fi
 
+if [[ "$SEQ_TYPE" == "MiSeq" ]]
+then
+  export REVERSE_INDEX2=FALSE
+    echo MiSeq
+fi
+
 if [[ "$SEQ_TYPE" == "DRAGEN" ]]
 then
 	export REVERSE_INDEX2=TRUE
