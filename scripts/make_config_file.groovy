@@ -35,7 +35,7 @@ pipeline {
         )
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Directory where the build output will go. Must contain the raw counts file from Nori. If not getting your metadata from cellDB & COMET this directory must also include the sample and cell line/pool metadata.')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate.pcr_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate,pcr_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
 
         separator(
           name: "metadata",
