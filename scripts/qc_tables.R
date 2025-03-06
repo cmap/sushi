@@ -110,7 +110,7 @@ write.csv(
               "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",  
               "median_log_normalized_ctl_vehicle", 
               "n_replicates_ctl_vehicle", "n_replicates_trt_poscon", 
-              "viability_trt_poscon", "qc_pass")),
+              "viability_trt_poscon", "qc_pass", "qc_pass_pert_plate")),
     file = plate_cell_outpath, row.names = FALSE,
     quote = FALSE
 )
