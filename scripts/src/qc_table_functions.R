@@ -541,6 +541,7 @@ compute_read_stats <- function(annotated_counts, filtered_counts, cell_set_meta,
     summarise(
       cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE),
       .groups = "drop"
+    )
 
 
   # Merge the plate-level metric back to the well-level metrics.
