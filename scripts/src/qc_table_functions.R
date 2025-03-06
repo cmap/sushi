@@ -286,8 +286,8 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
       median_normalized = median(log2_normalized_n, na.rm = TRUE),
       n_replicates = n(),
       mad_normalized = mad(log2_normalized_n, na.rm = TRUE),
-      median_raw = median(log2(n+pseudocount), na.rm = TRUE),
-      mad_raw = mad(log2(n+pseudocount), na.rm = TRUE)
+      median_raw = median(n, na.rm = TRUE),
+      mad_raw = mad(n, na.rm = TRUE)
     ) %>%
     dplyr::ungroup() %>%
     pivot_wider(
