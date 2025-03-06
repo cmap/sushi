@@ -53,12 +53,6 @@ def remove_columns(df, columns_to_remove):
     return df.drop(columns=columns_to_remove, errors='ignore')
 
 
-def add_control_barcodes(df, control_barcodes):
-    control_barcode_df = df.copy()
-    control_barcode_df["cb_ladder"] = control_barcodes
-    return control_barcode_df
-
-
 def filter_nan_flowcells(df):
     # Count rows with NaN in "flowcell_names"
     nan_count = df["flowcell_names"].isna().sum()
@@ -90,26 +84,17 @@ def main():
         required=True,
         help="Directory to save the CSV file",
     )
-    parser.add_argument(
-        "--control_barcodes",
-        "-cb",
-        type=str,
-        required=True,
-        help="Type of control barcode ladder, defaults to h-b",
-    )
 
     args = parser.parse_args()
     screen = args.screen
     api_key = args.api_key
     build_dir = args.build_dir
-    control_barcodes = args.control_barcodes
 
     try:
         df = (
             fetch_data(screen, api_key)
             .pipe(rename_columns)
             .pipe(remove_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
-            .pipe(add_control_barcodes, control_barcodes)
             .pipe(filter_nan_flowcells)
         )
         print("Retrieved following sample_metadata from COMET: ")
