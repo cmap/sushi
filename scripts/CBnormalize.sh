@@ -83,7 +83,6 @@ echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
 --out $BUILD_DIR \
---filtered_counts $FILTERED_COUNTS \
 --annotated_counts $ANNOTATED_COUNTS \
 --unknown_barcode_counts $UNKNOWN_BARCODE_COUNTS \
 --cell_set_meta $CELL_SET_AND_POOL_META
@@ -93,7 +92,6 @@ Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
 --out $BUILD_DIR \
---filtered_counts $FILTERED_COUNTS \
 --annotated_counts $ANNOTATED_COUNTS \
 --unknown_barcode_counts $UNKNOWN_BARCODE_COUNTS \
 --cell_set_meta $CELL_SET_AND_POOL_META
