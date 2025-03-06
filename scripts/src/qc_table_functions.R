@@ -182,7 +182,7 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
 #' @import dplyr
 generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
                                    count_threshold= 40, pseudocount= 20) {
-  paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
+  print(paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), "....."))
 
   read_stats_grouping_cols <- c(id_cols_list, "pert_type")
 
@@ -233,8 +233,8 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
 #' @import PRROC
 compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c("depmap_id", "pcr_plate"),
                                negcon = "ctl_vehicle", poscon = "trt_poscon") {
-  paste0("Computing error rate using ", negcon, " and ", poscon, ".....")
-  paste0("Grouping by ", paste0(group_cols, collapse = ","), ".....")
+  print(paste0("Computing error rate using ", negcon, " and ", poscon, "....."))
+  print(paste0("Grouping by ", paste0(group_cols, collapse = ","), "....."))
   result <- df %>%
     dplyr::filter(
       pert_type %in% c(negcon, poscon),
@@ -276,8 +276,8 @@ compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c(
 #' @importFrom stats mad pnorm
 compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_plate"),
                                     negcon = "ctl_vehicle", poscon = "trt_poscon", pseudocount = 20) {
-  paste0("Adding control median and MAD values for ", negcon, " and ", poscon, ".....")
-  paste0("Computing falses sensitivity probability for ", negcon, ".....")
+  print(paste0("Adding control median and MAD values for ", negcon, " and ", poscon, "....."))
+  print(paste0("Computing falses sensitivity probability for ", negcon, "....."))
   # Group and compute medians/MADs
   result <- df %>%
     dplyr::filter(pert_type %in% c(negcon, poscon)) %>%
@@ -324,7 +324,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
 #'
 #' @import dplyr
 compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon", grouping_cols = c("depmap_id", "pcr_plate")) {
-  paste0("Computing log fold change for ", negcon, " and ", poscon, ".....")
+  print(paste0("Computing log fold change for ", negcon, " and ", poscon, "....."))
   result <- df %>%
     dplyr::mutate(
       lfc_trt_poscon = .data[[paste0("median_normalized_", poscon)]] -
@@ -351,7 +351,7 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
 #'
 #' @import dplyr
 compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate", "depmap_id")) {
-  paste0("Computing cell line fractions for ", metric, ".....")
+  print(paste0("Computing cell line fractions for ", metric, "....."))
   result <- df %>%
     dplyr::group_by(across(all_of(grouping_cols))) %>%
     dplyr::summarise(
@@ -383,7 +383,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list,"pcr_plate") # Define columns to group by
-  paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
+  print(paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
 
   # Compute control medians and MAD
   medians_and_mad <- compute_ctl_medians_and_mad(
@@ -418,7 +418,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   )
 
   # Merge all tables together
-  paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together.....")
+  print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
   plate_cell_table <- medians_and_mad %>%
     dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
     dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
