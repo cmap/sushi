@@ -38,7 +38,7 @@ parser$add_argument(
 )
 parser$add_argument("-n", "--negcon_type", default = "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default = "trt_poscon")
-parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id")
+parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id,lua")
 parser$add_argument("--id_cols", default = "pcr_plate,pcr_well")
 parser$add_argument("--count_threshold", default = 40)
 parser$add_argument("--pseudocount", default = 20)
