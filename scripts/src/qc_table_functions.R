@@ -195,7 +195,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
   cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c(id_cols_list, "pert_plate"), pseudocount = pseudocount)
 
   id_cols_table <- read_stats %>%
-    dplyr::left_join(skew, by = c(id_cols_list, "pert_plate") %>%
+    dplyr::left_join(skew, by = c(id_cols_list, "pert_plate")) %>%
     dplyr::left_join(cb_metrics, by = id_cols_list, "pert_plate")
 
   return(id_cols_table)
