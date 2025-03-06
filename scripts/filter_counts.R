@@ -78,7 +78,7 @@ if(sum(module_outputs$filtered_counts$n) == 0) {
 
 # Also check that cell line counts are not all zeros.
 filtered_counts= module_outputs$filtered_counts
-cl_entries= filtered_counts %>% dplyr::filter(is.na(cb_name))
+cl_entries= filtered_counts %>% filter_control_barcodes()
 if(sum(cl_entries$n) == 0) {
   stop('All cell line counts are zero!')
 }

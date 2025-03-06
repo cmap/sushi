@@ -10,6 +10,7 @@ suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(data.table))
+source("./src/kitchen_utensils.R")
 
 #---- Read arguments ----
 # initialize parser
@@ -48,7 +49,7 @@ if (length(norm_count_files) == 1) {
 
 ## get negcon counts at day in QC table to pass to portal
 cell_counts_negcon <- norm_counts %>% 
-    dplyr::filter(is.na(cb_name)) %>%
+    filter_control_barcodes() %>%
     dplyr::filter(!(day %in% days_to_drop)) %>% 
     dplyr::filter(pert_type==control_type)
 

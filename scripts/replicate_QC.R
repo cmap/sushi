@@ -19,7 +19,7 @@ suppressPackageStartupMessages(library(stringr))
 ##          with at least one negcon sample and normalized_n column
 check_replicate_cor = function(normalized_counts, out) {
   tech_rep_cor = normalized_counts %>% 
-    filter(is.na(cb_name)) %>% 
+    filter_control_barcodes() %>%
     dcast(ccle_name~profile_id+bio_rep+tech_rep, value.var="log_normalized_n") %>% 
     dplyr::select(-ccle_name) %>% 
     cor(use="complete.obs") %>% as.data.frame() 
@@ -40,7 +40,7 @@ check_replicate_cor = function(normalized_counts, out) {
   write.csv(tech_rep_cor_long, trep_long_out, row.names=F, quote=F)
   
   tech_collapsed_counts = normalized_counts %>% 
-    filter(is.na(cb_name)) %>%  
+    filter_control_barcodes() %>%
     dplyr::select(-cb_name, -cb_log2_dose, -n, -log_n, -log_normalized_n) %>% 
     group_by_at(setdiff(names(.), c("normalized_n", "tech_rep"))) %>% 
     dplyr::summarise(sum_normalized_n = sum(normalized_n)) %>% 
