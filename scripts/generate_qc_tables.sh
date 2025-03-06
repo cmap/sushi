@@ -27,7 +27,6 @@ enforce_abs_path NORMALIZED_COUNTS
 enforce_abs_path ANNOTATED_COUNTS
 enforce_abs_path CELL_SET_AND_POOL_META
 enforce_abs_path FILTERED_COUNTS
-enforce_abs_path CONTROL_BARCODE_META
 enforce_abs_path UNKNOWN_BARCODE_COUNTS
 
 args=(
@@ -41,7 +40,7 @@ args=(
 --id_cols "$ID_COLS"
 --cell_line_cols "$CELL_LINE_COLS"
 --count_threshold "$COUNT_THRESHOLD"
---control_barcode_meta "$CONTROL_BARCODE_META"
+--control_barcode_meta "$BUILD_DIR/CB_meta.csv"
 --unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
 )
 
