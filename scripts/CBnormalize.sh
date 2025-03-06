@@ -36,13 +36,6 @@ else
 	FILTERED_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
 fi
 
-#Enforces abs paths
-if [[ "$CONTROL_BARCODE_META" = /* ]]
-then
-	CONTROL_BARCODE_META=$(ls $CONTROL_BARCODE_META)
-else
-	CONTROL_BARCODE_META=$BUILD_DIR/$CONTROL_BARCODE_META
-fi
 
 #Enforces abs paths
 if [[ "$UNKNOWN_BARCODE_COUNTS" = /* ]]
@@ -79,7 +72,7 @@ echo $RUN_NORM
 echo "Running normalization module"
 
 echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
---CB_meta $CONTROL_BARCODE_META \
+--CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
 --out $BUILD_DIR \
@@ -88,7 +81,7 @@ echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 --cell_set_meta $CELL_SET_AND_POOL_META
 
 Rscript CBnormalize.R -c $FILTERED_COUNTS	\
---CB_meta $CONTROL_BARCODE_META \
+--CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
 --out $BUILD_DIR \
