@@ -455,7 +455,7 @@ compute_read_stats <- function(annotated_counts, filtered_counts, cell_set_meta,
   # STEP 1: Process unknown_counts: join with unique identifier columns from annotated_counts,
   # group by group_cols and mark these as not expected reads.
   unknown_counts_proc <- unknown_counts %>%
-    left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well)),
+    left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
               by = c("pcr_plate", "pcr_well")) %>%
     group_by(across(all_of(group_cols))) %>%
     summarise(
