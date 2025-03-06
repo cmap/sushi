@@ -61,7 +61,7 @@ if (univariate_biomarker) {
 if (biomarker_type == "univariate") {
   if (lfc_biomarker) {
     create_univariate_biomarker_table(
-    in_path = in_path,
+    in_path = lfc_path,
     out_path = out_path,
     output_file_name = output_file_name,
     treatment_columns = sig_cols[grepl("pert", sig_cols)],
@@ -71,7 +71,7 @@ if (biomarker_type == "univariate") {
   }
   if (auc_biomarker) {
       create_univariate_biomarker_table(
-      in_path = in_path,
+      in_path = drc_file,
       out_path = out_path,
       output_file_name = output_file_name,
       treatment_columns = sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
@@ -87,7 +87,7 @@ if (multivariate_biomarker) {
 if (biomarker_type == "multivariate") {
   if (lfc_biomarker) {
     create_multivariate_biomarker_table(
-      in_path = in_path,
+      in_path = lfc_path,
       out_path = out_path,
       output_file_name = output_file_name,
       treatment_columns = sig_cols[grepl("pert", sig_cols)],
@@ -97,7 +97,7 @@ if (biomarker_type == "multivariate") {
   }
   if (auc_biomarker) {
     create_multivariate_biomarker_table(
-      in_path = in_path,
+      in_path = dr_file,
       out_path = out_path,
       output_file_name = output_file_name,
       treatment_columns = sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
