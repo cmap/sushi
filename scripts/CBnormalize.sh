@@ -36,14 +36,6 @@ else
 	FILTERED_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
 fi
 
-#Enforces abs paths
-if [[ "$CONTROL_BARCODE_META" = /* ]]
-then
-	CONTROL_BARCODE_META=$(ls $CONTROL_BARCODE_META)
-else
-	CONTROL_BARCODE_META=$BUILD_DIR/$CONTROL_BARCODE_META
-fi
-
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
@@ -55,13 +47,13 @@ echo $RUN_NORM
 echo "Running normalization module"
 
 echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
---CB_meta $CONTROL_BARCODE_META \
+--CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
 --out $BUILD_DIR
 
 Rscript CBnormalize.R -c $FILTERED_COUNTS	\
---CB_meta $CONTROL_BARCODE_META \
+--CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
 --out $BUILD_DIR

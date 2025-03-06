@@ -94,16 +94,6 @@ cell_line_meta <- cell_lines_df %>%
   rename("forward_read_barcode" = "dna_sequence") %>% dplyr::select(any_of(c(cell_line_cols))) %>%
   dplyr::distinct()
 
-# Checking if the selected cb_ladder returned any data + adjusting case sensitivity of the headers to match the original CB_meta static file
-if (nrow(control_bc_df) > 0 & !str_detect(cb_ladder, ".csv") ) {
-  CB_meta <- control_bc_df %>% rename("forward_read_barcode" = "sequence", "cb_log10_dose" = "log_10_dose")
-  # one caveat in the above is that "name" comes from the database, but should be changed to cb_name, so
-  #in the future, this renaming shouldn't be necessary
-} else {
-  print(paste("Since the cb_ladder selected was '", cb_ladder, "', no renaming is necessary."))
-  CB_meta <- control_bc_df
-}
-
 cell_sets <- create_cell_set_meta(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta)
 cell_set_meta <- cell_sets[[1]]
 failed_cell_sets <- cell_sets[[2]]
@@ -131,6 +121,8 @@ if(all(cell_set_meta_long$cell_set %in% assay_pools_meta$davepool_id)) {
   cell_set_assay_pool_meta <- cell_set_meta_long %>%
     select(cell_set, depmap_id = members)
 }
+
+CB_meta <- control_bc_df
 
 # Join CB_meta with cell_line_meta if the depmap_id and lua columns are not present in CB_meta
 if (!all(c("depmap_id", "lua") %in% colnames(CB_meta))) {
