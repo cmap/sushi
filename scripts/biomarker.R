@@ -55,7 +55,9 @@ if (!dir.exists(out_path)) {
 }
 
 # Call the biomarker functions ----
-
+if (univariate_biomarker) {
+  biomarker_type = "univariate"
+}
 if (biomarker_type == "univariate") {
   if (lfc_biomarker) {
     create_univariate_biomarker_table(
@@ -79,6 +81,9 @@ if (biomarker_type == "univariate") {
   }
 }
 
+if (multivariate_biomarker) {
+  biomarker_type = "multivariate"
+}
 if (biomarker_type == "multivariate") {
   if (lfc_biomarker) {
     create_multivariate_biomarker_table(
