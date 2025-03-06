@@ -111,8 +111,8 @@ create_total_counts_barplot= function(filtered_counts, id_cols, facet_col= NA) {
   
   # Sum up reads 
   total_counts= filtered_counts %>%
-    dplyr::mutate(barcode_type= case_when(!is.na(depmap_id) ~ 'cell line',
-                                          !is.na(cb_name) ~ 'ctrl barcode')) %>%
+    dplyr::mutate(barcode_type = case_when(
+    !("cb_name" %in% names(cur_data())) ~ "cell line", is.na(cb_name) ~ "cell line", TRUE ~ "ctrl barcode")) %>%
     tidyr::unite(all_of(id_cols), col= 'sample_id', sep= ':', remove= FALSE, na.rm= FALSE) %>%
     dplyr::group_by(pick(all_of(na.omit(c('sample_id', facet_col, 'barcode_type'))))) %>%
     dplyr::summarise(total_counts= sum(n)) %>% dplyr::ungroup()
@@ -155,7 +155,7 @@ create_recovery_barplot= function(filtered_counts, id_cols, facet_col= NA, value
   
   # Filter out control barcodes if it is specified.
   if(include_ctrl_bcs == FALSE) {
-    filtered_counts= filtered_counts %>% dplyr::filter(is.na(cb_name))
+    filtered_counts= filtered_counts %>% filter_control_barcodes()
   }
   
   # Count number of cell lines/ barcodes for a detection group.
@@ -257,7 +257,7 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
   output_plot= data_for_plot %>%
     ggplot(aes(x= rank_pct, y= cum_pct)) +
     # Color control barcodes if specified
-    {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(cb_name)), 
+    {if(contains_cbs) geom_point(. %>% dplyr::filter(!is.na(cb_name)),
                                  mapping= aes(x= rank_pct, y=cum_pct, color= reorder(cb_name, cb_log2_dose)), size= 2)} + 
     geom_line(color='black') +
     # point for mark1 of counts
@@ -298,8 +298,9 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
     print('WARNING: Columns "norm_r2" and/or "norm_mae" were not detected in normalized_counts.', quote= FALSE)
     print('Calculating both columns - this method may not be as robust as the normalize module.')
     
-    normalized_counts= normalized_counts %>% 
-      dplyr::filter(!is.na(cb_name), !is.na(cb_ladder), n != 0) %>%
+    normalized_counts= normalized_counts %>%
+      filter_control_barcodes() %>%
+      dplyr::filter(!is.na(cb_ladder), n != 0) %>%
       dplyr::group_by(pick(all_of(id_cols))) %>%
       dplyr::mutate(mean_y= mean(cb_log2_dose),
                     residual2= (cb_log2_dose - log2_n)^2,
@@ -716,8 +717,9 @@ QC_images= function(raw_counts_uncollapsed_path,
   ## 9. Sample correlation -----
   print('9. Generating sample_cor image ...')
   potential_error= base::tryCatch({
-    cor_df= filtered_counts %>% 
-      dplyr::filter(!is.na(depmap_id), !pert_type %in% c(NA, 'empty', '', 'CB_only')) %>%
+    cor_df= filtered_counts %>%
+      filter_control_barcodes() %>%
+      dplyr::filter(!pert_type %in% c(NA, 'empty', '', 'CB_only')) %>%
       dplyr::mutate(log2_n= log2(n + 1))
     cp= create_cor_heatmap(input_df= cor_df,
                            row_id_cols= c('depmap_id'),

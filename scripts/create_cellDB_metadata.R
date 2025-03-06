@@ -54,15 +54,15 @@ if (args$api_key != ""){
 
 print("Using CellDB to locate cell information.")
 print(api_url)
-cell_sets_df <- get_cell_api_info(paste(api_url,"cell_sets", sep = "/"), api_key)
-cell_pools_df <- get_cell_api_info(paste(api_url,"assay_pools", sep = "/"), api_key)
-cell_lines_df <- get_cell_api_info(paste(api_url,"cell_lines", sep = "/"), api_key)
-assay_pools_df <- get_cell_api_info(paste(api_url,"cell_set_definition_files", sep = "/"), api_key)
+cell_sets_df <- get_cell_api_info(paste(api_url,"e_cell_sets", sep = "/"), api_key)
+cell_pools_df <- get_cell_api_info(paste(api_url,"e_assay_pools", sep = "/"), api_key)
+cell_lines_df <- get_cell_api_info(paste(api_url,"e_cell_lines", sep = "/"), api_key)
+assay_pools_df <- get_cell_api_info(paste(api_url,"e_cell_set_definition_files", sep = "/"), api_key)
 assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
 
 #if custom cb_ladder is not provided, pull from CellDB
 if (!str_detect(cb_ladder, ".csv")){ 
-  control_bc_df <- get_cell_api_info(paste(api_url,"v_control_barcodes", sep = "/"), api_key, 
+  control_bc_df <- get_cell_api_info(paste(api_url,"e_v_control_barcodes", sep = "/"), api_key,
                                      filter = list(where = list(set = cb_ladder), fields = c("sequence", "cb_name", "cb_log10_dose")))
 } else {
   file_path <- file.path(args$out, cb_ladder)
@@ -113,6 +113,12 @@ if(all(cell_set_meta_long$cell_set %in% assay_pools_meta$davepool_id)) {
     select(cell_set, depmap_id = members)
 }
 
+# Join CB_meta with cell_line_meta if the depmap_id and lua columns are not present in CB_meta
+if (!all(c("depmap_id", "lua") %in% colnames(CB_meta))) {
+  print("Adding depmap_id and lua columns to CB_meta.")
+  CB_meta <- CB_meta %>%
+    dplyr::left_join(cell_line_meta, by = "forward_read_barcode")
+}
 
 # Writing out cell_line_meta
 cell_line_out_file = paste(args$out, 'cell_line_meta.csv', sep='/')

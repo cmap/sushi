@@ -49,7 +49,8 @@ compute_l2fc= function(normalized_counts,
   print('Collapsing technical replicates on the following columns: ')
   print(unique(c(cell_line_cols, 'pert_type', bio_rep_id_cols, ctrl_cols)))
   collapsed_tech_rep= normalized_counts %>%
-    dplyr::filter(!(pert_type %in% c('empty', '', 'CB_only', NA)), !is.na(depmap_id)) %>%
+    filter_control_barcodes() %>%
+    dplyr::filter(!(pert_type %in% c('empty', '', 'CB_only', NA))) %>%
     dplyr::group_by(pick(all_of(c(cell_line_cols, 'pert_type', bio_rep_id_cols, ctrl_cols)))) %>%
     dplyr::summarise(mean_n= mean(n),
                      mean_normalized_n= mean(2^(!!rlang::sym(count_col_name)))) %>% dplyr::ungroup()

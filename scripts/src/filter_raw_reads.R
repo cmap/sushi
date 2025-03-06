@@ -94,9 +94,11 @@ filter_raw_reads= function(prism_barcode_counts,
   # Filter for just wells that have a specified cell set and join cell_set_and_pool_meta
   template= data.table::merge.data.table(sample_meta[!cell_set %in% c(NA, 'NA', '', ' '),],
                                          cell_set_and_pool_meta, by= 'cell_set', allow.cartesian= TRUE)
+
   # Left join barcode sequence using data.table inplace merge
+  # template= data.table::merge.data.table(template, cell_line_meta, by= c('depmap_id','lua'), all.x= TRUE, all.y= FALSE)
   template[cell_line_meta, c(barcode_col) := get(barcode_col), on= c('depmap_id', 'lua')]
-  
+
   # Check for control barcodes and add them to the template.
   if(any(!unique(sample_meta$cb_ladder) %in% c(NA, 'NA', '', ' '))) {
     # From the sample meta, identify all expected control barcode sequences
@@ -105,7 +107,7 @@ filter_raw_reads= function(prism_barcode_counts,
                                               CB_meta, by= 'cb_ladder', allow.cartesian= TRUE)
     template= data.table::rbindlist(list(template, cb_template), fill= TRUE)
   }
-  
+
   # Add a column to indicate if a read was expected - this column is used by annotated counts
   template[, expected_read := TRUE]
   

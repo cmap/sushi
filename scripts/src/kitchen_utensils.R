@@ -111,3 +111,14 @@ check_file_exists <- function(file_path) {
     stop(paste("Error: File ", file_path, " does not exist, please check the output of this module."))
   }
 }
+
+#' Filter out control barcodes
+#'
+#' This function filters out control barcodes from a dataframe.
+#' tryCatch is used in the event that the `cb_name` column does not exist, it then returns the original dataframe.
+#'
+#' @param df A dataframe to filter.
+#' @return A filtered dataframe.
+filter_control_barcodes <- function(df) {
+  df %>% dplyr::filter(tryCatch(is.na(cb_name), error = function(e) TRUE))
+}
