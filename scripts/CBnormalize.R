@@ -3,6 +3,7 @@ library(argparse)
 library(magrittr)
 source("./src/normalize.R")
 source("./src/kitchen_utensils.R")
+source("./src/qc_table_functions.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
@@ -18,6 +19,10 @@ parser$add_argument("--id_cols", default="cell_set,pert_name,pert_dose,pert_dose
 parser$add_argument("--CB_meta", default="CB_meta.csv", help= "Control Barcode metadata")
 parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults to working directory")
 parser$add_argument("--pseudocount", default=20, help = "pseudocount for normalization")
+parser$add_argument("--filtered_counts", default="filtered_counts.csv", help = "filtered counts file")
+parser$add_argument("--annotated_counts", default="annotated_counts.csv", help = "annotated counts file")
+parser$add_argument("--unknown_barcode_counts", default="unknown_barcode_counts.csv", help = "unknown barcode counts file")
+parser$add_argument("--cell_set_meta", default="cell_set_and_pool_meta.csv", help = "cell set metadata")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -27,6 +32,11 @@ filtered_counts= data.table::fread(args$filtered_counts, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 input_pseudocount= as.numeric(args$pseudocount)
 input_id_cols= unlist(strsplit(args$id_cols, ","))
+filtered_counts = fread(args$filtered_counts, header= TRUE, sep= ',')
+annotated_counts = fread(args$annotated_counts, header= TRUE, sep= ',')
+unknown_counts = fread(args$unknown_barcode_counts, header= TRUE, sep= ',')
+cell_set_meta = fread(args$cell_set_meta, header= TRUE, sep= ',')
+
 
 # Run normalize ----
 print("Creating normalized count file ...")
