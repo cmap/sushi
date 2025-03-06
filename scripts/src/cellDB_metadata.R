@@ -62,13 +62,6 @@ get_LUAs_from_pools <- function(cell_pool_name) {
   return(depmap_ids)
 }
 
-# get_cell_line_info <- function(all_DepMapIDs) {
-#   cell_lines_api_url <- "https://api.clue.io/api/cell_lines"
-#   filter <- list(where = list(depmap_id = list(inq = all_DepMapIDs)))
-#   cell_lines_info <- get_cell_api_info(cell_lines_api_url, api_key, filter)
-#   return(cell_lines_info)
-# }
-
 create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_line_meta) {
   unique_cell_sets <- unique(sample_meta$cell_set[sample_meta$cell_set != ""])
   cell_set_meta <- data.frame(matrix(ncol = 2, nrow = length(unique_cell_sets)))

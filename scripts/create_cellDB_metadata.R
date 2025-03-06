@@ -60,14 +60,33 @@ cell_lines_df <- get_cell_api_info(paste(api_url,"e_cell_lines", sep = "/"), api
 assay_pools_df <- get_cell_api_info(paste(api_url,"e_cell_set_definition_files", sep = "/"), api_key)
 assay_pools_meta <- select(assay_pools_df, -cell_set_desc)
 
-#if custom cb_ladder is not provided, pull from CellDB
-if (!str_detect(cb_ladder, ".csv")){ 
-  control_bc_df <- get_cell_api_info(paste(api_url,"e_v_control_barcodes", sep = "/"), api_key,
-                                     filter = list(where = list(set = cb_ladder), fields = c("sequence", "cb_name", "cb_log10_dose")))
+# If a custom cb_ladder is not provided, pull from CellDB
+if (!str_detect(cb_ladder, ".csv")) {
+  control_bc_df <- get_cell_api_info(
+    paste(api_url, "v_control_barcodes", sep = "/"),
+    api_key,
+    filter = list(
+      where = list(set = cb_ladder)
+    )
+  )
+
+  # Rename columns and adjust case sensitivity to match the original CB_meta static file
+  # Select only the columns that are needed
+  control_bc_df <- control_bc_df %>%
+    rename(
+      cb_name = name,
+      forward_read_barcode = sequence,
+      cb_log10_dose = log_dose,
+      cb_ladder = set
+    ) %>%
+    mutate(cb_ladder = tolower(cb_ladder)) %>%
+    select(forward_read_barcode, cb_name, cb_log10_dose, cb_ladder)
+
 } else {
   file_path <- file.path(args$out, cb_ladder)
   control_bc_df <- read.csv(file_path)
 }
+
 
 # Renaming assay pool dataframe to act as cell_line_meta + matching case sensitivity of columns to that of static files
 cell_line_cols= c('depmap_id', 'forward_read_barcode', 'lua')
