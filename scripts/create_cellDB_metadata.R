@@ -122,6 +122,8 @@ if(all(cell_set_meta_long$cell_set %in% assay_pools_meta$davepool_id)) {
     select(cell_set, depmap_id = members)
 }
 
+CB_meta <- control_bc_df
+
 # Join CB_meta with cell_line_meta if the depmap_id and lua columns are not present in CB_meta
 if (!all(c("depmap_id", "lua") %in% colnames(CB_meta))) {
   print("Adding depmap_id and lua columns to CB_meta.")
