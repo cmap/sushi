@@ -5,7 +5,7 @@ import os
 
 
 def fetch_data(screen, api_key):
-    url = f"https://api.clue.io/api/v_eps_metadata?filter=%7B%22where%22%3A%7B%22project_code%22%3A%22{screen}%22%7D%7D"
+    url = f"https://api.clue.io/api/v_e_eps_metadata?filter=%7B%22where%22%3A%7B%22project_code%22%3A%22{screen}%22%7D%7D"
     headers = {
         "Accept": "application/json",
         "user_key": api_key,
