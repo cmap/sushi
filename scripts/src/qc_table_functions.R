@@ -419,6 +419,14 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
 
   # Merge all tables together
   print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
+  print("medians_and_mad")
+  print(colnames(medians_and_mad))
+  print("error_rates")
+  print(colnames(error_rates))
+  print("poscon_lfc")
+  print(colnames(poscon_lfc))
+  print("cell_line_fractions")
+  print(colnames(cell_line_fractions))
   plate_cell_table <- medians_and_mad %>%
     dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
     dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
