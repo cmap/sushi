@@ -32,8 +32,6 @@ compute_auc <- function(LL, UL, inflection, slope, minimum_dose, maximum_dose) {
 #'
 #' @examples
 compute_log_ic50 <- function(LL, UL, inflection, slope, minimum_dose, maximum_dose) {
-  print("Computing IC50 parameters ...")
-  print(list(LL, UL, inflection, slope, minimum_dose, maximum_dose))
   if((LL >= 0.5) | (UL <= 0.5)) {
     return(NA)
   } else {
