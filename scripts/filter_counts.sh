@@ -50,19 +50,12 @@ else
 	CELL_SET_AND_POOL_META=$BUILD_DIR/$CELL_SET_AND_POOL_META
 fi
 
-#Enforces abs paths
-if [[ "$CONTROL_BARCODE_META" = /* ]]
-then
-  CONTROL_BARCODE_META=$(ls $CONTROL_BARCODE_META)
-else
-	CONTROL_BARCODE_META=$BUILD_DIR/$CONTROL_BARCODE_META
-fi
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo PRISM_BARCODE_COUNTS is: $PRISM_BARCODE_COUNTS
 echo CELL_LINE_META is: $CELL_LINE_META
-echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
+echo CONTROL_BARCODE_META is: $BUILD_DIR/CB_meta.csv
 echo CELL_SET_AND_POOL_META is: $CELL_SET_AND_POOL_META
 echo ID_COLS is: $ID_COLS
 
@@ -70,7 +63,7 @@ args=(
 --prism_barcode_counts "$PRISM_BARCODE_COUNTS"
 --sample_meta "$SAMPLE_META"
 --cell_line_meta "$CELL_LINE_META"
---CB_meta "$CONTROL_BARCODE_META"
+--CB_meta "$BUILD_DIR/CB_meta.csv"
 --cell_set_and_pool_meta "$CELL_SET_AND_POOL_META"
 --id_cols "$ID_COLS"
 --out "$BUILD_DIR"
