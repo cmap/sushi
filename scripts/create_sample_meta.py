@@ -44,6 +44,7 @@ def rename_columns(df):
         "treatment": "pert_name",
         "dose": "pert_dose",
         "dose_unit": "pert_dose_unit",
+        "control_barcodes": "cb_ladder"
     }
     return df.rename(columns=rename_map)
 
