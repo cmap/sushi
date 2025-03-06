@@ -327,12 +327,13 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
   paste0("Computing log fold change for ", negcon, " and ", poscon, ".....")
   result <- df %>%
     dplyr::mutate(
-      lfc_normalized = .data[[paste0("median_normalized_", poscon)]] -
+      lfc_trt_poscon = .data[[paste0("median_normalized_", poscon)]] -
                        .data[[paste0("median_normalized_", negcon)]],
-      lfc_raw = .data[[paste0("median_raw_", poscon)]] -
+      lfc_raw_trt_poscon = .data[[paste0("median_raw_", poscon)]] -
                 .data[[paste0("median_raw_", negcon)]]
     ) %>%
-    dplyr::select(all_of(grouping_cols), lfc_normalized, lfc_raw)
+    dplyr::select(all_of(grouping_cols), lfc_trt_poscon, lfc_raw_trt_poscon) %>% 
+    dplyr::mutate(viability_trt_poscon=2^lfc_trt_poscon)
   return(result)
 }
 
