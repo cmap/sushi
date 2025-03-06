@@ -224,7 +224,7 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
           dplyr::rename(feature = x) %>%
           dplyr::mutate(feature_set = feat,
                         y = colnames(Y)[ix]) %>%
-          dplyr::filter(n_stable >= n.min)
+          dplyr::filter(n_stable >= n_stable.min)
 
         if(homoskedastic){
           res <- res %>%
