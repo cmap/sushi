@@ -97,7 +97,7 @@ if (biomarker_type == "multivariate") {
   }
   if (auc_biomarker) {
     create_multivariate_biomarker_table(
-      in_path = dr_file,
+      in_path = drc_file,
       out_path = out_path,
       output_file_name = "log2_auc_multivariate_biomarkers.csv",
       treatment_columns = sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
