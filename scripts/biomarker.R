@@ -63,7 +63,7 @@ if (biomarker_type == "univariate") {
     create_univariate_biomarker_table(
     in_path = lfc_path,
     out_path = out_path,
-    output_file_name = output_file_name,
+    output_file_name = "median_l2fc_univariate_biomarkers.csv",
     treatment_columns = sig_cols[grepl("pert", sig_cols)],
     response_column = lfc_column,
     depmap_file = bio_file
@@ -73,7 +73,7 @@ if (biomarker_type == "univariate") {
       create_univariate_biomarker_table(
       in_path = drc_file,
       out_path = out_path,
-      output_file_name = output_file_name,
+      output_file_name = "log2_auc_univariate_biomarkers.csv",
       treatment_columns = sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
       response_column = dr_column,
       depmap_file = bio_file
@@ -89,7 +89,7 @@ if (biomarker_type == "multivariate") {
     create_multivariate_biomarker_table(
       in_path = lfc_path,
       out_path = out_path,
-      output_file_name = output_file_name,
+      output_file_name = "median_l2fc_multivariate_biomarkers.csv",
       treatment_columns = sig_cols[grepl("pert", sig_cols)],
       response_column = lfc_column,
       depmap_file = bio_file
@@ -99,7 +99,7 @@ if (biomarker_type == "multivariate") {
     create_multivariate_biomarker_table(
       in_path = dr_file,
       out_path = out_path,
-      output_file_name = output_file_name,
+      output_file_name = "log2_auc_multivariate_biomarkers.csv",
       treatment_columns = sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
       response_column = dr_column,
       depmap_file = bio_file
