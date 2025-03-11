@@ -435,39 +435,29 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
 }
 
 ##################################################################
-id_cols_qc_flags <- function(annotated_counts, cell_set_meta, unknown_counts,
+id_cols_qc_flags <- function(annotated_counts,
                                normalized_counts,
                                group_cols = c("pcr_plate","pcr_well","pert_type"),
                                metric = "n",
-                               cell_line_cols = c("depmap_id", "pool_id"),
                                pseudocount = 20,
                                contamination_threshold = 0.8,
                                cb_mae_threshold = 1,
                                cb_spearman_threshold = 0.88,
                                cb_cl_ratio_low = 0.5,
-                               cb_cl_ratio_high = 2) {
-
-  # Compute expected lines from cell_set_meta
-  expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
-
-  # Summarize unknown counts by plate + well.
-  unknown_counts_proc <- unknown_counts %>%
-    left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
-              by = c("pcr_plate", "pcr_well")) %>%
-    group_by(across(all_of(group_cols))) %>%
-    summarise(
-      n = sum(.data[[metric]], na.rm = TRUE),
-      expected_read = FALSE,
-      .groups = "drop"
-    )
+                               cb_cl_ratio_high = 2,
+                               pool_well_delta_threshold = 0.5) {
 
   # Calculate cb metrics from normalized counts
   cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_type"), pseudocount = pseudocount)
 
   # Combine annotated_counts (after adding expected_lines) with unknown_counts and cb_metrics
   combined_data <- annotated_counts %>%
-    left_join(expected_lines, by = "cell_set") %>%  # brings in n_expected_lines, etc.
-    bind_rows(unknown_counts_proc) %>%
+    # Add normalized values
+    left_join(normalized_counts %>% mutate(expected_read = TRUE) %>% select(pcr_plate, pcr_well, pert_type, depmap_id, pool_id, lua, log2_normalized_n, cb_name),
+              by = c("pcr_plate", "pcr_well", "pert_type", "depmap_id", "lua", "pool_id", "cb_name")) %>%
+    # Add uknown barcode reads
+    #bind_rows(unknown_counts_proc) %>%
+    # Add cb_metrics
     left_join(cb_metrics, by = group_cols)
 
 
@@ -563,13 +553,39 @@ id_cols_qc_flags <- function(annotated_counts, cell_set_meta, unknown_counts,
   flagged_all <- bind_rows(flagged_all, flagged_cb_cl_ratio)
   working <- working %>% anti_join(flagged_cb_cl_ratio, by = group_cols)
 
-  # Return the normalized counts filtered for only the wells that were not flagged
-  normalized_filtered <- working %>%
+  ### POOL_WELL_OUTLIERS
+  ## Flag pool/well combinations based on the fraction of cell lines in a pool + well that are some distance from the pool + well median.
+  pool_well_outliers <- working %>%
+    # Consider only expected reads and cell line barcodes
+    filter(expected_read == TRUE) %>%
+    filter(is.na(cb_name)) %>%
+    # Get the median value of the pool in each well
+    group_by(pcr_plate, pcr_well, pert_type, pool_id) %>%
+    summarise(
+      pool_well_median = median(log2_normalized_n, na.rm = TRUE),
+      n_cell_lines = n_distinct(paste(lua, depmap_id, cell_set, sep = "_")),
+      .groups = "drop") %>%
+    right_join(working, by = c("pcr_plate", "pcr_well", "pert_type", "pool_id")) %>%
+    mutate(
+      delta_from_pool_well_median = abs(log2_normalized_n - pool_well_median)
+    ) %>%
+    group_by(pcr_plate, pcr_well, pert_type, pool_id) %>%
+    summarise(
+      n_outliers = sum(delta_from_pool_well_median > 5, na.rm = TRUE),
+        fraction_outliers = n_outliers / n_cell_lines,
+        .groups = "drop"
+    ) %>%
+    mutate(qc_flag = if_else(fraction_outliers > 0.4, "pool_well_outliers", NA_character_))
+
+
+
+  ### RETURN RESULTS
+  # Filter normalized_counts for only the wells that were not flagged
+  normalized_filtered <- flagged_all %>%
     select(pcr_plate, pcr_well, pert_type) %>%
     unique() %>%
     dplyr::left_join(normalized_counts, by = group_cols)
 
-
-  # Return a list containing both the final computed metrics and a record of all flagged wells.
+  # Return a list containing both the filtered normalized_counts and a record of all flagged wells.
   list(result = normalized_filtered, flags = flagged_all)
 }
