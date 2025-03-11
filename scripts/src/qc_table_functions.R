@@ -555,7 +555,9 @@ id_cols_qc_flags <- function(annotated_counts,
 
   ### POOL_WELL_OUTLIERS
   ## Flag pool/well combinations based on the fraction of cell lines in a pool + well that are some distance from the pool + well median.
-  pool_well_outliers <- working %>%
+  working_controls <- working %>%
+    filter(pert_type %in% c("trt_poscon", "ctl_vehicle"))
+  pool_well_outliers <- working_controls %>%
     # Consider only expected reads and cell line barcodes
     filter(expected_read == TRUE) %>%
     filter(is.na(cb_name)) %>%
@@ -565,7 +567,7 @@ id_cols_qc_flags <- function(annotated_counts,
       pool_well_median = median(log2_normalized_n, na.rm = TRUE),
       n_cell_lines = n_distinct(paste(lua, depmap_id, cell_set, sep = "_")),
       .groups = "drop") %>%
-    right_join(working, by = c("pcr_plate", "pcr_well", "pert_type", "pool_id")) %>%
+    right_join(working_controls, by = c("pcr_plate", "pcr_well", "pert_type", "pool_id")) %>%
     mutate(
       delta_from_pool_well_median = abs(log2_normalized_n - pool_well_median)
     ) %>%
