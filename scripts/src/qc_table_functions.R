@@ -451,6 +451,9 @@ id_cols_qc_flags <- function(annotated_counts,
   # Calculate cb metrics from normalized counts
   cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_type"), pseudocount = pseudocount)
 
+  #TODO: add back unknown bcs for frac expected reads calc
+  #TODO: don't calculate pool/well metrics here, don't need to join to norm
+
   # Combine annotated_counts (after adding expected_lines) with unknown_counts and cb_metrics
   combined_data <- annotated_counts %>%
     # Add normalized values
@@ -480,6 +483,7 @@ id_cols_qc_flags <- function(annotated_counts,
       .groups = "drop"
     ) %>%
     # Flag wells where median_cb_reads is less than 20 * pseudocount.
+    #TODO: replace 20 * pseudocount with a parameter
     mutate(qc_flag = if_else(median_cb_reads < (20 * pseudocount), "well_reads", NA_character_))
 
   # Record flagged wells and remove them from the working dataset.
@@ -534,6 +538,7 @@ id_cols_qc_flags <- function(annotated_counts,
 
   ### CB_CL_RATIO
   ## Flag wells based on the ratio of control barcode reads to cell line reads.
+  #TODO: split this by pert_type, different thresholds
   cb_cl_ratio = working %>%
     group_by(across(all_of(group_cols))) %>%
     summarise(
@@ -545,14 +550,27 @@ id_cols_qc_flags <- function(annotated_counts,
     group_by(pcr_plate, pert_type) %>%
     mutate(cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE)) %>%
     ungroup() %>%
-    mutate(qc_flag = if_else(cb_cl_ratio_well < cb_cl_ratio_low * cb_cl_ratio_plate & cb_cl_ratio_well > cb_cl_ratio_high * cb_cl_ratio_plate, "cb_cl_ratio", NA_character_))
+    mutate(qc_flag = if_else(cb_cl_ratio_well < cb_cl_ratio_low * cb_cl_ratio_plate | cb_cl_ratio_well > cb_cl_ratio_high * cb_cl_ratio_plate, "cb_cl_ratio", NA_character_))
 
   # Record flagged wells and remove them from the working dataset.
   flagged_cb_cl_ratio <- cb_cl_ratio %>%
     filter(qc_flag == "cb_cl_ratio") %>%
     select(all_of(group_cols), qc_flag)
   flagged_all <- bind_rows(flagged_all, flagged_cb_cl_ratio)
-  working <- working %>% anti_join(flagged_cb_cl_ratio, by = group_cols)
+  # working <- working %>% anti_join(flagged_cb_cl_ratio, by = group_cols) Don't need this as it is the last flag
+
+  ### RETURN RESULTS
+  # Filter normalized_counts for only the wells that were not flagged
+  normalized_filtered <- flagged_all %>%
+    select(pcr_plate, pcr_well, pert_type) %>%
+    unique() %>%
+    dplyr::left_join(normalized_counts, by = group_cols) %>%
+    dplyr::left_join(flagged_pool_well_outliers, by = c("pool_id", "pcr_plate", "pcr_well", "pert_type"))
+
+  # Return a list containing both the filtered normalized_counts and a record of all flagged wells.
+  list(result = normalized_filtered, well_flags = flagged_all, pool_well_flags = flagged_pool_well_outliers)
+}
+
 
   ### POOL_WELL_OUTLIERS
   ## Flag pool/well combinations based on the fraction of cell lines in a pool + well that are some distance from the pool + well median.
@@ -582,16 +600,3 @@ id_cols_qc_flags <- function(annotated_counts,
     select(-n_outliers, -fraction_outliers)
   flagged_pool_well_outliers <- pool_well_outliers %>%
     filter(qc_flag == "pool_well_outliers")
-
-
-  ### RETURN RESULTS
-  # Filter normalized_counts for only the wells that were not flagged
-  normalized_filtered <- flagged_all %>%
-    select(pcr_plate, pcr_well, pert_type) %>%
-    unique() %>%
-    dplyr::left_join(normalized_counts, by = group_cols) %>%
-    dplyr::left_join(flagged_pool_well_outliers, by = c("pool_id", "pcr_plate", "pcr_well", "pert_type"))
-
-  # Return a list containing both the filtered normalized_counts and a record of all flagged wells.
-  list(result = normalized_filtered, well_flags = flagged_all, pool_well_flags = flagged_pool_well_outliers)
-}
