@@ -50,6 +50,14 @@ else
 	CELL_SET_AND_POOL_META=$BUILD_DIR/$CELL_SET_AND_POOL_META
 fi
 
+# Enforces abs paths
+if [[ "$SKIPPED_WELLS" = /* ]]
+then
+  SKIPPED_WELLS=$(ls $SKIPPED_WELLS)
+else
+  SKIPPED_WELLS=$BUILD_DIR/$SKIPPED_WELLS
+fi
+
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
@@ -61,6 +69,7 @@ echo ID_COLS is: $ID_COLS
 echo SCREEN is: $SCREEN
 echo API_KEY is: $API_KEY
 echo FILTER_SKIPPED_WELLS is: $FILTER_SKIPPED_WELLS
+echo SKIPPED_WELLS is: $SKIPPED_WELLS
 echo REMOVE_DATA is: $REMOVE_DATA
 
 args=(
@@ -75,6 +84,7 @@ args=(
 --screen "$SCREEN"
 --api_key "$API_KEY"
 --filter_skipped_wells "$FILTER_SKIPPED_WELLS"
+--skipped_wells "$SKIPPED_WELLS"
 )
 
 echo Rscript filter_counts.R "${args[@]}"

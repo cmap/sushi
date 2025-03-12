@@ -133,6 +133,7 @@ echo "Running in container:"
   -e DR_PATH="$DR_PATH" \
   -e COLLAPSED_L2FC_COLUMN="$COLLAPSED_L2FC_COLUMN" \
   -e FILTER_SKIPPED_WELLS="$FILTER_SKIPPED_WELLS" \
+  -e SKIPPED_WELLS="$SKIPPED_WELLS" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \

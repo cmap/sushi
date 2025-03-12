@@ -35,6 +35,7 @@ parser$add_argument("-o", "--out", default="", help = "Output path. Default is w
 parser$add_argument("-s", "--screen", default="", help = "Screen")
 parser$add_argument("--filter_skipped_wells", type="logical", help = "Filter out skipped wells")
 parser$add_argument("--api_key", default="", help = "API key for the clue api")
+parser$add_argument("--skipped_wells", default="skipped_wells.csv", help = "Name of the skipped_wells file")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -53,6 +54,13 @@ cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 screen= args$screen
 api_key= args$api_key
+
+# If the skipped wells file exists, read it in ----
+if(file.exists(args$skipped_wells)){
+  skipped_wells <- data.table::fread(args$skipped_wells, header= TRUE, sep= ',')
+} else {
+  print("No skipped wells file found, not filtering skipped wells.")
+}
 
 # Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
@@ -115,9 +123,8 @@ if(args$rm_data){
 
 # Filter skipped wells if needed ----
 print(paste("Filtering skipped wells:", args$rm_data))
-if(args$filter_skipped_wells){
-  print('filter_skipped_wells is TRUE, removing skipped wells.')
-  skipped_wells <- fetch_skipped_wells(screen = screen, api_key = api_key)
+if(skipped_wells & args$filter_skipped_wells){
+  print('filter_skipped_wells is TRUE and the skipped wells file contains entries, removing skipped wells.')
   print('Skipped wells:')
   print(head(skipped_wells))
   filt_skipped <- filter_skipped_wells(filtered_counts, skipped_wells)
