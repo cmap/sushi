@@ -445,7 +445,8 @@ id_cols_qc_flags <- function(annotated_counts,
                                cb_spearman_threshold = 0.88,
                                cb_cl_ratio_low = 0.5,
                                cb_cl_ratio_high = 2,
-                               pool_well_delta_threshold = 0.5) {
+                               pool_well_delta_threshold = 5,
+                               pool_well_fraction_threshold = 0.4) {
 
   # Calculate cb metrics from normalized counts
   cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_type"), pseudocount = pseudocount)
@@ -453,7 +454,7 @@ id_cols_qc_flags <- function(annotated_counts,
   # Combine annotated_counts (after adding expected_lines) with unknown_counts and cb_metrics
   combined_data <- annotated_counts %>%
     # Add normalized values
-    left_join(normalized_counts %>% mutate(expected_read = TRUE) %>% select(pcr_plate, pcr_well, pert_type, depmap_id, pool_id, lua, log2_normalized_n, cb_name),
+    left_join(normalized_counts %>% select(pcr_plate, pcr_well, pert_type, depmap_id, pool_id, lua, log2_normalized_n, cb_name),
               by = c("pcr_plate", "pcr_well", "pert_type", "depmap_id", "lua", "pool_id", "cb_name")) %>%
     # Add uknown barcode reads
     #bind_rows(unknown_counts_proc) %>%
@@ -573,11 +574,11 @@ id_cols_qc_flags <- function(annotated_counts,
     ) %>%
     group_by(pcr_plate, pcr_well, pert_type, pool_id) %>%
     summarise(
-      n_outliers = sum(delta_from_pool_well_median > 5, na.rm = TRUE),
+      n_outliers = sum(delta_from_pool_well_median > pool_well_delta_threshold, na.rm = TRUE),
         fraction_outliers = n_outliers / n_cell_lines,
         .groups = "drop"
     ) %>%
-    mutate(qc_flag = if_else(fraction_outliers > 0.4, "pool_well_outliers", NA_character_)) %>%
+    mutate(qc_flag = if_else(fraction_outliers > pool_well_fraction_threshold, "pool_well_outliers", NA_character_)) %>%
     select(-n_outliers, -fraction_outliers)
   flagged_pool_well_outliers <- pool_well_outliers %>%
     filter(qc_flag == "pool_well_outliers")

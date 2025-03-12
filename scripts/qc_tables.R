@@ -58,9 +58,7 @@ paste0("Reading in ", args$control_barcode_meta, ".....")
 cb_meta <- data.table::fread(args$control_barcode_meta, header = TRUE, sep = ",")
 paste0("Reading in ", args$unknown_barcode_counts, header = TRUE, sep = ",")
 unknown_counts <- data.table::fread(args$unknown_barcode_counts, header = TRUE, sep = ",")
-
-# Create qc_table output directory if it doesn't exist ----
-paste0("Creating output directory ", args$out, "/qc_tables.....")
+xzx
 if (!dir.exists(paste0(args$out, "/qc_tables")))
     {
     dir.create(paste0(args$out, "/qc_tables"))
