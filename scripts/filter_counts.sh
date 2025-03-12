@@ -58,6 +58,10 @@ echo CELL_LINE_META is: $CELL_LINE_META
 echo CONTROL_BARCODE_META is: $BUILD_DIR/CB_meta.csv
 echo CELL_SET_AND_POOL_META is: $CELL_SET_AND_POOL_META
 echo ID_COLS is: $ID_COLS
+echo SCREEN is: $SCREEN
+echo API_KEY is: $API_KEY
+echo FILTER_SKIPPED_WELLS is: $FILTER_SKIPPED_WELLS
+echo REMOVE_DATA is: $REMOVE_DATA
 
 args=(
 --prism_barcode_counts "$PRISM_BARCODE_COUNTS"
@@ -68,6 +72,9 @@ args=(
 --id_cols "$ID_COLS"
 --out "$BUILD_DIR"
 --rm_data "$REMOVE_DATA"
+--screen "$SCREEN"
+--api_key "$API_KEY"
+--filter_skipped_wells "$FILTER_SKIPPED_WELLS"
 )
 
 echo Rscript filter_counts.R "${args[@]}"

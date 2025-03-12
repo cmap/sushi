@@ -55,6 +55,7 @@ pipeline {
         )
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Checks to ensure raw reads come from expected flowcells and lanes and then sums the counts across samples (SEQUENCING_INDEX_COLS).')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Assigns raw reads to the appropriate treatment conditions and cell lines; filters those that do not match. Removes cell lines that are duplicated in a cell set.')
+        booleanParam(name: 'FILTER_SKIPPED_WELLS', defaultValue: false, description: 'Check this to filter out wells that were skipped by the echo.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Uses a data_to_remove.csv files to remove data. Runs as part of filter counts.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
@@ -207,7 +208,7 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN',
                         'COLLAPSED_L2FC_COLUMN',
 

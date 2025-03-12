@@ -8,6 +8,9 @@ suppressPackageStartupMessages(library(dplyr)) #n(), %>%
 suppressPackageStartupMessages(library(tidyr)) #pivot_wider
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
+suppressPackageStartupMessages(library(httr)) # fread
+suppressPackageStartupMessages(library(jsonlite)) # fread
+suppressPackageStartupMessages(library(data.table)) # fread
 source("./src/filter_raw_reads.R")
 source("./src/kitchen_utensils.R")
 
@@ -29,6 +32,9 @@ parser$add_argument("--barcode_col", default= "forward_read_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
+parser$add_argument("-s", "--screen", default="", help = "Screen")
+parser$add_argument("--filter_skipped_wells", type="logical", help = "Filter out skipped wells")
+parser$add_argument("--api_key", default="", help = "API key for the clue api")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -45,6 +51,8 @@ sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
 cell_set_and_pool_meta= data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep= ',')
 cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
+screen= args$screen
+api_key= args$api_key
 
 # Convert input strings into vectors ----
 id_cols= unlist(strsplit(args$id_cols, ","))
@@ -83,23 +91,41 @@ if(sum(cl_entries$n) == 0) {
   stop('All cell line counts are zero!')
 }
 
+# If we plan to remove any data, first write a copy of the original unfiltered filtered_counts ----
+if(args$rm_data | args$filter_skipped_wells){
+  filtered_counts_original <- filtered_counts
+  write.csv(filtered_counts_original, paste(args$out, 'filtered_counts_original.csv', sep='/'), row.names=F, quote=F)
+}
+
 # Remove data ----
 print(paste("rm_data:", args$rm_data))
 # Remove data if needed
-if(args$rm_data == TRUE){
+if(args$rm_data){
   print('rm_data is TRUE, removing supplied data.')
   data_to_remove <- read.csv(paste(args$out, 'data_to_remove.csv', sep='/'))
   print('Data to remove:')
   print(head(data_to_remove))
   filt_rm <- remove_data(filtered_counts, data_to_remove)
-  
-  # keep the full filtered counts with the data that needs to be removed
-  filtered_counts_original <- filtered_counts
-  write.csv(filtered_counts_original, paste(args$out, 'filtered_counts_original.csv', sep='/'), row.names=F, quote=F)
+
   # re-point to what filtered_counts should be
   filtered_counts <- filt_rm
   rows_removed = nrow(filtered_counts_original) - nrow(filtered_counts)
   paste("Number of rows removed: ", rows_removed)
+}
+
+# Filter skipped wells if needed ----
+print(paste("Filtering skipped wells:", args$rm_data))
+if(args$filter_skipped_wells){
+  print('filter_skipped_wells is TRUE, removing skipped wells.')
+  skipped_wells <- fetch_skipped_wells(screen = screen, api_key = api_key)
+  print('Skipped wells:')
+  print(head(skipped_wells))
+  filt_skipped <- filter_skipped_wells(filtered_counts, skipped_wells)
+
+  # re-point to what filtered_counts should be
+  filtered_counts <- filt_skipped
+  rows_removed = nrow(filtered_counts_original) - nrow(filtered_counts)
+  paste("Number of skipped wells removed: ", rows_removed)
 }
 
 # Write out files ----
