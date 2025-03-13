@@ -124,14 +124,12 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
     dplyr::group_by(pcr_plate, pert_type) %>%
     dplyr::summarise(
       cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE),
-      # If the cb_cl_ratio_well is less that 0.5X or greater than 2X of the cb_cl_ratio_plate, flag the well.
-        qc_flag = ifelse(cb_cl_ratio_well < 0.5 * cb_cl_ratio_plate | cb_cl_ratio_well > 2 * cb_cl_ratio_plate, "cb_cl_ratio", qc_flag)
     ) %>%
     dplyr::ungroup()
 
     # Combine plate_well and plate_pert_type
   result <- plate_well %>%
-    dplyr::left_join(plate_pert_type, by = c("pcr_plate", "pert_type", "qc_flag"))
+    dplyr::left_join(plate_pert_type, by = c("pcr_plate", "pert_type"))
 
   return(result)
 }
