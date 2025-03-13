@@ -148,7 +148,7 @@ write.csv(
     quote = FALSE
 )
 
-if (args$filter_qc_flags == "TRUE") {
+if (args$filter_qc_flags) {
     # Filter out wells with QC flags
     print("Filtering out wells with QC flags")
     # Write original normalized counts ----------
