@@ -436,7 +436,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   # QC pass criteria, currently with hardcoded pert_types
   plate_cell_table <- plate_cell_table %>%
     dplyr::mutate(qc_pass= error_rate < 0.05 & viability_trt_poscon < 0.25 & 
-                    median_raw_ctl_vehicle > 40 & mad_log_normalized_ctl_vehicle < 1 ) %>%
+                    median_raw_ctl_vehicle > log(40) & mad_log_normalized_ctl_vehicle < 1 ) %>%
     dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate"))))  %>%
     dplyr::mutate(n_passing_plates=sum(qc_pass)) %>% 
     dplyr::mutate(qc_pass_pert_plate= n_passing_plates>1) %>% 
