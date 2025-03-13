@@ -38,7 +38,7 @@ parser$add_argument(
 )
 parser$add_argument("-n", "--negcon_type", default = "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default = "trt_poscon")
-parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id")
+parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id,lua")
 parser$add_argument("--id_cols", default = "pcr_plate,pcr_well")
 parser$add_argument("--count_threshold", default = 40)
 parser$add_argument("--pseudocount", default = 20)
@@ -88,11 +88,30 @@ plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
     cell_line_cols = cell_plate_list, pseudocount = pseudocount)
 
-# Write to file ----------
-plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
-print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))
+# Write to file for internal use ----------
+plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table_internal.csv")
+print(paste0("Writing out internal plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(
     x = plate_cell_table, file = plate_cell_outpath, row.names = FALSE,
+    quote = FALSE
+)
+check_file_exists(plate_cell_outpath)
+
+
+# Write to file for portal use----------
+plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
+print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_outpath))
+write.csv(
+    x = plate_cell_table %>% 
+        dplyr::select(
+            c("pool_id", "depmap_id", "lua", "pcr_plate",
+              "pert_plate",
+              "error_rate", "lfc_trt_poscon",  
+              "median_raw_ctl_vehicle", "mad_normalized_ctl_vehicle",
+              "median_normalized_ctl_vehicle",
+              "n_replicates_ctl_vehicle", "n_replicates_trt_poscon", 
+              "viability_trt_poscon", "qc_pass", "qc_pass_pert_plate")),
+    file = plate_cell_outpath, row.names = FALSE,
     quote = FALSE
 )
 check_file_exists(plate_cell_outpath)

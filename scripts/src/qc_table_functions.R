@@ -19,7 +19,7 @@ library (PRROC)
 #' @return A data frame with one row per group and a column `skew` containing the computed skew (auc).
 #'
 #' @import dplyr
-compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well"), metric = "n") {
+compute_skew <- function(df, group_cols = c("pcr_plate","pcr_well","pert_plate"), metric = "n") {
   result <- df %>%
     dplyr::group_by(across(all_of(group_cols))) %>%
     arrange(desc(.data[[metric]])) %>%  # Sort by metric in descending order
@@ -78,14 +78,14 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #' recovered cell lines, and their fractions.
 #'
 #' @import dplyr
-compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, group_cols = c("pcr_plate","pcr_well","pert_type"),
+compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, group_cols = c("pcr_plate","pcr_well","pert_type","pert_plate"),
                                metric = "n", cell_line_cols = c("depmap_id", "pool_id"), count_threshold = 40) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
   # Group unknown_counts by group_cols
   unknown_counts <- unknown_counts %>%
-      dplyr::left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
+      dplyr::left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type, pert_plate)),
                        by = c("pcr_plate","pcr_well")) %>%
       dplyr::group_by(across(all_of(group_cols))) %>%
       dplyr::summarise(
@@ -144,7 +144,7 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
 #'
 #' @import dplyr
 #'
-calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_plate", "pcr_well"), pseudocount = 20) {
+calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_plate"), pseudocount = 20) {
   valid_profiles= normalized_counts %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
                                                       cb_ladder %in% unique(cb_meta$cb_ladder),
                                                       cb_name %in% unique(cb_meta$cb_name)) %>%
@@ -182,21 +182,21 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
 #' @import dplyr
 generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
                                    count_threshold= 40, pseudocount= 20) {
-  paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), ".....")
+  print(paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), "....."))
 
-  read_stats_grouping_cols <- c(id_cols_list, "pert_type")
+  read_stats_grouping_cols <- c(id_cols_list, "pert_type", "pert_plate")
 
   read_stats <- compute_read_stats(annotated_counts = annotated_counts, unknown_counts = unknown_counts, group_cols = read_stats_grouping_cols,
                                    cell_set_meta= cell_set_meta, metric = "n", cell_line_cols = cell_line_cols,
   count_threshold = count_threshold)
 
-  skew <- compute_skew(annotated_counts, group_cols = id_cols_list, metric = "n")
+  skew <- compute_skew(annotated_counts, group_cols = c(id_cols_list, "pert_plate"), metric = "n")
 
-  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = id_cols_list, pseudocount = pseudocount)
+  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c(id_cols_list, "pert_plate"), pseudocount = pseudocount)
 
   id_cols_table <- read_stats %>%
-    dplyr::left_join(skew, by = id_cols_list) %>%
-    dplyr::left_join(cb_metrics, by = id_cols_list)
+    dplyr::left_join(skew, by = c(id_cols_list, "pert_plate")) %>%
+    dplyr::left_join(cb_metrics, by = id_cols_list, "pert_plate")
 
   return(id_cols_table)
 }
@@ -231,10 +231,10 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
 #'
 #' @import dplyr
 #' @import PRROC
-compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c("depmap_id", "pcr_plate"),
+compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c("depmap_id", "pcr_plate", "pert_plate"),
                                negcon = "ctl_vehicle", poscon = "trt_poscon") {
-  paste0("Computing error rate using ", negcon, " and ", poscon, ".....")
-  paste0("Grouping by ", paste0(group_cols, collapse = ","), ".....")
+  print(paste0("Computing error rate using ", negcon, " and ", poscon, "....."))
+  print(paste0("Grouping by ", paste0(group_cols, collapse = ","), "....."))
   result <- df %>%
     dplyr::filter(
       pert_type %in% c(negcon, poscon),
@@ -274,10 +274,10 @@ compute_error_rate <- function(df, metric = 'log2_normalized_n', group_cols = c(
 #' @import dplyr
 #' @importFrom tidyr pivot_wider
 #' @importFrom stats mad pnorm
-compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_plate"),
+compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_plate", "pert_plate"),
                                     negcon = "ctl_vehicle", poscon = "trt_poscon", pseudocount = 20) {
-  paste0("Adding control median and MAD values for ", negcon, " and ", poscon, ".....")
-  paste0("Computing falses sensitivity probability for ", negcon, ".....")
+  print(paste0("Adding control median and MAD values for ", negcon, " and ", poscon, "....."))
+  print(paste0("Computing falses sensitivity probability for ", negcon, "....."))
   # Group and compute medians/MADs
   result <- df %>%
     dplyr::filter(pert_type %in% c(negcon, poscon)) %>%
@@ -286,8 +286,8 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
       median_normalized = median(log2_normalized_n, na.rm = TRUE),
       n_replicates = n(),
       mad_normalized = mad(log2_normalized_n, na.rm = TRUE),
-      median_raw = median(log2(n+pseudocount), na.rm = TRUE),
-      mad_raw = mad(log2(n+pseudocount), na.rm = TRUE)
+      median_raw = median(n, na.rm = TRUE),
+      mad_raw = mad(n, na.rm = TRUE)
     ) %>%
     dplyr::ungroup() %>%
     pivot_wider(
@@ -323,16 +323,17 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
 #' - `lfc_raw`: Log fold change for raw data.
 #'
 #' @import dplyr
-compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon", grouping_cols = c("depmap_id", "pcr_plate")) {
-  paste0("Computing log fold change for ", negcon, " and ", poscon, ".....")
+compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon", grouping_cols = c("depmap_id", "pcr_plate", "pert_plate")) {
+  print(paste0("Computing log fold change for ", negcon, " and ", poscon, "....."))
   result <- df %>%
     dplyr::mutate(
-      lfc_normalized = .data[[paste0("median_normalized_", poscon)]] -
+      lfc_trt_poscon = .data[[paste0("median_normalized_", poscon)]] -
                        .data[[paste0("median_normalized_", negcon)]],
-      lfc_raw = .data[[paste0("median_raw_", poscon)]] -
+      lfc_raw_trt_poscon = .data[[paste0("median_raw_", poscon)]] -
                 .data[[paste0("median_raw_", negcon)]]
     ) %>%
-    dplyr::select(all_of(grouping_cols), lfc_normalized, lfc_raw)
+    dplyr::select(all_of(grouping_cols), lfc_trt_poscon, lfc_raw_trt_poscon) %>% 
+    dplyr::mutate(viability_trt_poscon=2^lfc_trt_poscon)
   return(result)
 }
 
@@ -349,8 +350,8 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
 #' - `fraction_of_reads`: The fraction of total reads contributed by each entry.
 #'
 #' @import dplyr
-compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate", "depmap_id")) {
-  paste0("Computing cell line fractions for ", metric, ".....")
+compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate", "depmap_id", "pert_plate")) {
+  print(paste0("Computing cell line fractions for ", metric, "....."))
   result <- df %>%
     dplyr::group_by(across(all_of(grouping_cols))) %>%
     dplyr::summarise(
@@ -381,8 +382,8 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' @import dplyr
 generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
-  cell_line_plate_grouping <- c(cell_line_list,"pcr_plate") # Define columns to group by
-  paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
+  cell_line_plate_grouping <- c(cell_line_list,"pcr_plate","pert_plate") # Define columns to group by
+  print(paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
 
   # Compute control medians and MAD
   medians_and_mad <- compute_ctl_medians_and_mad(
@@ -417,10 +418,27 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   )
 
   # Merge all tables together
-  paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together.....")
+  print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
+  print("medians_and_mad")
+  print(colnames(medians_and_mad))
+  print("error_rates")
+  print(colnames(error_rates))
+  print("poscon_lfc")
+  print(colnames(poscon_lfc))
+  print("cell_line_fractions")
+  print(colnames(cell_line_fractions))
   plate_cell_table <- medians_and_mad %>%
     dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
     dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
     dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
+  # QC pass criteria, currently with hardcoded pert_types
+  plate_cell_table <- plate_cell_table %>%
+    dplyr::mutate(qc_pass= error_rate < 0.05 & viability_trt_poscon < 0.25 & 
+                    median_raw_ctl_vehicle > 40 & mad_normalized_ctl_vehicle < 1 ) %>%
+    dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate"))))  %>%
+    dplyr::mutate(n_passing_plates=sum(qc_pass)) %>% 
+    dplyr::mutate(qc_pass_pert_plate= n_passing_plates>1) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::select(-n_passing_plates)
   return(plate_cell_table)
 }
