@@ -138,7 +138,7 @@ write.csv(
     x = plate_cell_table %>%
         dplyr::select(
             c("pool_id", "depmap_id", "lua", "pcr_plate",
-              "pert_plate", "project_code", "replicate_plate",
+              "pert_plate",
               "error_rate", "lfc_trt_poscon",
               "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
               "median_log_normalized_ctl_vehicle",
