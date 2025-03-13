@@ -334,7 +334,7 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
       lfc_poscon_raw = .data[[paste0("median_raw_", poscon)]] -
                 .data[[paste0("median_raw_", negcon)]]
     ) %>%
-    dplyr::select(all_of(grouping_cols), lfc_normalized, lfc_raw)
+    dplyr::select(all_of(grouping_cols), lfc_poscon_normalized, lfc_poscon_raw)
   return(result)
 }
 
