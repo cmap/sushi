@@ -446,6 +446,43 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
 }
 
 # QC FLAG FUNCTIONS ----------
+plate_cell_qc_flags <- function(normalized_counts, plate_cell_table,
+                                nc_variability_threshold = 1,
+                                error_rate_threshold = 0.05,
+                                pc_viability_threshold = 0.25,
+                                nc_raw_count_threshold = 40) {
+  plate_cell_qc_flag_table <- left_join(
+    normalized_counts,
+    plate_cell_table,
+    by = c("pool_id","depmap_id","lua","pcr_plate","pert_plate")
+  ) %>%
+    select(pool_id, depmap_id, lua, pcr_plate, pert_plate,
+           error_rate, mad_log_normalized_ctl_vehicle,
+           viability_trt_poscon, median_raw_trt_poscon) %>%
+    unique() %>%
+    mutate(
+        qc_flag = case_when(
+            mad_log_normalized_ctl_vehicle > nc_variability_threshold ~ "nc_variability",
+            error_rate > error_rate_threshold ~ "error_rate",
+            viability_trt_poscon > pc_viability_threshold ~ "pc_viability",
+            median_raw_trt_poscon > nc_raw_count_threshold ~ "nc_raw_count",
+            TRUE ~ NA_character_
+        )
+    ) %>%
+    select(pool_id, depmap_id, lua, pcr_plate, pert_plate, qc_flag)
+
+  filtered_normalized_counts <- normalized_counts %>%
+    left_join(
+      plate_cell_qc_flag_table %>% select(pool_id, depmap_id, lua, pcr_plate, pert_plate, qc_flag),
+      by = c("pool_id","depmap_id","lua","pcr_plate","pert_plate")
+    ) %>%
+    filter(is.na(qc_flag)) %>%
+    select(-qc_flag)
+  # Return the plate_cell_qc_flag_table and the filtered normalized_counts
+    return(list(plate_cell_qc_flag_table = plate_cell_qc_flag_table,
+                filtered_normalized_counts = filtered_normalized_counts))
+}
+
 id_cols_qc_flags <- function(annotated_counts,
                              normalized_counts,
                              unknown_counts,
@@ -655,4 +692,3 @@ generate_pool_well_qc_table <- function(normalized_counts, pool_well_delta_thres
     ungroup() %>%
     mutate(qc_flag = if_else(fraction_outliers > pool_well_fraction_threshold, "pool_well_outliers", NA_character_))
 }
-
