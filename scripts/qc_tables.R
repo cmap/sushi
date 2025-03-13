@@ -90,7 +90,7 @@ plate_cell_table <- generate_cell_plate_table(
 
 # Write to file for internal use ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table_internal.csv")
-print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))
+print(paste0("Writing out internal plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(
     x = plate_cell_table, file = plate_cell_outpath, row.names = FALSE,
     quote = FALSE
@@ -100,7 +100,7 @@ check_file_exists(plate_cell_outpath)
 
 # Write to file for portal use----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
-print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))
+print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(
     x = plate_cell_table %>% 
         dplyr::select(
