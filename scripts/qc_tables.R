@@ -95,6 +95,20 @@ result <- id_cols_qc_flags(
 id_cols_qc_flags_table <- result$well_flags
 filtered_normalized_counts <- result$result
 
+# POOL WELL QC FLAGS
+# Generate QC flags for the pool + well table and filter out flagged wells
+pool_well_qc_table <- generate_pool_well_qc_table(
+  normalized_counts = filtered_normalized_counts
+)
+
+result <- pool_well_qc_flags(
+    normalized_counts = filtered_normalized_counts,
+    pool_well_qc = pool_well_qc_table
+)
+
+pool_well_qc_flags_table <- result$pool_well_flags
+filtered_normalized_counts <- result$result
+
 # CELL LINE BY PLATE (pcr_plate,depmap_id) ---------
 # Filter out control barcodes (where depmap_id is NA) from normalized and filtered counts
 normalized_counts_rm_ctl <- filtered_normalized_counts %>%
@@ -109,20 +123,6 @@ result = plate_cell_qc_flags(
     plate_cell_table = plate_cell_table)
 plate_cell_qc_flags_table <- result$plate_cell_qc_flag_table
 filtered_normalized_counts <- result$filtered_normalized_counts
-
-# POOL WELL QC FLAGS
-# Generate QC flags for the pool + well table and filter out flagged wells
-pool_well_qc_table <- generate_pool_well_qc_table(
-  normalized_counts = filtered_normalized_counts
-)
-
-result <- pool_well_qc_flags(
-    normalized_counts = filtered_normalized_counts,
-    pool_well_qc = pool_well_qc_table
-)
-
-pool_well_qc_flags_table <- result$pool_well_flags
-filtered_normalized_counts <- result$result
 
 
 # WRITE OUT RESULTS --------
