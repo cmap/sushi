@@ -564,21 +564,21 @@ id_cols_qc_flags <- function(annotated_counts,
   normalized_filtered <- flagged_all %>%
     select(pcr_plate, pcr_well, pert_type) %>%
     unique() %>%
-    dplyr::left_join(normalized_counts, by = group_cols) %>%
-    dplyr::left_join(flagged_pool_well_outliers, by = c("pool_id", "pcr_plate", "pcr_well", "pert_type"))
+    dplyr::left_join(normalized_counts, by = group_cols)
 
   # Return a list containing both the filtered normalized_counts and a record of all flagged wells.
-  list(result = normalized_filtered, well_flags = flagged_all, pool_well_flags = flagged_pool_well_outliers)
+  list(result = normalized_filtered, well_flags = flagged_all)
 }
 
 
+pool_well_qc_flags <- function(normalized_counts, pool_well_delta_threshold = 5, pool_well_fraction_threshold = 0.4) {
   ### POOL_WELL_OUTLIERS
   ## Flag pool/well combinations based on the fraction of cell lines in a pool + well that are some distance from the pool + well median.
-  working_controls <- working %>%
+  ## This is in control wells only
+  working_controls <- normalized_counts %>%
     filter(pert_type %in% c("trt_poscon", "ctl_vehicle"))
   pool_well_outliers <- working_controls %>%
-    # Consider only expected reads and cell line barcodes
-    filter(expected_read == TRUE) %>%
+    # Consider only cell line barcodes
     filter(is.na(cb_name)) %>%
     # Get the median value of the pool in each well
     group_by(pcr_plate, pcr_well, pert_type, pool_id) %>%
@@ -600,3 +600,14 @@ id_cols_qc_flags <- function(annotated_counts,
     select(-n_outliers, -fraction_outliers)
   flagged_pool_well_outliers <- pool_well_outliers %>%
     filter(qc_flag == "pool_well_outliers")
+
+  ### RETURN RESULTS
+  # Filter normalized_counts for only the wells that were not flagged
+  normalized_filtered <- normalized_counts %>%
+    dplyr::left_join(flagged_pool_well_outliers %>%
+      select(pcr_plate, pcr_well, pert_type, pool_id),
+                     by = c("pool_id", "pcr_plate", "pcr_well", "pert_type"))
+
+  # Return a list containing both the filtered normalized_counts and a record of all flagged wells.
+  list(result = normalized_filtered, pool_well_flags = flagged_pool_well_outliers)
+}
