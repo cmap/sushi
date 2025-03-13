@@ -87,7 +87,7 @@ contamination_threshold = 0.8) {
   # Group unknown_counts by group_cols
   unknown_counts <- unknown_counts %>%
       dplyr::left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
-                       by = c("pcr_plate","pcr_well","pert_type")) %>%
+                       by = c("pcr_plate","pcr_well")) %>%
       dplyr::group_by(across(all_of(group_cols))) %>%
       dplyr::summarise(
       n = sum(.data[[metric]], na.rm = TRUE),
