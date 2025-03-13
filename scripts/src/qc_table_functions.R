@@ -446,13 +446,11 @@ id_cols_qc_flags <- function(annotated_counts,
                              cb_mae_threshold = 1,
                              cb_spearman_threshold = 0.88,
                              cb_cl_ratio_low = 0.5,
-                             cb_cl_ratio_high = 2) {
+                             cb_cl_ratio_high = 2,
+                             well_reads_threshold = 400) {
 
   # Calculate cb metrics from normalized counts
   cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_type"), pseudocount = pseudocount)
-
-  #TODO: add back unknown bcs for frac expected reads calc
-  #TODO: don't calculate pool/well metrics here, don't need to join to norm
 
   # Group unknown_counts by group_cols
   unknown_counts_proc <- unknown_counts %>%
@@ -491,8 +489,7 @@ id_cols_qc_flags <- function(annotated_counts,
       .groups = "drop"
     ) %>%
     # Flag wells where median_cb_reads is less than 20 * pseudocount.
-    #TODO: replace 20 * pseudocount with a parameter
-    mutate(qc_flag = if_else(median_cb_reads < (20 * pseudocount), "well_reads", NA_character_))
+    mutate(qc_flag = if_else(median_cb_reads < (well_reads_threshold), "well_reads", NA_character_))
 
   # Record flagged wells and remove them from the working dataset.
   flagged_well_reads <- well_reads %>%
