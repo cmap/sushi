@@ -265,7 +265,8 @@ filter_skipped_wells <- function(filtered_counts, skipped_wells) {
 
   # Filter out the skipped wells from the filtered counts
   filtered_counts <- filtered_counts %>%
-      anti_join(skipped_wells, by = c("pcr_well","pert_plate","pool_id","replicate"))
+      anti_join(skipped_wells %>%
+        select(cols), by = cols)
 
   return(filtered_counts)
 }
