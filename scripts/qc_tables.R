@@ -105,7 +105,8 @@ plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
     cell_line_cols = cell_plate_list, pseudocount = pseudocount)
 result = plate_cell_qc_flags(
-    normalized_counts = filtered_normalized_counts)
+    normalized_counts = filtered_normalized_counts,
+    plate_cell_table = plate_cell_table)
 plate_cell_qc_flags_table <- result$plate_cell_flags
 filtered_normalized_counts <- result$result
 
