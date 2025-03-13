@@ -104,6 +104,10 @@ filtered_counts_rm_ctl <- filtered_counts %>%
 plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
     cell_line_cols = cell_plate_list, pseudocount = pseudocount)
+result = plate_cell_qc_flags(
+    normalized_counts = filtered_normalized_counts)
+plate_cell_qc_flags_table <- result$plate_cell_flags
+filtered_normalized_counts <- result$result
 
 # POOL WELL QC FLAGS
 # Generate QC flags for the pool + well table and filter out flagged wells
@@ -121,7 +125,7 @@ filtered_normalized_counts <- result$result
 
 
 # WRITE OUT RESULTS --------
-# Write to file for internal use ----------
+# Write place_cell_qc_table for internal use ----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table_internal.csv")
 print(paste0("Writing out internal plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(
@@ -131,7 +135,7 @@ write.csv(
 check_file_exists(plate_cell_outpath)
 
 
-# Write to file for portal use----------
+# Write place_cell_qc_table for portal use----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
 print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(
@@ -148,6 +152,15 @@ write.csv(
     quote = FALSE
 )
 check_file_exists(plate_cell_outpath)
+
+# Write plate_cell_qc_flags table ----------
+plate_cell_qc_flags_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_flags.csv")
+print(paste0("Writing out plate_cell_qc_flags to ", plate_cell_qc_flags_outpath))
+write.csv(
+    x = plate_cell_qc_flags_table, file = plate_cell_qc_flags_outpath, row.names = FALSE,
+    quote = FALSE
+)
+check_file_exists(plate_cell_qc_flags_outpath)
 
 
 # BY WELL (PCR_PLATE, PCR_WELL) ----------
