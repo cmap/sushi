@@ -101,6 +101,7 @@ check_file_exists(plate_cell_outpath)
 # Write to file for portal use----------
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
 print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_outpath))
+print(paste0("DEBUG: plate_cell_table columns: ", colnames(plate_cell_table)))
 write.csv(
     x = plate_cell_table %>% 
         dplyr::select(
