@@ -43,6 +43,7 @@ args=(
 --count_threshold "$COUNT_THRESHOLD"
 --control_barcode_meta "$CONTROL_BARCODE_META"
 --unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
+--filter_qc_flags "$FILTER_QC_FLAGS"
 )
 
 echo Rscript qc_tables.R "${args[@]}"

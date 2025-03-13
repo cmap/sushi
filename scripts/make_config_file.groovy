@@ -81,6 +81,7 @@ pipeline {
         booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
         booleanParam(name: 'QC_IMAGES', defaultValue: false, description: 'Check this to trigger the QC images job.')
+        booleanParam(name: 'FILTER_QC_FLAGS', defaultValue: true, description: 'Filters data that have qc_flags.')
 
         separator(
           name: "portal_prep",
@@ -209,7 +210,7 @@ pipeline {
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN',
-                        'COLLAPSED_L2FC_COLUMN',
+                        'COLLAPSED_L2FC_COLUMN', 'FILTER_QC_FLAGS',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',

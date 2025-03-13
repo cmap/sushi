@@ -42,6 +42,8 @@ parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id")
 parser$add_argument("--id_cols", default = "pcr_plate,pcr_well")
 parser$add_argument("--count_threshold", default = 40)
 parser$add_argument("--pseudocount", default = 20)
+parser$add_argument("--filter_qc_flags", default = "true",
+                    help = "Filter out wells with QC flags. Default is TRUE")   )
 
 args <- parser$parse_args()
 
@@ -73,6 +75,7 @@ id_cols <- args$id_cols
 id_cols_list <- strsplit(id_cols, ",")[[1]]
 count_threshold <- as.numeric(args$count_threshold)
 pseudocount <- as.numeric(args$pseudocount)
+filter_qc_flags <- as.logical(toupper(args$filter_qc_flags))
 
 # BY WELL (PCR_PLATE, PCR_WELL) ----------
 id_cols_table <- generate_id_cols_table(
@@ -143,20 +146,26 @@ write.csv(
     quote = FALSE
 )
 
-# Write original normalized counts ----------
-normalized_counts_original_outpath <- paste0(args$out, "normalized_counts_original.csv")
-print(paste0("Writing unfiltered normalized_counts to ", normalized_counts_original_outpath))
-write.csv(
-    x = normalized_counts, file = normalized_counts_original_outpath, row.names = FALSE,
-    quote = FALSE
-)
+if (args$filter_qc_flags == "TRUE") {
+    # Filter out wells with QC flags
+    print("Filtering out wells with QC flags")
+    # Write original normalized counts ----------
+    normalized_counts_original_outpath <- paste0(args$out, "normalized_counts_original.csv")
+    print(paste0("Writing unfiltered normalized_counts to ", normalized_counts_original_outpath))
+    write.csv(
+        x = normalized_counts, file = normalized_counts_original_outpath, row.names = FALSE,
+        quote = FALSE)
 
-# Write filtered normalized counts ----------
-filtered_normalized_counts_outpath <- paste0(args$out, "normalized_counts.csv")
-print(paste0("Writing filtered normalized_counts to ", filtered_normalized_counts_outpath))
-write.csv(
-    x = filtered_normalized_counts, file = filtered_normalized_counts_outpath, row.names = FALSE,
-    quote = FALSE
-)
+    # Write filtered normalized counts ----------
+    filtered_normalized_counts_outpath <- paste0(args$out, "normalized_counts.csv")
+    print(paste0("Writing filtered normalized_counts to ", filtered_normalized_counts_outpath))
+    write.csv(
+        x = filtered_normalized_counts, file = filtered_normalized_counts_outpath, row.names = FALSE,
+        quote = FALSE)
+    }
+    else {
+    print("Nomalized counts not filtered for qc_flags.")
+    }
+
 
 paste0("QC module completed.")
