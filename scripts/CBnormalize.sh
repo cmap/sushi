@@ -14,20 +14,6 @@ then
     exit -1
 fi
 
-if [ -z "$SAMPLE_META" ]
-then
-	echo SAMPLE_META parameter empty
-    exit -1
-fi
-
-#Enforces abs paths
-if [[ "$SAMPLE_META" = /* ]]
-then
-	SAMPLE_META=$(ls $SAMPLE_META)
-else
-	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
-fi
-
 #Enforces abs paths
 if [[ "$FILTERED_COUNTS" = /* ]]
 then
@@ -58,4 +44,3 @@ Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 --id_cols $ID_COLS \
 --out $BUILD_DIR
 
-COUNTS="normalized_counts.csv"

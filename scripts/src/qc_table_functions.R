@@ -103,10 +103,12 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
       n_total_reads = sum(.data[[metric]], na.rm = TRUE),
       # Reads mapping to cell lines
       n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
-      # Fraction of reads mapping to cell lines
-      fraction_expected_reads = n_expected_reads / n_total_reads,
       # Reads mapping to control barcodes
       n_cb_reads = sum(.data[[metric]][cb_name != ""], na.rm = TRUE),
+      # Median reads for control barcodes
+      median_cb_reads = median(.data[[metric]][cb_name != ""], na.rm = TRUE),
+      # Fraction of reads mapping to cell lines
+      fraction_expected_reads = n_expected_reads / n_total_reads,
       # Number of cell lines with coverage above 40 reads
       n_lines_recovered = sum(.data[[metric]] >= count_threshold & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
       # Number of expected lines based on metadata
@@ -148,10 +150,10 @@ calculate_cb_metrics <- function(normalized_counts,cb_meta, group_cols = c("pcr_
   valid_profiles= normalized_counts %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
                                                       cb_ladder %in% unique(cb_meta$cb_ladder),
                                                       cb_name %in% unique(cb_meta$cb_name)) %>%
-    dplyr::group_by(across(all_of(group_cols))) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
+  dplyr::group_by(across(all_of(group_cols))) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
   fit_stats= valid_profiles %>%
-    dplyr::group_by(across(all_of(group_cols))) %>%
-    dplyr::mutate(log2_normalized_n= log2(n+pseudocount) + cb_intercept,
+  dplyr::group_by(across(all_of(group_cols))) %>%
+  dplyr::mutate(log2_normalized_n= log2(n+pseudocount) + cb_intercept,
                   cb_mae= median(abs(cb_log2_dose- log2_normalized_n)),
                   mean_y= mean(cb_log2_dose),
                   residual2= (cb_log2_dose- log2_normalized_n)^2,
@@ -283,27 +285,27 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
     dplyr::filter(pert_type %in% c(negcon, poscon)) %>%
     dplyr::group_by(across(all_of(c(group_cols, "pert_type")))) %>%
     dplyr::summarise(
-      median_normalized = median(log2_normalized_n, na.rm = TRUE),
+      median_log_normalized = median(log2_normalized_n, na.rm = TRUE),
       n_replicates = n(),
-      mad_normalized = mad(log2_normalized_n, na.rm = TRUE),
-      median_raw = median(n, na.rm = TRUE),
-      mad_raw = mad(n, na.rm = TRUE)
+      mad_log_normalized = mad(log2_normalized_n, na.rm = TRUE),
+      median_raw = median(log2(n+pseudocount), na.rm = TRUE),
+      mad_raw = mad(log2(n+pseudocount), na.rm = TRUE)
     ) %>%
     dplyr::ungroup() %>%
     pivot_wider(
       names_from = pert_type,
-      values_from = c(median_normalized, mad_normalized, median_raw, mad_raw, n_replicates),
+      values_from = c(median_log_normalized, mad_log_normalized, median_raw, mad_raw, n_replicates),
       names_sep = "_"
     ) %>%
     dplyr::rowwise() %>%
     dplyr::mutate(
       false_sensitivity_probability_50 = pnorm(
         -1,
-        sd = .data[[paste0('mad_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
+        sd = .data[[paste0('mad_log_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
       ),
       false_sensitivity_probability_25 = pnorm(
         -2,
-        sd = .data[[paste0('mad_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
+        sd = .data[[paste0('mad_log_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
       )
     )
   return(result)
@@ -442,3 +444,215 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     dplyr::select(-n_passing_plates)
   return(plate_cell_table)
 }
+
+# QC FLAG FUNCTIONS ----------
+id_cols_qc_flags <- function(annotated_counts,
+                             normalized_counts,
+                             unknown_counts,
+                             cb_meta,
+                             group_cols = c("pcr_plate","pcr_well","pert_type"),
+                             metric = "n",
+                             pseudocount = 20,
+                             contamination_threshold = 0.8,
+                             cb_mae_threshold = 1,
+                             cb_spearman_threshold = 0.88,
+                             cb_cl_ratio_low_negcon = 0.5,
+                             cb_cl_ratio_high_negcon = 2,
+                             cb_cl_ratio_low_poscon = 0.5,
+                             cb_cl_ratio_high_poscon = 2,
+                             well_reads_threshold = 400) {
+
+  # Calculate cb metrics from normalized counts
+  cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_type", "pert_plate"), pseudocount = pseudocount)
+
+  # Group unknown_counts by group_cols
+  unknown_counts_proc <- unknown_counts %>%
+      # Add pert_type from annotated_counts
+      dplyr::left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
+                       by = c("pcr_plate","pcr_well")) %>%
+      dplyr::group_by(across(all_of(group_cols))) %>%
+      dplyr::summarise(
+      n = sum(.data[[metric]], na.rm = TRUE),
+      expected_read = FALSE
+      )
+
+  # Combine annotated_counts (after adding expected_lines) with unknown_counts and cb_metrics
+  combined_data <- annotated_counts %>%
+    # Add uknown barcode reads
+    bind_rows(unknown_counts_proc) %>%
+    # Add cb_metrics
+    left_join(cb_metrics, by = group_cols)
+
+
+  # Initialize a container to record flagged wells.
+  flagged_all <- tibble()
+
+  # Working dataset: we will progressively filter out flagged wells.
+  working <- combined_data
+
+  ### WELL_READS
+  ## Flag wells based on the median count of control barcodes in each well.
+
+  # Calculate the median control barcode reads for each well.
+  well_reads <- working %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      n_cb_reads        = sum(.data[[metric]][cb_name != ""], na.rm = TRUE),
+      median_cb_reads   = median(.data[[metric]][cb_name != ""], na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    # Flag wells where median_cb_reads is less than 20 * pseudocount.
+    mutate(qc_flag = if_else(median_cb_reads < (well_reads_threshold), "well_reads", NA_character_))
+
+  # Record flagged wells and remove them from the working dataset.
+  flagged_well_reads <- well_reads %>%
+    filter(!is.na(qc_flag)) %>%
+    select(all_of(group_cols), qc_flag)
+  flagged_all <- bind_rows(flagged_all, flagged_well_reads)
+
+  working <- working %>% anti_join(flagged_well_reads, by = group_cols)
+
+  ### CONTAMINATION
+  ## Flag wells based on the fraction of reads mapping to expected cell lines or control barcodes.
+
+  # Calculate the total and expected reads for each well.
+  containation <- working %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      n_total_reads    = sum(.data[[metric]], na.rm = TRUE),
+      n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(fraction_expected_reads = n_expected_reads / n_total_reads,
+           qc_flag = if_else(fraction_expected_reads < contamination_threshold, "contamination", NA_character_))
+
+  # Record flagged wells and remove them from the working dataset.
+  flagged_contamination <- containation %>%
+    filter(qc_flag == "contamination") %>%
+    select(all_of(group_cols), qc_flag)
+  flagged_all <- bind_rows(flagged_all, flagged_contamination)
+
+  working <- working %>% anti_join(flagged_contamination, by = group_cols)
+
+  ### CB_LINEARITY
+  ## Flag wells based on the linearity of the control barcodes in each well defined by the median absolute error (MAE) and Spearman correlation coefficient.
+
+  # Calculate the MAE and Spearman correlation
+  cb_linearity <- working %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      cb_mae = median(.data[["cb_mae"]], na.rm = TRUE),
+      cb_spearman = median(.data[["cb_spearman"]], na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(qc_flag = if_else(cb_mae > cb_mae_threshold | cb_spearman < cb_spearman_threshold, "cb_linearity", NA_character_))
+
+  # Record flagged wells and remove them from the working dataset.
+  flagged_cb_linearity <- cb_linearity %>%
+    filter(qc_flag == "cb_linearity") %>%
+    select(all_of(group_cols), qc_flag)
+  flagged_all <- bind_rows(flagged_all, flagged_cb_linearity)
+  working <- working %>% anti_join(flagged_cb_linearity, by = group_cols)
+
+  ### CB_CL_RATIO
+  ## POSITIVE CONTROL
+  ## Flag wells based on the ratio of control barcode reads to cell line reads.
+  cb_cl_ratio_poscon = working %>%
+    filter(pert_type == "trt_poscon") %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
+      n_cb_reads = sum(.data[[metric]][cb_name != ""], na.rm = TRUE),
+      cb_cl_ratio_well = n_cb_reads / n_expected_reads,
+      .groups = "drop"
+    ) %>%
+    group_by(pcr_plate, pert_type) %>%
+    mutate(cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE)) %>%
+    ungroup() %>%
+    mutate(qc_flag = if_else(cb_cl_ratio_well < cb_cl_ratio_low_poscon * cb_cl_ratio_plate | cb_cl_ratio_well > cb_cl_ratio_high_poscon * cb_cl_ratio_plate, "cb_cl_ratio", NA_character_))
+
+  # Record flagged wells and remove them from the working dataset.
+  flagged_cb_cl_ratio_poscon <- cb_cl_ratio_poscon %>%
+    filter(qc_flag == "cb_cl_ratio") %>%
+    select(all_of(group_cols), qc_flag)
+  flagged_all <- bind_rows(flagged_all, flagged_cb_cl_ratio_poscon)
+  working <- working %>% anti_join(flagged_cb_cl_ratio_poscon, by = group_cols)
+
+  ## NEGATIVE CONTROL
+  ## Flag wells based on the ratio of control barcode reads to cell line reads.
+  cb_cl_ratio_negcon = working %>%
+    filter(pert_type == "ctl_vehicle") %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
+      n_cb_reads = sum(.data[[metric]][cb_name != ""], na.rm = TRUE),
+      cb_cl_ratio_well = n_cb_reads / n_expected_reads,
+      .groups = "drop"
+    ) %>%
+    group_by(pcr_plate, pert_type) %>%
+    mutate(cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE)) %>%
+    ungroup() %>%
+    mutate(qc_flag = if_else(cb_cl_ratio_well < cb_cl_ratio_low_negcon * cb_cl_ratio_plate | cb_cl_ratio_well > cb_cl_ratio_high_negcon * cb_cl_ratio_plate, "cb_cl_ratio", NA_character_))
+
+  # Record flagged wells and remove them from the working dataset.
+  flagged_cb_cl_ratio_negcon <- cb_cl_ratio_negcon %>%
+    filter(qc_flag == "cb_cl_ratio") %>%
+    select(all_of(group_cols), qc_flag)
+  flagged_all <- bind_rows(flagged_all, flagged_cb_cl_ratio_negcon)
+
+
+  ### RETURN RESULTS
+  # Filter normalized_counts for only the wells that were not flagged
+  normalized_filtered <- flagged_all %>%
+    select(pcr_plate, pcr_well, pert_type) %>%
+    unique() %>%
+    dplyr::left_join(normalized_counts, by = group_cols)
+
+  # Return a list containing both the filtered normalized_counts and a record of all flagged wells.
+  list(result = normalized_filtered, well_flags = flagged_all)
+}
+
+## POOL WELL QC FLAGS
+pool_well_qc_flags <- function(normalized_counts, pool_well_qc) {
+  ### POOL_WELL_OUTLIERS
+  ## Flag pool/well combinations based on the fraction of cell lines in a pool + well that are some distance from the pool + well median.
+  ## This is in control wells only
+  flagged_all <- pool_well_qc %>%
+    filter(!is.na(qc_flag))
+
+  ### RETURN RESULTS
+  # Filter normalized_counts for only the wells that were not flagged
+  normalized_filtered <- normalized_counts %>%
+    dplyr::left_join(flagged_all %>%
+      select(pcr_plate, pcr_well, pert_type, pool_id),
+                     by = c("pool_id", "pcr_plate", "pcr_well", "pert_type"))
+
+  # Return a list containing both the filtered normalized_counts and a record of all flagged wells.
+  list(result = normalized_filtered, pool_well_flags = flagged_all)
+}
+
+generate_pool_well_qc_table <- function(normalized_counts, pool_well_delta_threshold = 5, pool_well_fraction_threshold = 0.4) {
+  ### POOL_WELL_OUTLIERS
+  ## Flag pool/well combinations based on the fraction of cell lines in a pool + well that are some distance from the pool + well median.
+  ## This is in control wells only
+  pool_well_outliers <- normalized_counts %>%
+    # Consider only cell line barcodes
+    filter(is.na(cb_name)) %>%
+    # Get the median value of the pool in each well
+    group_by(pcr_plate, pcr_well, pert_type, pool_id) %>%
+    mutate(
+      pool_well_median = median(log2_normalized_n, na.rm = TRUE),
+      n_cell_lines = n_distinct(paste(lua, depmap_id, cell_set, sep = "_"))
+    ) %>%
+    mutate(
+      delta_from_pool_well_median = abs(log2_normalized_n - pool_well_median)
+    ) %>%
+    group_by(pcr_plate, pcr_well, pert_type, pool_id) %>%
+    reframe(
+      n_outliers = sum(delta_from_pool_well_median > pool_well_delta_threshold, na.rm = TRUE),
+        fraction_outliers = n_outliers / n_cell_lines
+    ) %>%
+    ungroup() %>%
+    mutate(qc_flag = if_else(fraction_outliers > pool_well_fraction_threshold, "pool_well_outliers", NA_character_))
+}
+
