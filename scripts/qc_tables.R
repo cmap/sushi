@@ -139,7 +139,7 @@ write.csv(
         dplyr::select(
             c("pool_id", "depmap_id", "lua", "pcr_plate",
               "pert_plate",
-              "error_rate", "lfc_poscon_normalized", "lfc_poscon_raw"
+              "error_rate", "lfc_poscon_normalized", "lfc_poscon_raw",
               "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
               "median_log_normalized_ctl_vehicle",
               "n_replicates_ctl_vehicle", "n_replicates_trt_poscon",
