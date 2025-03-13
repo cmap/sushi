@@ -432,7 +432,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
     dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
   # QC pass criteria, currently with hardcoded pert_types
-  plate_cell_table %>% 
+  plate_cell_table <- plate_cell_table %>%
     dplyr::mutate(qc_pass= error_rate < 0.05 & viability_trt_poscon < 0.25 & 
                     median_raw_ctl_vehicle > 40 & mad_normalized_ctl_vehicle < 1 ) %>%
     dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate"))))  %>%
