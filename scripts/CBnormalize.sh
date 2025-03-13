@@ -14,20 +14,6 @@ then
     exit -1
 fi
 
-if [ -z "$SAMPLE_META" ]
-then
-	echo SAMPLE_META parameter empty
-    exit -1
-fi
-
-#Enforces abs paths
-if [[ "$SAMPLE_META" = /* ]]
-then
-	SAMPLE_META=$(ls $SAMPLE_META)
-else
-	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
-fi
-
 #Enforces abs paths
 if [[ "$FILTERED_COUNTS" = /* ]]
 then
@@ -35,32 +21,6 @@ then
 else
 	FILTERED_COUNTS=$BUILD_DIR/$FILTERED_COUNTS
 fi
-
-
-#Enforces abs paths
-if [[ "$UNKNOWN_BARCODE_COUNTS" = /* ]]
-then
-  UNKNOWN_BARCODE_COUNTS=$(ls $UNKNOWN_BARCODE_COUNTS)
-else
-  UNKNOWN_BARCODE_COUNTS=$BUILD_DIR/$UNKNOWN_BARCODE_COUNTS
-fi
-
-#Enforces abs paths
-if [[ "$ANNOTATED_COUNTS" = /* ]]
-then
-  ANNOTATED_COUNTS=$(ls $ANNOTATED_COUNTS)
-else
-  ANNOTATED_COUNTS=$BUILD_DIR/$ANNOTATED_COUNTS
-fi
-
-#Enforces abs paths
-if [[ "$CELL_SET_AND_POOL_META" = /* ]]
-then
-  CELL_SET_AND_POOL_META=$(ls $CELL_SET_AND_POOL_META)
-else
-  CELL_SET_AND_POOL_META=$BUILD_DIR/$CELL_SET_AND_POOL_META
-fi
-
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
@@ -75,17 +35,11 @@ echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 --CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
---out $BUILD_DIR \
---annotated_counts $ANNOTATED_COUNTS \
---unknown_barcode_counts $UNKNOWN_BARCODE_COUNTS \
---cell_set_meta $CELL_SET_AND_POOL_META
+--out $BUILD_DIR
 
 Rscript CBnormalize.R -c $FILTERED_COUNTS	\
 --CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
---out $BUILD_DIR \
---annotated_counts $ANNOTATED_COUNTS \
---unknown_barcode_counts $UNKNOWN_BARCODE_COUNTS \
---cell_set_meta $CELL_SET_AND_POOL_META
+--out $BUILD_DIR
 
