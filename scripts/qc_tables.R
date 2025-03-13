@@ -152,14 +152,14 @@ if (args$filter_qc_flags) {
     # Filter out wells with QC flags
     print("Filtering out wells with QC flags")
     # Write original normalized counts ----------
-    normalized_counts_original_outpath <- paste0(args$out, "normalized_counts_original.csv")
+    normalized_counts_original_outpath <- paste0(args$out, "/normalized_counts_original.csv")
     print(paste0("Writing unfiltered normalized_counts to ", normalized_counts_original_outpath))
     write.csv(
         x = normalized_counts, file = normalized_counts_original_outpath, row.names = FALSE,
         quote = FALSE)
 
     # Write filtered normalized counts ----------
-    filtered_normalized_counts_outpath <- paste0(args$out, "normalized_counts.csv")
+    filtered_normalized_counts_outpath <- paste0(args$out, "/normalized_counts.csv")
     print(paste0("Writing filtered normalized_counts to ", filtered_normalized_counts_outpath))
     write.csv(
         x = filtered_normalized_counts, file = filtered_normalized_counts_outpath, row.names = FALSE,
