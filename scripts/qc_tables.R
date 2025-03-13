@@ -105,24 +105,57 @@ plate_cell_table <- generate_cell_plate_table(
     normalized_counts = normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
     cell_line_cols = cell_plate_list, pseudocount = pseudocount)
 
-# CELL LINE PLATE QC FLAGS
-# Generate QC flags for the plate_cell table and filter out flagged wells
-result <- pool_well_qc_flags(
-    normalized_counts = filtered_normalized_counts
+# POOL WELL QC FLAGS
+# Generate QC flags for the pool + well table and filter out flagged wells
+pool_well_qc_table <- generate_pool_well_qc_table(
+  normalized_counts = filtered_normalized_counts
 )
+
+result <- pool_well_qc_flags(
+    normalized_counts = filtered_normalized_counts,
+    pool_well_qc = pool_well_qc_table
+)
+
 pool_well_qc_flags_table <- result$pool_well_flags
 filtered_normalized_counts <- result$result
 
 
-# WRITE OUT RESULTS ----
-# Write plate_cell table ----------
-plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
-print(paste0("Writing out plate_cell_qc_table to ", plate_cell_outpath))
+# WRITE OUT RESULTS --------
+# Write to file for internal use ----------
+plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table_internal.csv")
+print(paste0("Writing out internal plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(
     x = plate_cell_table, file = plate_cell_outpath, row.names = FALSE,
     quote = FALSE
 )
 check_file_exists(plate_cell_outpath)
+
+
+# Write to file for portal use----------
+plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
+print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_outpath))
+write.csv(
+    x = plate_cell_table %>%
+        dplyr::select(
+            c("pool_id", "depmap_id", "lua", "pcr_plate",
+              "pert_plate", "project_code", "replicate_plate",
+              "error_rate", "lfc_trt_poscon",
+              "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
+              "median_log_normalized_ctl_vehicle",
+              "n_replicates_ctl_vehicle", "n_replicates_trt_poscon",
+              "viability_trt_poscon", "qc_pass", "qc_pass_pert_plate")),
+    file = plate_cell_outpath, row.names = FALSE,
+    quote = FALSE
+)
+check_file_exists(plate_cell_outpath)
+
+# Write pool_well_qc_table ----------
+pool_well_qc_table_outpath <- paste0(args$out, "/qc_tables/pool_well_qc_table.csv")
+print(paste0("Writing out pool_well_qc_table to ", pool_well_qc_table_outpath))
+write.csv(
+    x = pool_well_qc_table, file = pool_well_qc_table_outpath, row.names = FALSE,
+    quote = FALSE
+)
 
 # Write pool_well_qc_flags table ----------
 pool_well_qc_flags_outpath <- paste0(args$out, "/qc_tables/pool_well_qc_flags.csv")
