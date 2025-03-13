@@ -639,3 +639,4 @@ create_univariate_biomarker_table <- function(in_path, out_path,
     dplyr::select(-y) %>%
     write_csv(paste0(out_path, "/", output_file_name))
 }
+
