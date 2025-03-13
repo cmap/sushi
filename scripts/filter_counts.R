@@ -122,7 +122,7 @@ if(args$rm_data){
 }
 
 # Filter skipped wells if needed ----
-if(exists(skipped_wells) & args$filter_skipped_wells){
+if(exists("skipped_wells") && args$filter_skipped_wells){
   print('filter_skipped_wells is TRUE and the skipped wells file contains entries, removing skipped wells.')
   print('Skipped wells:')
   print(head(skipped_wells))
