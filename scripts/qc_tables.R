@@ -88,7 +88,9 @@ id_cols_table <- generate_id_cols_table(
 # Generate QC flags for the id_cols table and filter out flagged wells
 result <- id_cols_qc_flags(
     annotated_counts = annotated_counts,
-    normalized_counts = normalized_counts
+    normalized_counts = normalized_counts,
+    unknown_counts = unknown_counts,
+    cb_meta = cb_meta
 )
 id_cols_qc_flags_table <- result$well_flags
 filtered_normalized_counts <- result$result
