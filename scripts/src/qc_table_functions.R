@@ -383,7 +383,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' @import dplyr
 generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
-  cell_line_plate_grouping <- c(cell_line_list,"pcr_plate") # Define columns to group by
+  cell_line_plate_grouping <- c(cell_line_list,"pcr_plate", "pert_plate") # Define columns to group by
   paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), ".....")
 
   # Compute control medians and MAD
