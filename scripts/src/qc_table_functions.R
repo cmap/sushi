@@ -198,7 +198,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
 
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = c(id_cols_list, "pert_plate")) %>%
-    dplyr::left_join(cb_metrics, by = id_cols_list, "pert_plate")
+    dplyr::left_join(cb_metrics, by = c(id_cols_list, "pert_plate"))
 
   return(id_cols_table)
 }
@@ -285,11 +285,11 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
     dplyr::filter(pert_type %in% c(negcon, poscon)) %>%
     dplyr::group_by(across(all_of(c(group_cols, "pert_type")))) %>%
     dplyr::summarise(
-      median_log_normalized = median(log2_normalized_n, na.rm = TRUE),
+      median_log_normalized = median(log2_normalized_n),
       n_replicates = n(),
-      mad_log_normalized = mad(log2_normalized_n, na.rm = TRUE),
-      median_raw = median(log2(n+pseudocount), na.rm = TRUE),
-      mad_raw = mad(log2(n+pseudocount), na.rm = TRUE)
+      mad_log_normalized = mad(log2_normalized_n),
+      median_raw = median(log2(n+pseudocount)),
+      mad_raw = mad(log2(n+pseudocount))
     ) %>%
     dplyr::ungroup() %>%
     pivot_wider(
