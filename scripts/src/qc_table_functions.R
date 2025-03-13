@@ -301,11 +301,11 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
     dplyr::mutate(
       false_sensitivity_probability_50 = pnorm(
         -1,
-        sd = .data[[paste0('mad_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
+        sd = .data[[paste0('mad_log_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
       ),
       false_sensitivity_probability_25 = pnorm(
         -2,
-        sd = .data[[paste0('mad_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
+        sd = .data[[paste0('mad_log_normalized_',negcon)]] * sqrt((1/.data[[paste0('n_replicates_',negcon)]] * pi/2) + 1)
       )
     )
   return(result)
@@ -329,8 +329,8 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
   paste0("Computing log fold change for ", negcon, " and ", poscon, ".....")
   result <- df %>%
     dplyr::mutate(
-      lfc_poscon_normalized = .data[[paste0("median_normalized_", poscon)]] -
-                       .data[[paste0("median_normalized_", negcon)]],
+      lfc_poscon_normalized = .data[[paste0("median_log_normalized_", poscon)]] -
+                       .data[[paste0("median_log_normalized_", negcon)]],
       lfc_poscon_raw = .data[[paste0("median_raw_", poscon)]] -
                 .data[[paste0("median_raw_", negcon)]]
     ) %>%
