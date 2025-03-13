@@ -445,8 +445,10 @@ id_cols_qc_flags <- function(annotated_counts,
                              contamination_threshold = 0.8,
                              cb_mae_threshold = 1,
                              cb_spearman_threshold = 0.88,
-                             cb_cl_ratio_low = 0.5,
-                             cb_cl_ratio_high = 2,
+                             cb_cl_ratio_low_negcon = 0.5,
+                             cb_cl_ratio_high_negcon = 2,
+                             cb_cl_ratio_low_poscon = 0.5,
+                             cb_cl_ratio_high_poscon = 2,
                              well_reads_threshold = 400) {
 
   # Calculate cb metrics from normalized counts
@@ -542,9 +544,10 @@ id_cols_qc_flags <- function(annotated_counts,
   working <- working %>% anti_join(flagged_cb_linearity, by = group_cols)
 
   ### CB_CL_RATIO
+  ## POSITIVE CONTROL
   ## Flag wells based on the ratio of control barcode reads to cell line reads.
-  #TODO: split this by pert_type, different thresholds
-  cb_cl_ratio = working %>%
+  cb_cl_ratio_poscon = working %>%
+    filter(pert_type == "trt_poscon") %>%
     group_by(across(all_of(group_cols))) %>%
     summarise(
       n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
@@ -555,14 +558,37 @@ id_cols_qc_flags <- function(annotated_counts,
     group_by(pcr_plate, pert_type) %>%
     mutate(cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE)) %>%
     ungroup() %>%
-    mutate(qc_flag = if_else(cb_cl_ratio_well < cb_cl_ratio_low * cb_cl_ratio_plate | cb_cl_ratio_well > cb_cl_ratio_high * cb_cl_ratio_plate, "cb_cl_ratio", NA_character_))
+    mutate(qc_flag = if_else(cb_cl_ratio_well < cb_cl_ratio_low_poscon * cb_cl_ratio_plate | cb_cl_ratio_well > cb_cl_ratio_high_poscon * cb_cl_ratio_plate, "cb_cl_ratio", NA_character_))
 
   # Record flagged wells and remove them from the working dataset.
-  flagged_cb_cl_ratio <- cb_cl_ratio %>%
+  flagged_cb_cl_ratio_poscon <- cb_cl_ratio_poscon %>%
     filter(qc_flag == "cb_cl_ratio") %>%
     select(all_of(group_cols), qc_flag)
-  flagged_all <- bind_rows(flagged_all, flagged_cb_cl_ratio)
-  # working <- working %>% anti_join(flagged_cb_cl_ratio, by = group_cols) Don't need this as it is the last flag
+  flagged_all <- bind_rows(flagged_all, flagged_cb_cl_ratio_poscon)
+  working <- working %>% anti_join(flagged_cb_cl_ratio_poscon, by = group_cols)
+
+  ## NEGATIVE CONTROL
+  ## Flag wells based on the ratio of control barcode reads to cell line reads.
+  cb_cl_ratio_negcon = working %>%
+    filter(pert_type == "ctl_vehicle") %>%
+    group_by(across(all_of(group_cols))) %>%
+    summarise(
+      n_expected_reads = sum(.data[[metric]][expected_read], na.rm = TRUE),
+      n_cb_reads = sum(.data[[metric]][cb_name != ""], na.rm = TRUE),
+      cb_cl_ratio_well = n_cb_reads / n_expected_reads,
+      .groups = "drop"
+    ) %>%
+    group_by(pcr_plate, pert_type) %>%
+    mutate(cb_cl_ratio_plate = median(cb_cl_ratio_well, na.rm = TRUE)) %>%
+    ungroup() %>%
+    mutate(qc_flag = if_else(cb_cl_ratio_well < cb_cl_ratio_low_negcon * cb_cl_ratio_plate | cb_cl_ratio_well > cb_cl_ratio_high_negcon * cb_cl_ratio_plate, "cb_cl_ratio", NA_character_))
+
+  # Record flagged wells and remove them from the working dataset.
+  flagged_cb_cl_ratio_negcon <- cb_cl_ratio_negcon %>%
+    filter(qc_flag == "cb_cl_ratio") %>%
+    select(all_of(group_cols), qc_flag)
+  flagged_all <- bind_rows(flagged_all, flagged_cb_cl_ratio_negcon)
+
 
   ### RETURN RESULTS
   # Filter normalized_counts for only the wells that were not flagged
