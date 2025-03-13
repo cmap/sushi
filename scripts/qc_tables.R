@@ -104,7 +104,7 @@ print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_outpath)
 write.csv(
     x = plate_cell_table %>% 
         dplyr::select(
-            c("pool_id", "depmap_id", "lua", "cell_set", "pcr_plate", 
+            c("pool_id", "depmap_id", "lua", "pcr_plate",
               "pert_plate", "project_code", "replicate_plate", 
               "error_rate", "lfc_trt_poscon",  
               "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",  
