@@ -107,8 +107,8 @@ plate_cell_table <- generate_cell_plate_table(
 result = plate_cell_qc_flags(
     normalized_counts = filtered_normalized_counts,
     plate_cell_table = plate_cell_table)
-plate_cell_qc_flags_table <- result$plate_cell_flags
-filtered_normalized_counts <- result$result
+plate_cell_qc_flags_table <- result$plate_cell_qc_flag_table
+filtered_normalized_counts <- result$filtered_normalized_counts
 
 # POOL WELL QC FLAGS
 # Generate QC flags for the pool + well table and filter out flagged wells
