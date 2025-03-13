@@ -294,7 +294,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
     dplyr::ungroup() %>%
     pivot_wider(
       names_from = pert_type,
-      values_from = c(median_normalized, mad_normalized, median_raw, mad_raw, n_replicates),
+      values_from = c(median_log_normalized, mad_log_normalized, median_raw, mad_raw, n_replicates),
       names_sep = "_"
     ) %>%
     dplyr::rowwise() %>%
