@@ -50,31 +50,41 @@ else
 	CELL_SET_AND_POOL_META=$BUILD_DIR/$CELL_SET_AND_POOL_META
 fi
 
-#Enforces abs paths
-if [[ "$CONTROL_BARCODE_META" = /* ]]
+# Enforces abs paths
+if [[ "$SKIPPED_WELLS" = /* ]]
 then
-  CONTROL_BARCODE_META=$(ls $CONTROL_BARCODE_META)
+  SKIPPED_WELLS=$(ls $SKIPPED_WELLS)
 else
-	CONTROL_BARCODE_META=$BUILD_DIR/$CONTROL_BARCODE_META
+  SKIPPED_WELLS=$BUILD_DIR/$SKIPPED_WELLS
 fi
+
 
 echo Build dir is: $BUILD_DIR
 echo SAMPLE_META is: $SAMPLE_META
 echo PRISM_BARCODE_COUNTS is: $PRISM_BARCODE_COUNTS
 echo CELL_LINE_META is: $CELL_LINE_META
-echo CONTROL_BARCODE_META is: $CONTROL_BARCODE_META
+echo CONTROL_BARCODE_META is: $BUILD_DIR/CB_meta.csv
 echo CELL_SET_AND_POOL_META is: $CELL_SET_AND_POOL_META
 echo ID_COLS is: $ID_COLS
+echo SCREEN is: $SCREEN
+echo API_KEY is: $API_KEY
+echo FILTER_SKIPPED_WELLS is: $FILTER_SKIPPED_WELLS
+echo SKIPPED_WELLS is: $SKIPPED_WELLS
+echo REMOVE_DATA is: $REMOVE_DATA
 
 args=(
 --prism_barcode_counts "$PRISM_BARCODE_COUNTS"
 --sample_meta "$SAMPLE_META"
 --cell_line_meta "$CELL_LINE_META"
---CB_meta "$CONTROL_BARCODE_META"
+--CB_meta "$BUILD_DIR/CB_meta.csv"
 --cell_set_and_pool_meta "$CELL_SET_AND_POOL_META"
 --id_cols "$ID_COLS"
 --out "$BUILD_DIR"
 --rm_data "$REMOVE_DATA"
+--screen "$SCREEN"
+--api_key "$API_KEY"
+--filter_skipped_wells "$FILTER_SKIPPED_WELLS"
+--skipped_wells "$SKIPPED_WELLS"
 )
 
 echo Rscript filter_counts.R "${args[@]}"

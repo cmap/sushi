@@ -246,3 +246,28 @@ remove_data = function(filtered_counts, data_to_remove) {
   return(filt_rm)
 }
 
+#' Filter Skipped Wells
+#'
+#' This function filters the skipped wells from the filtered counts.
+#'
+#' @param filtered_counts The filtered counts dataframe.
+#' @param skipped_wells The skipped wells dataframe.
+#'
+filter_skipped_wells <- function(filtered_counts, skipped_wells) {
+  # Ensure the required columns exist in the dataframes
+  cols <- c("pcr_well", "pert_plate", "pool_id", "replicate")
+  if (!all(cols %in% names(filtered_counts))) {
+      stop("The filtered counts dataframe is missing one or more required columns.")
+  }
+  if (!all(cols %in% names(skipped_wells))) {
+      stop("The skipped wells dataframe is missing one or more required columns.")
+  }
+
+  # Filter out the skipped wells from the filtered counts
+  filtered_counts <- filtered_counts %>%
+      anti_join(skipped_wells %>%
+        select(cols), by = cols)
+
+  return(filtered_counts)
+}
+

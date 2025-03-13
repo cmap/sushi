@@ -35,7 +35,7 @@ pipeline {
         )
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Directory where the build output will go. Must contain the raw counts file from Nori. If not getting your metadata from cellDB & COMET this directory must also include the sample and cell line/pool metadata.')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate,pcr_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
 
         separator(
           name: "metadata",
@@ -55,6 +55,7 @@ pipeline {
         )
         booleanParam(name: 'COLLATE_FASTQ_READS', defaultValue: true, description: 'Checks to ensure raw reads come from expected flowcells and lanes and then sums the counts across samples (SEQUENCING_INDEX_COLS).')
         booleanParam(name: 'FILTER_COUNTS', defaultValue: true, description: 'Assigns raw reads to the appropriate treatment conditions and cell lines; filters those that do not match. Removes cell lines that are duplicated in a cell set.')
+        booleanParam(name: 'FILTER_SKIPPED_WELLS', defaultValue: true, description: 'Check this to filter out wells that were skipped by the echo.')
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Uses a data_to_remove.csv files to remove data. Runs as part of filter counts.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
@@ -148,6 +149,7 @@ pipeline {
         string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'Filename in BUILD_DIR containing normalized counts. This file is created by CBNORMALIZE.')
         string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'Filename containing log2 fold change values. This file is created by COMPUTE_LFC.')
         string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values. This file is created by COLLAPSED_LFC.')
+        string(name: 'SKIPPED_WELLS', defaultValue: 'skipped_wells.csv', description: 'Filename in BUILD_DIR containing skipped wells. This file is created by create_sample_meta.')
         // Other
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
         string(name: 'MERGE_PATTERNS', defaultValue: 'normalized_counts*,collapsed_l2fc*,l2fc*,log2_auc_multivariate_biomarkers*,log2_auc_univariate_biomarkers*,median_l2fc_multivariate_biomarkers*,median_l2fc_univariate_biomarkers*,DRC_TABLE*', description: 'Patterns to search for when merging files by project. May be changed based on modules run.')
@@ -155,7 +157,7 @@ pipeline {
         // Biomarker
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
         string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis.')
-        string(name: 'DR_PATH', defaultValue: 'dose_response.csv', description: 'File in BUILD_DIR containing dose response curve data. This file is created by DRC.')
+        string(name: 'DR_PATH', defaultValue: 'DRC_TABLE.csv', description: 'File in drc/BUILD_DIR containing dose response curve data. This file is created by DRC.')
     }
 
     environment {
@@ -208,9 +210,9 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'DAYS',
-                        'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN',
-                        'COLLAPSED_L2FC_COLUMN', 'FILTER_QC_FLAGS',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
+                        'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
+                        'SKIPPED_WELLS','FILTER_QC_FLAGS',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',

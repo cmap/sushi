@@ -58,9 +58,10 @@ args=(
 --multivariate_biomarker "$MULTIVARIATE_BIOMARKER"
 --biomarker_file "$BIOMARKER_FILE"
 --dr_column "$DR_COLUMN"
---l2fc_column "$COLLAPSED_L2FC_COLUMN"
+--collapsed_l2fc_column "$COLLAPSED_L2FC_COLUMN"
 --lfc_biomarker "$LFC_BIOMARKER"
 --auc_biomarker "$AUC_BIOMARKER"
+--out_path "$BUILD_DIR/biomarker"
 )
 
 echo Rscript biomarker.R "${args[@]}"

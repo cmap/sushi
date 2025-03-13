@@ -31,9 +31,9 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
   correlation_coeff = muS / sqrt(varX * varY)
   p_val <- 2*pt(abs(sqrt(n-2) * muS/sigmaS),
                 df = n-2, lower.tail = FALSE)
-  p_val.homoskedastic <- 2*pt(sqrt( (n-2) /(1/correlation_coeff^2-1)),
+  p_val_homoskedastic <- 2*pt(sqrt( (n-2) /(1/correlation_coeff^2-1)),
                               df = n-2, lower.tail = FALSE)
-  p_val.homoskedastic[near(abs(correlation_coeff), 1)] <- 0
+  p_val_homoskedastic[near(abs(correlation_coeff), 1)] <- 0
 
   # Experimental robustness score
   n_stable = apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
@@ -41,9 +41,9 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
 
   res <- data.frame(x = names(regression_coeff), correlation_coeff = correlation_coeff, regression_coeff = regression_coeff,
                     p_val_rob = p_val,
-                    p_val = p_val.homoskedastic,
+                    p_val = p_val_homoskedastic,
                     q_val_rob = p.adjust(p_val, method = "BH"),
-                    q_val = p.adjust(p_val.homoskedastic, method = "BH"),
+                    q_val = p.adjust(p_val_homoskedastic, method = "BH"),
                     n = n,
                     n_stable = n_stable)
 
@@ -170,7 +170,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 #' @param features : You can give a subset of available feature sets, but if left as NULL, it computes for everything.
 #' @param homoskedastic : Should homoskedastic or robust q-values be used for ranking and filtering. Default is homoskedastic.
 #' @param n.X.min : Results with less thana given sample size are dropped, default is 100
-#' @param ns.min : Results that can be flipped with less than ns.min data points are dropped, the default is 3
+#' @param n_stable.min : Results that can be flipped with less than n_stable.min data points are dropped, the default is 3
 #' @param q_val.max : Results with q-values less than q_val.max are dropped, default is 0.2
 #' @param parallel : Should multiple cores to be used to decrease the compute time. Default is FALSE.
 #'
@@ -183,7 +183,7 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
                                        features = NULL,
                                        homoskedastic = TRUE, n.X.min = 100,
                                        v.X.min = 0.0025,
-                                       ns.min = 3, q_val.max = .2,
+                                       n_stable.min = 3, q_val_max = .2,
                                        parallel = FALSE){
   require(tidyverse)
   require(magrittr)
@@ -228,10 +228,10 @@ univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap
 
         if(homoskedastic){
           res <- res %>%
-            dplyr::filter(q_val <= q_val.max)
+            dplyr::filter(q_val <= q_val_max)
         } else{
           res <- res %>%
-            dplyr::filter(q_val.rob <= q_val.max)
+            dplyr::filter(q_val_rob <= q_val_max)
         }
 
         if(nrow(res) > 0){
@@ -626,7 +626,8 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   #TODO: Decide on agg function
 
   # generate the biomarker table
-  univariate_biomarker_table <- univariate_biomarker_table(Y = M, features = features, file = depmap_file,  n.X.min = min_sample_size, parallel =  parallel)
+  univariate_biomarker_table <- univariate_biomarker_table(Y = M, features = features, file = depmap_file,
+                                                           n.X.min = min_sample_size, parallel =  parallel)
 
   # Export the biomarker table -----
   print(paste0("Writing the univariate output file to ", paste0(out_path, "/", output_file_name)))

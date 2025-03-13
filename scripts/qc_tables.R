@@ -38,7 +38,7 @@ parser$add_argument(
 )
 parser$add_argument("-n", "--negcon_type", default = "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default = "trt_poscon")
-parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id")
+parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id,lua")
 parser$add_argument("--id_cols", default = "pcr_plate,pcr_well")
 parser$add_argument("--count_threshold", default = 40)
 parser$add_argument("--pseudocount", default = 20)
@@ -135,17 +135,26 @@ check_file_exists(plate_cell_outpath)
 plate_cell_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
 print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_outpath))
 write.csv(
-    x = plate_cell_table %>%
+    x = plate_cell_table %>% 
         dplyr::select(
             c("pool_id", "depmap_id", "lua", "pcr_plate",
               "pert_plate",
-              "error_rate", "lfc_poscon_normalized", "lfc_poscon_raw",
-              "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
-              "median_log_normalized_ctl_vehicle",
-              "n_replicates_ctl_vehicle", "n_replicates_trt_poscon",
+              "error_rate", "lfc_trt_poscon",  
+              "median_raw_ctl_vehicle", "mad_normalized_ctl_vehicle",
+              "median_normalized_ctl_vehicle",
+              "n_replicates_ctl_vehicle", "n_replicates_trt_poscon", 
               "viability_trt_poscon", "qc_pass", "qc_pass_pert_plate")),
     file = plate_cell_outpath, row.names = FALSE,
     quote = FALSE
+)
+check_file_exists(plate_cell_outpath)
+
+
+# BY WELL (PCR_PLATE, PCR_WELL) ----------
+id_cols_table <- generate_id_cols_table(
+    normalized_counts = normalized_counts, annotated_counts = annotated_counts, unknown_counts = unknown_counts,
+    cell_set_meta = cell_set_meta, id_cols_list = id_cols_list, cell_line_cols = cell_line_cols_list,
+    count_threshold = count_threshold, cb_meta = cb_meta, pseudocount = pseudocount
 )
 check_file_exists(plate_cell_outpath)
 
