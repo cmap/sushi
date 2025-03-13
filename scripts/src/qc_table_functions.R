@@ -434,19 +434,19 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   return(plate_cell_table)
 }
 
-##################################################################
+# QC FLAG FUNCTIONS ----------
 id_cols_qc_flags <- function(annotated_counts,
-                               normalized_counts,
-                               group_cols = c("pcr_plate","pcr_well","pert_type"),
-                               metric = "n",
-                               pseudocount = 20,
-                               contamination_threshold = 0.8,
-                               cb_mae_threshold = 1,
-                               cb_spearman_threshold = 0.88,
-                               cb_cl_ratio_low = 0.5,
-                               cb_cl_ratio_high = 2,
-                               pool_well_delta_threshold = 5,
-                               pool_well_fraction_threshold = 0.4) {
+                             normalized_counts,
+                             unknown_counts,
+                             cb_meta,
+                             group_cols = c("pcr_plate","pcr_well","pert_type"),
+                             metric = "n",
+                             pseudocount = 20,
+                             contamination_threshold = 0.8,
+                             cb_mae_threshold = 1,
+                             cb_spearman_threshold = 0.88,
+                             cb_cl_ratio_low = 0.5,
+                             cb_cl_ratio_high = 2) {
 
   # Calculate cb metrics from normalized counts
   cb_metrics <- calculate_cb_metrics(normalized_counts, cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_type"), pseudocount = pseudocount)
@@ -454,13 +454,21 @@ id_cols_qc_flags <- function(annotated_counts,
   #TODO: add back unknown bcs for frac expected reads calc
   #TODO: don't calculate pool/well metrics here, don't need to join to norm
 
+  # Group unknown_counts by group_cols
+  unknown_counts_proc <- unknown_counts %>%
+      # Add pert_type from annotated_counts
+      dplyr::left_join(unique(annotated_counts %>% select(pcr_plate, pcr_well, pert_type)),
+                       by = c("pcr_plate","pcr_well")) %>%
+      dplyr::group_by(across(all_of(group_cols))) %>%
+      dplyr::summarise(
+      n = sum(.data[[metric]], na.rm = TRUE),
+      expected_read = FALSE
+      )
+
   # Combine annotated_counts (after adding expected_lines) with unknown_counts and cb_metrics
   combined_data <- annotated_counts %>%
-    # Add normalized values
-    left_join(normalized_counts %>% select(pcr_plate, pcr_well, pert_type, depmap_id, pool_id, lua, log2_normalized_n, cb_name),
-              by = c("pcr_plate", "pcr_well", "pert_type", "depmap_id", "lua", "pool_id", "cb_name")) %>%
     # Add uknown barcode reads
-    #bind_rows(unknown_counts_proc) %>%
+    bind_rows(unknown_counts_proc) %>%
     # Add cb_metrics
     left_join(cb_metrics, by = group_cols)
 
