@@ -2,10 +2,17 @@ import argparse
 import requests
 import pandas as pd
 import os
+import urllib.parse
+import json
 
+def fetch_metadata(filter_dict, base_url, api_key):
+    # Convert the filter to a JSON string
+    filter_json = json.dumps(filter_dict)
+    # URL-encode the JSON string
+    encoded_filter = urllib.parse.quote(filter_json)
+    # Build the full URL with the encoded filter
+    url = f"{base_url}?filter={encoded_filter}"
 
-def fetch_data(screen, api_key):
-    url = f"https://api.clue.io/api/v_e_eps_metadata?filter=%7B%22where%22%3A%7B%22project_code%22%3A%22{screen}%22%7D%7D"
     headers = {
         "Accept": "application/json",
         "user_key": api_key,
@@ -23,20 +30,19 @@ def fetch_data(screen, api_key):
         print(response.text)  # Print the response content for more insight
         response.raise_for_status()
 
-
-def save_dataframe(df, build_dir):
+def save_dataframe(df, filename, build_dir):
     # Ensure the directory exists
     os.makedirs(build_dir, exist_ok=True)
 
     # Define the file path
-    file_path = os.path.join(build_dir, "sample_meta.csv")
+    filepath = os.path.join(build_dir, f"{filename}.csv")
 
     # Write the DataFrame to a CSV file
-    df.to_csv(file_path, index=False)
-    print(f"Sample metadata written to {file_path}")
+    df.to_csv(filepath, index=False)
+    print(f"Sample metadata written to {filepath}")
 
 
-def rename_columns(df):
+def rename_sample_meta(df):
     rename_map = {
         "index1": "index_1",
         "index2": "index_2",
@@ -49,7 +55,7 @@ def rename_columns(df):
     return df.rename(columns=rename_map)
 
 
-def remove_columns(df, columns_to_remove):
+def remove_sample_meta_columns(df, columns_to_remove):
     # Remove specified columns from the DataFrame
     return df.drop(columns=columns_to_remove, errors='ignore')
 
@@ -93,14 +99,32 @@ def main():
 
     try:
         df = (
-            fetch_data(screen, api_key)
-            .pipe(rename_columns)
-            .pipe(remove_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
+            fetch_metadata(filter_dict={"where":{"project_code": screen}},
+                           base_url="https://api.clue.io/api/v_e_eps_metadata",
+                           api_key=api_key)
+            .pipe(rename_sample_meta)
+            .pipe(remove_sample_meta_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
             .pipe(filter_nan_flowcells)
         )
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
-        save_dataframe(df, build_dir)
+        save_dataframe(df=df, filename="sample_meta", build_dir=build_dir)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    try:
+        df = (
+            fetch_metadata(filter_dict={"where":{"screen": screen}},
+                           base_url="https://api.clue.io/api/v_e_assay_plate_skipped_well",
+                           api_key=api_key)
+        )
+        # If skipped wells is not empty, save it to a csv file
+        if not df.empty:
+            print("Retrieved following skipped_wells from COMET: ")
+            print(df.head())
+            save_dataframe(df=df, filename="skipped_wells", build_dir=build_dir)
+        else:
+            print(f"No skipped wells found for screen {screen}.")
     except Exception as e:
         print(f"An error occurred: {e}")
 
