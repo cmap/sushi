@@ -320,6 +320,9 @@ pipeline {
                         if (params.CBNORMALIZE) {
                             scriptsToRun.add('CBnormalize.sh')
                         }
+                        if (params.GENERATE_QC_TABLES) {
+                            scriptsToRun.add('generate_qc_tables.sh')
+                        }
                         if (params.COMPUTE_LFC) {
                             scriptsToRun.add('compute_l2fc.sh')
                         }
@@ -340,9 +343,6 @@ pipeline {
                         }
                         if (params.RUN_EPS_QC) {
                             scriptsToRun.add('eps_qc.sh')
-                        }
-                        if (params.GENERATE_QC_TABLES) {
-                            scriptsToRun.add('generate_qc_tables.sh')
                         }
                         if (params.CONVERT_SUSHI) {
                             scriptsToRun.add('sushi_2_s3.sh')
