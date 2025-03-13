@@ -164,8 +164,7 @@ if (args$filter_qc_flags == "TRUE") {
     write.csv(
         x = filtered_normalized_counts, file = filtered_normalized_counts_outpath, row.names = FALSE,
         quote = FALSE)
-    }
-    else {
+    } else {
     print("Nomalized counts not filtered for qc_flags.")
     }
 
