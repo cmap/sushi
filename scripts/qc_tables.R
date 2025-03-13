@@ -131,6 +131,7 @@ write.csv(
     x = pool_well_qc_flags_table, file = pool_well_qc_flags_outpath, row.names = FALSE,
     quote = FALSE
 )
+check_file_exists(pool_well_qc_flags_outpath)
 
 # Write id_cols table ----------
 id_cols_outpath <- paste0(args$out, "/qc_tables/id_cols_qc_table.csv")
@@ -147,6 +148,7 @@ write.csv(
     x = id_cols_qc_flags_table, file = id_cols_qc_flags_outpath, row.names = FALSE,
     quote = FALSE
 )
+check_file_exists(id_cols_qc_flags_outpath)
 
 if (args$filter_qc_flags) {
     # Filter out wells with QC flags
@@ -157,6 +159,7 @@ if (args$filter_qc_flags) {
     write.csv(
         x = normalized_counts, file = normalized_counts_original_outpath, row.names = FALSE,
         quote = FALSE)
+    check_file_exists(normalized_counts_original_outpath)
 
     # Write filtered normalized counts ----------
     filtered_normalized_counts_outpath <- paste0(args$out, "/normalized_counts.csv")
@@ -164,6 +167,7 @@ if (args$filter_qc_flags) {
     write.csv(
         x = filtered_normalized_counts, file = filtered_normalized_counts_outpath, row.names = FALSE,
         quote = FALSE)
+    check_file_exists(filtered_normalized_counts_outpath)
     } else {
     print("Nomalized counts not filtered for qc_flags.")
     }
