@@ -148,7 +148,7 @@ pipeline {
         string(name: 'NORMALIZED_COUNTS', defaultValue: 'normalized_counts.csv', description: 'Filename in BUILD_DIR containing normalized counts. This file is created by CBNORMALIZE.')
         string(name: 'LFC', defaultValue: 'l2fc.csv', description: 'Filename containing log2 fold change values. This file is created by COMPUTE_LFC.')
         string(name: 'COLLAPSED_LFC', defaultValue: 'collapsed_l2fc.csv', description: 'Filename in BUILD_DIR containing replicate collapsed l2fc values. This file is created by COLLAPSED_LFC.')
-        string(name: 'SKIPPED_WELLS', default_value: 'skipped_wells.csv', description: 'Filename in BUILD_DIR containing skipped wells. This file is created by create_sample_meta.')
+        string(name: 'SKIPPED_WELLS', defaultValue: 'skipped_wells.csv', description: 'Filename in BUILD_DIR containing skipped wells. This file is created by create_sample_meta.')
         // Other
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
         string(name: 'MERGE_PATTERNS', defaultValue: 'normalized_counts*,collapsed_l2fc*,l2fc*,log2_auc_multivariate_biomarkers*,log2_auc_univariate_biomarkers*,median_l2fc_multivariate_biomarkers*,median_l2fc_univariate_biomarkers*,DRC_TABLE*', description: 'Patterns to search for when merging files by project. May be changed based on modules run.')
