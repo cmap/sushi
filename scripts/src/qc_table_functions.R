@@ -329,8 +329,8 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
   print(paste0("Computing log fold change for ", negcon, " and ", poscon, "....."))
   result <- df %>%
     dplyr::mutate(
-      lfc_trt_poscon = .data[[paste0("median_normalized_", poscon)]] -
-                       .data[[paste0("median_normalized_", negcon)]],
+      lfc_trt_poscon = .data[[paste0("median_log_normalized_", poscon)]] -
+                       .data[[paste0("median_log_normalized_", negcon)]],
       lfc_raw_trt_poscon = .data[[paste0("median_raw_", poscon)]] -
                 .data[[paste0("median_raw_", negcon)]]
     ) %>%
@@ -436,7 +436,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   # QC pass criteria, currently with hardcoded pert_types
   plate_cell_table <- plate_cell_table %>%
     dplyr::mutate(qc_pass= error_rate < 0.05 & viability_trt_poscon < 0.25 & 
-                    median_raw_ctl_vehicle > 40 & mad_normalized_ctl_vehicle < 1 ) %>%
+                    median_raw_ctl_vehicle > 40 & mad_log_normalized_ctl_vehicle < 1 ) %>%
     dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate"))))  %>%
     dplyr::mutate(n_passing_plates=sum(qc_pass)) %>% 
     dplyr::mutate(qc_pass_pert_plate= n_passing_plates>1) %>% 
