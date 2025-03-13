@@ -43,7 +43,7 @@ parser$add_argument("--id_cols", default = "pcr_plate,pcr_well")
 parser$add_argument("--count_threshold", default = 40)
 parser$add_argument("--pseudocount", default = 20)
 parser$add_argument("--filter_qc_flags", default = "true",
-                    help = "Filter out wells with QC flags. Default is TRUE")   )
+                    help = "Filter out wells with QC flags. Default is TRUE")
 
 args <- parser$parse_args()
 
