@@ -164,9 +164,7 @@ plate_cell_qc_flags_table <- plate_cell_qc_flags(
   nc_variability_threshold = thresholds$nc_variability_threshold,
   error_rate_threshold = thresholds$error_rate_threshold,
   pc_viability_threshold = thresholds$pc_viability_threshold,
-  nc_raw_count_threshold = thresholds$nc_raw_count_threshold,
-  fraction_expected_controls = thresholds$fraction_expected_controls
-) %>%
+  nc_raw_count_threshold = thresholds$nc_raw_count_threshold) %>%
   dplyr::filter(!is.na(qc_flag))
 
 
@@ -179,9 +177,8 @@ plate_cell_filtered_normalized_counts <-
 
 # PCR PLATE
 
-pcr_plate_qc_flags_table <- pcr_plate_qc_flags(
-  plate_cell_table = plate_cell_table,
-  fraction_expected_controls = thresholds$fraction_expected_controls)
+pcr_plate_qc_flags_table <- generate_pcr_plate_qc_flags_table(plate_cell_table = plate_cell_table,
+                                                              fraction_expected_controls = thresholds$fraction_expected_controls)
 
 final_filtered_normalized_counts <-
   dplyr::anti_join(

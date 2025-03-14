@@ -640,8 +640,7 @@ load_thresholds_from_json <- function(json_file_path) {
 }
 
 # PCR PLATE FLAGS
-pcr_plate_qc_flags <- function(plate_cell_table,
-                               fraction_expected_controls) {
+generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expected_controls) {
   # Add a qc_flag when either fraction_expected_poscon or fraction_expected_negcon is below the threshold
   table <- plate_cell_table %>%
     dplyr::select(fraction_expected_poscon, fraction_expected_negcon, pcr_plate, pert_plate) %>%
