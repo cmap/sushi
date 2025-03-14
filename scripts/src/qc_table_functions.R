@@ -433,6 +433,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     grouping_cols = cell_line_plate_grouping
   )
 
+
   # Merge all tables together
   print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
   print("medians_and_mad")
@@ -456,6 +457,16 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 1) %>%
     dplyr::ungroup() %>%
     dplyr::select(-n_passing_plates)
+  # Add the n_expected_controls values
+  plate_cell_table <- plate_cell_table %>%
+    dplyr::left_join(
+      n_expected_controls,
+      by = c("pcr_plate", "pert_plate")
+    ) %>%
+    dplyr::mutate(
+      fraction_expected_poscon = n_replicates_trt_poscon/n_expected_trt_poscon,
+      fraction_expected_negcon = n_replicates_ctl_vehicle/n_expected_ctl_vehicle
+    ) %>%
   return(plate_cell_table)
 }
 
@@ -625,6 +636,23 @@ load_thresholds_from_json <- function(json_file_path) {
   # Convert each value to numeric
   numeric_params <- lapply(params, as.numeric)
 
-  # Create objects in the global environment
-  list2env(numeric_params, envir = .GlobalEnv)
+  return(numeric_params)
+}
+
+# PCR PLATE FLAGS
+pcr_plate_qc_flags <- function(plate_cell_table,
+                               fraction_expected_controls) {
+  # Add a qc_flag when either fraction_expected_poscon or fraction_expected_negcon is below the threshold
+  table <- plate_cell_table %>%
+    dplyr::select(fraction_expected_poscon, fraction_expected_negcon, pcr_plate, pert_plate) %>%
+    unique() %>%
+    dplyr::mutate(
+      qc_flag = dplyr::case_when(
+        fraction_expected_poscon < fraction_expected_controls ~ "fraction_expected_controls",
+        fraction_expected_negcon < fraction_expected_controls ~ "fraction_expected_controls",
+        TRUE ~ NA_character_
+      )
+    ) %>%
+    filter(!is.na(qc_flag))
+  return(table)
 }

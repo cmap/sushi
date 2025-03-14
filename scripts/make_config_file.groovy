@@ -127,7 +127,7 @@ pipeline {
         string(name: 'well_reads_threshold', defaultValue: '100', description: 'Minimum median control barcode reads per well')
         string(name: 'pool_well_delta_threshold', defaultValue: '5', description: 'Maximum delta of log2_normalized_n between a cell line and the pool median in a given well before it is considered an outlier')
         string(name: 'pool_well_fraction_threshold', defaultValue: '0.4', description: 'Minimum fraction of cells in a pool that must be outliers in order to flag that pool/well')
-
+        string(name: 'fraction_expected_controls', defaultValue: '0.667', description: 'Fraction of expected controls that must be present in a given pcr_plate for it to be considered a valid well. If either vehicle or poscon wells fall below this threshold, the entire pcr_plate will be removed.')
         // Sequencing tech
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
 
@@ -256,7 +256,7 @@ pipeline {
                         'MERGE_PATTERNS',
 
                         //qc parameters
-                        'QC_PARAMS'
+                        'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS'
                     ]
 
                     def config = [:]
@@ -297,7 +297,7 @@ pipeline {
                         'nc_raw_count_threshold', 'contamination_threshold', 'cb_mae_threshold',
                         'cb_spearman_threshold', 'cb_cl_ratio_low_negcon', 'cb_cl_ratio_high_negcon',
                         'cb_cl_ratio_low_poscon', 'cb_cl_ratio_high_poscon', 'well_reads_threshold',
-                        'pool_well_delta_threshold', 'pool_well_fraction_threshold'
+                        'pool_well_delta_threshold', 'pool_well_fraction_threshold', 'fraction_expected_controls'
                     ]
 
                     def config = [:]
