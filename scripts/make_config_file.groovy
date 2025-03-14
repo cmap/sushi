@@ -309,6 +309,7 @@ pipeline {
                     }
                     // Write the config back to file after all updates
                     writeFile file: env.QC_PARAMS_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
+                }
             }
         }
 
