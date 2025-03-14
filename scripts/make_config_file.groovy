@@ -112,6 +112,7 @@ pipeline {
         )
 
         // QC Paramters
+        string(name: 'QC_PARAMS', defaultValue: 'qc_params.json', description: 'File name in BUILD_DIR containing the QC parameters.')
         string(name: 'nc_variability_threshold', defaultValue: '1', description: 'Threshold for negative control variability')
         string(name: 'error_rate_threshold', defaultValue: '0.05', description: 'Threshold for error rate')
         string(name: 'pc_viability_threshold', defaultValue: '0.25', description: 'Threshold for positive control viability')
@@ -124,6 +125,8 @@ pipeline {
         string(name: 'cb_cl_ratio_low_poscon', defaultValue: '0.5', description: 'Low threshold for control barcode ratio in positive controls')
         string(name: 'cb_cl_ratio_high_poscon', defaultValue: '2', description: 'High threshold for control barcode ratio in positive controls')
         string(name: 'well_reads_threshold', defaultValue: '100', description: 'Minimum median control barcode reads per well')
+        string(name: 'pool_well_delta_threshold', defaultValue: '5', description: 'Maximum delta of log2_normalized_n between a cell line and the pool median in a given well before it is considered an outlier')
+        string(name: 'pool_well_fraction_threshold', defaultValue: '0.4', description: 'Minimum fraction of cells in a pool that must be outliers in order to flag that pool/well')
 
         // Sequencing tech
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
@@ -250,7 +253,10 @@ pipeline {
                         'DR_PATH',
 
                         //io parameters
-                        'MERGE_PATTERNS'
+                        'MERGE_PATTERNS',
+
+                        //qc parameters
+                        'QC_PARAMS'
                     ]
 
                     def config = [:]
@@ -290,7 +296,8 @@ pipeline {
                         'nc_variability_threshold', 'error_rate_threshold', 'pc_viability_threshold',
                         'nc_raw_count_threshold', 'contamination_threshold', 'cb_mae_threshold',
                         'cb_spearman_threshold', 'cb_cl_ratio_low_negcon', 'cb_cl_ratio_high_negcon',
-                        'cb_cl_ratio_low_poscon', 'cb_cl_ratio_high_poscon', 'well_reads_threshold'
+                        'cb_cl_ratio_low_poscon', 'cb_cl_ratio_high_poscon', 'well_reads_threshold',
+                        'pool_well_delta_threshold', 'pool_well_fraction_threshold'
                     ]
 
                     def config = [:]

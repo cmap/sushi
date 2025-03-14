@@ -52,6 +52,11 @@ parser$add_argument("--filter_qc_flags",
   default = "true",
   help = "Filter out wells with QC flags. Default is TRUE"
 )
+parser$add_argument(
+  "--qc_params",
+  default = "qc_params.csv",
+  help = "File containing QC parameters"
+)
 
 args <- parser$parse_args()
 
@@ -76,7 +81,6 @@ if (!dir.exists(paste0(args$out, "/qc_tables"))) {
 
 
 # DEFINE COLUMNS
-
 cell_line_cols <- args$cell_line_cols
 cell_line_cols_list <- strsplit(cell_line_cols, ",")[[1]]
 cell_plate_list <- c(cell_line_cols, "pcr_plate")
@@ -87,22 +91,34 @@ pseudocount <- as.numeric(args$pseudocount)
 filter_qc_flags <- as.logical(toupper(args$filter_qc_flags))
 
 
-# ID COLS
+# LOAD QC PARAMETERS
+load_thresholds_from_json(args$qc_params)
 
+# ID COLS
 id_cols_table <- generate_id_cols_table(
   normalized_counts = normalized_counts, annotated_counts = annotated_counts, unknown_counts = unknown_counts,
   cell_set_meta = cell_set_meta, id_cols_list = id_cols_list, cell_line_cols = cell_line_cols_list,
   count_threshold = count_threshold, cb_meta = cb_meta, pseudocount = pseudocount
 )
 
-id_cols_qc_flags_table <- id_cols_qc_flags(id_cols_table)
+id_cols_qc_flags_table <- id_cols_qc_flags(id_cols_table = id_cols_table,
+                                           contamination_threshold = contamination_threshold,
+                                           cb_mae_threshold = cb_mae_threshold,
+                                           cb_spearman_threshold = cb_spearman_threshold,
+                                           cb_cl_ratio_low_negcon = cb_cl_ratio_low_negcon,
+                                           cb_cl_ratio_high_poscon = cb_cl_ratio_high_poscon,
+                                           cb_cl_ratio_low_poscon = cb_cl_ratio_low_poscon,
+                                           cb_cl_ratio_high_negcon = cb_cl_ratio_high_negcon,
+                                           well_reads_threshold = well_reads_threshold)
+
 id_cols_filtered_normalized_counts <- dplyr::anti_join(normalized_counts, id_cols_qc_flags_table, by = c("pcr_plate", "pcr_well"))
 
 
 # POOL WELL
-
 pool_well_table <- generate_pool_well_qc_table(
   normalized_counts = id_cols_filtered_normalized_counts,
+  pool_well_delta_threshold = pool_well_delta_threshold,
+  pool_well_fraction_threshold = pool_well_fraction_threshold
 )
 
 pool_well_qc_flags_table <- pool_well_table %>%
@@ -125,7 +141,11 @@ plate_cell_table <- generate_cell_plate_table(
 )
 
 plate_cell_qc_flags_table <- plate_cell_qc_flags(
-  plate_cell_table = plate_cell_table
+  plate_cell_table = plate_cell_table,
+  nc_variability_threshold = nc_variability_threshold,
+  error_rate_threshold = error_rate_threshold,
+  pc_viability_threshold = pc_variability_threshold,
+  nc_raw_count_threshold = nc_raw_count_threshold
 ) %>%
   dplyr::filter(!is.na(qc_flag))
 

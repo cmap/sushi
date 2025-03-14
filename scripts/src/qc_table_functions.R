@@ -535,7 +535,7 @@ plate_cell_qc_flags <- function(plate_cell_table,
 #' @import dplyr
 id_cols_qc_flags <- function(id_cols_table,
                              group_cols = c("pcr_plate", "pcr_well", "pert_type"),
-                             contamination_threshold = 0.8,
+                             contamination_threshold = contamination_threshold,
                              cb_mae_threshold = 1,
                              cb_spearman_threshold = 0.8,
                              cb_cl_ratio_low_negcon = 0,
@@ -610,4 +610,21 @@ generate_pool_well_qc_table <- function(normalized_counts, pool_well_delta_thres
     ) %>%
     ungroup() %>%
     mutate(qc_flag = if_else(fraction_outliers > pool_well_fraction_threshold, "pool_well_outliers", NA_character_))
+}
+
+# Get the qc parameters from the qc_params json file
+load_thresholds_from_json <- function(json_file_path) {
+  # Load required package
+  if (!requireNamespace("jsonlite", quietly = TRUE)) {
+    stop("Package 'jsonlite' is required but not installed.")
+  }
+
+  # Read JSON file into a list
+  params <- jsonlite::fromJSON(json_file_path)
+
+  # Convert each value to numeric
+  numeric_params <- lapply(params, as.numeric)
+
+  # Create objects in the global environment
+  list2env(numeric_params, envir = .GlobalEnv)
 }
