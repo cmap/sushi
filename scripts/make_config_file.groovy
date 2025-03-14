@@ -296,7 +296,7 @@ pipeline {
                     def config = [:]
 
                     // Load existing params if they exist
-                    if fileExists(env.QC_PARAMS_FILE_PATH) {
+                    if (fileExists(env.QC_PARAMS_FILE_PATH)) {
                         def configText = readFile(file: env.QC_PARAMS_FILE_PATH)
                         config = new HashMap(new JsonSlurper().parseText(configText))
                     }
