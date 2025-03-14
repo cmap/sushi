@@ -111,6 +111,20 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleRed
         )
 
+        // QC Paramters
+        string(name: 'nc_variability_threshold', defaultValue: '1', description: 'Threshold for negative control variability')
+        string(name: 'error_rate_threshold', defaultValue: '0.05', description: 'Threshold for error rate')
+        string(name: 'pc_viability_threshold', defaultValue: '0.25', description: 'Threshold for positive control viability')
+        string(name: 'nc_raw_count_threshold', defaultValue: '40', description: 'Threshold for negative control raw counts')
+        string(name: 'contamination_threshold', defaultValue: '0.8', description: 'Threshold for fraction of expected reads')
+        string(name: 'cb_mae_threshold', defaultValue: '1', description: 'Threshold for mean absolute error of control barcodes')
+        string(name: 'cb_spearman_threshold', defaultValue: '0.8', description: 'Threshold for control barcode spearman correlation')
+        string(name: 'cb_cl_ratio_low_negcon', defaultValue: '0', description: 'Low threshold for control barcode ratio in negative controls')
+        string(name: 'cb_cl_ratio_high_negcon', defaultValue: '2', description: 'High threshold for control barcode ratio in negative controls')
+        string(name: 'cb_cl_ratio_low_poscon', defaultValue: '0.5', description: 'Low threshold for control barcode ratio in positive controls')
+        string(name: 'cb_cl_ratio_high_poscon', defaultValue: '2', description: 'High threshold for control barcode ratio in positive controls')
+        string(name: 'well_reads_threshold', defaultValue: '100', description: 'Minimum median control barcode reads per well')
+
         // Sequencing tech
         string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
 
@@ -162,6 +176,7 @@ pipeline {
 
     environment {
         CONFIG_FILE_PATH = "${params.BUILD_DIR}/config.json"
+        QC_PARAMS_FILE_PATH = "${params.BUILD_DIR}/qc_params.json"
     }
 
     stages {
@@ -265,6 +280,35 @@ pipeline {
                     writeFile file: env.CONFIG_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
                     echo "Generated config.json: ${config}"
                 }
+            }
+        }
+
+        stage('Generate qc_flag_params') {
+            steps {
+                script {
+                    def paramList = [
+                        'nc_variability_threshold', 'error_rate_threshold', 'pc_viability_threshold',
+                        'nc_raw_count_threshold', 'contamination_threshold', 'cb_mae_threshold',
+                        'cb_spearman_threshold', 'cb_cl_ratio_low_negcon', 'cb_cl_ratio_high_negcon',
+                        'cb_cl_ratio_low_poscon', 'cb_cl_ratio_high_poscon', 'well_reads_threshold'
+                    ]
+
+                    def config = [:]
+
+                    // Load existing params if they exist
+                    if fileExists(env.QC_PARAMS_FILE_PATH) {
+                        def configText = readFile(file: env.QC_PARAMS_FILE_PATH)
+                        config = new HashMap(new JsonSlurper().parseText(configText))
+                    }
+
+                    // Add parameters from Jenkins UI only if they don't exist in the config
+                    paramList.each { paramName ->
+                        if (!config.containsKey(paramName) && params.containsKey(paramName)) {
+                            config[paramName] = params[paramName]
+                        }
+                    }
+                    // Write the config back to file after all updates
+                    writeFile file: env.QC_PARAMS_FILE_PATH, text: groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config))
             }
         }
 
