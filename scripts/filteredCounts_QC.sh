@@ -99,6 +99,7 @@ echo COUNT_THRESHOLD is: $COUNT_THRESHOLD
 echo RAW_COUNTS_UNCOLLAPSED is: $RAW_COUNTS_UNCOLLAPSED
 echo LFC is: $LFC
 echo REVERSE_INDEX2 is: $REVERSE_INDEX2
+echo PSEUDOCOUNT is: $PSEUDOCOUNT
 
 args=(
 --sample_meta "$SAMPLE_META"
@@ -117,6 +118,7 @@ args=(
 --reverse_index2 "$REVERSE_INDEX2"
 --chunk_size "$CHUNK_SIZE"
 --cell_line_cols "$CELL_LINE_COLS"
+--pseudocount "$PSEUDOCOUNT"
 )
 
 echo Rscript filteredCounts_QC.R "${args[@]}"

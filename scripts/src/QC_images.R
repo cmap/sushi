@@ -286,8 +286,9 @@ create_cdf_plot= function(input_df, id_cols, counts_col= 'n', mark1= 0.5, mark2=
 #' @param normalized_counts Dataframe output from the normalize module.
 #' @param id_cols Vector of column names that identify every PCR well.
 #' @param value_col Name of the column that contains the values.
+#' @param pseudocount a pseudo raw count used for missing cell line counts, also used when computing log2 on raw counts
 #' @returns Returns a ggplot object.
-create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log2_n') {
+create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log2_n', pseudocount = 20) {
   # Validation: Check that id_cols and value_col exist in filtered counts.
   if(value_col == "log2_n" & validate_columns_exist(c(id_cols, "n"), normalized_counts) & 
      !(validate_columns_exist(c("log2_n"), normalized_counts))){
@@ -470,6 +471,7 @@ create_replicate_scatterplots= function(input_df, cell_line_cols, replicate_grou
 #' @param count_threshold Threshold for low read counts.
 #' @param reverse_index2 Boolean set to TRUE if the sequencing involved the reverse complement workflow.
 #' @param out Path to the directory to save the QC images.
+#' @param pseudocount a pseudo raw count used for missing cell line counts, also used when computing log2 on raw counts
 #' @returns NA. QC images are written out to the specified folder.
 QC_images= function(raw_counts_uncollapsed_path,
                     prism_barcode_counts, unknown_barcode_counts,
@@ -477,10 +479,10 @@ QC_images= function(raw_counts_uncollapsed_path,
                     sample_meta,
                     barcode_col= 'forward_read_barcode',
                     id_cols= c('pcr_plate', 'pcr_well'),
-                    cell_line_cols= c('depmap_id'), 
+                    cell_line_cols= c('depmap_id', 'lua'), 
                     sig_cols,
                     control_type= 'ctl_vehicle', count_threshold= 40, 
-                    chunk_size= 10^6,
+                    chunk_size= 10^6, pseudocount = 20,
                     reverse_index2= FALSE, out= NA) {
   
   # Required packages ----
@@ -697,7 +699,8 @@ QC_images= function(raw_counts_uncollapsed_path,
     print('8. Generating control_barcode_trend image')
     potential_error= base::tryCatch({
       trend_sc= create_ctrlBC_scatterplots(normalized_counts %>% dplyr::filter(!cb_ladder %in% c(NA, FALSE, 'none', '')), 
-                                           id_cols, value_col= 'log2_n')
+                                           id_cols, value_col= 'log2_n',
+                                           pseudocount = pseudocount)
       
       pdf(file=paste(out, "control_barcode_trend.pdf", sep="/"),
           width= sqrt(num_profiles) * 2, height= sqrt(num_profiles) * 2)
