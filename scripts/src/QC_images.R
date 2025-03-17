@@ -291,6 +291,7 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
   # Validation: Check that id_cols and value_col exist in filtered counts.
   if(value_col == "log2_n" & validate_columns_exist(c(id_cols, "n"), normalized_counts) & 
      !(validate_columns_exist(c("log2_n"), normalized_counts))){
+    print("Calculating log2_n")
     normalized_counts %<>% mutate(log2_n = log2(n+1))
   }else if(!validate_columns_exist(c(id_cols, value_col), normalized_counts)) {
     stop('Some input columns were not detected in normalized counts.')
@@ -306,10 +307,10 @@ create_ctrlBC_scatterplots= function(normalized_counts, id_cols, value_col= 'log
       dplyr::filter(!is.na(cb_ladder), n != 0) %>%
       dplyr::group_by(pick(all_of(id_cols))) %>%
       dplyr::mutate(mean_y= mean(cb_log2_dose),
-                    residual2= (cb_log2_dose - log2(n+1))^2,
+                    residual2= (cb_log2_dose - log2_n)^2,
                     squares2= (cb_log2_dose - mean_y)^2,
                     norm_r2= 1 - sum(residual2) / sum(squares2),
-                    norm_mae= median(abs(cb_log2_dose- log2(n+1)))) %>% ungroup()
+                    norm_mae= median(abs(cb_log2_dose - log2_n))) %>% ungroup()
   } 
   
   # Filter for just the control barcodes, create a profile_id for faceting, 
