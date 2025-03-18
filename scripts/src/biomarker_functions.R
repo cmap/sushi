@@ -653,27 +653,3 @@ create_univariate_biomarker_table <- function(in_path, out_path,
 
 
 
-
-# test -----
-
-library(taigr)
-PRISMOncologyReferenceAUCMatrix <- load.from.taiga(data.name='internal-dataset-for-review-2f15', data.version=3, data.file='PRISMOncologyReferenceAUCMatrix')
-file = "depmap_data/depmap_24Q4_public.h5"
-
-time1 = Sys.time()
-res_1 = univariate_biomarker_table(Y = PRISMOncologyReferenceAUCMatrix[, 1:10], file = file)
-time1 = Sys.time() - time1
-
-
-colnames(PRISMOncologyReferenceAUCMatrix)
-
-
-multivariate_biomarker_res <- multivariate_biomarker_table(Y = PRISMOncologyReferenceAUCMatrix[, "PMTS063::PRC-007945869-180-52::ENCORAFENIB", drop = FALSE], file = file, k = 10)
-
-multivariate_biomarker_table$model %>% table
-
-multivariate_biomarker_table %>%  head
-  ggplot() +
-  geom_point(aes(x = rank, y = RF.imp.mean, color = PearsonScore)) +
-  facet_wrap(model ~ PearsonScore)
-  head
