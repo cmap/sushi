@@ -32,7 +32,11 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
     print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
     
     # Call the action over the chunk
-    chunk_collector[[chunk_idx]]= do.call(action, list(current_chunk, ...))
+    chunk_collector[[chunk_idx]] <- do.call(
+    action,
+    c(list(uncollapsed_raw_counts = current_chunk), list(...))
+    )
+
     chunk_idx= chunk_idx + 1
   }
   
