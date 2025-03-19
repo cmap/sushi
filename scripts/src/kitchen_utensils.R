@@ -122,3 +122,16 @@ check_file_exists <- function(file_path) {
 filter_control_barcodes <- function(df) {
   df %>% dplyr::filter(tryCatch(is.na(cb_name), error = function(e) TRUE))
 }
+
+#' Append a print statement to a file to track critical console output
+#'
+#' This function, when applied to a given print statement, will append the statement to a file in order to
+#' track critical console outputs for human review. It will also write the statement to the console as usual.
+#'
+#' @param print_statement A string to print and append to a file
+append_critical_output <- function(print_statement, build_dir) {
+  # Print to console
+  print(print_statement)
+  # Append to file
+  cat(print_statement, file = paste0(build_dir, "/critical_output.txt"), append = TRUE, sep = "\n")
+}
