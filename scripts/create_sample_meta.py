@@ -50,7 +50,8 @@ def rename_sample_meta(df):
         "treatment": "pert_name",
         "dose": "pert_dose",
         "dose_unit": "pert_dose_unit",
-        "control_barcodes": "cb_ladder"
+        "control_barcodes": "cb_ladder",
+        "replicate": "replicate_plate"
     }
     return df.rename(columns=rename_map)
 
