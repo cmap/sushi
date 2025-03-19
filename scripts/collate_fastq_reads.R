@@ -86,8 +86,8 @@ chunked_results= process_in_chunks(large_file_path= args$raw_counts_uncollapsed,
                                                             CB_meta[[args$barcode_col]])),
                                    reverse_index2= args$reverse_index2,
                                    barcode_col= args$barcode_col,
-                                   low_abundance_threshold= as.numeric(args$low_abundance_threshold,
-                                   out_dir = args$out))
+                                   low_abundance_threshold= as.numeric(args$low_abundance_threshold),
+                                   out_dir = args$out)
 
 # From each chunk, extract prism_barcode_counts or unknown_barcode_counts and bind those rows together.
 # Then use data.table to aggregate and sum up reads across the chunks.
