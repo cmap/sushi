@@ -141,5 +141,5 @@ append_critical_output <- function(statement, out) {
   # Print to console
   cat(statement, sep = "\n")
   # Append to file
-  cat(statement, file = paste0(out, "/critical_output.txt"), append = TRUE, sep = "\n")
+  cat(statement, file = paste0(out, "/logs/critical_output.txt"), append = TRUE, sep = "\n")
 }

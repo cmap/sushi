@@ -61,15 +61,24 @@ def remove_sample_meta_columns(df, columns_to_remove):
     return df.drop(columns=columns_to_remove, errors='ignore')
 
 
-def filter_nan_flowcells(df):
+def filter_nan_flowcells(df, build_dir):
     # Count rows with NaN in "flowcell_names"
     nan_count = df["flowcell_names"].isna().sum()
 
-    # Print the count if any rows are dropped
+    # Print the count if any rows are dropped and append that output to a file
     if nan_count > 0:
-        print(
-            f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped."
-        )
+        # If the build_dir/logs directory does not exist, create it
+        os.makedirs(os.path.join(build_dir, "logs"), exist_ok=True)
+        warning_message = f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped."
+        print(warning_message)
+        output_path = os.path.join(build_dir, "logs/critical_output.txt")
+        with open(output_path, "a") as f:
+            f.write(warning_message + "\n")
+
+        # Write the filtered DataFrame to a CSV file
+        df_filtered = df.dropna(subset=["flowcell_names"])
+        filtered_path = os.path.join(build_dir, "logs/na_flowcells.csv")
+        df_filtered.to_csv(filtered_path, index=False, mode='a', header=False)
 
     # Drop rows with NaN in "flowcell_names"
     return df.dropna(subset=["flowcell_names"])
@@ -105,7 +114,7 @@ def main():
                            api_key=api_key)
             .pipe(rename_sample_meta)
             .pipe(remove_sample_meta_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
-            .pipe(filter_nan_flowcells)
+            .pipe(filter_nan_flowcells, build_dir)
         )
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
