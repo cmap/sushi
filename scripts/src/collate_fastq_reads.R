@@ -134,6 +134,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                     flowcell_lane= base::strsplit(flowcell_lanes, split='[,;:]', fixed=F)) %>% 
       tidyr::unnest(cols= flowcell_name) %>% tidyr::unnest(cols= flowcell_lane) %>%
       dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
+    print(paste0('Expected ', nrow(expected_flowcells), ' unique flowcell + lane combos in the sample meta:'))
+    print(expected_flowcells)
     # Note: This code uses base::strsplit and tidyr::unnest from an older version of tidyverse.
     # If there is any update to the tidyverse verision, this can be refactored to use
     # tidyr::separate_longer_delim
