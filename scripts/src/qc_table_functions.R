@@ -49,18 +49,12 @@ compute_skew <- function(df, group_cols = c("pcr_plate", "pcr_well", "pert_plate
 #'
 #' @import dplyr
 compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
-  # Get number of expected cell lines for each cell_set
-  result <- cell_set_meta %>%
-    dplyr::group_by(across(all_of(cell_line_cols))) %>%
-    dplyr::filter(n() == 1) %>%
-    dplyr::ungroup() %>%
+  cell_set_meta %>%
+    dplyr::distinct(cell_set, across(all_of(cell_line_cols))) %>%
     dplyr::group_by(cell_set) %>%
-    dplyr::summarise(
-      n_expected_lines = dplyr::n_distinct(across(all_of(cell_line_cols))), # Count unique cell_lines for each cell_set
-    ) %>%
-    dplyr::ungroup()
-  return(result)
+    dplyr::summarise(n_expected_lines = n(), .groups = "drop")
 }
+
 
 #' Compute read stats
 #'
@@ -197,7 +191,7 @@ calculate_cb_metrics <- function(normalized_counts, cb_meta, group_cols = c("pcr
 #' @import dplyr
 generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
                                    count_threshold = 40, pseudocount = 20) {
-  print(paste0("Computing QC metrics grouping by ", paste0(id_cols_list, collapse = ","), "....."))
+  print(paste0("Computing id_cols QC metrics grouping by ", paste0(id_cols_list, collapse = ","), "....."))
 
   read_stats_grouping_cols <- c(id_cols_list, "pert_type", "pert_plate")
 
@@ -399,7 +393,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate") # Define columns to group by
-  print(paste0("Computing QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
+  print(paste0("Computing cell + plate QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
 
   # Compute control medians and MAD
   medians_and_mad <- compute_ctl_medians_and_mad(
