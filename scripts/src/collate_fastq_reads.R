@@ -53,7 +53,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                               known_barcodes,
                               reverse_index2= FALSE,
                               barcode_col= 'forward_read_barcode',
-                              low_abundance_threshold= 20) {
+                              low_abundance_threshold= 20,
+                              out) {
   require(tidyverse)
   require(data.table)
   
@@ -134,8 +135,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                     flowcell_lane= base::strsplit(flowcell_lanes, split='[,;:]', fixed=F)) %>% 
       tidyr::unnest(cols= flowcell_name) %>% tidyr::unnest(cols= flowcell_lane) %>%
       dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
-    append_critical_output(paste0('Expected ', nrow(expected_flowcells), ' unique flowcell + lane combos in the sample meta:'))
-    append_critical_output(expected_flowcells)
+    append_critical_output(paste0('Expected ', nrow(expected_flowcells), ' unique flowcell + lane combos in the sample meta:'), out)
+    append_critical_output(expected_flowcells, out)
     # Note: This code uses base::strsplit and tidyr::unnest from an older version of tidyverse.
     # If there is any update to the tidyverse verision, this can be refactored to use
     # tidyr::separate_longer_delim
@@ -144,8 +145,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
     # Check that all expected flowcell name + lanes are present in uncollapsed_raw_counts.
     # Print warning if a flowcell is expected but not detected.
     detected_flowcells= uncollapsed_raw_counts %>% dplyr::distinct(flowcell_name, flowcell_lane)
-    append_critical_output(paste0('Identified ', nrow(detected_flowcells), ' unique flowcell + lane combos in the uncollapsed raw counts.'))
-    append_critical_output(detected_flowcells)
+    append_critical_output(paste0('Identified ', nrow(detected_flowcells), ' unique flowcell + lane combos in the uncollapsed raw counts.'), out)
+    append_critical_output(detected_flowcells, out)
     validate_detected_flowcells(detected_flowcells, expected_flowcells)
     
     # Filter for expected flowcells and add names/lanes columns ----
