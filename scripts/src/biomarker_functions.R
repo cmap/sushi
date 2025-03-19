@@ -103,7 +103,7 @@ univariate_biomarker_table <- function(Y, file,
   require(magrittr)
   require(rhdf5)
   require(WGCNA)
-  
+
   
   if(!is.matrix(Y)){
     Y <- as.matrix(Y)
@@ -128,7 +128,7 @@ univariate_biomarker_table <- function(Y, file,
       
       print(paste0(feat, " - ", dim(X)[1] ,'x', dim(X)[2]))
       
-      RESULTS[[feat]] <- linear_model(X = X, Y = Y[cl, ],
+      RESULTS[[feat]] <- linear_model(X = X, Y = Y[cl, , drop = FALSE],
                                                         v.X.min = v.X.min, n.min = n.X.min, 
                                                         rank.max = rank.max, q.val.max = q_val_max, 
                                                         regression_coef = regression_coef, stability_score = stability_score, ns.min = n_stable.min) %>% 
@@ -237,7 +237,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
     r2 <- 1 - (mse/var(y.clean, na.rm = T))
     ps <- cor(y.clean, yhat_rf, use = "pairwise.complete.obs")
     RF.table %<>% dplyr::mutate(MSE = mse, MSE.se = mse.se,
-                                R2 = r2, PearsonScore = ps)
+                                R2 = r2, PearsonScore = c(ps))
 
     if(is.null(X.test)){
       return(list(model_table = RF.table, predictions = yhat_rf, folds = folds))
@@ -556,10 +556,10 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   print(paste0("Writing the multivariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
     dplyr::select_at(vars(treatment_columns)) %>%
-    dplyr::distinct() %>%
-    tidyr::unite(y, treatment_columns, sep = "::", remove = FALSE) %>%
-    dplyr::inner_join(multivariate_biomarker_table) %>%
-    dplyr::select(-y) %>%
+    dplyr::distinct() %>% 
+    tidyr::unite(y, treatment_columns, sep = "::", remove = FALSE) %>% 
+    dplyr::inner_join(multivariate_biomarker_table) %>% 
+    dplyr::select(-y) %>%  
     write_csv(paste0(out_path, "/", output_file_name))
 }
 
@@ -597,6 +597,8 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   require(tidyverse)
   require(rlang)
 
+
+  
   # check if the input path exists
   if(!file.exists(in_path)){
     stop("Input path does not exist!")
@@ -612,14 +614,6 @@ create_univariate_biomarker_table <- function(in_path, out_path,
 
   # check for missing critical columns
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
-  print("treatment_columns:")
-  print(treatment_columns)
-  print("necessary_columns:")
-  print(necessary_columns)
-  print("input_columns:")
-  print(colnames(input_file))
-  print("response_column:")
-  print(response_column)
 
   if(any(!necessary_columns %in% colnames(input_file))){
     stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
@@ -650,6 +644,8 @@ create_univariate_biomarker_table <- function(in_path, out_path,
     dplyr::select(-y) %>%
     write_csv(paste0(out_path, "/", output_file_name))
 }
+
+
 
 
 
