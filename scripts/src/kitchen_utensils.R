@@ -134,8 +134,12 @@ filter_control_barcodes <- function(df) {
 #'
 #' @param print_statement A string to print and append to a file
 append_critical_output <- function(statement, out) {
+  # Convert data frames or lists into a string if necessary
+  if (!is.character(statement)) {
+    statement <- capture.output(print(statement))
+  }
   # Print to console
-  print(statement)
+  cat(statement, sep = "\n")
   # Append to file
   cat(statement, file = paste0(out, "/critical_output.txt"), append = TRUE, sep = "\n")
 }
