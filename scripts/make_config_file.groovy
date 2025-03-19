@@ -421,7 +421,7 @@ pipeline {
             script {
                 def buildDir = params.BUILD_DIR
                 def buildName = params.BUILD_NAME ?: "default_build_name"
-                def logFilePath = "${buildDir}/${buildName}_console_output.log"
+                def logFilePath = "${buildDir}/logs/console_output.log"
 
                 // Capture the entire console log
                 def log = currentBuild.rawBuild.getLog(999999)

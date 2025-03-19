@@ -134,6 +134,10 @@ filter_control_barcodes <- function(df) {
 #'
 #' @param print_statement A string to print and append to a file
 append_critical_output <- function(statement, out) {
+  # If the out/logs directory does not exist, create it
+    if (!dir.exists(paste0(out, "/logs"))) {
+        dir.create(paste0(out, "/logs"), recursive = TRUE)
+    }
   # Convert data frames or lists into a string if necessary
   if (!is.character(statement)) {
     statement <- capture.output(print(statement))
