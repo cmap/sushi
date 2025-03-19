@@ -226,6 +226,19 @@ write.csv(
 )
 check_file_exists(plate_cell_qc_table_outpath_external)
 
+# Write cl_pertplate_pass_rate_qc_table for portal
+pertplate_cell_pass_rate_outpath <- paste0(args$out, "/qc_tables/pertplate_cell_pass_rate.csv")
+pertplate_cell_pass_rate <- plate_cell_table %>% 
+  dplyr::distinct(pert_plate, project_code, qc_pass_pert_plate, depmap_id, lua, cell_set) %>%
+  dplyr::group_by(pert_plate, project_code) %>% 
+  dplyr::summarise(num_cl_pass=sum(qc_pass_pert_plate),
+                   num_cl_failed=sum(!qc_pass_pert_plate)) %>%
+  dplyr::ungroup() 
+write.csv(pertplate_cell_pass_rate,
+          "/Users/abinogeo/Datasets/MTS_SEQ/MTS_SEQ003/qc_tables/pertplate_cell_pass_rate.csv",
+          row.names = F, quote = F)
+check_file_exists(pertplate_cell_pass_rate_outpath)
+
 # Write plate_cell_qc_flags table
 plate_cell_qc_flags_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_flags.csv")
 print(paste0("Writing out plate_cell_qc_flags to ", plate_cell_qc_flags_outpath))
@@ -234,7 +247,6 @@ write.csv(
   quote = FALSE
 )
 check_file_exists(plate_cell_qc_flags_outpath)
-
 
 # Write pool_well_qc_table ----------
 pool_well_qc_table_outpath <- paste0(args$out, "/qc_tables/pool_well_qc_table.csv")
