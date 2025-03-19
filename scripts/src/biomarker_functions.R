@@ -21,7 +21,7 @@
 #'
 #' @examples
 #'
-linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.val.max = 0.2, regression_coef = TRUE, stability_score = FALSE, ns.min = 3) {
+linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.val.max = 0.1, regression_coef = TRUE, stability_score = FALSE, ns.min = 3) {
   require(tidyverse)
   require(matrixStats)
   require(WGCNA)
@@ -96,7 +96,7 @@ linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.v
 univariate_biomarker_table <- function(Y, file,
                                        features = NULL, n.X.min = 100,
                                        v.X.min = 0.0025,
-                                       n_stable.min = 3, q_val_max = .2,
+                                       n_stable.min = 3, q_val_max = .1,
                                        regression_coef = TRUE,
                                        stability_score = TRUE, rank.max = 250){
   require(tidyverse)
@@ -591,7 +591,7 @@ create_univariate_biomarker_table <- function(in_path, out_path,
                                                 response_column = "median_l2fc", aggregate_function = median, transform_function = function(x){x},
                                               features = NULL, min_sample_size = 100,
                                               regression_coef = TRUE, stability_score = TRUE, rank.max = 250,
-                                              min_x_variance = 0.0025, n_stable_min = 3, q_val_max = .2
+                                              min_x_variance = 0.0025, n_stable_min = 3, q_val_max = .1
                                               ) {
   require(data.table)
   require(tidyverse)
