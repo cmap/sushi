@@ -30,6 +30,12 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
     
     current_chunk_size= nrow(current_chunk) # set current chunk size to stop loop
     print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
+
+    # DEBUG
+    print("DEBUGGING")
+    args_list <- c(list(uncollapsed_raw_counts = current_chunk), list(...))
+    print(names(args_list))
+
     
     # Call the action over the chunk
     chunk_collector[[chunk_idx]] <- do.call(
