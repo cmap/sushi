@@ -129,9 +129,9 @@ filter_control_barcodes <- function(df) {
 #' track critical console outputs for human review. It will also write the statement to the console as usual.
 #'
 #' @param print_statement A string to print and append to a file
-append_critical_output <- function(print_statement, build_dir) {
+append_critical_output <- function(statement, out) {
   # Print to console
-  print(print_statement)
+  print(statement)
   # Append to file
-  cat(print_statement, file = paste0(build_dir, "/critical_output.txt"), append = TRUE, sep = "\n")
+  cat(statement, file = paste0(out, "/critical_output.txt"), append = TRUE, sep = "\n")
 }
