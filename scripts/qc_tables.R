@@ -213,7 +213,7 @@ write.csv(
     dplyr::select(
       c(
         "pool_id", "depmap_id", "lua", "pcr_plate",
-        "pert_plate",
+        "pert_plate", "project_code",
         "error_rate", "lfc_trt_poscon",
         "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
         "median_log_normalized_ctl_vehicle",
@@ -230,12 +230,12 @@ check_file_exists(plate_cell_qc_table_outpath_external)
 pertplate_cell_pass_rate_outpath <- paste0(args$out, "/qc_tables/pertplate_cell_pass_rate.csv")
 pertplate_cell_pass_rate <- plate_cell_table %>% 
   dplyr::distinct(pert_plate, project_code, qc_pass_pert_plate, depmap_id, lua, cell_set) %>%
-  dplyr::group_by(pert_plate, project_code) %>% 
+  dplyr::group_by(pert_plate, project_code) %>%
   dplyr::summarise(num_cl_pass=sum(qc_pass_pert_plate),
                    num_cl_failed=sum(!qc_pass_pert_plate)) %>%
   dplyr::ungroup() 
 write.csv(pertplate_cell_pass_rate,
-          "/Users/abinogeo/Datasets/MTS_SEQ/MTS_SEQ003/qc_tables/pertplate_cell_pass_rate.csv",
+          pertplate_cell_pass_rate_outpath,
           row.names = F, quote = F)
 check_file_exists(pertplate_cell_pass_rate_outpath)
 
