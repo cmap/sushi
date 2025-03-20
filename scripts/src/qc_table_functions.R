@@ -106,7 +106,7 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
       # Fraction of reads mapping to cell lines
       fraction_expected_reads = n_expected_reads / n_total_reads,
       # Number of cell lines with coverage above 40 reads
-      n_lines_recovered = sum(.data[[metric]] >= count_threshold & (is.na(cb_name) | cb_name == ""), na.rm = TRUE),
+      n_lines_recovered = sum(.data[[metric]] >= count_threshold & (is.na(cb_name) | cb_name == "") & expected_read == TRUE, na.rm = TRUE),
       # Number of expected lines based on metadata
       n_expected_lines = max(n_expected_lines, na.rm = TRUE), # Bring forward from join
       # Fraction of cell lines with coverage above count threshold
