@@ -2,7 +2,7 @@ options(cli.unicode = FALSE)
 library(tidyverse)
 library(data.table)
 library(magrittr)
-library (PRROC)
+library(PRROC)
 
 # BY ID_COLS (PCR_PLATE, PCR_WELL) ----------
 
