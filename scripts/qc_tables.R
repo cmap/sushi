@@ -66,20 +66,28 @@ parser$add_argument(
 args <- parser$parse_args()
 
 # Read in metadata files as data.table objects ----
-paste0("Reading in ", args$cell_set_and_pool_meta, ".....")
+print(paste0("Reading in ", args$cell_set_and_pool_meta, "....."))
 cell_set_meta <- data.table::fread(args$cell_set_and_pool_meta, header = TRUE, sep = ",")
-paste0("Reading in ", args$normalized_counts, ".....")
-normalized_counts <- data.table::fread(args$normalized_counts, header = TRUE, sep = ",")
-paste0("Reading in ", args$annotated_counts, ".....")
+print(paste0("Reading in ", args$annotated_counts, "....."))
 annotated_counts <- data.table::fread(args$annotated_counts, header = TRUE, sep = ",")
-paste0("Reading in ", args$filtered_counts, ".....")
+print(paste0("Reading in ", args$filtered_counts, "....."))
 filtered_counts <- data.table::fread(args$filtered_counts, header = TRUE, sep = ",")
-paste0("Reading in ", args$control_barcode_meta, ".....")
+print(paste0("Reading in ", args$control_barcode_meta, "....."))
 cb_meta <- data.table::fread(args$control_barcode_meta, header = TRUE, sep = ",")
-paste0("Reading in ", args$unknown_barcode_counts, header = TRUE, sep = ",")
+print(paste0("Reading in ", args$unknown_barcode_counts, header = TRUE, sep = ","))
 unknown_counts <- data.table::fread(args$unknown_barcode_counts, header = TRUE, sep = ",")
-paste0("Reading in ", args$sample_meta, ".....")
+print(paste0("Reading in ", args$sample_meta, "....."))
 sample_meta <- data.table::fread(args$sample_meta, header = TRUE, sep = ",")
+# If normzlied_counts_original.csv exists, use that, otherwise use args$normalized_counts
+normalized_counts_original_path <- paste0(args$out, "/normalized_counts_original.csv")
+if (file.exists(normalized_counts_original_path)) {
+  print("Original normalized counts found, will use this file for QC flags and tables.")
+  print("Reading in normalized_counts_original.csv.....")
+  normalized_counts <- data.table::fread(normalized_counts_original_path, header = TRUE, sep = ",")
+} else {
+print(paste0("Reading in ", args$normalized_counts, "....."))
+normalized_counts <- data.table::fread(args$normalized_counts, header = TRUE, sep = ",")
+}
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(paste0(args$out, "/qc_tables"))) {
