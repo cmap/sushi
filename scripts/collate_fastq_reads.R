@@ -11,12 +11,12 @@ parser <- ArgumentParser()
 # specify desired options
 parser$add_argument("-v", "--verbose", action="store_true", default=TRUE, help="Print extra output [default]")
 parser$add_argument("-q", "--quietly", action="store_false", dest="verbose", help="Print little output")
-parser$add_argument('--raw_counts_uncollapsed', default= "raw_counts_uncollapsed.csv",
+parser$add_argument('--raw_counts_uncollapsed', default= "raw_counts_uncollapsed.csv.gz",
                     help= "path to file containing uncollapsed raw counts file")
 parser$add_argument("--sample_meta", default="sample_meta.csv", help= "Sample metadata")
 parser$add_argument("--cell_line_meta", default="cell_line_meta.csv", help= "Cell line metadata")
 parser$add_argument("--CB_meta", default= "CB_meta.csv", help= "Control Barcode metadata")
-parser$add_argument('--sequencing_index_cols', default= 'index_1,index_2', 
+parser$add_argument('--sequencing_index_cols', default= 'flowcell_names,index_1,index_2', 
                     help= 'List of sequencing columns in the sample meta.')
 parser$add_argument("--id_cols", default= "pcr_plate,pcr_well", 
                     help = "Columns that identify a unique PCR well")
@@ -38,9 +38,13 @@ if (args$out == "") {
 }
 
 # Read in metadata files as data.table objects ----
-sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
 cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
+sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
+## if flowcell_lanes one lane, the integer gets read in as numeric, so force this to be a string
+if(validate_columns_exist("flowcell_lanes", sample_meta)){
+  sample_meta %<>% mutate(flowcell_lanes = as.character(flowcell_lanes))
+}
 
 # Parse some parameters into vectors ----
 sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
