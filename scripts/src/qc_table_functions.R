@@ -611,10 +611,11 @@ generate_pool_well_qc_table <- function(normalized_counts, pool_well_delta_thres
     group_by(pcr_plate, pcr_well, pert_type, pool_id) %>%
     reframe(
       n_outliers = sum(delta_from_pool_well_median > pool_well_delta_threshold, na.rm = TRUE),
-      fraction_outliers = n_outliers / n_cell_lines
+      n_cell_lines = max(n_cell_lines)
     ) %>%
     ungroup() %>%
-    mutate(qc_flag = if_else(fraction_outliers > pool_well_fraction_threshold, "pool_well_outliers", NA_character_))
+    mutate(fraction_outliers = n_outliers / n_cell_lines,
+      qc_flag = if_else(fraction_outliers > pool_well_fraction_threshold, "pool_well_outliers", NA_character_))
 }
 
 # Get the qc parameters from the qc_params json file
