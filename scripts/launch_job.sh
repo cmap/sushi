@@ -40,6 +40,8 @@ PARAMS=(
   VIABILITY_CAP
   # biomarker parameters
   UNIVARIATE_BIOMARKER MULTIVARIATE_BIOMARKER BIOMARKER_FILE DR_COLUMN LFC_BIOMARKER AUC_BIOMARKER DR_PATH COLLAPSED_L2FC_COLUMN
+  # qc parameters
+  QC_PARAMS
 )
 
 # Load parameters
@@ -135,6 +137,7 @@ echo "Running in container:"
   -e FILTER_SKIPPED_WELLS="$FILTER_SKIPPED_WELLS" \
   -e SKIPPED_WELLS="$SKIPPED_WELLS" \
   -e FILTER_QC_FLAGS="$FILTER_QC_FLAGS" \
+  -e QC_PARAMS="$QC_PARAMS" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \

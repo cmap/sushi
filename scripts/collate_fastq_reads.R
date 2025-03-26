@@ -42,6 +42,9 @@ sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
 cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 
+# Check that sample_meta has complete flowcell names and lanes
+check_flowcell_names_in_sample_meta(sample_meta, args$out)
+
 # Parse some parameters into vectors ----
 sequencing_index_cols= unlist(strsplit(args$sequencing_index_cols, ","))
 id_cols= unlist(strsplit(args$id_cols, ","))
@@ -86,7 +89,8 @@ chunked_results= process_in_chunks(large_file_path= args$raw_counts_uncollapsed,
                                                             CB_meta[[args$barcode_col]])),
                                    reverse_index2= args$reverse_index2,
                                    barcode_col= args$barcode_col,
-                                   low_abundance_threshold= as.numeric(args$low_abundance_threshold))
+                                   low_abundance_threshold= as.numeric(args$low_abundance_threshold),
+                                   out_dir = args$out)
 
 # From each chunk, extract prism_barcode_counts or unknown_barcode_counts and bind those rows together.
 # Then use data.table to aggregate and sum up reads across the chunks.
