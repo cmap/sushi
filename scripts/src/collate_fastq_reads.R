@@ -183,6 +183,11 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Calculate index purity ----
   # This is only accurate if the Nori input file is small enough to fit into a chunk.
   index_purity= sum(summed_reads$n) / sum(uncollapsed_raw_counts$n)
+  # if index_purity is NA, make it 0
+  if(is.na(index_purity)){
+    index_purity = 0
+  }
+  
   # Throw an error if the purity is greater than 1.
   # Throw a warning if the purity is below 0.5.
   print(paste0('Index purity in chunk: ', round(index_purity, 4)))

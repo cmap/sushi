@@ -40,6 +40,7 @@ parser$add_argument('--count_threshold', default= 40, help= 'Low counts theshold
 parser$add_argument('--reverse_index2', type= "logical", default= FALSE,
                     help= 'Switch to reverse complement index_2 for some sequencers')
 parser$add_argument('-o', '--out', default= '', help= 'Output path, defaults to working directory')
+parser$add_argument("--pseudocount", default=20, help = "pseudo raw count used in normalization")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -85,4 +86,5 @@ QC_images(raw_counts_uncollapsed_path= args$raw_counts_uncollapsed,
           control_type= args$control_type, 
           count_threshold= as.numeric(args$count_threshold), 
           reverse_index2= args$reverse_index2,
-          out= args$out)
+          out= args$out,
+          pseudocount = as.numeric(args$pseudocount))
