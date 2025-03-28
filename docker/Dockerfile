@@ -15,7 +15,7 @@ RUN apt-get update -qq && \
     libssl-dev \
     libxml2-dev \
     libcairo2-dev \
-    libsqlite-dev \
+    libsqlite3-dev \
     libmariadbd-dev \
     libmariadb-dev-compat \
     libpq-dev \
