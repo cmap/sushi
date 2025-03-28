@@ -33,7 +33,8 @@ RUN apt-get update -qq && \
 RUN pip3 install pandas requests boto3
 
 # First set of R dependencies
-COPY ./install_packages.R /src/install_packages.R
+COPY docker/install_packages.R /src/install_packages.R
+
 RUN Rscript /src/install_packages.R
 
 # Install curl (why post update?)
