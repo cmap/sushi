@@ -49,6 +49,12 @@ auc_biomarker = as.logical(toupper(args$auc_biomarker))
 univariate_biomarker = as.logical(toupper(args$univariate_biomarker))
 multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 
+# Print some arguments ----
+print(paste0("lfc_biomarker is", lfc_biomarker))
+print(paste0("auc_biomarker is" , auc_biomarker))
+print(paste0("univariate_biomarker is" , univariate_biomarker))
+print(paste0("multivariate_biomarker is" , multivariate_biomarker))
+
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
     dir.create(out_path)
@@ -56,7 +62,7 @@ if (!dir.exists(out_path)) {
 
 # Call the biomarker functions ----
 if (univariate_biomarker) {
-  biomarker_type = "univariate"
+  biomarker_type <- "univariate"
 }
 if (biomarker_type == "univariate") {
   if (lfc_biomarker) {
@@ -82,7 +88,7 @@ if (biomarker_type == "univariate") {
 }
 
 if (multivariate_biomarker) {
-  biomarker_type = "multivariate"
+  biomarker_type <- "multivariate"
 }
 if (biomarker_type == "multivariate") {
   if (lfc_biomarker) {
