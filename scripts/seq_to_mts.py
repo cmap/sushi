@@ -315,7 +315,7 @@ def main(args):
     api_key = args.api_key
     print(f"Using API key {api_key}...")
     cell_line_df = get_cell_api_info(cell_line_api_url, api_key)[["lua", "ccle_name"]]
-    cell_line_df= df.dropna(axis=0,subset=["lua"]) # drop rows where lua is NA
+    cell_line_df= cell_line_df.dropna(axis=0,subset=["lua"]) # drop rows where lua is NA
     # Add luas to datasets
     print(f"Adding ccle_name to datasets, matching on lua...")
     level_3 = level_3.merge(cell_line_df, on="lua", how="left")
