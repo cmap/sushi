@@ -32,25 +32,61 @@ l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
 # Parse some parameters ----
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 sig_cols= unlist(strsplit(args$sig_cols, ","))
-dose_col= args$dose_col
-l2fc_column= args$l2fc_column
+dose_cols= unlist(strsplit(args$dose_cols, ","))
+l2fc_col= args$l2fc_col
 type_col= args$type_col
 cap_for_viability= as.numeric(args$cap_for_viability)
 build_dir = args$build_dir
 out_dir = args$out_dir
 
-# Create treatment_columns by filtering out elements containing "dose"
-treatment_cols <- sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)]
 
-# Calculate dose response ----
-print("Calculating dose response ...")
-dose_response= create_drc_table(LFC= l2fc,
-                                cell_line_cols= cell_line_cols,
-                                treatment_cols= treatment_cols,
-                                dose_col= dose_col,
-                                l2fc_column= l2fc_column,
-                                type_col= type_col,
-                                cap_for_viability= cap_for_viability)
+# Set up list of drc outputs
+drc_outputs = base::list()
+idx = 1
+treatment_cols = sig_cols[!grepl("dose", sig_cols)]
+
+# What dose columns were detected?
+print(paste0("Detecting the following dose column(s): ", dose_cols))
+if(length(dose_cols) > 1) {
+  print("More than one does column was supplied.")
+} else if(length(dose_cols > 2)) {
+  print("More than two dose columns were detected!")
+  stop()
+}
+
+# Run first DRC for first dose column ----
+print(paste0("Running dose response curves with ", dose_cols[1]))
+
+if(length(dose_cols) > 1) {
+  treatment_grouping = c(treatment_cols, dose_cols[-1])
+} else {
+  treatment_grouping = treatment_cols
+}
+
+drc_outputs[idx] = create_drc_table(LFC= l2fc,
+                                    cell_line_cols= cell_line_cols,
+                                    treatment_cols= treatment_grouping,
+                                    dose_col= dose_cols[1],
+                                    l2fc_col= l2fc_col,
+                                    cap_for_viability= cap_for_viability)
+idx = idx + 1 # update location for next drc output
+
+# Run DRC for potential second dose column with combination screens ----
+if(length(dose_cols) == 2) {
+  print(paste0("Running dose response curves with ", dose_cols[2]))
+  
+  # Filter for rows with a second pert_dose
+  combo_l2fc = l2fc %>% dplyr::filter(!is.na(.data[[dose_cols[2]]]))
+  
+  drc_outputs[idx]= create_drc_table(LFC = combo_l2fc,
+                                     cell_line_cols = cell_line_cols,
+                                     treatment_cols = c(treatment_cols, dose_cols[-2]),
+                                     dose_col = dose_cols[2],
+                                     l2fc_col = l2fc_col,
+                                     cap_for_viability = cap_for_viability)
+}
+
+dose_response = dplyr::bind_rows(drc_outputs)
 
 # Validation: Check that dose_response is not empty ----
 if(nrow(dose_response) == 0) {
