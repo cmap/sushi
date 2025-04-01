@@ -40,7 +40,10 @@ build_dir = args$build_dir
 out_dir = args$out_dir
 
 # Create treatment_columns by filtering out elements containing "dose"
-treatment_cols <- sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols) & grepl("day", sig_cols)]
+treatment_cols <- union(
+  sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)],
+  sig_cols[sig_cols == "day"]
+)
 
 # Calculate dose response ----
 print("Calculating dose response ...")
