@@ -84,6 +84,11 @@ def filter_nan_flowcells(df, build_dir):
     return df.dropna(subset=["flowcell_names"])
 
 
+def add_pert_vehicle(df):
+    df["pert_vehicle"] = "DMSO"
+    return df
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fetch data from API and save to a CSV file."
@@ -115,6 +120,7 @@ def main():
             .pipe(rename_sample_meta)
             .pipe(remove_sample_meta_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
             .pipe(filter_nan_flowcells, build_dir)
+            .pipe(add_pert_vehicle)
         )
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
