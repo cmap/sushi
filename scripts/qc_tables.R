@@ -94,6 +94,8 @@ if (!dir.exists(paste0(args$out, "/qc_tables"))) {
   dir.create(paste0(args$out, "/qc_tables"))
 }
 
+# Check if any samples are positive controls, if not set poscon to FALSE, if so TRUE
+poscon <- any(sample_meta$pert_type == args$poscon_type)
 
 # DEFINE COLUMNS
 cell_line_cols <- args$cell_line_cols
@@ -164,7 +166,7 @@ filtered_counts_rm_ctl <- filtered_counts %>%
 
 plate_cell_table <- generate_cell_plate_table(
   normalized_counts = filtered_normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
-  cell_line_cols = cell_plate_list, pseudocount = pseudocount
+  cell_line_cols = cell_plate_list, pseudocount = pseudocount, poscon = poscon
 )
 
 plate_cell_qc_flags_table <- plate_cell_qc_flags(
@@ -172,7 +174,8 @@ plate_cell_qc_flags_table <- plate_cell_qc_flags(
   nc_variability_threshold = thresholds$nc_variability_threshold,
   error_rate_threshold = thresholds$error_rate_threshold,
   pc_viability_threshold = thresholds$pc_viability_threshold,
-  nc_raw_count_threshold = thresholds$nc_raw_count_threshold) %>%
+  nc_raw_count_threshold = thresholds$nc_raw_count_threshold,
+  contains_poscon = poscon) %>%
   dplyr::filter(!is.na(qc_flag))
 
 
@@ -186,7 +189,8 @@ plate_cell_filtered_normalized_counts <-
 # PCR PLATE
 
 pcr_plate_qc_flags_table <- generate_pcr_plate_qc_flags_table(plate_cell_table = plate_cell_table,
-                                                              fraction_expected_controls = thresholds$fraction_expected_controls)
+                                                              fraction_expected_controls = thresholds$fraction_expected_controls,
+                                                              contains_poscon = poscon)
 
 final_filtered_normalized_counts <-
   dplyr::anti_join(
@@ -216,18 +220,30 @@ check_file_exists(plate_cell_qc_table_outpath)
 # Write plate_cell_qc_table for portal use
 plate_cell_qc_table_outpath_external <- paste0(args$out, "/qc_tables/plate_cell_qc_table.csv")
 print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_qc_table_outpath_external))
+if (poscon) {
+  columns_to_write <- c(
+    "pool_id", "depmap_id", "lua", "pcr_plate",
+    "pert_plate", "project_code",
+    "error_rate", "lfc_trt_poscon",
+    "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
+    "median_log_normalized_ctl_vehicle",
+    "n_replicates_ctl_vehicle", "n_replicates_trt_poscon",
+    "viability_trt_poscon", "qc_pass", "qc_pass_pert_plate"
+  )
+  } else {
+    columns_to_write <- c(
+    "pool_id", "depmap_id", "lua", "pcr_plate",
+    "pert_plate", "project_code",
+    "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
+    "median_log_normalized_ctl_vehicle",
+    "n_replicates_ctl_vehicle",
+    "qc_pass", "qc_pass_pert_plate"
+  )
+}
 write.csv(
   x = plate_cell_table %>%
     dplyr::select(
-      c(
-        "pool_id", "depmap_id", "lua", "pcr_plate",
-        "pert_plate", "project_code",
-        "error_rate", "lfc_trt_poscon",
-        "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
-        "median_log_normalized_ctl_vehicle",
-        "n_replicates_ctl_vehicle", "n_replicates_trt_poscon",
-        "viability_trt_poscon", "qc_pass", "qc_pass_pert_plate"
-      )
+      columns_to_write
     ),
   file = plate_cell_qc_table_outpath_external, row.names = FALSE,
   quote = FALSE

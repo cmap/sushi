@@ -244,28 +244,34 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
 #' @import dplyr
 #' @import PRROC
 compute_error_rate <- function(df, metric = "log2_normalized_n", group_cols = c("depmap_id", "pcr_plate", "pert_plate"),
-                               negcon = "ctl_vehicle", poscon = "trt_poscon") {
-  print(paste0("Computing error rate using ", negcon, " and ", poscon, "....."))
-  print(paste0("Grouping by ", paste0(group_cols, collapse = ","), "....."))
-  result <- df %>%
-    dplyr::filter(
-      pert_type %in% c(negcon, poscon),
-      is.finite(.data[[metric]]),
-      !is.na(pool_id)
-    ) %>%
-    dplyr::group_by(across(all_of(group_cols))) %>%
-    dplyr::summarise(
-      error_rate = {
-        roc_data <- PRROC::roc.curve(
-          scores.class0 = .data[[metric]],
-          weights.class0 = pert_type == negcon,
-          curve = TRUE
-        )
-        min(roc_data$curve[, 1] + 1 - roc_data$curve[, 2]) / 2
-      },
-    ) %>%
-    dplyr::ungroup()
-  return(result)
+                               negcon = "ctl_vehicle", poscon = "trt_poscon", contains_poscon = TRUE) {
+
+  if (contains_poscon) {
+    print(paste0("Computing error rate using ", negcon, " and ", poscon, "....."))
+    print(paste0("Grouping by ", paste0(group_cols, collapse = ","), "....."))
+    result <- df %>%
+      dplyr::filter(
+        pert_type %in% c(negcon, poscon),
+        is.finite(.data[[metric]]),
+        !is.na(pool_id)
+      ) %>%
+      dplyr::group_by(across(all_of(group_cols))) %>%
+      dplyr::summarise(
+        error_rate = {
+          roc_data <- PRROC::roc.curve(
+            scores.class0 = .data[[metric]],
+            weights.class0 = pert_type == negcon,
+            curve = TRUE
+          )
+          min(roc_data$curve[, 1] + 1 - roc_data$curve[, 2]) / 2
+        },
+      ) %>%
+      dplyr::ungroup()
+    return(result)
+  }
+  else {
+    print("No positive controls found. Unable to calculate error rate.")
+  }
 }
 
 #' Compute control median and MAD
@@ -288,7 +294,7 @@ compute_error_rate <- function(df, metric = "log2_normalized_n", group_cols = c(
 #' @importFrom stats mad pnorm
 compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_plate", "pert_plate"),
                                         negcon = "ctl_vehicle", poscon = "trt_poscon", pseudocount = 20) {
-  print(paste0("Adding control median and MAD values for ", negcon, " and ", poscon, "....."))
+  print(paste0("Adding control median and MAD values for ", negcon, " and ", poscon, " if it exists....."))
   print(paste0("Computing falses sensitivity probability for ", negcon, "....."))
   # Group and compute medians/MADs
   result <- df %>%
@@ -335,8 +341,9 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
 #' - `lfc_raw`: Log fold change for raw data.
 #'
 #' @import dplyr
-compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon", grouping_cols = c("depmap_id", "pcr_plate", "pert_plate")) {
+compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon", grouping_cols = c("depmap_id", "pcr_plate", "pert_plate"), contains_poscon = TRUE) {
   print(paste0("Computing log fold change for ", negcon, " and ", poscon, "....."))
+  if (contains_poscon) {
   result <- df %>%
     dplyr::mutate(
       lfc_trt_poscon = .data[[paste0("median_log_normalized_", poscon)]] -
@@ -347,6 +354,10 @@ compute_control_lfc <- function(df, negcon = "ctl_vehicle", poscon = "trt_poscon
     dplyr::select(all_of(grouping_cols), lfc_trt_poscon, lfc_raw_trt_poscon) %>%
     dplyr::mutate(viability_trt_poscon = 2^lfc_trt_poscon)
   return(result)
+  }
+  else {
+    print("No positive controls found. Unable to calculate log fold change.")
+  }
 }
 
 #' Compute cell line fractions
@@ -390,7 +401,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20) {
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, poscon = TRUE) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code") # Define columns to group by
   print(paste0("Computing cell + plate QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
@@ -410,7 +421,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     metric = "log2_normalized_n",
     group_cols = cell_line_plate_grouping,
     negcon = args$negcon_type,
-    poscon = args$poscon_type
+    poscon = args$poscon_type,
+    contains_poscon = poscon
   )
 
   # Compute poscon LFC
@@ -418,7 +430,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     df = medians_and_mad,
     negcon = args$negcon_type,
     poscon = args$poscon_type,
-    grouping_cols = cell_line_plate_grouping
+    grouping_cols = cell_line_plate_grouping,
+    contains_poscon = poscon
   )
 
   # Compute cell line fractions per plate
@@ -429,38 +442,66 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
 
 
   # Merge all tables together
-  print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
-  print("medians_and_mad")
-  print(colnames(medians_and_mad))
-  print("error_rates")
-  print(colnames(error_rates))
-  print("poscon_lfc")
-  print(colnames(poscon_lfc))
-  print("cell_line_fractions")
-  print(colnames(cell_line_fractions))
-  plate_cell_table <- medians_and_mad %>%
-    dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
-    dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
-    dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
-  # QC pass criteria, currently with hardcoded pert_types
-  plate_cell_table <- plate_cell_table %>%
-    dplyr::mutate(qc_pass = error_rate < 0.05 & viability_trt_poscon < 0.25 &
-      median_raw_ctl_vehicle > log(40) & mad_log_normalized_ctl_vehicle < 1) %>%
-    dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
-    dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-    dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 1) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-n_passing_plates)
-  # Add the n_expected_controls values
-  plate_cell_table <- plate_cell_table %>%
-    dplyr::left_join(
-      n_expected_controls,
-      by = c("pcr_plate", "pert_plate")
-    ) %>%
-    dplyr::mutate(
-      fraction_expected_poscon = n_replicates_trt_poscon/n_expected_trt_poscon,
-      fraction_expected_negcon = n_replicates_ctl_vehicle/n_expected_ctl_vehicle
-    ) %>%
+  if (poscon) {
+    print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
+    print("medians_and_mad")
+    print(colnames(medians_and_mad))
+    print("error_rates")
+    print(colnames(error_rates))
+    print("poscon_lfc")
+    print(colnames(poscon_lfc))
+    print("cell_line_fractions")
+    print(colnames(cell_line_fractions))
+    plate_cell_table <- medians_and_mad %>%
+      dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
+      dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
+      dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
+    # QC pass criteria, currently with hardcoded pert_types
+    plate_cell_table <- plate_cell_table %>%
+      dplyr::mutate(qc_pass = error_rate < 0.05 & viability_trt_poscon < 0.25 &
+        median_raw_ctl_vehicle > log(40) & mad_log_normalized_ctl_vehicle < 1) %>%
+      dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
+      dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
+      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 1) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-n_passing_plates)
+    # Add the n_expected_controls values
+    plate_cell_table <- plate_cell_table %>%
+      dplyr::left_join(
+        n_expected_controls,
+        by = c("pcr_plate", "pert_plate")
+      ) %>%
+      dplyr::mutate(
+        fraction_expected_poscon = n_replicates_trt_poscon/n_expected_trt_poscon,
+        fraction_expected_negcon = n_replicates_ctl_vehicle/n_expected_ctl_vehicle
+      )
+  }
+  else {
+    print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
+    print("medians_and_mad")
+    print(colnames(medians_and_mad))
+    print("cell_line_fractions")
+    print(colnames(cell_line_fractions))
+    plate_cell_table <- medians_and_mad %>%
+      dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
+    # QC pass criteria, currently with hardcoded pert_types
+    plate_cell_table <- plate_cell_table %>%
+      dplyr::mutate(qc_pass = median_raw_ctl_vehicle > log(40) & mad_log_normalized_ctl_vehicle < 1) %>%
+      dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
+      dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
+      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 1) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(-n_passing_plates)
+    # Add the n_expected_controls values
+    plate_cell_table <- plate_cell_table %>%
+      dplyr::left_join(
+        n_expected_controls,
+        by = c("pcr_plate", "pert_plate")
+      ) %>%
+      dplyr::mutate(
+        fraction_expected_negcon = n_replicates_ctl_vehicle/n_expected_ctl_vehicle
+      )
+  }
   return(plate_cell_table)
 }
 
@@ -493,8 +534,10 @@ plate_cell_qc_flags <- function(plate_cell_table,
                                 nc_variability_threshold = 1,
                                 error_rate_threshold = 0.05,
                                 pc_viability_threshold = 0.25,
-                                nc_raw_count_threshold = 40) {
+                                nc_raw_count_threshold = 40,
+                                contains_poscon = TRUE) {
   # Add a qc_flag column using case_when (conditions are checked in order)
+  if (contains_poscon) {
   qc_table <- plate_cell_table %>%
     mutate(qc_flag = case_when(
       mad_log_normalized_ctl_vehicle > nc_variability_threshold ~ "nc_variability",
@@ -503,6 +546,15 @@ plate_cell_qc_flags <- function(plate_cell_table,
       median_raw_ctl_vehicle < log(nc_raw_count_threshold) ~ "nc_raw_count",
       TRUE ~ NA_character_
     ))
+  }
+  else {
+    qc_table <- plate_cell_table %>%
+      mutate(qc_flag = case_when(
+        mad_log_normalized_ctl_vehicle > nc_variability_threshold ~ "nc_variability",
+        median_raw_ctl_vehicle < log(nc_raw_count_threshold) ~ "nc_raw_count",
+        TRUE ~ NA_character_
+      ))
+  }
   return(qc_table)
 }
 
@@ -635,8 +687,9 @@ load_thresholds_from_json <- function(json_file_path) {
 }
 
 # PCR PLATE FLAGS
-generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expected_controls) {
+generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expected_controls, contains_poscon = TRUE) {
   # Add a qc_flag when either fraction_expected_poscon or fraction_expected_negcon is below the threshold
+  if (contains_poscon) {
   table <- plate_cell_table %>%
     dplyr::select(fraction_expected_poscon, fraction_expected_negcon, pcr_plate, pert_plate) %>%
     unique() %>%
@@ -648,5 +701,18 @@ generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expecte
       )
     ) %>%
     filter(!is.na(qc_flag))
+  }
+  else {
+    table <- plate_cell_table %>%
+      dplyr::select(fraction_expected_negcon, pcr_plate, pert_plate) %>%
+      unique() %>%
+      dplyr::mutate(
+        qc_flag = dplyr::case_when(
+          fraction_expected_negcon < fraction_expected_controls ~ "fraction_expected_controls",
+          TRUE ~ NA_character_
+        )
+      ) %>%
+      filter(!is.na(qc_flag))
+  }
   return(table)
 }
