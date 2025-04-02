@@ -401,7 +401,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, poscon = TRUE) {
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, contains_poscon = TRUE) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code") # Define columns to group by
   print(paste0("Computing cell + plate QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
@@ -422,7 +422,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     group_cols = cell_line_plate_grouping,
     negcon = args$negcon_type,
     poscon = args$poscon_type,
-    contains_poscon = poscon
+    contains_poscon = contains_poscon
   )
 
   # Compute poscon LFC
@@ -431,7 +431,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     negcon = args$negcon_type,
     poscon = args$poscon_type,
     grouping_cols = cell_line_plate_grouping,
-    contains_poscon = poscon
+    contains_poscon = contains_poscon
   )
 
   # Compute cell line fractions per plate
