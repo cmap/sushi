@@ -304,7 +304,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
       median_log_normalized = median(log2_normalized_n),
       n_replicates = n(),
       mad_log_normalized = mad(log2_normalized_n),
-      median_raw = median(log2(n + pseudocount)),
+      median_raw = median(n),
       mad_raw = mad(log2(n + pseudocount))
     ) %>%
     dplyr::ungroup() %>%
