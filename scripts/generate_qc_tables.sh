@@ -28,11 +28,14 @@ enforce_abs_path ANNOTATED_COUNTS
 enforce_abs_path CELL_SET_AND_POOL_META
 enforce_abs_path FILTERED_COUNTS
 enforce_abs_path UNKNOWN_BARCODE_COUNTS
+enforce_abs_path QC_PARAMS
+enforce_abs_path SAMPLE_META
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
 --annotated_counts "$ANNOTATED_COUNTS"
 --filtered_counts "$FILTERED_COUNTS"
+--sample_meta "$SAMPLE_META"
 --negcon_type "$CTL_TYPES"
 --poscon_type "$POSCON_TYPE"
 --cell_set_and_pool_meta "$CELL_SET_AND_POOL_META"
@@ -43,6 +46,7 @@ args=(
 --control_barcode_meta "$BUILD_DIR/CB_meta.csv"
 --unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
 --filter_qc_flags "$FILTER_QC_FLAGS"
+--qc_params "$QC_PARAMS"
 )
 
 echo Rscript qc_tables.R "${args[@]}"

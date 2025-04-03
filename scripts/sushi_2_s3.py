@@ -176,6 +176,10 @@ def main(args):
     logger.info("Writing compound key to JSON...")
     key_to_json(key_df, output_path=os.path.join(build_path, "compound_key.json"))
 
+    # Create the unique projects key
+    unique_df = key_df[["x_project_id"]].drop_duplicates().reset_index(drop=True)
+    key_to_json(unique_df, output_path=os.path.join(build_path, "unique_projects.json"))
+
     # Get the list of merge patterns
     merge_patterns = config.MERGE_PATTERNS
     merge_patterns = merge_patterns.split(",")

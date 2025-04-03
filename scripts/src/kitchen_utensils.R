@@ -32,7 +32,11 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
     print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
     
     # Call the action over the chunk
-    chunk_collector[[chunk_idx]]= do.call(action, list(current_chunk, ...))
+    chunk_collector[[chunk_idx]] <- do.call(
+    action,
+    c(list(uncollapsed_raw_counts = current_chunk), list(...))
+    )
+
     chunk_idx= chunk_idx + 1
   }
   
@@ -121,4 +125,25 @@ check_file_exists <- function(file_path) {
 #' @return A filtered dataframe.
 filter_control_barcodes <- function(df) {
   df %>% dplyr::filter(tryCatch(is.na(cb_name), error = function(e) TRUE))
+}
+
+#' Append a print statement to a file to track critical console output
+#'
+#' This function, when applied to a given print statement, will append the statement to a file in order to
+#' track critical console outputs for human review. It will also write the statement to the console as usual.
+#'
+#' @param print_statement A string to print and append to a file
+append_critical_output <- function(statement, out) {
+  # If the out/logs directory does not exist, create it
+    if (!dir.exists(paste0(out, "/logs"))) {
+        dir.create(paste0(out, "/logs"), recursive = TRUE)
+    }
+  # Convert data frames or lists into a string if necessary
+  if (!is.character(statement)) {
+    statement <- capture.output(print(statement))
+  }
+  # Print to console
+  cat(statement, sep = "\n")
+  # Append to file
+  cat(statement, file = paste0(out, "/logs/critical_output.txt"), append = TRUE, sep = "\n")
 }

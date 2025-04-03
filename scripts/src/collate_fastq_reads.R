@@ -53,7 +53,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                               known_barcodes,
                               reverse_index2= FALSE,
                               barcode_col= 'forward_read_barcode',
-                              low_abundance_threshold= 20) {
+                              low_abundance_threshold= 20,
+                              out_dir) {
   require(tidyverse)
   require(data.table)
   
@@ -134,6 +135,8 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
                     flowcell_lane= base::strsplit(flowcell_lanes, split='[,;:]', fixed=F)) %>% 
       tidyr::unnest(cols= flowcell_name) %>% tidyr::unnest(cols= flowcell_lane) %>%
       dplyr::mutate(flowcell_lane= as.numeric(flowcell_lane))
+    print(paste0('Expected ', nrow(expected_flowcells), ' unique flowcell + lane combos in the sample meta:'))
+    print(expected_flowcells)
     # Note: This code uses base::strsplit and tidyr::unnest from an older version of tidyverse.
     # If there is any update to the tidyverse verision, this can be refactored to use
     # tidyr::separate_longer_delim
@@ -180,6 +183,11 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   # Calculate index purity ----
   # This is only accurate if the Nori input file is small enough to fit into a chunk.
   index_purity= sum(summed_reads$n) / sum(uncollapsed_raw_counts$n)
+  # if index_purity is NA, make it 0
+  if(is.na(index_purity)){
+    index_purity = 0
+  }
+  
   # Throw an error if the purity is greater than 1.
   # Throw a warning if the purity is below 0.5.
   print(paste0('Index purity in chunk: ', round(index_purity, 4)))
@@ -193,4 +201,21 @@ collate_fastq_reads= function(uncollapsed_raw_counts, sample_meta,
   print('Completing collate_fastq_reads.')
   return(list(prism_barcode_counts= summed_reads[summed_reads[[barcode_col]] %chin% known_barcodes,], 
               unknown_barcode_counts= summed_reads[!summed_reads[[barcode_col]] %chin% known_barcodes,]))
+}
+
+# Record sample_meta rows where either flowcell_names or flowcell_lanes are NA.
+check_flowcell_names_in_sample_meta <- function(sample_meta, out_dir) {
+  # Check for rows in flowcell_names that equate to empty - NA, "NA", "", " "
+  # Error out if the flowcell_names are not filled out in the sample meta.
+  missing_flowcell_names= sample_meta %>% dplyr::filter(if_any(all_of(c('flowcell_names')), ~ . %in% c(NA, 'NA', '', ' ')))
+  if(nrow(missing_flowcell_names) > 0) {
+    append_critical_output('The following rows in the sample meta are not filled out for flowcell_names.', out_dir)
+    append_critical_output(missing_flowcell_names, out_dir) # show the empty rows
+    append_critical_output('This means that these samples will not have any data in subsequent outputs. Ensure this is intentional.', out_dir)
+    append_critical_output('These samples will be saved in the missing_flowcells.csv file', out_dir)
+    # Write out missing flowcell names
+    write.csv(missing_flowcell_names, paste0(out_dir, '/missing_flowcells.csv'), row.names= FALSE, quote= FALSE)
+  } else {
+    append_critical_output('All flowcell_names and lanes are filled out in the sample meta.', out_dir)
+  }
 }

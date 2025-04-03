@@ -72,7 +72,6 @@ linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.v
       res <- dplyr::filter(res, ns >= ns.min)
     }
   }
-  
   return(res)
 }
 
@@ -255,7 +254,6 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
     }
   }
 }
-
 
 
 #' Exports individual datasets from depmap_datasets.h5 file. You can specify the row names either as ccle_names or depmap_ids.
