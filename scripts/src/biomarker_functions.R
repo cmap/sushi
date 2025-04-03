@@ -1,54 +1,147 @@
+
 #' Fits a simple linear model by regressing y over each column of X.
 #'
 #' @param X : matrix of n by m, it can have NA's in it, columns should be named.
-#' @param y : vector of m, elements are in the same order of with the rows of X, there cannot be any NAs.
+#' @param Y : matrix of n by p, rows are in the same order of with the rows of X.
 #' @param v.th : Minimum variance for the columns of X, columns with smaller variances will be dropped.
-#' @param n.min : Minimum number of finite pairs between column of X and y, columns not satisfying this condition will be dropped.
+#' @param n.min : Minimum number of finite pairs between columns of X and Y, column pairs not satisfying this condition will be dropped.
+#' @param rank.max : For each column of Y, only the top rank.max elements will be returned.
+#' @param q.val.max : Associations with a q_val > q.val.max will be dropped.
+#' @param regression_coef : Should the regression coefficients be calculated
+#' @param stability_score : Should the stability scores be calculated (valid only if regression_coef = TRUE) 
+#' @param ns.min : If the stability scores are calculated, associations with score less than ns.min will be dropped
+#' 
 #'
-#' @return A data frame with: x (corresponding column of X), correlation_coeff (Pearson correlation), regression_coeff (regression coefficient),
-#'         p_val_rob / q_val.rob (robust p-value / q-value), p_val / q_val (homoskedastic / traditional p-value / q-value),
+#' @return A data frame with: x (corresponding column of X), y (corresponding column of Y), correlation_coeff (Pearson correlation), 
+#'         regression_coeff (regression coefficient), p_val / q_val (homoskedastic p-value / q-value),
 #'         n (number of non-na samples), ns (a stability score to represent how many points of y needs to be replaced with
-#'         the mean value to flip the sign of regression coefficient).
+#'         the mean value to flip the sign of regression coefficient), rank (rank of the significance for each column of Y), 
+#
 #' @export
 #'
 #' @examples
 #'
-robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
-  X <- scale(X, center = TRUE, scale = FALSE)
-  n = colSums(!is.na(X))
-  X <- X[, (colMeans(X^2, na.rm = T) >= v.th) & (n >= n.min), drop = FALSE]
-  n = colSums(!is.na(X))
-  Y = matrix(y, dim(X)[1], dim(X)[2])
-  Y <- scale(Y, center = TRUE, scale = FALSE)
-  S = X * Y
-  muS = colMeans(S, na.rm = T)
-  sigmaS = sqrt(rowMeans((t(S) - muS)^2, na.rm = T))
-  varX = colMeans(X^2, na.rm = T)
-  varY = colMeans(Y^2, na.rm = T)
-
-  # Estimation and inference
-  regression_coef = muS / varX
-  correlation_coef = muS / sqrt(varX * varY)
-  p_val <- 2*pt(abs(sqrt(n-2) * muS/sigmaS),
-                df = n-2, lower.tail = FALSE)
-  p_val_homoskedastic <- 2*pt(sqrt( (n-2) /(1/correlation_coef^2-1)),
-                              df = n-2, lower.tail = FALSE)
-  p_val_homoskedastic[near(abs(correlation_coef), 1)] <- 0
-
-  # Experimental robustness score
-  n_stable = apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
-  n_stable = pmin(n_stable, n - apply(X, 2, function(x) sort(table(x), decreasing = TRUE)[1]))
-
-  res <- data.frame(x = names(regression_coef), correlation_coef = correlation_coef, regression_coef = regression_coef,
-                    p_val_rob = p_val,
-                    p_val = p_val_homoskedastic,
-                    q_val_rob = p.adjust(p_val, method = "BH"),
-                    q_val = p.adjust(p_val_homoskedastic, method = "BH"),
-                    n = n,
-                    n_stable = n_stable)
-
+linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.val.max = 0.1, regression_coef = TRUE, stability_score = FALSE, ns.min = 3) {
+  require(tidyverse)
+  require(matrixStats)
+  require(WGCNA)
+  
+  X <- X[, (matrixStats::colVars(X, na.rm = T) >= v.X.min) & (colSums(!is.na(X)) >= n.min), drop = FALSE]
+  
+  print("Calculating correlation coefficients and q-values...")
+  res <- WGCNA::corAndPvalue(X,Y, use = "p")[c(1,2,5)] %>%
+    reshape2::melt() %>% 
+    tidyr::pivot_wider(names_from = L1, values_from = value) %>% 
+    dplyr::filter(nObs >= n.min) %>% 
+    dplyr::group_by(Var2) %>%  
+    dplyr::mutate(q = p.adjust(p, method = "BH")) %>% 
+    dplyr::arrange(q) %>% dplyr::mutate(rank = 1:n()) %>%
+    dplyr::ungroup() %>% 
+    dplyr::filter(q <= q.val.max) %>%
+    dplyr::group_by(Var2, sign(cor)) %>% 
+    dplyr::arrange(desc(abs(cor))) %>% dplyr::mutate(rank = pmin(rank, 1:n())) %>%
+    dplyr::ungroup() %>% 
+    dplyr::filter(rank <= rank.max) %>% 
+    dplyr::rename(x = Var1, y = Var2, rho = cor, p.val = p, q.val = q, n = nObs) %>% 
+    dplyr::distinct(x, y, rho, p.val, q.val, n, rank) %>%
+    dplyr::rename(correlation_coef = rho, p_val = p.val, q_val = q.val)
+  
+  # Do we need the regression coefficients?
+  if(regression_coef & (nrow(res) > 0)){
+    print("Calculating regression coefficients...")
+    X_ <- X[, res$x]; Y_ <- Y[, res$y]
+    mask <- !is.finite(X_ * Y_)
+    X_[mask] <- NA; Y_[mask] <- NA
+    Y_ <- scale(Y_, center = TRUE, scale = FALSE)
+    X_ <- scale(X_, center = TRUE, scale = FALSE)
+    
+    res$var.x <- colMeans(X_^2, na.rm = T)
+    res$var.y <- colMeans(Y_^2, na.rm = T) 
+    
+    res <- res %>% 
+      dplyr::mutate(regression_coef = correlation_coef * sqrt(var.y/var.x)) %>% 
+      dplyr::select(-var.y)
+    
+    # Experimental robustness score?
+    if(stability_score){
+      print("Calculating stability scores...")
+      S <- X_ * Y_
+      n <- colSums(!is.na(X_))
+      ns <- apply(S,2, function(s) sum(cumsum(sort(s/sum(s, na.rm = T), decreasing = T)) < 1, na.rm = T)) + 1
+      res$ns <- pmin(ns, n - apply(X_, 2, function(x) max(table(x))))
+      res <- dplyr::filter(res, ns >= ns.min)
+    }
+  }
   return(res)
 }
+
+
+#' Calculates and returns univariate analysis results by correlating each column of Y with features sets from depmap.org.
+#'
+#' @param Y : Matrix n x m, make sure rownames are depmap_id's and columns are named. There can be NA's.
+#' @param file : Please point out to the downloaded depmap_datasets.h5 file.
+#' @param features : You can give a subset of available feature sets, but if left as NULL, it computes for everything.
+#' @param homoskedastic : Should homoskedastic or robust q-values be used for ranking and filtering. Default is homoskedastic.
+#' @param n.X.min : Results with less thana given sample size are dropped, default is 100
+#' @param n_stable.min : Results that can be flipped with less than n_stable.min data points are dropped, the default is 3
+#' @param q_val.max : Results with q-values less than q_val.max are dropped, default is 0.2
+#' @param parallel : Should multiple cores to be used to decrease the compute time. Default is FALSE.
+#'
+#' @return Returns a data-table with each row corresponds to a particular (feature, feature_set, y) triplet. See linear_model for the other columns.
+#' @export
+#'
+#' @examples
+#'
+univariate_biomarker_table <- function(Y, file,
+                                       features = NULL, n.X.min = 100,
+                                       v.X.min = 0.0025,
+                                       n_stable.min = 3, q_val_max = .1,
+                                       regression_coef = TRUE,
+                                       stability_score = TRUE, rank.max = 250){
+  require(tidyverse)
+  require(magrittr)
+  require(rhdf5)
+  require(WGCNA)
+
+  
+  if(!is.matrix(Y)){
+    Y <- as.matrix(Y)
+  }
+  
+  if(is.null(features)){
+    features <-  substr(setdiff(h5ls(file)$group, "/"),2,100)
+  }else{
+    features <- intersect(features, substr(setdiff(h5ls(file)$group, "/"),2,100))
+  }
+  print(features)
+  
+  RESULTS <- list()
+  for(feat in features){
+    
+    
+    X <- read_dataset(file , feat)
+    cl = intersect(rownames(X), rownames(Y))
+    X <- X[cl, ]
+    
+    if((dim(X)[1] >= n.X.min) & (dim(X)[2] > 0)){
+      
+      print(paste0(feat, " - ", dim(X)[1] ,'x', dim(X)[2]))
+      
+      RESULTS[[feat]] <- linear_model(X = X, Y = Y[cl, , drop = FALSE],
+                                                        v.X.min = v.X.min, n.min = n.X.min, 
+                                                        rank.max = rank.max, q.val.max = q_val_max, 
+                                                        regression_coef = regression_coef, stability_score = stability_score, ns.min = n_stable.min) %>% 
+        dplyr::rename(feature = x) %>%
+        dplyr::mutate(feature_set = feat) 
+    }
+    print(feat)
+  }
+  
+  RESULTS <- dplyr::bind_rows(RESULTS)
+  return(RESULTS)
+}
+
+
 
 
 
@@ -73,8 +166,8 @@ robust_linear_model <- function(X, y, v.th = 0.0025, n.min = 25) {
 #' @examples
 random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = NULL, X.test = NULL) {
   y.clean <- y[is.finite(y)]
-  X.clean <- X[, apply(X, 2, function(x) all(is.finite(x)))]
-  cl <- sample(dplyr::intersect(rownames(X.clean), names(y.clean)))
+  cl <- sample(dplyr::intersect(rownames(X), names(y.clean)))
+  X.clean <- X[cl, apply(X[cl, ], 2, function(x) all(is.finite(x)))]
   if(is.null(folds)){
     N = floor(length(cl)/k)
     folds <- sapply(1:k, function(kx) cl[((kx - 1) * N + 1):(kx * N)])
@@ -127,22 +220,23 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
     }
   }
   if (nrow(SS) > 0) {
-    RF.importances <- SS %>% dplyr::distinct(feature, RF.imp,
-                                             fold) %>% reshape2::acast(feature ~ fold, value.var = "RF.imp",
-                                                                       fill = 0)
+    RF.importances <- SS %>%
+      dplyr::distinct(feature, RF.imp, fold) %>%
+      reshape2::acast(feature ~ fold, value.var = "RF.imp", fill = 0)
+
     RF.table <- tibble::tibble(feature = rownames(RF.importances),
-                               RF.imp.mean = RF.importances %>% apply(1, mean),
-                               RF.imp.sd = RF.importances %>% apply(1, function(x) sd(x,
-                                                                                      na.rm = T)), RF.imp.stability = RF.importances %>%
-                                 apply(1, function(x) sum(x > 0)/k)) %>% dplyr::filter(feature !=
-                                                                                         "(Intercept)") %>% dplyr::arrange(desc(RF.imp.mean)) %>%
-      dplyr::mutate(rank = 1:n())
+                               RF.imp.mean = rowMeans(RF.importances), 
+                               RF.imp.sd = apply(RF.importances, 1, function(x) sd(x, na.rm = T)),
+                               RF.imp.stability = apply(RF.importances, 1, function(x) sum(x > 0)/k)) %>%
+      dplyr::filter(feature != "(Intercept)") %>%
+      dplyr::arrange(desc(RF.imp.mean)) 
+    
     mse <- mean((yhat_rf - y.clean)^2, na.rm = T)
     mse.se <- sqrt(var((yhat_rf - y.clean)^2, na.rm = T))/sqrt(length(y.clean))
     r2 <- 1 - (mse/var(y.clean, na.rm = T))
     ps <- cor(y.clean, yhat_rf, use = "pairwise.complete.obs")
     RF.table %<>% dplyr::mutate(MSE = mse, MSE.se = mse.se,
-                                R2 = r2, PearsonScore = ps)
+                                R2 = r2, PearsonScore = c(ps))
 
     if(is.null(X.test)){
       return(list(model_table = RF.table, predictions = yhat_rf, folds = folds))
@@ -160,106 +254,6 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
     }
   }
 }
-
-
-
-#' Calculates and returns univariate analysis results by correlating each column of Y with features sets from depmap.org.
-#'
-#' @param Y : Matrix n x m, make sure rownames are depmap_id's and columns are named. There can be NA's.
-#' @param file : Please point out to the downloaded depmap_datasets.h5 file.
-#' @param features : You can give a subset of available feature sets, but if left as NULL, it computes for everything.
-#' @param homoskedastic : Should homoskedastic or robust q-values be used for ranking and filtering. Default is homoskedastic.
-#' @param n.X.min : Results with less thana given sample size are dropped, default is 100
-#' @param n_stable.min : Results that can be flipped with less than n_stable.min data points are dropped, the default is 3
-#' @param q_val.max : Results with q-values less than q_val.max are dropped, default is 0.2
-#' @param parallel : Should multiple cores to be used to decrease the compute time. Default is FALSE.
-#'
-#' @return Returns a data-table with each row corresponds to a particular (feature, feature set, y) triplet. See robust_linear_model for the other columns.
-#' @export
-#'
-#' @examples
-#'
-univariate_biomarker_table <- function(Y, file = '/data/biomarker/current/depmap_datasets_public.h5',
-                                       features = NULL,
-                                       homoskedastic = TRUE, n.X.min = 100,
-                                       v.X.min = 0.0025,
-                                       n_stable.min = 3, q_val_max = .2,
-                                       parallel = FALSE){
-  require(tidyverse)
-  require(magrittr)
-  require(rhdf5)
-
-
-  if(!is.matrix(Y)){
-    Y <- as.matrix(Y)
-  }
-
-  if(is.null(features)){
-    features <-  substr(setdiff(h5ls(file)$group, "/"),2,100)
-  }else{
-    features <- intersect(features, substr(setdiff(h5ls(file)$group, "/"),2,100))
-  }
-  print(features)
-
-  RESULTS <- list()
-  for(feat in features){
-
-    X <- read_dataset(file , feat)
-    cl = intersect(rownames(X), rownames(Y))
-
-
-    X <- X[cl, ]
-    X <- X[ , apply(X, 2, function(x) sum(is.finite(x))) >= n.X.min, drop = FALSE]
-
-    print(paste0(feat, " - ", dim(X)[1] ,'x', dim(X)[2]))
-
-    if((dim(X)[1] >= n.X.min) & dim(X)[2] > 0){
-      f <- function(ix){
-        y <- Y[cl, ix]; y <- y[is.finite(y)]
-
-        #TODO: Need to deal with empty X values
-
-        res <- robust_linear_model(X = X[names(y), ], y = y, v.th = v.X.min, n.min = n.X.min) %>%
-          as.tibble()%>%
-          dplyr::rename(feature = x) %>%
-          dplyr::mutate(feature_set = feat,
-                        y = colnames(Y)[ix]) %>%
-          dplyr::filter(n_stable >= n_stable.min)
-
-        if(homoskedastic){
-          res <- res %>%
-            dplyr::filter(q_val <= q_val_max)
-        } else{
-          res <- res %>%
-            dplyr::filter(q_val_rob <= q_val_max)
-        }
-
-        if(nrow(res) > 0){
-          res <- res %>%
-            dplyr::arrange(correlation_coef) %>%
-            dplyr::mutate(rank = ifelse(sign(correlation_coef) < 0, 1:n(), NA)) %>%
-            dplyr::arrange(-correlation_coef) %>%
-            dplyr::mutate(rank = pmin(rank, ifelse(sign(correlation_coef > 0), 1:n(), NA), na.rm = T))
-        }
-        return(res)
-      }
-
-      if(parallel){
-        require(parallel)
-        require(parallelly)
-        RES <- mclapply(1:dim(Y)[2], f, mc.cores = parallelly::availableCores() )
-      }else{
-        RES <- lapply(1:dim(Y)[2], f)
-      }
-
-      RESULTS[[feat]] <- dplyr::bind_rows(RES)
-    }
-  }
-
-  RESULTS <- dplyr::bind_rows(RESULTS)
-  return(RESULTS)
-}
-
 
 
 #' Exports individual datasets from depmap_datasets.h5 file. You can specify the row names either as ccle_names or depmap_ids.
@@ -354,12 +348,12 @@ read_features <- function(file = '/data/biomarker/current/depmap_datasets_public
 #' @param W : Confounder matrix, rows are indexed by depmap_id's.
 #' @param file : File path for the compressed depmap datasets (.h5 file).
 #'
-#' @return Returns a list of two matrices X.DNA and X.RNA. X.DNA contains CopyNumber, Mutation, Fusion, Lineage, and OmicsSignatures features as columns.
-#'         X.RNA additionally includes the RNA expression data as well.
+#' @return Returns a list of three matrices X.DNA, X.RNA, and X.CRISPR. X.DNA contains CopyNumber, Mutation, Fusion, Lineage, and OmicsSignatures features as columns.
+#'         X.RNA additionally includes the RNA expression data as well, lastly X.CRISPR adds the CRISPR profiles for the overlapping rows.
 #' @export
 #'
 #' @examples
-RF_feature_sets <- function(Y, W = NULL, file = '/data/biomarker/current/depmap_datasets_public.h5') {
+RF_feature_sets <- function(Y, W = NULL, file) {
   require(magrittr)
 
   if(!is.null(W)){
@@ -381,6 +375,7 @@ RF_feature_sets <- function(Y, W = NULL, file = '/data/biomarker/current/depmap_
   SIG <- read_dataset(file = file, dataset = 'Signatures')
   colnames(SIG) %<>% paste0("SIG_", .)
 
+
   cl = intersect(rownames(MUT), rownames(CN)) %>%
     intersect(rownames(FUS)) %>%
     intersect(rownames(LIN)) %>%
@@ -396,24 +391,32 @@ RF_feature_sets <- function(Y, W = NULL, file = '/data/biomarker/current/depmap_
     X.DNA <- cbind(X.DNA, W[cl, , drop = FALSE])
   }
 
-  X.DNA <- X.DNA[rowMeans(is.finite(X.DNA)) > 0.9, ,drop = TRUE]
+  X.DNA <- X.DNA[rowMeans(is.finite(X.DNA)) > 0.9, ,drop = FALSE]
 
   rm(CN, MUT, FUS, LIN, SIG)
   EXP <- read_dataset(file = file, dataset = 'Expression')
+  EXP <- EXP[rowMeans(is.finite(EXP)) > 0.9, ,drop = FALSE]
   colnames(EXP) %<>% paste0("EXP_", .)
-
-
+  
   cl = intersect(rownames(X.DNA), rownames(EXP))
 
+  X.DNA <- X.DNA[cl, ]
   X.RNA <- EXP[cl, ]
   rm(EXP)
 
-  X.RNA <- X.RNA[rowMeans(is.finite(X.RNA)) > 0.9, ,drop = TRUE]
+  CRISPR <- read_dataset(file = file, dataset = 'CRISPR')
+  CRISPR <- CRISPR[rowMeans(is.finite(CRISPR)) > 0.9, ,drop = FALSE]
+  colnames(CRISPR) %<>% paste0("CRISPR_", .)
+  
+  cl = intersect(cl, rownames(CRISPR))
+  X.CRISPR <- CRISPR[cl, ]
+  rm(CRISPR)
 
   colnames(X.DNA) %<>% make.names()
   colnames(X.RNA) %<>% make.names()
+  colnames(X.CRISPR) %<>% make.names()
 
-  return(list(X.DNA = X.DNA,  X.RNA = X.RNA))
+  return(list(X.DNA = X.DNA,  X.RNA = X.RNA, X.CRISPR = X.CRISPR))
 }
 
 
@@ -429,11 +432,11 @@ RF_feature_sets <- function(Y, W = NULL, file = '/data/biomarker/current/depmap_
 #' @export
 #'
 #' @examples
-multivariate_biomarker_table <- function(Y, W = NULL, file = '/data/biomarker/current/depmap_datasets_public.h5', k = 10) {
+multivariate_biomarker_table <- function(Y, W = NULL, file, k = 10) {
   X <- RF_feature_sets(Y, W = W, file = file)
   cl <- intersect(rownames(X$X.DNA), rownames(X$X.RNA))
 
-  rf.DNA <- list(); rf.RNA <- list()
+  rf.DNA <- list(); rf.RNA <- list(); rf.CRISPR <- list()
   for(ix in 1:dim(Y)[2]){
 
     y = Y[,ix]; y = y[is.finite(y)]
@@ -441,21 +444,34 @@ multivariate_biomarker_table <- function(Y, W = NULL, file = '/data/biomarker/cu
 
     rf_DNA <- random_forest(X$X.DNA[cl_, ], y[cl_], k = k)
     rf_RNA <- random_forest(cbind(X$X.DNA[cl_, ], X$X.RNA[cl_, ]), y[cl_], folds = rf_DNA$folds, k = k)
+    
+    cl_ = intersect(cl_, rownames(X$X.CRISPR))
+    rf_CRISPR <- random_forest(cbind(X$X.DNA[cl_, ], X$X.RNA[cl_, ], X$CRISPR[cl_, ]), y[cl_], k = k)
 
     rf.DNA[[ix]] <- rf_DNA$model_table %>%
       dplyr::mutate(y = colnames(Y)[ix],
-                    model = "DNA") %>%
-      dplyr::filter(RF.imp.stability > 0.5)
+                    model = "DNA-ONLY") %>%
+      dplyr::filter(RF.imp.stability >= 0.5) %>% 
+      dplyr::mutate(rank = 1:n())
+    
 
     rf.RNA[[ix]] <- rf_RNA$model_table %>%
       dplyr::mutate(y = colnames(Y)[ix],
                     model = "DNA+RNA") %>%
-      dplyr::filter(RF.imp.stability > 0.5)
+      dplyr::filter(RF.imp.stability >= 0.5) %>% 
+      dplyr::mutate(rank = 1:n())
+    
+    
+    rf.CRISPR[[ix]] <- rf_CRISPR$model_table %>%
+      dplyr::mutate(y = colnames(Y)[ix],
+                    model = "DNA+RNA+CRISPR") %>%
+      dplyr::filter(RF.imp.stability >= 0.5) %>% 
+      dplyr::mutate(rank = 1:n())
 
     print(paste0(ix, " out of ", dim(Y)[2]))
   }
 
-  RF <- dplyr::bind_rows(dplyr::bind_rows(rf.DNA), dplyr::bind_rows(rf.RNA))
+  RF <- dplyr::bind_rows(dplyr::bind_rows(rf.DNA), dplyr::bind_rows(rf.RNA), dplyr::bind_rows(rf.CRISPR))
 
   return(RF)
 }
@@ -538,10 +554,10 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   print(paste0("Writing the multivariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
     dplyr::select_at(vars(treatment_columns)) %>%
-    dplyr::distinct() %>%
-    tidyr::unite(y, treatment_columns, sep = "::", remove = FALSE) %>%
-    dplyr::inner_join(multivariate_biomarker_table) %>%
-    dplyr::select(-y) %>%
+    dplyr::distinct() %>% 
+    tidyr::unite(y, treatment_columns, sep = "::", remove = FALSE) %>% 
+    dplyr::inner_join(multivariate_biomarker_table) %>% 
+    dplyr::select(-y) %>%  
     write_csv(paste0(out_path, "/", output_file_name))
 }
 
@@ -561,32 +577,26 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
 #' @param transform_function : Should the response variable be transformed before the analysis. Default is identity, a common choice is log2.
 #' @param features : Set of depmap datasets to be used in the analysis. The default NULL makes sure all the datasets in the dpemap_file are used.
 #' @param min_sample_size : Minimum sample size for a feature to be included in the analysis. The default is 100.
-#' @param parallel : Should the analysis be parallelized to multiple cores.
+#' See the description of univariate_biomarker_table() for the remaining parameters.
 #'
 #' @return
 #' @export
 #'
 #' @examples
-#' create_univariate_biomarker_table( in_path = "data/MTS_SEQ003_KF/", input_file_name = "drc.csv",
-#'                                    output_file_name = "l2auc_univariate_biomarkers",
-#'                                    treatment_columns = c("x_project_id", "pert_plate", "pert_name"),
-#'                                    response_column = "auc", transform_function = log2,
-#'                                    depmap_file = "~/Downloads/mts_sequencing_analysis/data/depmap_datasets_internal_24q4.h5",
-#'                                    parallel = TRUE)
-#'
-#' create_univariate_biomarker_table( in_path = "data/MTS_SEQ003_KF/",
-#'                                    treatment_columns = c("x_project_id", "pert_plate", "pert_name", "pert_dose"),
-#'                                    depmap_file = "~/Downloads/mts_sequencing_analysis/data/depmap_datasets_internal_24q4.h5",
-#'                                    parallel = TRUE)
 create_univariate_biomarker_table <- function(in_path, out_path,
                                               output_file_name = "l2fc_univariate_biomarkers", depmap_file,
                                                 treatment_columns = c("pert_id", "x_project_id", "pert_name", "pert_plate", "pert_dose"),
                                                 response_column = "median_l2fc", aggregate_function = median, transform_function = function(x){x},
-                                              features = NULL, min_sample_size = 100, parallel = FALSE) {
+                                              features = NULL, min_sample_size = 100,
+                                              regression_coef = TRUE, stability_score = TRUE, rank.max = 250,
+                                              min_x_variance = 0.0025, n_stable_min = 3, q_val_max = .1
+                                              ) {
   require(data.table)
   require(tidyverse)
   require(rlang)
 
+
+  
   # check if the input path exists
   if(!file.exists(in_path)){
     stop("Input path does not exist!")
@@ -602,14 +612,6 @@ create_univariate_biomarker_table <- function(in_path, out_path,
 
   # check for missing critical columns
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
-  print("treatment_columns:")
-  print(treatment_columns)
-  print("necessary_columns:")
-  print(necessary_columns)
-  print("input_columns:")
-  print(colnames(input_file))
-  print("response_column:")
-  print(response_column)
 
   if(any(!necessary_columns %in% colnames(input_file))){
     stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
@@ -626,8 +628,9 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   #TODO: Decide on agg function
 
   # generate the biomarker table
-  univariate_biomarker_table <- univariate_biomarker_table(Y = M, features = features, file = depmap_file,
-                                                           n.X.min = min_sample_size, parallel =  parallel)
+  univariate_biomarker_table <- univariate_biomarker_table(Y = M, features = features,file = depmap_file, n.X.min = min_sample_size,
+                                         v.X.min = min_x_variance, n_stable.min = n_stable_min, q_val_max = q_val_max, 
+                                         regression_coef = regression_coef, stability_score = stability_score, rank.max = rank.max) 
 
   # Export the biomarker table -----
   print(paste0("Writing the univariate output file to ", paste0(out_path, "/", output_file_name)))
@@ -639,3 +642,8 @@ create_univariate_biomarker_table <- function(in_path, out_path,
     dplyr::select(-y) %>%
     write_csv(paste0(out_path, "/", output_file_name))
 }
+
+
+
+
+
