@@ -78,43 +78,55 @@ restructure2_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
   return(full_table)
 }
 
-# bliss synergy function
+# Calculate synergy scores
 # uses the first restructuring function
 # l2fc_root is set to l2fc_col
-calculate_bliss = function(restructured_l2fc,
-                           sig_cols,
-                           cell_line_cols,
-                           l2fc_root = 'median_l2fc') {
-  # function testing - to be removed
-  restructured_l2fc = restructured_l2fc
-  sig_cols = c('x_project_id', 'pert_type', 'pert1_iname', 'pert1_dose', 'pert2_iname', 'pert2_dose')
-  cell_line_cols = c('culture', 'pool_id', 'ccle_name')
-  l2fc_root= 'LFC_cb'
-  # -
+calculate_synergy = function(restructured_l2fc,
+                           l2fc_root = 'median_l2fc',
+                           cap_for_viability = 1) {
+  # From l2fc calculate FCs
+  synergy_scores = restructured_l2fc %>% 
+    dplyr::mutate(pert1_capped_viab = pmin(2^get(paste0('pert1_', l2fc_root)), cap_for_viability),
+                  pert2_capped_viab = pmin(2^get(paste0('pert2_', l2fc_root)), cap_for_viability),
+                  combo_capped_viab = pmin(2^get(paste0('combo_', l2fc_root)), cap_for_viability),
+                  bliss = pert1_capped_viab * pert2_capped_viab) %>%
+    dplyr::rowwise() %>% 
+    dplyr::mutate(hsa = min(pert1_capped_viab, pert2_capped_viab)) %>% 
+    dplyr::ungroup() %>%
+    dplyr::mutate(synergy = 
+                    dplyr::case_when(combo_capped_viab > hsa ~ combo_capped_viab - hsa,
+                                     combo_capped_viab < bliss ~ bliss - combo_capped_viab,
+                                     .default = 0))
   
-  # Calculate capped viability
-  capped_viab = restructured_l2fc %>% 
-    dplyr::mutate(pert1_capped_viab = pmin(2^get(paste0('pert1_', l2fc_root)), 1),
-                  pert2_capped_viab = pmin(2^get(paste0('pert2_', l2fc_root)), 1),
-                  Bliss.NullFC = pert1_capped_viab * pert2_capped_viab)
+  return(synergy_scores)
+}
+
+# Sample DMSO l2fc values
+sample_dmso_l2fc = function(dmso_l2fc, l2fc_col = 'l2fc',
+                            grouping_cols,
+                            n_samples) {
+  LFC_sample <- list()
+  for (i in 1:n_samples){
+    LFC_sample[[i]] <-  dmso_l2fc %>%
+      group_by(pick(all_of(grouping_cols))) %>%
+      slice_sample(n = 3) %>%
+      summarise(pert1_LFC = median(.[[l2fc_col]]), .groups = 'drop')
+    if(i %% 50 == 0) { print(i) }
+  }
+  LFC_sample <- LFC_sample %>%
+    dplyr::bind_rows()
   
-  # Bliss calcs axis 1 - on pert1, pert1_dose, pert2
-  temp1 = capped_viab %>% 
-    dplyr::group_by(pick(all_of(c(cell_line_cols, sig_cols[!grepl('pert2_[a-z]?dose', sig_cols)])))) %>%
-    dplyr::filter(length(unique(pert2_dose)) > 3) %>% 
-    dplyr::summarise(riem_AUC_med_combination = mean(pmin(2^get(paste0('combo_', l2fc_root)), 1)),
-                     riem_AUC_med_bliss = mean(Bliss.NullFC),
-                     n_pts = dplyr::n()) %>% dplyr::ungroup()
-  
-  # Bliss calcs axis 2 - on pert1, pert2, pert2_dose
-  temp2 = capped_viab %>% 
-    dplyr::group_by(pick(all_of(c(cell_line_cols, sig_cols[!grepl('pert1_[a-z]?dose', sig_cols)])))) %>%
-    dplyr::filter(length(unique(pert1_dose)) > 3) %>% 
-    dplyr::summarise(riem_AUC_med_combination = mean(pmin(2^get(paste0('combo_', l2fc_root)), 1)),
-                     riem_AUC_med_bliss = mean(Bliss.NullFC),
-                     n_pts = dplyr::n()) %>% dplyr::ungroup()
-  
-  AUC_bliss.df = dplyr::bind_rows(temp1,temp2)
-  
-  return(AUC_bliss.df)
+  LFC_sampled = LFC_sample %>% 
+    dplyr::group_by(pick(all_of(grouping_cols))) %>%
+    dplyr::mutate(pert2_LFC = sample(pert1_LFC, n_samples, replace = TRUE),
+                  combo_LFC = sample(pert1_LFC, n_samples, replace = TRUE)) %>%
+    dplyr::ungroup()
+  return(LFC_sampled)
+}
+
+# 
+get_cdf_value = function(group_name, synergy, h5_file) {
+  ecdf_obj = stats::ecdf(h5read(h5_file, group_name))
+  out_value = ecdf_obj(synergy)
+  return(out_value)
 }
