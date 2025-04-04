@@ -108,8 +108,8 @@ pseudocount <- as.numeric(args$pseudocount)
 filter_qc_flags <- as.logical(toupper(args$filter_qc_flags))
 
 # Set control types
-poscon = args$poscon_type
-negcon = args$negcon_type
+poscon <- args$poscon_type
+negcon <- args$negcon_type
 
 
 # LOAD QC PARAMETERS
