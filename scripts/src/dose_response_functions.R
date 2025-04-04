@@ -302,8 +302,7 @@ create_drc_table <- function(LFC,
                              cell_line_cols = c("depmap_id", "cell_set", "pool_id"),
                              treatment_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
                              dose_col = "pert_dose", l2fc_col = "median_l2fc", type_column = "pert_type",
-                             cap_for_viability = 1.5,
-                             limits_col) {
+                             cap_for_viability = 1.5) {
   require(data.table)
   require(tidyverse)
   require(rlang)
@@ -313,8 +312,8 @@ create_drc_table <- function(LFC,
     stop("LFC is empty!")
   }
 
-  print(paste0("dose_column:", dose_column))
-  print(paste0("l2fc_column:", l2fc_column))
+  print(paste0("dose_column:", dose_col))
+  print(paste0("l2fc_column:", l2fc_col))
   print(paste0("cell_line_cols:", cell_line_cols))
   print(paste0("treatment_cols:", treatment_cols))
   print(paste0("cap_for_viability:", cap_for_viability))
@@ -329,8 +328,8 @@ create_drc_table <- function(LFC,
   # Convert columns to numeric explicitly and check for NA generation
   LFC <- LFC %>%
     dplyr::mutate(
-      dose_ = as.numeric(.data[[dose_column]]),
-      l2fc_ = as.numeric(.data[[l2fc_column]])
+      dose_ = as.numeric(.data[[dose_col]]),
+      l2fc_ = as.numeric(.data[[l2fc_col]])
     )
 
   # Verify conversion results
