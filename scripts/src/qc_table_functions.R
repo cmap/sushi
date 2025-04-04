@@ -401,7 +401,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, contains_poscon = TRUE) {
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, contains_poscon = TRUE, poscon = NULL, negcon = NULL) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code") # Define columns to group by
   print(paste0("Computing cell + plate QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
@@ -410,8 +410,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
   medians_and_mad <- compute_ctl_medians_and_mad(
     df = normalized_counts,
     group_cols = cell_line_plate_grouping,
-    negcon = args$negcon_type,
-    poscon = args$poscon_type,
+    negcon = negcon,
+    poscon = poscon,
     pseudocount = pseudocount
   )
 
@@ -420,16 +420,16 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     df = normalized_counts,
     metric = "log2_normalized_n",
     group_cols = cell_line_plate_grouping,
-    negcon = args$negcon_type,
-    poscon = args$poscon_type,
+    negcon = negcon,
+    poscon = poscon,
     contains_poscon = contains_poscon
   )
 
   # Compute poscon LFC
   poscon_lfc <- compute_control_lfc(
     df = medians_and_mad,
-    negcon = args$negcon_type,
-    poscon = args$poscon_type,
+    negcon = negcon,
+    poscon = poscon,
     grouping_cols = cell_line_plate_grouping,
     contains_poscon = contains_poscon
   )
@@ -442,7 +442,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
 
 
   # Merge all tables together
-  if (poscon) {
+  if (contains_poscon) {
     print(paste0("Merging ", paste0(cell_line_plate_grouping, collapse = ","), " QC tables together....."))
     print("medians_and_mad")
     print(colnames(medians_and_mad))

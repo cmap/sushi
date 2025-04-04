@@ -107,6 +107,10 @@ count_threshold <- as.numeric(args$count_threshold)
 pseudocount <- as.numeric(args$pseudocount)
 filter_qc_flags <- as.logical(toupper(args$filter_qc_flags))
 
+# Set control types
+poscon = args$poscon_type
+negcon = args$negcon_type
+
 
 # LOAD QC PARAMETERS
 thresholds <- load_thresholds_from_json(args$qc_params)
@@ -166,7 +170,8 @@ filtered_counts_rm_ctl <- filtered_counts %>%
 
 plate_cell_table <- generate_cell_plate_table(
   normalized_counts = filtered_normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
-  cell_line_cols = cell_plate_list, pseudocount = pseudocount, contains_poscon = contains_poscon
+  cell_line_cols = cell_plate_list, pseudocount = pseudocount, contains_poscon = contains_poscon,
+  poscon = poscon, negcon = negcon
 )
 
 plate_cell_qc_flags_table <- plate_cell_qc_flags(
