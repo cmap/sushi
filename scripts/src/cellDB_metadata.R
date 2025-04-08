@@ -96,13 +96,13 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
         print(paste(cs[j], "is a cell pool")) 
         known_cell_sets = append(known_cell_sets, cs[j])
         
-        # Collecting pool DepMap ID members
+        # Collecting pool lua members
         pool_members = get_LUAs_from_pools(cs[j])
-        all_luas = get_LUAs_from_pools(cs[j])
+        all_luas = append(all_luas, pool_members)
         # all_DepMapIDs = append(all_DepMapIDs, pool_members)
-        print(paste(cs[j], "has a DepMap ID length of:", length(pool_members[[1]])))
+        print(paste(cs[j], "has a lua length of:", length(pool_members[[1]])))
         
-      } else if (cs[j] %in% cell_line_meta$DepMap_ID){
+      } else if (cs[j] %in% cell_line_meta$lua){
         print(paste(cs[j], "is a cell line")) 
         all_luas = append(all_luas, cs[j])
         known_cell_sets = c(known_cell_sets, cs[j])
