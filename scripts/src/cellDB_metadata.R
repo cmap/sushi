@@ -137,6 +137,9 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
       # Should duplicates be removed before adding to cell_set_meta?
       if (length(all_luas) > 0) {
         known_cell_sets <- paste(known_cell_sets, collapse = ";")
+        # Deduplicate all_luas and all_DepMapIDs
+        all_luas <- unique(all_luas)
+        all_DepMapIDs <- unique(all_DepMapIDs)
         joined_luas <- sapply(all_luas, function(row) paste(row, collapse = ";"))
         all_luas <- paste(joined_luas, collapse = ";")
         joined_DepMapIDs <- sapply(all_DepMapIDs, function(row) paste(row, collapse = ";"))
