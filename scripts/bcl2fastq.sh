@@ -100,7 +100,7 @@ fi
 
 if [ ! -d $BUILD_DIR/fastq/ ]
 then
-  mkdir -p $BUILD_DIR/fastq/
+  mkdir -p -m a=rwx $BUILD_DIR/fastq/
 fi
 
 #echo Copying fastq files from $OUT_DIR/$SEQ_CODE/ to $BUILD_DIR/fastq/

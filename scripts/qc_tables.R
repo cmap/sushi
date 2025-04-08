@@ -91,7 +91,7 @@ normalized_counts <- data.table::fread(args$normalized_counts, header = TRUE, se
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(paste0(args$out, "/qc_tables"))) {
-  dir.create(paste0(args$out, "/qc_tables"))
+  dir.create(paste0(args$out, "/qc_tables"), mode = "0777")
 }
 
 

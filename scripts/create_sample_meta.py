@@ -32,7 +32,8 @@ def fetch_metadata(filter_dict, base_url, api_key):
 
 def save_dataframe(df, filename, build_dir):
     # Ensure the directory exists
-    os.makedirs(build_dir, exist_ok=True)
+    os.umask(0) # Remove masking permission
+    os.makedirs(build_dir, mode = 0o777, exist_ok=True)
 
     # Define the file path
     filepath = os.path.join(build_dir, f"{filename}.csv")

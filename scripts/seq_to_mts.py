@@ -191,7 +191,8 @@ def main(args):
     if os.path.isdir(args.out):
         pass
     else:
-        os.makedirs(args.out)
+        os.umask(0) # Remove masking permission
+        os.makedirs(args.out, mode = 0o777)
 
     try:
         print("Reading in data")

@@ -34,7 +34,7 @@ if (args$out == ""){
 
 #if args$out doesn't exist, create it
 if (!dir.exists(args$out)){
-  dir.create(args$out)
+  dir.create(args$out, mode = "0777")
 }
 
 read_directory_contents <- c(args$fastq) %>% 

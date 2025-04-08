@@ -59,7 +59,7 @@ if(nrow(dose_response) == 0) {
 
 # Check if the output durectory exists, if not create it
 if (!dir.exists(paste0(out_dir))) {
-  dir.create(paste0(out_dir))
+  dir.create(paste0(out_dir), mode = "0777")
 }
 
 # Write out the DRC table ----

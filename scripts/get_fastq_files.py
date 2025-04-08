@@ -104,7 +104,8 @@ def main(args):
     if os.path.isdir(fastq_out):
         logger.info("directory exists")
     else:
-        os.makedirs(fastq_out)
+        os.umask(0) # Remove masking permission
+        os.makedirs(fastq_out, mode = 0o777)
 
     logger.debug(fastq_out)
     logger.debug(paths)
