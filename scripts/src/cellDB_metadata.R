@@ -116,12 +116,14 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
     
     if (!cell_set_failed) {
       # Should duplicates be removed before adding to cell_set_meta?
-      if (length(all_DepMapIDs) > 0) {
+      if (length(all_luas) > 0) {
         known_cell_sets <- paste(known_cell_sets, collapse = ";")
-        joined_DepMapIDs <- sapply(all_DepMapIDs, function(row) paste(row, collapse = ";"))
-        all_DepMapIDs <- paste(joined_DepMapIDs, collapse = ";")
+        joined_luas <- sapply(all_luas, function(row) paste(row, collapse = ";"))
+        all_luas <- paste(joined_luas, collapse = ";")
+        #joined_DepMapIDs <- sapply(all_DepMapIDs, function(row) paste(row, collapse = ";"))
+        #all_DepMapIDs <- paste(joined_DepMapIDs, collapse = ";")
         cell_set_meta$cell_set[insert_index] <- known_cell_sets
-        cell_set_meta$members[insert_index] <- all_DepMapIDs   
+        cell_set_meta$members[insert_index] <- all_luas
       }
     } else {
       failed_sets <- c(failed_sets, chr_unique_cell_sets)
