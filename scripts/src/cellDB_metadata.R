@@ -56,9 +56,9 @@ get_LUAs_from_sets <- function(cell_set_name) {
 
 get_LUAs_from_pools <- function(cell_pool_name) {
   v_assay_pool_api_url <- "https://api.clue.io/api/v_e_assay_pools"
-  filter <- list(where = list(assay_pool = cell_pool_name), fields = c("assay_pool","lua"))
+  filter <- list(where = list(assay_pool = cell_pool_name), fields = c("assay_pool","barcode_id"))
   cell_pool_DepMap_df <- get_cell_api_info(v_assay_pool_api_url, api_key, filter)
-  luas <- list(cell_pool_DepMap_df$lua)
+  luas <- list(cell_pool_DepMap_df$barcode_id)
   return(luas)
 }
 
