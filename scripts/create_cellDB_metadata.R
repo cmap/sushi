@@ -4,12 +4,13 @@ source("./src/cellDB_metadata.R")
 source("./src/kitchen_utensils.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
-suppressPackageStartupMessages(library(readr)) #write_delim
-suppressPackageStartupMessages(library(dplyr)) #n(), %>%
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(sets))
 suppressPackageStartupMessages(library(httr))
 suppressPackageStartupMessages(library(jsonlite))
 suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(data.table))
 
 # Argument parser ----
 parser <- ArgumentParser()
