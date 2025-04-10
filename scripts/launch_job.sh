@@ -138,7 +138,7 @@ echo "Running in container:"
   -e SKIPPED_WELLS="$SKIPPED_WELLS" \
   -e FILTER_QC_FLAGS="$FILTER_QC_FLAGS" \
   -e QC_PARAMS="$QC_PARAMS" \
-  -e FILTER_FAILED_COUNTS="$FILTER_FAILED_COUNTS" \
+  -e FILTER_FAILED_LINES="$FILTER_FAILED_LINES" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \

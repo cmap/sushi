@@ -2,8 +2,6 @@
 
 echo Starting compute_l2fc...
 
-echo "ACTUAL FILTER_FAILED_LINES from env: [$FILTER_FAILED_LINES]"
-
 if [ -z "$BUILD_DIR" ]
 then
 	echo BUILD_DIR not specified
@@ -27,13 +25,6 @@ fi
 # Construct path to plate+cell qc table
 PLATE_CELL_QC_TABLE="$BUILD_DIR"/qc_tables/plate_cell_qc_table.csv
 
-# Set filter_failed_lines to TRUE or FALSE
-if [[ "${FILTER_FAILED_LINES,,}" == "true" ]]; then
-  FILTER_FLAG=TRUE
-else
-  FILTER_FLAG=FALSE
-fi
-
 echo Build dir is: $BUILD_DIR
 echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
 
@@ -47,7 +38,7 @@ args=(
 --count_threshold "$COUNT_THRESHOLD"
 --cell_line_cols "$CELL_LINE_COLS"
 --qc_path "$PLATE_CELL_QC_TABLE"
---filter_failed_lines "$FILTER_FLAG"
+--filter_failed_lines "$FILTER_FAILED_LINES"
 )
 
 echo Rscript compute_l2fc.R "${args[@]}"
