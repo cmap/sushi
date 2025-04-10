@@ -27,7 +27,7 @@ parser$add_argument("-ccn", "--count_col_name", default="log2_normalized_n",
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
-parser$add_argument("-ff", "--filter_failed_lines", default=true,
+parser$add_argument("-ff", "--filter_failed_lines", default=FALSE,
                     help = "Filter out failed cell lines from the output file")
 parser$add_argument("-qc", "--qc_path", default="", help = "Path to cell line level QC file")
 
