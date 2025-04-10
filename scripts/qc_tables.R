@@ -227,7 +227,7 @@ plate_cell_qc_table_outpath_external <- paste0(args$out, "/qc_tables/plate_cell_
 print(paste0("Writing out external plate_cell_qc_table to ", plate_cell_qc_table_outpath_external))
 if (contains_poscon) {
   columns_to_write <- c(
-    "pool_id", "depmap_id", "lua", "pcr_plate",
+    "cell_set","pool_id", "depmap_id", "lua", "pcr_plate",
     "pert_plate", "project_code",
     "error_rate", "lfc_trt_poscon",
     "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
@@ -237,7 +237,7 @@ if (contains_poscon) {
   )
   } else {
     columns_to_write <- c(
-    "pool_id", "depmap_id", "lua", "pcr_plate",
+    "cell_set","pool_id", "depmap_id", "lua", "pcr_plate",
     "pert_plate", "project_code",
     "median_raw_ctl_vehicle", "mad_log_normalized_ctl_vehicle",
     "median_log_normalized_ctl_vehicle",
