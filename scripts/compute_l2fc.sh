@@ -26,11 +26,10 @@ fi
 PLATE_CELL_QC_TABLE="$BUILD_DIR"/qc_tables/plate_cell_qc_table.csv
 
 # Set filter_failed_lines to TRUE or FALSE
-if [[ "$FILTER_FAILED_LINES" == "true" ]]
-then
-  export FILTER_FAILED_LINES=TRUE
+if [[ "${FILTER_FAILED_LINES,,}" == "true" ]]; then
+  FILTER_FLAG=TRUE
 else
-  export FILTER_FAILED_LINES=FALSE
+  FILTER_FLAG=FALSE
 fi
 
 echo Build dir is: $BUILD_DIR
@@ -46,7 +45,7 @@ args=(
 --count_threshold "$COUNT_THRESHOLD"
 --cell_line_cols "$CELL_LINE_COLS"
 --qc_path "$PLATE_CELL_QC_TABLE"
---filter_failed_lines "$FILTER_FAILED_LINES"
+--filter_failed_lines "$FILTER_FLAG"
 )
 
 echo Rscript compute_l2fc.R "${args[@]}"
