@@ -2,6 +2,8 @@
 
 echo Starting compute_l2fc...
 
+echo "ACTUAL FILTER_FAILED_LINES from env: [$FILTER_FAILED_LINES]"
+
 if [ -z "$BUILD_DIR" ]
 then
 	echo BUILD_DIR not specified
