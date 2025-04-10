@@ -42,6 +42,8 @@ ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 count_col_name = args$count_col_name
 count_threshold = as.numeric(args$count_threshold)
+filter_failed_lines = as.logical(args$filter_failed_lines)
+qc_path = args$qc_path
 
 print("Collapsing tech reps and computing log-fold change ...")
 l2fc= compute_l2fc(normalized_counts= normalized_counts, 
@@ -53,8 +55,10 @@ l2fc= compute_l2fc(normalized_counts= normalized_counts,
                    cell_line_cols= cell_line_cols)
 
 # If filter_failed_lines is TRUE, filter out failed cell lines from the output file
-if (args$filter_failed_lines) {
-  if (args$qc_path == "") {
+if (filter_failed_lines) {
+  if (qc_path == "") {
+    append_critical_output("If filter_failed_lines is TRUE, please provide a path to the cell line level QC file.",
+                           output_path= args$out)
     stop("If filter_failed_lines is TRUE, please provide a path to the cell line level QC file.")
   }
   # Write out the unfiltered l2fc file
