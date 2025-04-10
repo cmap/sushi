@@ -27,6 +27,9 @@ parser$add_argument("-ccn", "--count_col_name", default="log2_normalized_n",
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
+parser$add_argument("-ff", "--filter_failed_lines", default=FALSE,
+                    help = "Filter out failed cell lines from the output file")
+parser$add_argument("-qc", "--qc_path", default="", help = "Path to cell line level QC file")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -48,6 +51,23 @@ l2fc= compute_l2fc(normalized_counts= normalized_counts,
                    count_col_name= count_col_name, 
                    count_threshold = count_threshold,
                    cell_line_cols= cell_line_cols)
+
+# If filter_failed_lines is TRUE, filter out failed cell lines from the output file
+if (args$filter_failed_lines) {
+  if (args$qc_path == "") {
+    stop("If filter_failed_lines is TRUE, please provide a path to the cell line level QC file.")
+  }
+  # Write out the unfiltered l2fc file
+  print("Writing out unfiltered l2fc file ...")
+  l2fc_unfiltered_outpath= paste(args$out, "l2fc_original.csv", sep= "/")
+  write.csv(l2fc, l2fc_unfiltered_outpath, row.names= FALSE, quote= FALSE)
+  # Read in QC file and get failed lines
+  join_cols = c("pert_plate", "lua", "depmap_id")
+  qc_data = data.table::fread(args$qc_path, header= TRUE, sep= ',', data.table= FALSE)
+  failed_lines = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
+
+  l2fc = l2fc %>% anti_join(failed_lines, by= join_cols)
+}
 
 # Write out file ----
 l2fc_outpath= paste(args$out, "l2fc.csv", sep= "/")
