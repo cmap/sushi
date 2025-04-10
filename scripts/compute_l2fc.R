@@ -67,7 +67,7 @@ if (args$filter_failed_lines) {
   # Read in QC file and get failed lines
   join_cols = c("pert_plate", "lua", "depmap_id")
   qc_data = data.table::fread(args$qc_path, header= TRUE, sep= ',', data.table= FALSE)
-  failed_lines = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
+  failed_lines = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
 
   l2fc = l2fc %>% anti_join(failed_lines, by= join_cols)
 }
