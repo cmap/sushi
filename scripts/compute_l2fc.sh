@@ -25,6 +25,14 @@ fi
 # Construct path to plate+cell qc table
 PLATE_CELL_QC_TABLE="$BUILD_DIR"/qc_tables/plate_cell_qc_table.csv
 
+# Set filter_failed_lines to TRUE or FALSE
+if [[ "$FILTER_FAILED_LINES" == "true" ]]
+then
+  export FILTER_FAILED_LINES=TRUE
+else
+  export FILTER_FAILED_LINES=FALSE
+fi
+
 echo Build dir is: $BUILD_DIR
 echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
 
