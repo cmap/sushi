@@ -83,6 +83,7 @@ pipeline {
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
         booleanParam(name: 'QC_IMAGES', defaultValue: false, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'FILTER_QC_FLAGS', defaultValue: true, description: 'Filters data that have qc_flags.')
+        booleanParam(name: 'FILTER_FAILED_LINES', defaultValue: true, description: 'Filter cell lines from LFC and collapsed LFC that have failed QC.')
 
         separator(
           name: "portal_prep",
@@ -256,7 +257,7 @@ pipeline {
                         'MERGE_PATTERNS',
 
                         //qc parameters
-                        'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS'
+                        'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES'
                     ]
 
                     def config = [:]

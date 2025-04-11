@@ -27,6 +27,9 @@ parser$add_argument("-ccn", "--count_col_name", default="log2_normalized_n",
                     help = "column containing counts with which to calculate l2fc")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
+parser$add_argument("-ff", "--filter_failed_lines", type="logical",
+                    help = "Filter out failed cell lines from the output file")
+parser$add_argument("-qc", "--qc_path", default="", help = "Path to cell line level QC file")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -39,6 +42,7 @@ ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 count_col_name = args$count_col_name
 count_threshold = as.numeric(args$count_threshold)
+qc_path = args$qc_path
 
 print("Collapsing tech reps and computing log-fold change ...")
 l2fc= compute_l2fc(normalized_counts= normalized_counts, 
@@ -48,6 +52,29 @@ l2fc= compute_l2fc(normalized_counts= normalized_counts,
                    count_col_name= count_col_name, 
                    count_threshold = count_threshold,
                    cell_line_cols= cell_line_cols)
+
+# If filter_failed_lines is TRUE, filter out failed cell lines from the output file
+if (args$filter_failed_lines) {
+  if (qc_path == "") {
+    append_critical_output("If filter_failed_lines is TRUE, please provide a path to the cell line level QC file.",
+                           output_path= args$out)
+    stop("If filter_failed_lines is TRUE, please provide a path to the cell line level QC file.")
+  }
+  # Write out the unfiltered l2fc file
+  print("Writing out unfiltered l2fc file ...")
+  l2fc_unfiltered_outpath= paste(args$out, "l2fc_original.csv", sep= "/")
+  write.csv(l2fc, l2fc_unfiltered_outpath, row.names= FALSE, quote= FALSE)
+  # Read in QC file and filter lines that fail for an entire pert_plate
+  join_cols = c(cell_line_cols, "pert_plate")
+  qc_data = data.table::fread(args$qc_path, header= TRUE, sep= ',', data.table= FALSE)
+  failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
+
+  l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
+  # Filter lines that fail for a pcr_plate
+  join_cols = c(cell_line_cols, "pcr_plate")
+  failed_lines_pcr_plate = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
+  l2fc = l2fc %>% anti_join(failed_lines_pcr_plate, by= join_cols)
+}
 
 # Write out file ----
 l2fc_outpath= paste(args$out, "l2fc.csv", sep= "/")
