@@ -64,12 +64,16 @@ if (args$filter_failed_lines) {
   print("Writing out unfiltered l2fc file ...")
   l2fc_unfiltered_outpath= paste(args$out, "l2fc_original.csv", sep= "/")
   write.csv(l2fc, l2fc_unfiltered_outpath, row.names= FALSE, quote= FALSE)
-  # Read in QC file and get failed lines
+  # Read in QC file and filter lines that fail for an entire pert_plate
   join_cols = c(cell_line_cols, "pert_plate")
   qc_data = data.table::fread(args$qc_path, header= TRUE, sep= ',', data.table= FALSE)
-  failed_lines = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
+  failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
 
-  l2fc = l2fc %>% anti_join(failed_lines, by= join_cols)
+  l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
+  # Filter lines that fail for a pcr_plate
+  join_cols = c(cell_line_cols, "pcr_plate")
+  failed_lines_pcr_plate = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
+  l2fc = l2fc %>% anti_join(failed_lines_pcr_plate, by= join_cols)
 }
 
 # Write out file ----
