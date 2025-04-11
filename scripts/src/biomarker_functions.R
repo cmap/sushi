@@ -450,21 +450,21 @@ multivariate_biomarker_table <- function(Y, W = NULL, file, k = 10) {
 
     rf.DNA[[ix]] <- rf_DNA$model_table %>%
       dplyr::mutate(y = colnames(Y)[ix],
-                    model = "DNA-ONLY") %>%
+                    model = "dna") %>%
       dplyr::filter(RF.imp.stability >= 0.5) %>% 
       dplyr::mutate(rank = 1:n())
     
 
     rf.RNA[[ix]] <- rf_RNA$model_table %>%
       dplyr::mutate(y = colnames(Y)[ix],
-                    model = "DNA+RNA") %>%
+                    model = "dna_rna") %>%
       dplyr::filter(RF.imp.stability >= 0.5) %>% 
       dplyr::mutate(rank = 1:n())
     
     
     rf.CRISPR[[ix]] <- rf_CRISPR$model_table %>%
       dplyr::mutate(y = colnames(Y)[ix],
-                    model = "DNA+RNA+CRISPR") %>%
+                    model = "dna_rna_crispr") %>%
       dplyr::filter(RF.imp.stability >= 0.5) %>% 
       dplyr::mutate(rank = 1:n())
 
