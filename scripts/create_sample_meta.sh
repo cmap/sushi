@@ -13,19 +13,13 @@ fi
 
 echo Build dir is: $BUILD_DIR
 
-# Define an array of parameters and their corresponding values
-parameters=(
-  "BUILD_DIR:$BUILD_DIR"
-  "SCREEN:$SCREEN"
-  "API_KEY:$API_KEY"
-)
-
 echo $R_LIBS
 
 args=(
 --screen "$SCREEN"
 --build_dir "$BUILD_DIR"
 --api_key "$API_KEY"
+--pert_plates "$PERT_PLATES"
 )
 
 echo python3 create_sample_meta.py "${args[@]}"
