@@ -36,6 +36,8 @@ pipeline {
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Directory where the build output will go. Must contain the raw counts file from Nori. If not getting your metadata from cellDB & COMET this directory must also include the sample and cell line/pool metadata.')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
+        string(name: 'SCREEN', defaultValue: '', description: 'Name of the screen.')
+        string(name: 'PERT_PLATES', defaultValue: '', description: 'Comma separated list of pert_plates to include in this build. If not provided, all plates for the given screen will be used.')
 
         separator(
           name: "metadata",
@@ -45,7 +47,6 @@ pipeline {
         )
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB. Requires that all sample_meta column entries for cell_set exist in cellDB.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
-        string(name: 'SCREEN', defaultValue: '', description: 'If CREATE_SAMPLE_META is checked, you must provide the screen name from COMET.')
 
         separator(
           name: "core_modules",
@@ -231,7 +232,7 @@ pipeline {
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
-                        'SKIPPED_WELLS','FILTER_QC_FLAGS',
+                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES'
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',

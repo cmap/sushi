@@ -106,11 +106,15 @@ def main():
         required=True,
         help="Directory to save the CSV file",
     )
+    parser.add_argument(
+        "--pert_plates", "-p", type=str, required=False, help="Pert plates in the screen to use. If not provided, all pert plates will be used."
+    )
 
     args = parser.parse_args()
     screen = args.screen
     api_key = args.api_key
     build_dir = args.build_dir
+    pert_plates = args.pert_plates.split(",") if args.pert_plates else None
 
     try:
         df = (
@@ -122,6 +126,11 @@ def main():
             .pipe(filter_nan_flowcells, build_dir)
             .pipe(add_pert_vehicle)
         )
+        # Subset to provided pert plates if any
+        if pert_plates:
+            print(f"pert_plate provided, filtering sample_metadata to pert plates: {pert_plates}")
+            df = df[df["pert_plate"].isin(pert_plates)]
+
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
         save_dataframe(df=df, filename="sample_meta", build_dir=build_dir)
