@@ -114,7 +114,7 @@ def main():
     screen = args.screen
     api_key = args.api_key
     build_dir = args.build_dir
-    pert_plates = args.pert_plates.split(",") if args.pert_plates else None
+    pert_plates = args.pert_plates.replace(" ", "").split(",") if args.pert_plates else None
 
     try:
         df = (
