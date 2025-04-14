@@ -87,6 +87,17 @@ def generate_merge_key(df, merge_patterns):
     return distinct_df
 
 
+def generate_pert_plate_project_key(df):
+    # Select the columns we need
+    df = df[["x_project_id", "pert_plate"]]
+
+    # Drop duplicates
+    distinct_df = df.drop_duplicates().reset_index(drop=True)
+
+    # Rename the distinct_df
+    return distinct_df
+
+
 # Turn the key_df into a json object
 def key_to_json(
     df: pd.DataFrame, unique_by: list = None, output_path: str = None
@@ -191,6 +202,13 @@ def main(args):
     # Convert the merge_key_df to json and write to the build directory
     logger.info("Writing merge key to JSON...")
     key_to_json(merge_key_df, output_path=os.path.join(build_path, "merge_key.json"))
+
+    # Generate the pert_plate_project key
+    logger.info("Generating pert_plate_project key...")
+    pert_plate_project_key = generate_pert_plate_project_key(sample_meta)
+    key_to_json(
+        pert_plate_project_key, output_path=os.path.join(build_path, "pert_plate_project_key.json")
+    )
 
     # Sync the build directory to S3
     logger.info(f"Syncing {build_path} to {s3_prefix}...")
