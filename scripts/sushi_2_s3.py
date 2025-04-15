@@ -89,13 +89,13 @@ def generate_merge_key(df, merge_patterns):
 
 def generate_pert_plate_project_key(df):
     # Select the columns we need
-    df = df[["x_project_id", "pert_plate"]]
+    df = df[["x_project_id", "pert_plate"]].drop_duplicates()
 
-    # Drop duplicates
-    distinct_df = df.drop_duplicates().reset_index(drop=True)
+    # Group by x_project_ud and aggregate the pert_plate values into a list
+    grouped_df = df.groupby("x_project_id")["pert_plate"].apply(list)
 
-    # Rename the distinct_df
-    return distinct_df
+    # Rename the result
+    return grouped_df
 
 
 # Turn the key_df into a json object
