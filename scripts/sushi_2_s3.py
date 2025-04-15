@@ -206,9 +206,14 @@ def main(args):
     # Generate the pert_plate_project key
     logger.info("Generating pert_plate_project key...")
     pert_plate_project_key = generate_pert_plate_project_key(sample_meta)
-    key_to_json(
-        pert_plate_project_key, output_path=os.path.join(build_path, "pert_plate_project_key.json")
-    )
+    pert_plate_project_key_dict = pert_plate_project_key.to_dict()
+    # Write the pert_plate_project key to the build directory
+    logger.info("Writing pert_plate_project key to JSON...")
+    with open(
+        os.path.join(build_path, "pert_plate_project_key.json"), "w"
+    ) as f:
+        json.dump(pert_plate_project_key_dict, f, indent=2)
+
 
     # Sync the build directory to S3
     logger.info(f"Syncing {build_path} to {s3_prefix}...")
