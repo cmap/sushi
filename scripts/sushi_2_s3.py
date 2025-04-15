@@ -87,15 +87,16 @@ def generate_merge_key(df, merge_patterns):
     return distinct_df
 
 
-def generate_pert_plate_project_key(df):
-    # Select the columns we need
+def generate_pert_plate_project_list(df):
+    # Select only the relevant columns and remove any duplicate rows.
     df = df[["x_project_id", "pert_plate"]].drop_duplicates()
 
-    # Group by x_project_ud and aggregate the pert_plate values into a list
-    grouped_df = df.groupby("x_project_id")["pert_plate"].apply(list)
+    # Group by 'x_project_id' and aggregate the 'pert_plate' values into lists
+    grouped = df.groupby("x_project_id")["pert_plate"].apply(list).reset_index()
 
-    # Rename the result
-    return grouped_df
+    # Convert the DataFrame to a list of dictionaries (records)
+    output_list = grouped.to_dict(orient="records")
+    return output_list
 
 
 # Turn the key_df into a json object
@@ -205,14 +206,11 @@ def main(args):
 
     # Generate the pert_plate_project key
     logger.info("Generating pert_plate_project key...")
-    pert_plate_project_key = generate_pert_plate_project_key(sample_meta)
-    pert_plate_project_key_dict = pert_plate_project_key.to_dict()
-    # Write the pert_plate_project key to the build directory
-    logger.info("Writing pert_plate_project key to JSON...")
+    pert_plate_project_list = generate_pert_plate_project_list(sample_meta)
     with open(
-        os.path.join(build_path, "pert_plate_project_key.json"), "w"
+        os.path.join(build_path, "pert_plate_project.json"), "w"
     ) as f:
-        json.dump(pert_plate_project_key_dict, f, indent=2)
+        json.dump(pert_plate_project_list, f, indent=2)
 
 
     # Sync the build directory to S3
