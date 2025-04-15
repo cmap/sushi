@@ -208,7 +208,7 @@ def main(args):
     logger.info("Generating pert_plate_project key...")
     pert_plate_project_list = generate_pert_plate_project_list(sample_meta)
     with open(
-        os.path.join(build_path, "pert_plate_project.json"), "w"
+        os.path.join(build_path, "pert_plate_project_key.json"), "w"
     ) as f:
         json.dump(pert_plate_project_list, f, indent=2)
 
