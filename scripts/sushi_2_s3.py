@@ -88,6 +88,9 @@ def generate_merge_key(df, merge_patterns):
 
 
 def generate_pert_plate_project_list(df):
+    # Remove "x_project_id" when it contains the string "CONTROLS"
+    df = df[~df["x_project_id"].str.contains("CONTROLS")]
+
     # Select only the relevant columns and remove any duplicate rows.
     df = df[["x_project_id", "pert_plate"]].drop_duplicates()
 
