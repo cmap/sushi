@@ -1,39 +1,44 @@
-FROM prismcmap/base-clue-pseq
-#FROM prismcmap/base-clue-pseq-test
-MAINTAINER Anup Jonchhe <cmap-soft@broadinstitute.org>
-LABEL clue.sushi.pipeline.clue.io.version="0.0.1"
-LABEL clue.sushi.pipeline.clue.io.vendor="PRISM/CMAP"
+FROM rocker/r-ver:4.4
 
-RUN apt-get -y update
+MAINTAINER John Davis <cmap-soft@broadinstitute.org>
 
-RUN apt-get install -y curl \
-    bzip2 \
-    git
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN curl -LO https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b && \
-    rm Miniconda3-latest-Linux-x86_64.sh
+# Set root user for installs
+USER root
 
-ENV PATH=/miniconda/bin:${PATH}
+# Install required packages
+RUN apt-get update -qq && \
+    mkdir -p /src && \
+    apt-get -y --no-install-recommends install \
+    libssl-dev \
+    libxml2-dev \
+    libcairo2-dev \
+    libsqlite3-dev \
+    libmariadbd-dev \
+    libmariadb-dev-compat \
+    libpq-dev \
+    libssh2-1-dev \
+    libhdf5-dev \
+    libcurl4-openssl-dev \
+    jq \
+    python3 \
+    python3-pip && \
+    apt-get -y --no-install-recommends install libbz2-dev liblzma-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN conda create -y --name prism -c bioconda python=3.6 numpy pandas yaml h5py requests setuptools argparse pathlib pyyaml jinja2 simplejson
+# Install Python dependencies
+RUN pip3 install pandas requests boto3 --break-system-packages
 
-RUN mkdir -p /cmap/bin && \
-mkdir -p /cmap/bin/sushi/
-
-#COPY ../R /cmap/bin/sushi/R
-#COPY ../scripts /cmap/bin/sushi/scripts
-COPY ./ /cmap/bin/sushi/
-COPY ./docker/install_packages.R /src/install_packages.R
+# First set of R dependencies
+COPY docker/install_packages.R /src/install_packages.R
 
 RUN Rscript /src/install_packages.R
-RUN Rscript -e "setwd('/cmap/bin/sushi/');getwd();devtools::install()"
-COPY ./docker/aws_batch.sh /clue/bin/aws_batch
 
-WORKDIR /
-ENV PATH /clue/bin:$PATH
-RUN ["chmod","-R", "+x", "/cmap/bin"]
-#RUN ["chmod","-R", "+x", "/cmap/sushi"]
-ENTRYPOINT ["aws_batch"]
-
-CMD ["-help"]
+# Install curl (why post update?)
+RUN apt-get update -qq && \
+    apt-get -y install --no-install-recommends curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
