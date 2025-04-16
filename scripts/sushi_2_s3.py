@@ -120,7 +120,7 @@ def key_to_json(
         directory = os.path.dirname(output_path)
         if directory and not os.path.exists(directory):
             os.umask(0) # Remove masking permission
-            os.makedirs(directory, mode = 0o777, exist_ok=True)
+            os.makedirs(directory, exist_ok=True)
         with open(output_path, "w") as f:
             f.write(json_str)
 
