@@ -73,7 +73,8 @@ if (univariate_biomarker) {
     output_file_name = "median_l2fc_univariate_biomarkers.csv",
     treatment_columns = trt_cols_lfc,
     response_column = lfc_column,
-    depmap_file = bio_file
+    depmap_file = bio_file,
+    n.cor = 25
     )
   }
   if (auc_biomarker) {
@@ -83,7 +84,8 @@ if (univariate_biomarker) {
       output_file_name = "log2_auc_univariate_biomarkers.csv",
       treatment_columns = trt_cols_auc,
       response_column = dr_column,
-      depmap_file = bio_file
+      depmap_file = bio_file,
+      n.cor = 25
       )
   }
 }

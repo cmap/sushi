@@ -21,7 +21,7 @@
 #'
 #' @examples
 #'
-linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.val.max = 0.1, regression_coef = TRUE, stability_score = FALSE, ns.min = 3) {
+linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.val.max = 0.1, regression_coef = TRUE, stability_score = FALSE, ns.min = 3, n.cor = 25) {
   require(tidyverse)
   require(matrixStats)
   require(WGCNA)
@@ -39,10 +39,11 @@ linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.v
     dplyr::ungroup() %>% 
     dplyr::filter(q <= q.val.max) %>%
     dplyr::group_by(Var2, sign(cor)) %>% 
-    dplyr::arrange(desc(abs(cor))) %>% dplyr::mutate(rank = pmin(rank, 1:n())) %>%
-    dplyr::ungroup() %>% 
-    dplyr::filter(rank <= rank.max) %>% 
-    dplyr::rename(x = Var1, y = Var2, rho = cor, p.val = p, q.val = q, n = nObs) %>% 
+    dplyr::arrange(desc(abs(cor))) %>% dplyr::mutate(rank_cor = 1:n()) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(rank <= rank.max | rank_cor < n.cor) %>%
+    dplyr::rename(x = Var1, y = Var2, rho = cor, p.val = p, q.val = q, n = nObs) %>%
+    dplyr::mutate(x = as.character(x), y = as.character(y)) %>%
     dplyr::distinct(x, y, rho, p.val, q.val, n, rank) %>%
     dplyr::rename(correlation_coef = rho, p_val = p.val, q_val = q.val)
   
@@ -97,7 +98,7 @@ univariate_biomarker_table <- function(Y, file,
                                        v.X.min = 0.0025,
                                        n_stable.min = 3, q_val_max = .1,
                                        regression_coef = TRUE,
-                                       stability_score = TRUE, rank.max = 250){
+                                       stability_score = TRUE, rank.max = 250, n.cor = 25){
   require(tidyverse)
   require(magrittr)
   require(rhdf5)
@@ -130,7 +131,8 @@ univariate_biomarker_table <- function(Y, file,
       RESULTS[[feat]] <- linear_model(X = X, Y = Y[cl, , drop = FALSE],
                                                         v.X.min = v.X.min, n.min = n.X.min, 
                                                         rank.max = rank.max, q.val.max = q_val_max, 
-                                                        regression_coef = regression_coef, stability_score = stability_score, ns.min = n_stable.min) %>% 
+                                                        regression_coef = regression_coef, stability_score = stability_score, ns.min = n_stable.min,
+      n.cor = n.cor) %>%
         dplyr::rename(feature = x) %>%
         dplyr::mutate(feature_set = feat) 
     }
@@ -589,7 +591,7 @@ create_univariate_biomarker_table <- function(in_path, out_path,
                                                 response_column = "median_l2fc", aggregate_function = median, transform_function = function(x){x},
                                               features = NULL, min_sample_size = 100,
                                               regression_coef = TRUE, stability_score = TRUE, rank.max = 250,
-                                              min_x_variance = 0.0025, n_stable_min = 3, q_val_max = .1
+                                              min_x_variance = 0.0025, n_stable_min = 3, q_val_max = .1, n.cor = 25
                                               ) {
   require(data.table)
   require(tidyverse)
@@ -630,7 +632,7 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   # generate the biomarker table
   univariate_biomarker_table <- univariate_biomarker_table(Y = M, features = features,file = depmap_file, n.X.min = min_sample_size,
                                          v.X.min = min_x_variance, n_stable.min = n_stable_min, q_val_max = q_val_max, 
-                                         regression_coef = regression_coef, stability_score = stability_score, rank.max = rank.max) 
+                                         regression_coef = regression_coef, stability_score = stability_score, rank.max = rank.max, n.cor = n.cor)
 
   # Export the biomarker table -----
   print(paste0("Writing the univariate output file to ", paste0(out_path, "/", output_file_name)))
