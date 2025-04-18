@@ -171,7 +171,7 @@ filtered_counts_rm_ctl <- filtered_counts %>%
 plate_cell_table <- generate_cell_plate_table(
   normalized_counts = filtered_normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
   cell_line_cols = cell_plate_list, pseudocount = pseudocount, contains_poscon = contains_poscon,
-  poscon = poscon, negcon = negcon, plate_cell_table = plate_cell_table,
+  poscon = poscon, negcon = negcon,
   nc_variability_threshold = thresholds$nc_variability_threshold,
   error_rate_threshold = thresholds$error_rate_threshold,
   pc_viability_threshold = thresholds$pc_viability_threshold,
