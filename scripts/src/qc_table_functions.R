@@ -401,7 +401,8 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, contains_poscon = TRUE, poscon = NULL, negcon = NULL) {
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, contains_poscon = TRUE, poscon = NULL, negcon = NULL,
+                                      nc_variability_threshold = 1, error_rate_threshold = 0.05, pc_viability_threshold = 0.25, nc_raw_count_threshold = 40) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code") # Define columns to group by
   print(paste0("Computing cell + plate QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
@@ -458,8 +459,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
       dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
     # QC pass criteria, currently with hardcoded pert_types
     plate_cell_table <- plate_cell_table %>%
-      dplyr::mutate(qc_pass = error_rate < 0.05 & viability_trt_poscon < 0.25 &
-        median_raw_ctl_vehicle > log(40) & mad_log_normalized_ctl_vehicle < 1) %>%
+      dplyr::mutate(qc_pass = error_rate < error_rate_threshold & viability_trt_poscon < pc_viability_threshold &
+        median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
       dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
       dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 1) %>%
