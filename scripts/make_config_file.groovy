@@ -412,11 +412,6 @@ pipeline {
                                 $WORKSPACE/scripts/launch_job.sh $scriptName
                             """
                         }
-                        // add line
-                        sh """
-                            echo "Directory to update: ${BUILD_DIR}"
-                            chmod -R 775 ${BUILD_DIR}
-                        """
                     }
                 }
             }
