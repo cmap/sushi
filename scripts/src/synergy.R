@@ -37,7 +37,7 @@ restructure_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
                      by = c(cell_line_cols, join_cols, cross_join_cols), suffix = c("", ".y")) %>%
     dplyr::relocate(any_of(c(cell_line_cols, sig_cols, new_names))) %>% 
     dplyr::select(!contains(".y"))
-  
+
   return(restructured_l2fc)
 }
 
@@ -94,77 +94,53 @@ calculate_synergy = function(restructured_l2fc,
                              viability_cap = 1,
                              names_prefix = c("pert1", "pert2", "combo"),
                              names_sep = "_") {
+  
+  # Convert data frame to data.table
+  if(!data.table::is.data.table(restructured_l2fc)) {
+    restructured_l2fc = as.data.table(restructured_l2fc)
+  }
+  
   # Create vector of names used to create new columns
   l2fc_names = paste(names_prefix, l2fc_root, sep = names_sep)
   viab_names = paste(names_prefix, "viab", sep = names_sep)
-
-  # From l2fc calculate FCs
-  restructured_l2fc[[viab_names[1]]] = pmin(2^restructured_l2fc[[l2fc_names[1]]], viability_cap)
-  restructured_l2fc[[viab_names[2]]] = pmin(2^restructured_l2fc[[l2fc_names[2]]], viability_cap)
-  restructured_l2fc[[viab_names[3]]] = pmin(2^restructured_l2fc[[l2fc_names[3]]], viability_cap)
   
-  # Use viab to calculate bliss, hsa, and synergy
-  synergy_scores = restructured_l2fc %>%
-    dplyr::mutate(bliss = .data[[viab_names[1]]] * .data[[viab_names[2]]]) %>%
-    dplyr::rowwise() %>%
-    dplyr::mutate(hsa = min(.data[[viab_names[1]]], .data[[viab_names[2]]],
-                            na.rm = FALSE)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(synergy =
-                    dplyr::case_when(.data[[viab_names[3]]] > hsa ~ .data[[viab_names[3]]] - hsa,
-                                     bliss <= .data[[viab_names[1]]] & .data[[viab_names[1]]] <= hsa ~ 0,
-                                     .data[[viab_names[3]]] < bliss ~ bliss - .data[[viab_names[3]]],
-                                     .default = NA))
+  # Convert l2fcs to viabilities
+  restructured_l2fc[, (l2fc_names) := .(pmin(2^get(l2fc_names[1]), viability_cap),
+                                        pmin(2^get(l2fc_names[2]), viability_cap),
+                                        pmin(2^get(l2fc_names[3]), viability_cap))]
+  data.table::setnames(restructured_l2fc, l2fc_names, viab_names)
   
-  return(synergy_scores)
+  # Calculate synergies
+  restructured_l2fc[, hsa := pmin(get(viab_names[1]), get(viab_names[2]))]
+  restructured_l2fc[, bliss := get(viab_names[1]) * get(viab_names[2])]
+  restructured_l2fc[, synergy := data.table::fifelse(get(viab_names[3]) > hsa, hsa - get(viab_names[3]),
+                                 data.table::fifelse(get(viab_names[3]) < bliss, bliss - get(viab_names[3]), 0))]
+  
+  return(restructured_l2fc)
 }
 
 # Sample DMSO l2fc values
-sample_dmso_l2fc = function(dmso_l2fc, l2fc_col = 'l2fc',
-                            grouping_cols,
-                            n_samples,
-                            names_prefix = c("pert1", "pert2", "combo"),
-                            names_sep = "_",
-                            seed = 2) {
+median_sample = function(x, n_samples,
+                         size = 3, seed = 2,
+                         replace = TRUE, prob = NULL) {
+  
   # Check that there are enough entries to sample to n
-  min_num_reps = dmso_l2fc %>%
-    dplyr::group_by(pick(all_of(grouping_cols))) %>%
-    dplyr::summarize(count= dplyr::n(), .groups = "drop") %>%
-    dplyr::pull(count) %>% base::min()
-  # Calculate combination with the minimum
-  num_pick_combinations = base::choose(min_num_reps, 3)
-  print(paste0(min_num_reps, " choose ", 3, " = ", num_pick_combinations))
+  num_pick_combinations = base::choose(length(x), size)
+  print(paste0(length(x), " choose ", size, " = ", num_pick_combinations))
   
   # Stop if the number to sample to is too low
   if(num_pick_combinations < n_samples) {
     stop("ERROR: Cannot sample up to n.")
   }
-    
+  
   # Set seed
   base::set.seed(seed)
-  # Create vector of names used to create new columns
-  l2fc_names = paste(names_prefix, l2fc_col, sep = names_sep)
-  # Create an empty list to store results
-  sample_output = list()
   
-  # Loop to sample each cell line on a plate
-  for(i in 1:n_samples) {
-    sample_output[[i]] = dmso_l2fc %>%
-      dplyr::group_by(pick(all_of(grouping_cols))) %>%
-      dplyr::slice_sample(n = 3) %>%
-      dplyr::summarise(!!l2fc_names[1] := median(.data[[l2fc_col]]), .groups = 'drop')
-    
-    if(i %% 100 == 0) { print(i) }
-  }
+  # Test non loop
+  resampled_values = base::replicate(n_samples, 
+                                     median(base::sample(x, size, replace = replace, prob = prob)))
   
-  # Combine sampled outputs and sample other two l2fc columns
-  sample_l2fc = dplyr::bind_rows(sample_output) %>%
-    dplyr::group_by(pick(all_of(grouping_cols))) %>%
-    dplyr::mutate(!!l2fc_names[2] := sample(.data[[l2fc_names[1]]], n_samples, replace = TRUE),
-                  !!l2fc_names[3] := sample(.data[[l2fc_names[1]]], n_samples, replace = TRUE)) %>%
-    dplyr::ungroup()
-  
-  return(sample_l2fc)
+  return(resampled_values)
 }
 
 # Get cdf to change into pvalue
