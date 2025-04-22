@@ -1,6 +1,6 @@
 options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
-source("cellDB_metadata.R")
+source("create_cell_meta/cellDB_metadata.R")
 source("../src/kitchen_utensils.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
