@@ -2,8 +2,8 @@ options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 library(tidyverse)
-source("./src/dose_response_functions.R")
-source("./src/kitchen_utensils.R")
+source("dose_response_functions.R")
+source("../src/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

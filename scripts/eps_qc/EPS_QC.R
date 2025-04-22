@@ -10,7 +10,7 @@ suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(data.table))
-source("./src/kitchen_utensils.R")
+source("../src/kitchen_utensils.R")
 
 #---- Read arguments ----
 # initialize parser

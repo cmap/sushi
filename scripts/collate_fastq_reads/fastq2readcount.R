@@ -2,7 +2,7 @@ options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(tidyverse)) ###### debug
 suppressPackageStartupMessages(library(magrittr))
-source("./src/write_df_from_fastq.R")
+source("write_df_from_fastq.R")
 
 # Argument parser ----
 parser <- argparse::ArgumentParser()

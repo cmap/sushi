@@ -11,8 +11,8 @@ suppressPackageStartupMessages(library(tidyverse)) # load last - after dplyr
 suppressPackageStartupMessages(library(httr)) # fread
 suppressPackageStartupMessages(library(jsonlite)) # fread
 suppressPackageStartupMessages(library(data.table)) # fread
-source("./src/filter_raw_reads.R")
-source("./src/kitchen_utensils.R")
+source("filter_raw_reads.R")
+source("../src/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
