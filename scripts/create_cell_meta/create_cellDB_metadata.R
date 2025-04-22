@@ -1,7 +1,7 @@
 options(cli.unicode = FALSE)
 suppressPackageStartupMessages(library(argparse))
 source("create_cell_meta/cellDB_metadata.R")
-source("../src/kitchen_utensils.R")
+source("src/kitchen_utensils.R")
 suppressPackageStartupMessages(library(scam))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(readr)) #write_delim
