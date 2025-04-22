@@ -32,13 +32,13 @@ echo $RUN_NORM
 
 echo "Running normalization module"
 
-echo Rscript CBnormalize.R -c $FILTERED_COUNTS	\
+echo Rscript normalize/CBnormalize.R -c $FILTERED_COUNTS	\
 --CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
 --out $BUILD_DIR
 
-Rscript CBnormalize.R -c $FILTERED_COUNTS	\
+Rscript normalize/CBnormalize.R -c $FILTERED_COUNTS	\
 --CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \

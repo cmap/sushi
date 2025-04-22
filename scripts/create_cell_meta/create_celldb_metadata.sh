@@ -109,6 +109,6 @@ args=(
 --api_key "$API_KEY"
 )
 
-echo Rscript create_cellDB_metadata.R "${args[@]}"
+echo Rscript create_cell_meta/create_cellDB_metadata.R "${args[@]}"
 
-Rscript create_cellDB_metadata.R "${args[@]}"
+Rscript create_cell_meta/create_cellDB_metadata.R "${args[@]}"

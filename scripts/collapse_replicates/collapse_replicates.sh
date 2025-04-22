@@ -27,13 +27,13 @@ fi
 echo Build dir is: $BUILD_DIR
 echo LFC is: $LFC
 
-echo Rscript collapse_replicates.R -c $LFC	\
+echo Rscript collapse_replicates/collapse_replicates.R -c $LFC	\
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
 --cell_line_cols $CELL_LINE_COLS
 
 
-Rscript collapse_replicates.R -c $LFC	\
+Rscript collapse_replicates/collapse_replicates.R -c $LFC	\
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
 --cell_line_cols $CELL_LINE_COLS

@@ -43,5 +43,5 @@ args=(
 --out_dir "$BUILD_DIR/drc"
 )
 
-echo Rscript dose_response.R "${args[@]}"
-Rscript dose_response.R "${args[@]}"
+echo Rscript drc/dose_response.R "${args[@]}"
+Rscript drc/dose_response.R "${args[@]}"

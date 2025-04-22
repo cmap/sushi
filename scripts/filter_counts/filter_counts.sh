@@ -87,6 +87,6 @@ args=(
 --skipped_wells "$SKIPPED_WELLS"
 )
 
-echo Rscript filter_counts.R "${args[@]}"
+echo Rscript filter_counts/filter_counts.R "${args[@]}"
 
-Rscript filter_counts.R "${args[@]}"
+Rscript filter_counts/filter_counts.R "${args[@]}"

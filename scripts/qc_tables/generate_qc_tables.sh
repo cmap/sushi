@@ -49,5 +49,5 @@ args=(
 --qc_params "$QC_PARAMS"
 )
 
-echo Rscript qc_tables.R "${args[@]}"
-Rscript qc_tables.R "${args[@]}"
+echo Rscript qc_tables/qc_tables.R "${args[@]}"
+Rscript qc_tables/qc_tables.R "${args[@]}"

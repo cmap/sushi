@@ -14,6 +14,6 @@ args=(
 --s3_bucket "macchiato.clue.io"
 )
 
-echo python3 sushi_2_s3.py "${args[@]}"
+echo python3 sushi_2_s3/sushi_2_s3.py "${args[@]}"
 
-python3 sushi_2_s3.py "${args[@]}"
+python3 sushi_2_s3/sushi_2_s3.py "${args[@]}"

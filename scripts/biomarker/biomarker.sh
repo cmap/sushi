@@ -64,5 +64,5 @@ args=(
 --out_path "$BUILD_DIR/biomarker"
 )
 
-echo Rscript biomarker.R "${args[@]}"
-Rscript biomarker.R "${args[@]}"
+echo Rscript biomarker/biomarker.R "${args[@]}"
+Rscript biomarker/biomarker.R "${args[@]}"

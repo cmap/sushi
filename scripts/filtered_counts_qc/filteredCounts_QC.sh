@@ -121,6 +121,6 @@ args=(
 --pseudocount "$PSEUDOCOUNT"
 )
 
-echo Rscript filteredCounts_QC.R "${args[@]}"
+echo Rscript filtered_counts_qc/filteredCounts_QC.R "${args[@]}"
 
-Rscript filteredCounts_QC.R "${args[@]}"
+Rscript filtered_counts_qc/filteredCounts_QC.R "${args[@]}"

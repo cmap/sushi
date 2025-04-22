@@ -118,5 +118,5 @@ args=(
 --out "$BUILD_DIR"
 )
 
-echo Rscript collate_fastq_reads.R "${args[@]}"
-Rscript collate_fastq_reads.R "${args[@]}"
+echo Rscript collate/collate_fastq_reads.R "${args[@]}"
+Rscript collate/collate_fastq_reads.R "${args[@]}"

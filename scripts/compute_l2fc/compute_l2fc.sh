@@ -41,5 +41,5 @@ args=(
 --filter_failed_lines "$FILTER_FAILED_LINES"
 )
 
-echo Rscript compute_l2fc.R "${args[@]}"
-Rscript compute_l2fc.R "${args[@]}"
+echo Rscript compute_l2fc/compute_l2fc.R "${args[@]}"
+Rscript compute_l2fc/compute_l2fc.R "${args[@]}"

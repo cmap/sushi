@@ -22,6 +22,6 @@ args=(
 --pert_plates "$PERT_PLATES"
 )
 
-echo python3 create_sample_meta.py "${args[@]}"
+echo python3 create_sample_meta/create_sample_meta.py "${args[@]}"
 
-python3 create_sample_meta.py "${args[@]}"
+python3 create_sample_meta/create_sample_meta.py "${args[@]}"
