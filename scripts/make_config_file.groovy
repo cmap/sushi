@@ -58,6 +58,7 @@ pipeline {
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols.')
         string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls.')
         string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day,pcr_plate,replicate_plate', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
+        string(name: 'CONTROL_BARCODE_META', defaultValue: 'h-a', description: 'Metadata for control barcodes. If the CBs exist in cellDB, this can simply be the lowercase cb_ladder name (ie, h-a). Otherwise, this must be a csv file located in the build directory.')
 
         separator(
           name: "core_modules",
@@ -144,7 +145,6 @@ pipeline {
         string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name in BUILD_DIR of the sample meta.')
         string(name: 'CELL_SET_AND_POOL_META', defaultValue: 'cell_set_and_pool_meta.csv', description: 'Cell set and pool information for this run.')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
-        string(name: 'CONTROL_BARCODE_META', defaultValue: 'h-a', description: 'Metadata for control barcodes. If the CBs exist in cellDB, this can simply be the lowercase cb_ladder name (ie, h-a). Otherwise, this must be a csv file located in the build directory.')
 
         // Additional parameters ordered by when they first appear
         string(name: 'BARCODE_COL', defaultValue: 'forward_read_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_barcode\", and the paramter is first used in COLLATE_FASTQ_READS.')
