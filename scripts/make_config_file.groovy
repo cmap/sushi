@@ -34,10 +34,11 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Directory where the build output will go. Must contain the raw counts file from Nori. If not getting your metadata from cellDB & COMET this directory must also include the sample and cell line/pool metadata.')
-        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
-        string(name: 'SCREEN', defaultValue: '', description: 'Name of the screen.')
+        string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts. Should match the directoty name from BUILD_DIR.')
+        string(name: 'SCREEN', defaultValue: '', description: 'Name of the screen with which this build is associated. This is necessary if you are getting your metadata from COMET/cellDB and/or you plan to upload the data to the portal. This should be the same as the screen from the sample metadata file.')
+        choice(name: 'BUILD_TYPE', choices: ['', 'MTS', 'CPS', 'EPS', 'APS'], description: 'Select the type of build you are running. This is only necessary if these data are going to be put on the portal.')
         string(name: 'PERT_PLATES', defaultValue: '', description: 'Comma separated list of pert_plates to include in this build. If not provided, all plates for the given screen will be used.')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate,pcr_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
 
         separator(
           name: "metadata",
@@ -47,6 +48,17 @@ pipeline {
         )
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB. Requires that all sample_meta column entries for cell_set exist in cellDB.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
+
+        separator(
+            name: "controls",
+            sectionHeader: "Controls",
+            separatorStyle: separatorStyleCss,
+            sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        string(name: 'CONTROL_BARCODE_META', defaultValue: 'h-a', description: 'Metadata for control barcodes. If the CBs exist in cellDB, this can simply be the lowercase cb_ladder name (ie, h-a). Otherwise, this must be a csv file located in the build directory.')
+        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols.')
+        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls.')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day,pcr_plate,replicate_plate', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
 
         separator(
           name: "core_modules",
@@ -61,18 +73,6 @@ pipeline {
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
-
-        separator(
-          name: "analytics_modules",
-          sectionHeader: "Analytics Modules",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
-        )
-        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
-        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
-        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
-        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
-        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
 
         separator(
           name: "qc_modules",
@@ -96,14 +96,16 @@ pipeline {
         string(name: 'DAYS', defaultValue: '', description: 'Provide any days/timepoints (separated by commas) that should be dropped from the portal output data. Note that the portal does not currently support multiple timepoints. No quotes needed (ie, 2,8).')
 
         separator(
-            name: "controls",
-            sectionHeader: "Controls",
-            separatorStyle: separatorStyleCss,
-            sectionHeaderStyle: sectionHeaderStyleBlue
+          name: "analytics_modules",
+          sectionHeader: "Analytics Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols.')
-        string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls.')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day,pcr_plate,replicate_plate', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
+        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
+        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
+        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
+        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
+        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
 
         // Parameters that we don't expect users to change
         separator(
@@ -112,6 +114,11 @@ pipeline {
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleRed
         )
+
+        // pipeline version
+        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
+        booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
+        string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch or if already specified in the config file.)')
 
         // QC Paramters
         string(name: 'QC_PARAMS', defaultValue: 'qc_params.json', description: 'File name in BUILD_DIR containing the QC parameters.')
@@ -131,20 +138,13 @@ pipeline {
         string(name: 'pool_well_fraction_threshold', defaultValue: '0.4', description: 'Minimum fraction of cells in a pool that must be outliers in order to flag that pool/well')
         string(name: 'fraction_expected_controls', defaultValue: '0.667', description: 'Fraction of expected controls that must be present in a given pcr_plate for it to be considered a valid well. If either vehicle or poscon wells fall below this threshold, the entire pcr_plate will be removed.')
         // Sequencing tech
-        string(name: 'SEQ_TYPE', defaultValue: 'DRAGEN', description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
-
-
-        // pipeline version
-        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Pipeline branch to use')
-        booleanParam(name: 'USE_LATEST', defaultValue: true, description: 'Check this to use the most up to date version from the specified branch. If not checked, will use the specified commit.')
-        string(name: 'COMMIT_ID', defaultValue: '', description: 'Specific commit ID to use (leave empty if using the latest commit in the branch or if already specified in the config file.)')
+        choice(name: 'SEQ_TYPE', choices: ['DRAGEN', 'MiSeq', 'HiSeq', 'NovaSeq'], description: 'Choose DRAGEN, MiSeq, HiSeq, or NovaSeq. MiSeq and HiSeq/NovaSeq return files named differently. This setting sets the INDEX_1, INDEX_2, and BARCODE_SUFFIX parameters in fastq2readcount. Select DRAGEN if fastq files are from the DRAGEN pipeline from GP. Choosing NovaSeq reverses index 2.')
 
         // Sushi Input files
         string(name: 'RAW_COUNTS_UNCOLLAPSED', defaultValue: 'raw_counts_uncollapsed.csv.gz', description: 'File name in BUILD_DIR containing the uncollapsed raw counts. This should be the file generated by Nori.')
         string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name in BUILD_DIR of the sample meta.')
         string(name: 'CELL_SET_AND_POOL_META', defaultValue: 'cell_set_and_pool_meta.csv', description: 'Cell set and pool information for this run.')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
-        string(name: 'CONTROL_BARCODE_META', defaultValue: 'h-a', description: 'Metadata for control barcodes. If the CBs exist in cellDB, this can simply be the lowercase cb_ladder name (ie, h-a). Otherwise, this must be a csv file located in the build directory.')
 
         // Additional parameters ordered by when they first appear
         string(name: 'BARCODE_COL', defaultValue: 'forward_read_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_barcode\", and the paramter is first used in COLLATE_FASTQ_READS.')
@@ -232,7 +232,7 @@ pipeline {
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
-                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES',
+                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'BUILD_TYPE',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
