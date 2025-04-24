@@ -54,36 +54,16 @@ if(length(dose_cols) > 1) {
   stop()
 }
 
-# Run first DRC for first dose column ----
-print(paste0("Running dose response curves with ", dose_cols[1]))
+# Set DRCs as a loop
+drc_output = list()
 
-if(length(dose_cols) > 1) {
-  treatment_grouping = c(treatment_cols, dose_cols[-1])
-} else {
-  treatment_grouping = treatment_cols
-}
-
-drc_outputs[idx] = create_drc_table(LFC= l2fc,
-                                    cell_line_cols= cell_line_cols,
-                                    treatment_cols= treatment_grouping,
-                                    dose_col= dose_cols[1],
-                                    l2fc_col= l2fc_col,
-                                    cap_for_viability= cap_for_viability)
-idx = idx + 1 # update location for next drc output
-
-# Run DRC for potential second dose column with combination screens ----
-if(length(dose_cols) == 2) {
-  print(paste0("Running dose response curves with ", dose_cols[2]))
-  
-  # Filter for rows with a second pert_dose
-  combo_l2fc = l2fc %>% dplyr::filter(!is.na(.data[[dose_cols[2]]]))
-  
-  drc_outputs[idx]= create_drc_table(LFC = combo_l2fc,
-                                     cell_line_cols = cell_line_cols,
-                                     treatment_cols = c(treatment_cols, dose_cols[-2]),
-                                     dose_col = dose_cols[2],
-                                     l2fc_col = l2fc_col,
-                                     cap_for_viability = cap_for_viability)
+for (idx in seq_along(dose_cols)) {
+  drc_outputs[idx] = create_drc_table(LFC = l2fc[!is.na(l2fc[[dose_cols[idx]]])],
+                                      cell_line_cols = cell_line_cols,
+                                      treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],
+                                      dose_col = dose_cols[idx],
+                                      l2fc_col = l2fc_col,
+                                      cap_for_viability = cap_for_viability)
 }
 
 dose_response = dplyr::bind_rows(drc_outputs)
