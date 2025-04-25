@@ -1,7 +1,7 @@
 library(argparse)
 library(tidyverse)
-source("join_metadata_functions.R")
-source("../src/kitchen_utensils.R")
+source("join_metadata/join_metadata_functions.R")
+source("utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

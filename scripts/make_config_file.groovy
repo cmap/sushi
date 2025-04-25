@@ -365,19 +365,19 @@ pipeline {
                             scriptsToRun.add('create_sample_meta/create_sample_meta.sh')
                         }
                         if (params.CREATE_CELLDB_METADATA) {
-                            scriptsToRun.add('create_cell_meta/create_celldb_metadata.sh')
+                            scriptsToRun.add('create_cell_meta/create_cell_meta.sh')
                         }
                         if (params.COLLATE_FASTQ_READS) {
-                            scriptsToRun.add('collate/collate_fastq_reads.sh')
+                            scriptsToRun.add('collate/collate.sh')
                         }
                         if (params.FILTER_COUNTS) {
                             scriptsToRun.add('filter_counts/filter_counts.sh')
                         }
                         if (params.CBNORMALIZE) {
-                            scriptsToRun.add('normalized/CBnormalize.sh')
+                            scriptsToRun.add('normalized/normalize.sh')
                         }
                         if (params.GENERATE_QC_TABLES) {
-                            scriptsToRun.add('qc_tables/generate_qc_tables.sh')
+                            scriptsToRun.add('qc_tables/qc_tables.sh')
                         }
                         if (params.COMPUTE_LFC) {
                             scriptsToRun.add('compute_l2fc/compute_l2fc.sh')
@@ -392,7 +392,7 @@ pipeline {
                             scriptsToRun.add('biomarker/biomarker.sh')
                         }
                         if (params.QC_IMAGES) {
-                            scriptsToRun.add('filtered_counts_qc/filteredCounts_QC.sh')
+                            scriptsToRun.add('filter_counts_qc/filter_counts_qc.sh')
                         }
                         if (params.JOIN_METADATA) {
                             scriptsToRun.add('join_metadata/join_metadata.sh')

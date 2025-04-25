@@ -7,8 +7,8 @@ suppressPackageStartupMessages({
   library(jsonlite)
   library(dplyr)
 })
-source("qc_table_functions.R")
-source("../src/kitchen_utensils.R")
+source("qc_tables_functions.R")
+source("../utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
@@ -54,7 +54,7 @@ parser$add_argument("--filter_qc_flags",
 )
 parser$add_argument(
   "--qc_params",
-  default = "qc_params.csv",
+  default = "qc_params.json",
   help = "File containing QC parameters"
 )
 parser$add_argument(

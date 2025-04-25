@@ -4,8 +4,8 @@ library(magrittr)
 library(tidyverse)
 suppressPackageStartupMessages(library(argparse))
 suppressPackageStartupMessages(library(dplyr))
-source("compute_l2fc_functions.R")
-source("../src/kitchen_utensils.R")
+source("compute_l2fc/compute_l2fc_functions.R")
+source("utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

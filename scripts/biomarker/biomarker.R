@@ -2,8 +2,8 @@ options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
 library(tidyverse)
-source("biomarker_functions.R")
-source("../src/kitchen_utensils.R")
+source("biomarker/biomarker_functions.R")
+source("utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

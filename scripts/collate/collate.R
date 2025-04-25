@@ -3,8 +3,8 @@ library(argparse)
 library(magrittr)
 library(tidyverse)
 library(data.table)
-source("collate_fastq_reads_functions.R")
-source("../src/kitchen_utensils.R")
+source("collate/collate_functions.R")
+source("utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

@@ -9,8 +9,8 @@ suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(scales)) # for out of bound handling in plots
 suppressPackageStartupMessages(library(ggpmisc)) # with ggplot to add linear fit labels
 suppressPackageStartupMessages(library(WGCNA)) # for faster correlations
-source("/workspace/scripts/src/QC_images.R")
-source("../src/kitchen_utensils.R")
+source("filter_counts_qc/filter_counts_qc_functions.R")
+source("utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()

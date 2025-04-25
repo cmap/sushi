@@ -101,6 +101,6 @@ args=(
 --name "$BUILD_NAME"
 )
 
-echo Rscript eps_qc/EPS_QC.R "${args[@]}"
+echo Rscript eps_qc/eps_qc.R "${args[@]}"
 
-Rscript eps_qc/EPS_QC.R "${args[@]}"
+Rscript eps_qc/eps_qc.R "${args[@]}"

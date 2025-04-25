@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo Starting collate_fastq_reads...
+echo Starting create_celldb_metadata...
 
 export API_KEY=$(cat /local/jenkins/.clue_api_key)
 export API_URL="https://api.clue.io/api/"
@@ -36,19 +36,13 @@ esac
 if [[ "$SEQ_TYPE" == "NovaSeq" ]]
 then
 	export REVERSE_INDEX2=TRUE
-    echo NovaSeq
-fi
-
-if [[ "$SEQ_TYPE" == "MiSeq" ]]
-then
-  export REVERSE_INDEX2=FALSE
-    echo MiSeq
+    echo Sequencing type is NovaSeq
 fi
 
 if [[ "$SEQ_TYPE" == "DRAGEN" ]]
 then
 	export REVERSE_INDEX2=TRUE
-    echo DRAGEN
+    echo Sequencing type is DRAGEN
 fi
 
 if [ -z "$INDEX_1" ]
@@ -69,30 +63,14 @@ then
     exit -1
 fi
 
-#Enforces abs paths
-if [[ "$RAW_COUNTS_UNCOLLAPSED" = /* ]]
-then
-	RAW_COUNTS_UNCOLLAPSED=$(ls $RAW_COUNTS_UNCOLLAPSED)
-else
-	RAW_COUNTS_UNCOLLAPSED=$BUILD_DIR/$RAW_COUNTS_UNCOLLAPSED
-fi
 
 #Enforces abs paths
 if [[ "$SAMPLE_META" = /* ]]
 then
-  SAMPLE_META=$(ls $SAMPLE_META)
+	SAMPLE_META=$(ls $SAMPLE_META)
 else
-  SAMPLE_META=$BUILD_DIR/$SAMPLE_META
+	SAMPLE_META=$BUILD_DIR/$SAMPLE_META
 fi
-
-#Enforces abs paths
-if [[ "$CELL_LINE_META" = /* ]]
-then
-  CELL_LINE_META=$(ls $CELL_LINE_META)
-else
-  CELL_LINE_META=$BUILD_DIR/$CELL_LINE_META
-fi
-
 
 echo Build dir is: $BUILD_DIR
 
@@ -100,23 +78,37 @@ PROJECT_DIR=$(dirname "$BUILD_DIR")
 PROJECT_CODE=$(basename "$PROJECT_DIR")
 
 echo Project Code: $PROJECT_CODE
-echo REVERSE_INDEX2 is: $REVERSE_INDEX2
-echo CONTROL_BARCODE_META is: $BUILD_DIR/CB_meta.csv
-echo CELL_LINE_META is: $CELL_LINE_META
 
-args=(
---raw_counts_uncollapsed "$RAW_COUNTS_UNCOLLAPSED"
---sample_meta "$SAMPLE_META"
---cell_line_meta "$CELL_LINE_META"
---CB_meta "$BUILD_DIR/CB_meta.csv"
---sequencing_index_cols="$SEQUENCING_INDEX_COLS"
---id_cols "$ID_COLS" 
---reverse_index2 "$REVERSE_INDEX2"
---barcode_col "$BARCODE_COL"
---chunk_size "$CHUNK_SIZE"
---low_abundance_threshold "$LOW_ABUNDANCE_THRESHOLD"
---out "$BUILD_DIR"
+# Define an array of parameters and their corresponding values
+parameters=(
+  "BUILD_DIR:$BUILD_DIR"
+  "SAMPLE_META:$SAMPLE_META"
+  "SEQ_TYPE:$SEQ_TYPE"
+  "INDEX_1:$INDEX_1"
+  "INDEX_2:$INDEX_2"
+  "BARCODE_SUFFIX:$BARCODE_SUFFIX"
+  "RUN_NORM:$RUN_NORM"
+  "ID_COLS:$ID_COLS"
+  "SIG_COLS:$SIG_COLS"
+  "SEQUENCING_INDEX_COLS:$SEQUENCING_INDEX_COLS"
+  "CONTROL_COLS:$CONTROL_COLS"
+  "COUNT_THRESHOLD:$COUNT_THRESHOLD"
+  "PSEUDOCOUNT:$PSEUDOCOUNT"
+  "COUNT_COL_NAME:$COUNT_COL_NAME"
+  "CONTROL_BARCODE_META:$CONTROL_BARCODE_META"
+  "BUILD_NAME:$BUILD_NAME"
+  "API_KEY:$API_KEY"
 )
 
-echo Rscript collate/collate_fastq_reads.R "${args[@]}"
-Rscript collate/collate_fastq_reads.R "${args[@]}"
+echo $R_LIBS
+
+args=(
+--sample_meta "$SAMPLE_META"
+--out "$BUILD_DIR"
+--cb_ladder "$CONTROL_BARCODE_META"
+--api_key "$API_KEY"
+)
+
+echo Rscript create_cell_meta/create_cell_meta.R "${args[@]}"
+
+Rscript create_cell_meta/create_cell_meta.R "${args[@]}"
