@@ -144,6 +144,16 @@ calculate_synergy = function(restructured_l2fc,
   restructured_l2fc[, synergy := data.table::fifelse(get(viab_names[3]) > hsa, hsa - get(viab_names[3]),
                                  data.table::fifelse(get(viab_names[3]) < bliss, bliss - get(viab_names[3]), 0))]
 
+  # Testing non viab columns
+  #restructured_l2fc[, (viab_names[3]) := .(pmin(2^get(l2fc_names[3]), viab_cap))]
+  #restructured_l2fc[, hsa := pmin(pmin(2^get(l2fc_names[1]), viab_cap),
+  #                                pmin(2^get(l2fc_names[2]), viab_cap))]
+  #restructured_l2fc[, bliss := pmin(2^get(l2fc_names[1]), viab_cap) * pmin(2^get(l2fc_names[2]), viab_cap)]
+  #restructured_l2fc[, synergy := data.table::fcase(get(viab_names[3]) > hsa, hsa - get(viab_names[3]),
+  #                                                 get(viab_names[3]) < bliss, bliss - get(viab_names[3]),
+  #                                                 default = 0)]
+  #restructured_l2fc[, (viab_names[3]) := NULL]
+
   return(restructured_l2fc)
 }
 
