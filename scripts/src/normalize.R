@@ -32,15 +32,26 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   if(!validate_columns_exist(id_cols, X)) {
     stop('One or more id_cols (printed above) is NOT present in the supplied dataframe.')
   }
-  
+
+  # Filter cb_meta
+  if ("cb_type" %in% colnames(CB_meta)) {
+    dropped_cbs = CB_meta |> dplyr::filter(cb_type != "well_norm")
+    if (nrow(dropped_cbs) > 0) {
+      print(" The following CBs are excluded from normalization.")
+      print(dropped_cbs)
+      CB_meta = CB_meta |> dplyr::filter(cb_type == "well_norm")
+    }
+  }
+
   # Identify valid profiles and valid control barcodes to determine intercept ----
   # Drop wells with invalid pert_type, wells without control barcodes, cell line entries or other CBs,
   # cbs with zero reads, and profiles with fewer than 4 CBs.
-  valid_profiles= X %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0, 
-                                      cb_ladder %in% unique(CB_meta$cb_ladder), 
+
+  valid_profiles= X %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
+                                      cb_ladder %in% unique(CB_meta$cb_ladder),
                                       cb_name %in% unique(CB_meta$cb_name)) %>%
     dplyr::group_by(pick(all_of(id_cols))) %>% dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
-  
+
   # Validation: Check which wells/profiles were dropped ----
   distinct_all_profiles= X %>% dplyr::distinct(pick(all_of(id_cols)))
   distinct_valid_profiles= valid_profiles %>% dplyr::distinct(pick(all_of(id_cols)))
