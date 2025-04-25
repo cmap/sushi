@@ -100,7 +100,7 @@ contains_poscon <- any(sample_meta$pert_type == args$poscon_type)
 # DEFINE COLUMNS
 cell_line_cols <- args$cell_line_cols
 cell_line_cols_list <- strsplit(cell_line_cols, ",")[[1]]
-cell_plate_list <- c(cell_line_cols, "pcr_plate")
+cell_plate_list <- cell_line_cols
 id_cols <- args$id_cols
 id_cols_list <- strsplit(id_cols, ",")[[1]]
 count_threshold <- as.numeric(args$count_threshold)
@@ -119,7 +119,7 @@ thresholds <- load_thresholds_from_json(args$qc_params)
 # Calculate the number of expected poscons and negcons
 n_expected_controls <- sample_meta %>%
   filter(pert_type %in% c("trt_poscon", "ctl_vehicle")) %>%
-  group_by(pert_plate, pcr_plate, pert_type) %>%
+  group_by(pert_plate, pert_type) %>%
   summarize(unique_bio_rep = n_distinct(bio_rep), .groups = "drop") %>%
   pivot_wider(
     names_from = pert_type,
