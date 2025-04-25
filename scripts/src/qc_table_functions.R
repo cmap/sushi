@@ -299,7 +299,7 @@ compute_ctl_medians_and_mad <- function(df, group_cols = c("depmap_id", "pcr_pla
   # Group and compute medians/MADs
   result <- df %>%
     dplyr::filter(pert_type %in% c(negcon, poscon)) %>%
-    dplyr::group_by(across(all_of(c(group_cols, "pert_type")))) %>%
+    dplyr::group_by(across(all_of(c(group_cols, "pert_type", "day")))) %>%
     dplyr::summarise(
       median_log_normalized = median(log2_normalized_n),
       n_replicates = n(),
@@ -404,7 +404,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, contains_poscon = TRUE, poscon = NULL, negcon = NULL,
                                       nc_variability_threshold = 1, error_rate_threshold = 0.05, pc_viability_threshold = 0.25, nc_raw_count_threshold = 40) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
-  cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code") # Define columns to group by
+  cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code", "day") # Define columns to group by
   print(paste0("Computing cell + plate QC metrics grouping by ", paste0(cell_line_plate_grouping, collapse = ","), "....."))
 
   # Compute control medians and MAD
