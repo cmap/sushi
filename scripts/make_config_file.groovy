@@ -38,7 +38,7 @@ pipeline {
         string(name: 'SCREEN', defaultValue: '', description: 'Name of the screen with which this build is associated. This is necessary if you are getting your metadata from COMET/cellDB and/or you plan to upload the data to the portal. This should be the same as the screen from the sample metadata file.')
         choice(name: 'BUILD_TYPE', choices: ['', 'MTS', 'CPS', 'EPS', 'APS'], description: 'Select the type of build you are running. This is only necessary if these data are going to be put on the portal.')
         string(name: 'PERT_PLATES', defaultValue: '', description: 'Comma separated list of pert_plates to include in this build. If not provided, all plates for the given screen will be used.')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate,pcr_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
 
         separator(
           name: "metadata",
