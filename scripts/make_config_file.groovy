@@ -48,6 +48,7 @@ pipeline {
         )
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB. Requires that all sample_meta column entries for cell_set exist in cellDB.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
+        choice(name: 'PERT_VEHICLE', choices: ['DMSO', 'H2O', 'PBS', description: 'Select the vehicle used in this screen.'])
 
         separator(
             name: "controls",
@@ -232,7 +233,7 @@ pipeline {
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
-                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'BUILD_TYPE',
+                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'BUILD_TYPE', 'PERT_VEHICLE',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',

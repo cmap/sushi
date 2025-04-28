@@ -30,10 +30,12 @@ echo LFC is: $LFC
 echo Rscript collapse_replicates.R -c $LFC	\
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
---cell_line_cols $CELL_LINE_COLS
+--cell_line_cols $CELL_LINE_COLS \
+--pert_vehicle $PERT_VEHICLE
 
 
 Rscript collapse_replicates.R -c $LFC	\
 --out $BUILD_DIR \
 --sig_cols $SIG_COLS \
---cell_line_cols $CELL_LINE_COLS
+--cell_line_cols $CELL_LINE_COLS \
+--pert_vehicle $PERT_VEHICLE
