@@ -146,7 +146,22 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
 #'
 #' @import dplyr
 #'
-calculate_cb_metrics <- function(normalized_counts, cb_meta, group_cols = c("pcr_plate", "pcr_well", "pert_plate"), pseudocount = 20) {
+calculate_cb_metrics <- function(normalized_counts, 
+                                 cb_meta,
+                                 group_cols = c("pcr_plate", "pcr_well", "pert_plate"),
+                                 pseudocount = 20) {
+  # Filter cb_meta by dropping any control barcodes without "well_norm"
+  # indicated under "cb_type"
+  if ("cb_type" %in% colnames(cb_meta)) {
+    dropped_cbs = cb_meta |> dplyr::filter(cb_type != "well_norm")
+    
+    if (nrow(dropped_cbs) > 0) {
+      print(" The following CBs are excluded from normalization.")
+      print(dropped_cbs)
+      cb_meta = cb_meta |> dplyr::filter(cb_type == "well_norm")
+    }
+  }
+  
   valid_profiles <- normalized_counts %>%
     dplyr::filter(
       !pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
