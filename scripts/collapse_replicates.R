@@ -40,8 +40,7 @@ if (args$pert_vehicle != "") {
   print("Adding pert_vehicle to collapsed l2fc ...")
   collapsed_l2fc= collapsed_l2fc %>%
     mutate(pert_vehicle= args$pert_vehicle)
-}
-else {
+} else {
   print("No pert_vehicle specified, not adding to collapsed l2fc ...")
 }
 
