@@ -110,9 +110,9 @@ univariate_biomarker_table <- function(Y, file,
   }
   
   if(is.null(features)){
-    features <-  substr(setdiff(h5ls(file)$group, "/"),2,100)
+    features <-  substr(setdiff(h5ls(file)$group, c("/",  "/Lineage_Table")),2,100)
   }else{
-    features <- intersect(features, substr(setdiff(h5ls(file)$group, "/"),2,100))
+    features <- intersect(features, substr(setdiff(h5ls(file)$group, c("/",  "/Lineage_Table")),2,100))
   }
   print(features)
   
