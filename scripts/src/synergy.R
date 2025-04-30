@@ -27,33 +27,38 @@ restructure_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
                             names_sep = "_") {
   # Create new column names using prefix, l2fc_col, and names_sep
   new_names = paste(names_prefix, l2fc_col, sep = names_sep)
-
+  
+  pert1_cols = sig_cols[grepl(paste0(names_prefix[1], names_sep), sig_cols) & sig_cols != "pert_type"]
+  pert2_cols = sig_cols[grepl(paste0(names_prefix[2], names_sep), sig_cols) & sig_cols != "pert_type"]
+  
+  # Check that pert1_cols and pert2_cols are of the same size
+  if (length(pert1_cols) != length(pert2_cols)) {
+    print(pert1_cols)
+    print(pert2_cols)
+    stop("Number of columns describing pert1 does not match number of columns describing pert2.")
+  }
+  
   # Slice data frame into single agents and combos
-  singles_df = cps_l2fc %>% dplyr::filter(pert_type == singles_type)
-  combos_df = cps_l2fc %>% dplyr::filter(pert_type == combos_type) %>% dplyr::rename(setNames(l2fc_col, new_names[3]))
+  singles_df = cps_l2fc |> dplyr::filter(pert_type == singles_type)
+  combos_df = cps_l2fc |> dplyr::filter(pert_type == combos_type) |> dplyr::rename(setNames(l2fc_col, new_names[3]))
   # Change the old l2fc_col name into combo + old l2fc_col
-
+  
   # Add single agents to pert1 of the combos dataframe
-  join_cols = sig_cols[sig_cols != "pert_type" & !grepl(paste0(names_prefix[2], names_sep), sig_cols)]
-
-  restructured_l2fc = combos_df %>%
-    dplyr::left_join(singles_df %>% dplyr::rename(setNames(l2fc_col, new_names[1])),
-                     by = c(cell_line_cols, join_cols),
-                     suffix = c("", ".y")) %>%
-    dplyr::relocate(tidyselect::any_of(c(cell_line_cols, sig_cols, new_names))) %>%
+  restructured_l2fc = combos_df |>
+    dplyr::left_join(singles_df |> dplyr::rename(setNames(l2fc_col, new_names[1])),
+                     by = c(cell_line_cols, pert1_cols),
+                     suffix = c("", ".y")) |>
+    dplyr::relocate(tidyselect::any_of(c(cell_line_cols, sig_cols, new_names))) |>
     dplyr::select(!tidyselect::contains(".y"))
-
+  
   # Add single agents to pert2 of the combos dataframe
-  join_cols = sig_cols[!grepl("pert", sig_cols)]
-  cross_join_cols = setNames(sig_cols[grepl(paste0(names_prefix[1], names_sep), sig_cols)],
-                             sig_cols[grepl(paste0(names_prefix[2], names_sep), sig_cols)])
-
-  restructured_l2fc = restructured_l2fc %>%
-    dplyr::left_join(singles_df %>% dplyr::rename(setNames(l2fc_col, new_names[2])),
-                     by = c(cell_line_cols, join_cols, cross_join_cols), suffix = c("", ".y")) %>%
-    dplyr::relocate(tidyselect::any_of(c(cell_line_cols, sig_cols, new_names))) %>%
+  cross_join_cols = setNames(pert1_cols, pert2_cols)
+  restructured_l2fc = restructured_l2fc |>
+    dplyr::left_join(singles_df |> dplyr::rename(setNames(l2fc_col, new_names[2])),
+                     by = c(cell_line_cols, cross_join_cols), suffix = c("", ".y")) |>
+    dplyr::relocate(tidyselect::any_of(c(cell_line_cols, sig_cols, new_names))) |>
     dplyr::select(!tidyselect::contains(".y"))
-
+  
   return(restructured_l2fc)
 }
 
@@ -107,52 +112,29 @@ restructure2_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
 #' In the context of a CPS, this function calculates synergy scores from l2fc values.
 #'
 #' From the restructure l2fc dataframe, l2fc columns are converted to viabilities which are then used
-#' to calculate HSA, Bliss, and synergy scores. This function relies on the `data.table` package for speed.
+#' to calculate HSA, Bliss, and synergy scores. This function relies on the `data.table` package for speed
+#' and thus will modify the restructured_l2fcl input.
 #'
 #' @import data.table
 #' @param restructure_l2fc
-#' @param l2fc_root
+#' @param l2fc_cols Vector of column names containing l2fc values.
 #' @param viab_cap Upper bound for the viability. Defaults to 1.
-#' @param names_prefix A vector of three prefixes used to identify perturbation 1, perturbation 2, and the combination.
-#' @param names_sep A string used to create new column names with `names_prefix` and `l2fc_root`.
-#' @retun A dataframe
-calculate_synergy = function(restructured_l2fc,
-                             l2fc_root = "median_l2fc",
-                             viab_root = "viab",
-                             viab_cap = 1,
-                             names_prefix = c("pert1", "pert2", "combo"),
-                             names_sep = "_") {
-
+#' @return A dataframe
+calculate_synergy = function(restructured_l2fc, l2fc_cols, viab_cap = 1) {
   # Convert data frame to data.table
   if (!data.table::is.data.table(restructured_l2fc)) {
     restructured_l2fc = data.table::as.data.table(restructured_l2fc)
   }
 
-  # Create vector of names used to create new columns
-  l2fc_names = paste(names_prefix, l2fc_root, sep = names_sep)
-  viab_names = paste(names_prefix, viab_root, sep = names_sep)
-
-  # Convert l2fcs to viabilities
-  restructured_l2fc[, (l2fc_names) := .(pmin(2^get(l2fc_names[1]), viab_cap),
-                                        pmin(2^get(l2fc_names[2]), viab_cap),
-                                        pmin(2^get(l2fc_names[3]), viab_cap))]
-  data.table::setnames(restructured_l2fc, l2fc_names, viab_names)
-
-  # Calculate synergies
-  restructured_l2fc[, hsa := pmin(get(viab_names[1]), get(viab_names[2]))]
-  restructured_l2fc[, bliss := get(viab_names[1]) * get(viab_names[2])]
-  restructured_l2fc[, synergy := data.table::fifelse(get(viab_names[3]) > hsa, hsa - get(viab_names[3]),
-                                 data.table::fifelse(get(viab_names[3]) < bliss, bliss - get(viab_names[3]), 0))]
-
   # Testing non viab columns
-  #restructured_l2fc[, (viab_names[3]) := .(pmin(2^get(l2fc_names[3]), viab_cap))]
-  #restructured_l2fc[, hsa := pmin(pmin(2^get(l2fc_names[1]), viab_cap),
-  #                                pmin(2^get(l2fc_names[2]), viab_cap))]
-  #restructured_l2fc[, bliss := pmin(2^get(l2fc_names[1]), viab_cap) * pmin(2^get(l2fc_names[2]), viab_cap)]
-  #restructured_l2fc[, synergy := data.table::fcase(get(viab_names[3]) > hsa, hsa - get(viab_names[3]),
-  #                                                 get(viab_names[3]) < bliss, bliss - get(viab_names[3]),
-  #                                                 default = 0)]
-  #restructured_l2fc[, (viab_names[3]) := NULL]
+  restructured_l2fc[, hsa := pmin(2^pmin(get(l2fc_cols[1]), get(l2fc_cols[2])), viab_cap)]
+  restructured_l2fc[, bliss := pmin(2^get(l2fc_cols[1]), viab_cap) * pmin(2^get(l2fc_cols[2]), viab_cap)]
+  restructured_l2fc[, temp_viab := pmin(2^get(l2fc_cols[3]), viab_cap)]
+  restructured_l2fc[, synergy := data.table::fcase(temp_viab < bliss, bliss - temp_viab,
+                                                   temp_viab >= bliss & temp_viab <= hsa, 0,
+                                                   temp_viab > hsa, hsa - temp_viab,
+                                                   default = NA)]
+  restructured_l2fc[, temp_viab := NULL] # drop temp viab column
 
   return(restructured_l2fc)
 }
