@@ -164,10 +164,13 @@ median_sample = function(x, n_samples,
 }
 
 # Get cdf to change into pvalue
-get_cdf_value = function(group_name, synergy, h5_file) {
-  ecdf_obj = stats::ecdf(h5read(h5_file, group_name))
-  out_value = ecdf_obj(synergy)
-  return(out_value)
+get_pvalue = function(group_name, synergy_value, 
+                      h5_file = test_mock_synergy, n_samples = 10000) {
+  ecdf_obj = stats::ecdf(rhdf5::h5read(h5_file, group_name))
+  cdf_value = smooth_pvalue(ecdf_obj(synergy_value), n_samples)
+  pvalue = 2 * min(1 - cdf_value, cdf_value)
+  
+  return(pvalue)
 }
 
 # smooth pvalue
