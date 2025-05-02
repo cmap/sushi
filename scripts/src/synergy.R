@@ -39,27 +39,18 @@ restructure_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
   }
   
   # Slice data frame into single agents and combos
-  singles_df = cps_l2fc |> dplyr::filter(pert_type == singles_type)
-  combos_df = cps_l2fc |> dplyr::filter(pert_type == combos_type) |> dplyr::rename(setNames(l2fc_col, new_names[3]))
+  singles_df = cps_l2fc[pert_type == singles_type, ]
+  combos_df = cps_l2fc[pert_type == combos_type, data.table::setnames(.SD, l2fc_col, new_names[3])]
   # Change the old l2fc_col name into combo + old l2fc_col
   
   # Add single agents to pert1 of the combos dataframe
-  restructured_l2fc = combos_df |>
-    dplyr::left_join(singles_df |> dplyr::rename(setNames(l2fc_col, new_names[1])),
-                     by = c(cell_line_cols, pert1_cols),
-                     suffix = c("", ".y")) |>
-    dplyr::relocate(tidyselect::any_of(c(cell_line_cols, sig_cols, new_names))) |>
-    dplyr::select(!tidyselect::contains(".y"))
+  combos_df[singles_df, new_names[1] := get(l2fc_col), on = c(cell_line_cols, pert1_cols)]
   
   # Add single agents to pert2 of the combos dataframe
   cross_join_cols = setNames(pert1_cols, pert2_cols)
-  restructured_l2fc = restructured_l2fc |>
-    dplyr::left_join(singles_df |> dplyr::rename(setNames(l2fc_col, new_names[2])),
-                     by = c(cell_line_cols, cross_join_cols), suffix = c("", ".y")) |>
-    dplyr::relocate(tidyselect::any_of(c(cell_line_cols, sig_cols, new_names))) |>
-    dplyr::select(!tidyselect::contains(".y"))
+  combos_df[singles_df, new_names[2] := get(l2fc_col), on = c(cell_line_cols, cross_join_cols)]
   
-  return(restructured_l2fc)
+  return(combos_df)
 }
 
 # Restructure 2 - grouping single agents with combinations
@@ -140,9 +131,7 @@ calculate_synergy = function(restructured_l2fc, l2fc_cols, viab_cap = 1) {
 }
 
 # Sample DMSO l2fc values
-median_sample = function(x, n_samples,
-                         size = 3, seed = 2,
-                         replace = FALSE, prob = NULL) {
+median_sample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, prob = NULL) {
   
   # Check that there are enough entries to sample to n
   num_pick_combinations = base::choose(length(x), size)
@@ -155,26 +144,33 @@ median_sample = function(x, n_samples,
   
   # Set seed
   base::set.seed(seed)
-  
-  # Test non loop
-  resampled_values = base::replicate(n_samples, 
-                                     median(base::sample(x, size, replace = replace, prob = prob)))
+  # Resample values
+  resampled_values = base::replicate(n_samples, median(base::sample(x, size, replace = replace, prob = prob)))
   
   return(resampled_values)
 }
 
-# Get cdf to change into pvalue
-get_pvalue = function(group_name, synergy_value, 
-                      h5_file = test_mock_synergy, n_samples = 10000) {
-  ecdf_obj = stats::ecdf(rhdf5::h5read(h5_file, group_name))
+#' Get cdf to change into pvalue
+#' 
+#' @import rhdf5
+#' @param group_name
+#' @param synergy_value
+#' @param h5_file
+#' @param n_samples
+get_pvalue = function(group_name, synergy_value, h5_file, n_samples = 10000) {
+  ecdf_obj = stats::ecdf(rhdf5::H5Dread(rhdf5::H5Dopen(h5_file, name = group_name)))
   cdf_value = smooth_pvalue(ecdf_obj(synergy_value), n_samples)
-  pvalue = 2 * min(1 - cdf_value, cdf_value)
+  pvalue = 2 * pmin(1 - cdf_value, cdf_value)
   
   return(pvalue)
 }
 
-# smooth pvalue
-smooth_pvalue <- function(pval_naive, n_samples ){
-  ## use Laplace smoothing on pvalue to not output a 0 pvalue.
-  return ( (pval_naive * n_samples+1)/(n_samples+2) )
+#' Smooth pvalue
+#' 
+#' Use Laplace smoothing on pvalues to prevent zero values.
+#' 
+#' @param pval_naive description
+#' @param n_samples Number of samples
+smooth_pvalue = function(pval_naive, n_samples) {
+  return((pval_naive * n_samples + 1) / (n_samples + 2))
 }
