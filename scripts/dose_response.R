@@ -73,7 +73,7 @@ if(nrow(dose_response) == 0) {
   stop('Dose response table is empty.')
 }
 
-# Check if the output durectory exists, if not create it
+# Check if the output directory exists, if not create it
 if (!dir.exists(paste0(out_dir))) {
   dir.create(paste0(out_dir))
 }
