@@ -9,21 +9,23 @@
 #' The single agent entries are merged onto the combonation entries - once for each member of the
 #' combination.
 #'
-#' @import tidyverse
+#' @import data.table
 #' @param cps_l2fc
-#' @param sig_cols A vector of column names defining unique profiles.
 #' @param cell_line_cols A vector of column names defining unique cell lines.
+#' @param sig_cols A vector of column names defining unique profiles.
+#' @param l2fc_col A string name of the column containing the l2fc values.
 #' @param singles_type
 #' @param combos_type
-#' @param l2fc_col A string name of the column containing the l2fc values.
 #' @param names_prefix A vector of three prefixes used to identify perturbation 1, perturbation 2, and the combination.
 #' @param names_sep A string used to create new column names with `names_prefix` and `l2fc_col`.
 #' @return A dataframe
-restructure_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
+restructure_l2fc = function(cps_l2fc,
+                            cell_line_cols,
+                            sig_cols,
+                            l2fc_col = "median_l2fc",
                             singles_type = "trt_cp",
                             combos_type = "trt_combo",
-                            l2fc_col = "median_l2fc",
-                            names_prefix = c("pert1", "pert2", "combo"),
+                            names_prefix = c("pert", "pert2", "combo"),
                             names_sep = "_") {
   # Create new column names using prefix, l2fc_col, and names_sep
   new_names = paste(names_prefix, l2fc_col, sep = names_sep)
@@ -38,7 +40,7 @@ restructure_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
     stop("Number of columns describing pert1 does not match number of columns describing pert2.")
   }
   
-  # Slice data frame into single agents and combos
+  # Slice dataframe into single agents and combos
   singles_df = cps_l2fc[pert_type == singles_type, ]
   combos_df = cps_l2fc[pert_type == combos_type, data.table::setnames(.SD, l2fc_col, new_names[3])]
   # Change the old l2fc_col name into combo + old l2fc_col
