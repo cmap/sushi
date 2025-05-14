@@ -18,6 +18,7 @@
 #' @param combos_type
 #' @param names_prefix A vector of three prefixes used to identify perturbation 1, perturbation 2, and the combination.
 #' @param names_sep A string used to create new column names with `names_prefix` and `l2fc_col`.
+#' @param ignore_cols A vector of column names to ignore. These columns might be in `sig_cols` and are ignored to prevent merging issues.
 #' @return A dataframe
 restructure_l2fc = function(cps_l2fc,
                             cell_line_cols,
@@ -26,13 +27,14 @@ restructure_l2fc = function(cps_l2fc,
                             singles_type = "trt_cp",
                             combos_type = "trt_combo",
                             names_prefix = c("pert", "pert2", "combo"),
-                            names_sep = "_") {
+                            names_sep = "_",
+                            ignore_cols = c("pert_type", "pert_plate")) {
   # Create new column names using prefix, l2fc_col, and names_sep
   new_names = paste(names_prefix, l2fc_col, sep = names_sep)
   
-  pert1_cols = sig_cols[grepl(paste0(names_prefix[1], names_sep), sig_cols) & sig_cols != "pert_type"]
-  pert2_cols = sig_cols[grepl(paste0(names_prefix[2], names_sep), sig_cols) & sig_cols != "pert_type"]
-  
+  pert1_cols = sig_cols[grepl(paste0(names_prefix[1], names_sep), sig_cols) & !sig_cols %in% ignore_cols]
+  pert2_cols = sig_cols[grepl(paste0(names_prefix[2], names_sep), sig_cols) & !sig_cols %in% ignore_cols]
+
   # Check that pert1_cols and pert2_cols are of the same size
   if (length(pert1_cols) != length(pert2_cols)) {
     print(pert1_cols)
@@ -53,51 +55,6 @@ restructure_l2fc = function(cps_l2fc,
   combos_df[singles_df, new_names[2] := get(l2fc_col), on = c(cell_line_cols, cross_join_cols)]
   
   return(combos_df)
-}
-
-# Restructure 2 - grouping single agents with combinations
-restructure2_l2fc = function(cps_l2fc, sig_cols, cell_line_cols,
-                             singles_type = "trt_cp",
-                             combos_type = "trt_combo",
-                             l2fc_col = "median_l2fc") {
-  # function testing - to be removed
-  cps_l2fc = test_l2fc
-  sig_cols = c('x_project_id', 'pert_type', 'pert1_iname', 'pert1_dose', 'pert2_iname', 'pert2_dose')
-  cell_line_cols = c('culture', 'pool_id', 'ccle_name')
-  singles_type = "trt_cp"; combos_type = "trt_combo"
-  l2fc_col = 'LFC'
-  # -
-  
-  # Slice data frame into single agents and combos
-  singles_df = cps_l2fc %>% dplyr::filter(pert_type == singles_type)
-  combos_df = cps_l2fc %>% dplyr::filter(pert_type == combos_type)
-  
-  # Validate singles df
-  print(unique(singles_df$pert2_iname))
-  
-  # Expand single agents for pert1
-  join_cols = sig_cols[sig_cols != "pert_type" & !grepl('pert2_', sig_cols)]
-  
-  singles_pert1_df = combos_df %>% dplyr::mutate(pert2_dose = 0) %>%
-    dplyr::distinct(pick(all_of(c(cell_line_cols, sig_cols)))) %>%
-    dplyr::left_join(singles_df, by = c(cell_line_cols, join_cols), suffix = c('', '.y')) %>%
-    dplyr::relocate(all_of(c(cell_line_cols, sig_cols, l2fc_col))) %>% dplyr::select(!contains('.y'))
-  
-  # Expand single agents for pert2
-  join_cols = sig_cols[!grepl('pert', sig_cols)]
-  cross_join_cols = setNames(sig_cols[grepl('pert1_', sig_cols)], 
-                             sig_cols[grepl('pert2_', sig_cols)])
-  
-  singles_pert2_df = combos_df %>% dplyr::mutate(pert1_dose = 0) %>%
-    dplyr::distinct(pick(all_of(c(cell_line_cols, sig_cols)))) %>%
-    dplyr::left_join(singles_df, by = c(cell_line_cols, join_cols, cross_join_cols), suffix = c('', '.y')) %>%
-    dplyr::relocate(all_of(c(cell_line_cols, sig_cols, l2fc_col))) %>% dplyr::select(!contains('.y'))
-  
-  # Full data table
-  full_table = rbind(singles_pert1_df,
-                     singles_pert2_df, 
-                     combos_df)
-  return(full_table)
 }
 
 #' Calculate synergy scores
@@ -168,11 +125,12 @@ get_pvalue = function(group_name, synergy_value, h5_file, n_samples = 10000) {
 }
 
 #' Smooth pvalue
-#' 
+#'
 #' Use Laplace smoothing on pvalues to prevent zero values.
-#' 
+#'
 #' @param pval_naive description
 #' @param n_samples Number of samples
+#' @return Smoothed pvalue
 smooth_pvalue = function(pval_naive, n_samples) {
   return((pval_naive * n_samples + 1) / (n_samples + 2))
 }
