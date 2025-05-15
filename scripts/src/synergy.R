@@ -5,55 +5,60 @@
 #' In the context of a CPS, this function restructures a l2fc file by creating additional
 #' columns containing the l2fc values for the single agents.
 #'
-#' This function splits the l2fc dataframe into combination entries and single agent entries.
-#' The single agent entries are merged onto the combonation entries - once for each member of the
-#' combination.
+#' This function splits the l2fc data.table into rows with single agents and rows with combinaitons using
+#' `single_type` and `combo_type` from the column `pert_type`. The single agent rows are joined onto the
+#' combination rows - once for each member of the combination. The new l2fc columns created by the joins
+#' are named following `new_col_names`.
 #'
 #' @import data.table
 #' @param cps_l2fc
-#' @param cell_line_cols A vector of column names defining unique cell lines.
-#' @param sig_cols A vector of column names defining unique profiles.
+#' @param join_cols A vector of column names used for joining.
+#' @param pert_cols_list A list of vectors where each item is a vector of column names describing a perturbation.
 #' @param l2fc_col A string name of the column containing the l2fc values.
-#' @param singles_type
-#' @param combos_type
-#' @param names_prefix A vector of three prefixes used to identify perturbation 1, perturbation 2, and the combination.
-#' @param names_sep A string used to create new column names with `names_prefix` and `l2fc_col`.
-#' @param ignore_cols A vector of column names to ignore. These columns might be in `sig_cols` and are ignored to prevent merging issues.
-#' @return A dataframe
-restructure_l2fc = function(cps_l2fc,
-                            cell_line_cols,
-                            sig_cols,
+#' @param single_type String value in the pert_type column that denotes single agent conditions.
+#' @param combo_type String value in the pert_type column that denotes combination conditions.
+#' @param new_col_names A vector of l2fc column names to be created by this function.
+#' @return A data.table
+restructure_l2fc = function(cps_l2fc, join_cols, pert_cols_list,
                             l2fc_col = "median_l2fc",
-                            singles_type = "trt_cp",
-                            combos_type = "trt_combo",
-                            names_prefix = c("pert", "pert2", "combo"),
-                            names_sep = "_",
-                            ignore_cols = c("pert_type", "pert_plate")) {
-  # Create new column names using prefix, l2fc_col, and names_sep
-  new_names = paste(names_prefix, l2fc_col, sep = names_sep)
-  
-  pert1_cols = sig_cols[grepl(paste0(names_prefix[1], names_sep), sig_cols) & !sig_cols %in% ignore_cols]
-  pert2_cols = sig_cols[grepl(paste0(names_prefix[2], names_sep), sig_cols) & !sig_cols %in% ignore_cols]
+                            single_type = "trt_cp",
+                            combo_type = "trt_combo",
+                            new_col_names = c("pert1_l2fc", "pert2_l2fc", "combo_l2fc")) {
 
-  # Check that pert1_cols and pert2_cols are of the same size
-  if (length(pert1_cols) != length(pert2_cols)) {
-    print(pert1_cols)
-    print(pert2_cols)
-    stop("Number of columns describing pert1 does not match number of columns describing pert2.")
+  # Check that pert_type is a column in cps_l2fc
+  if (!"pert_type" %in% colnames(cps_l2fc)) {
+    stop("The column pert_type is not in the provided data.table.")
   }
-  
+
+  # Check that the specified types are in the pert_type column
+  if (!all(c(single_type, combo_type) %in% unique(cps_l2fc$pert_type))) {
+    stop(paste0(single_type, " and ", combo_type, " are not both present in the pert_type column."))
+  }
+
+  # Check that vectors in pert_cols_list are of the same size
+  if (length(unique(lengths(pert_cols_list))) !=  1) {
+    print(pert_cols_list)
+    stop("Number of columns describing each perturbation does not match.")
+  }
+
   # Slice dataframe into single agents and combos
-  singles_df = cps_l2fc[pert_type == singles_type, ]
-  combos_df = cps_l2fc[pert_type == combos_type, data.table::setnames(.SD, l2fc_col, new_names[3])]
-  # Change the old l2fc_col name into combo + old l2fc_col
-  
-  # Add single agents to pert1 of the combos dataframe
-  combos_df[singles_df, new_names[1] := get(l2fc_col), on = c(cell_line_cols, pert1_cols)]
-  
-  # Add single agents to pert2 of the combos dataframe
-  cross_join_cols = setNames(pert1_cols, pert2_cols)
-  combos_df[singles_df, new_names[2] := get(l2fc_col), on = c(cell_line_cols, cross_join_cols)]
-  
+  singles_df = cps_l2fc[pert_type == single_type, ]
+  combos_df = cps_l2fc[pert_type == combo_type,
+                       data.table::setnames(.SD, l2fc_col, new_col_names[length(new_col_names)])]
+  # In combos_df rename l2fc_col to last item of new_col_names
+
+  # For each single agent, add its l2fc column onto combos_df
+  # Loop over new_col_names ignoring last item
+  for (idx in seq_along(new_col_names[-length(new_col_names)])) {
+    # The first iterations will not be a cross join, but subsequent joins will be
+    cross_join_cols = setNames(pert_cols_list[[1]], pert_cols_list[[idx]])
+    combos_df[singles_df, new_col_names[idx] := get(l2fc_col), on = c(join_cols, cross_join_cols)]
+  }
+
+  # Rorder columns - move combo l2fc to after single l2fcs
+  data.table::setcolorder(combos_df, neworder = new_col_names[length(new_col_names)],
+                          after = new_col_names[length(new_col_names) - 1], skip_absent = TRUE)
+
   return(combos_df)
 }
 
@@ -61,15 +66,15 @@ restructure_l2fc = function(cps_l2fc,
 #'
 #' In the context of a CPS, this function calculates synergy scores from l2fc values.
 #'
-#' From the restructure l2fc dataframe, l2fc columns are converted to viabilities which are then used
+#' From the restructure l2fc data.table, l2fc columns are converted to viabilities which are then used
 #' to calculate HSA, Bliss, and synergy scores. This function relies on the `data.table` package for speed
-#' and thus will modify the restructured_l2fcl input.
+#' and thus will modify the restructured_l2fc input.
 #'
 #' @import data.table
 #' @param restructure_l2fc
 #' @param l2fc_cols Vector of column names containing l2fc values.
 #' @param viab_cap Upper bound for the viability. Defaults to 1.
-#' @return A dataframe
+#' @return A data.table
 calculate_synergy = function(restructured_l2fc, l2fc_cols, viab_cap = 1) {
   # Convert data frame to data.table
   if (!data.table::is.data.table(restructured_l2fc)) {
@@ -84,28 +89,27 @@ calculate_synergy = function(restructured_l2fc, l2fc_cols, viab_cap = 1) {
                                                    temp_viab >= bliss & temp_viab <= hsa, 0,
                                                    temp_viab > hsa, hsa - temp_viab,
                                                    default = NA)]
-  restructured_l2fc[, temp_viab := NULL] # drop temp viab column
+  restructured_l2fc[, temp_viab := NULL] # drop temp_viab column
 
   return(restructured_l2fc)
 }
 
 # Sample DMSO l2fc values
 median_sample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, prob = NULL) {
-  
   # Check that there are enough entries to sample to n
   num_pick_combinations = base::choose(length(x), size)
   print(paste0(length(x), " choose ", size, " = ", num_pick_combinations))
-  
-  # Stop if the number to sample to is too low
+
+  # Stop if the number to sample up to is too high
   if(num_pick_combinations < n_samples) {
     stop("ERROR: Cannot sample up to n.")
   }
-  
+
   # Set seed
   base::set.seed(seed)
   # Resample values
   resampled_values = base::replicate(n_samples, median(base::sample(x, size, replace = replace, prob = prob)))
-  
+
   return(resampled_values)
 }
 
