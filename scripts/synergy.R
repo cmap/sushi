@@ -37,24 +37,27 @@ args = parser$parse_args()
 normalized_counts = data.table::fread(args$normalized_counts, sep = ",", header = TRUE)
 cps_l2fc = data.table::fread(args$l2fc, sep = ",", header = TRUE)
 
-cell_line_cols = unlist(strsplit(args$cell_line_cols, ","))
-ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
-sig_cols = unlist(strsplit(args$sig_cols, ","))
+args$cell_line_cols = unlist(strsplit(args$cell_line_cols, ","))
+args$count_threshold = as.numeric(args$count_threshold)
+args$ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
+args$n_samples = as.numeric(args$n_samples)
+args$sig_cols = unlist(strsplit(args$sig_cols, ","))
+args$viab_cap = as.numeric(args$viab_cap)
 #
 
 # Create DMSO l2fc ----
-dmso_norm_ctrl = normalized_counts[pert_type == control_type, ]
+dmso_norm_ctrl = normalized_counts[pert_type == args$control_type, ]
 dmso_norm_trt = dmso_norm_ctrl
 dmso_norm_trt$pert_type = "trt_cp"
 dmso_norm_input = data.table::rbindlist(list(dmso_norm_trt, dmso_norm_ctrl))
 
 dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
-                         cell_line_cols = cell_line_cols,
+                         cell_line_cols = args$cell_line_cols,
                          control_type = args$control_type,
                          count_col_name = args$count_col_name,
                          count_threshold = args$count_threshold,
-                         ctrl_cols = ctrl_cols,
-                         sig_cols = sig_cols)
+                         ctrl_cols = args$ctrl_cols,
+                         sig_cols = args$sig_cols)
 #
 
 # Loop to resample and write to an hdf5 ----
@@ -64,7 +67,7 @@ rhdf5::h5createFile(file.path(args$out, "mock_dmso_synergy.h5"))
 # Create unique group names for each plate cell line
 # this is used for hdf5 hierarchy
 dmso_l2fc = data.table::as.data.table(dmso_l2fc)
-dmso_l2fc[, group_name := do.call(paste, c(.SD, sep = "___")), .SDcols = c(cell_line_cols, ctrl_cols)]
+dmso_l2fc[, group_name := do.call(paste, c(.SD, sep = "___")), .SDcols = c(args$cell_line_cols, args$ctrl_cols)]
 
 # Loop through each unique name - large time constraint
 unique_group_names = unique(dmso_l2fc$group_name)
@@ -73,18 +76,18 @@ for (i in unique_group_names) {
   subset = dmso_l2fc[group_name == i, ]
 
   # Resample to n_samples and create pert1, pert2, combo
-  resampled_l2fc = median_sample(x = subset$l2fc, n_samples = args$n_samples, size = 4, 
+  resampled_l2fc = median_sample(x = subset$l2fc, n_samples = args$n_samples, size = 4,
                                  replace = FALSE, seed = 100)
   mock_values = data.table(pert1_l2fc = resampled_l2fc)
   mock_values[, pert2_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
   mock_values[, combo_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
-  
+
   # Calculate synergy
   subset_synergy = calculate_synergy(restructured_l2fc = mock_values,
                                      l2fc_cols = c("pert1_l2fc", "pert2_l2fc", "combo_l2fc"))
   # Write to hdf5
-  rhdf5::h5write(obj = subset_synergy$synergy, 
-                 file = file.path(args$out, "mock_dmso_synergy.h5"), 
+  rhdf5::h5write(obj = subset_synergy$synergy,
+                 file = file.path(args$out, "mock_dmso_synergy.h5"),
                  name = i)
 }
 
@@ -92,20 +95,30 @@ rhdf5::h5closeAll()
 # by plate is resulting large dfs in memory
 
 # Restructure L2FCs with single agent L2FCs and calculate synergy ----
-restructured_l2fc = restructure_l2fc(cps_l2fc = cps_l2fc,
-                                     sig_cols = sig_cols,
-                                     cell_line_cols = cell_line_cols,
-                                     singles_type = "trt_cp",
-                                     combos_type = "trt_combo",
-                                     l2fc_col = args$l2fc_col,
-                                     names_prefix = c("pert", "pert2", "combo"),
-                                     names_sep = "_")
+# Create vector of new column names
+names_prefix = c("pert", "pert2", "combo")
+new_names = paste(names_prefix, args$l2fc_col, sep = "_")
 
-l2fc_cols = paste(c("pert", "pert2", "combo"), l2fc_col, sep = "_")
+# Pull out columns that describe each pert
+ignore_cols = c("pert_type", "pert_plate") # common pert columns that could be extracted
+pert1_cols = args$sig_cols[grepl(paste0(names_prefix[1], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
+pert2_cols = args$sig_cols[grepl(paste0(names_prefix[2], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
+
+# Pull columns to join on
+# These are cell line columns and additional columns from sig_cols that don't describe the pertubation
+filt_sig_cols = args$sig_cols[!args$sig_cols %in% c(pert1_cols, pert2_cols, "pert_type")]
+
+restructured_l2fc = restructure_l2fc(cps_l2fc = cps_l2fc,
+                                     join_cols = unique(c(args$cell_line_cols, filt_sig_cols)),
+                                     pert_cols_list = list(pert1_cols, pert2_cols),
+                                     l2fc_col = args$l2fc_col,
+                                     single_type = "trt_cp",
+                                     combo_type = "trt_combo",
+                                     new_col_names = new_names)
 
 trt_synergy_scores = calculate_synergy(restructured_l2fc = restructured_l2fc,
-                                       l2fc_cols = l2fc_cols,
-                                       viab_cap = args$viab_cap)
+                                       l2fc_cols = new_names,
+                                       viab_cap = as.numeric(args$viab_cap))
 #
 
 # Pull out pvalues ----
@@ -115,13 +128,14 @@ existing_groups = rhdf5::h5ls(file.path(args$out, "mock_dmso_synergy.h5"))
 
 # Create group name and filter for only cls that were sampled
 trt_synergy_scores[, group_name := do.call(paste, c(.SD, sep = "___")),
-                   .SDcols = c(cell_line_cols, ctrl_cols)]
+                   .SDcols = c(args$cell_line_cols, args$ctrl_cols)]
 # Filter out names not in hf file
 trt_synergy_scores = trt_synergy_scores[group_name %in% existing_groups$name, ]
 
 # Mapply vectorize
 trt_synergy_scores[, p_val_emp := mapply(get_pvalue, group_name, synergy,
-                                         MoreArgs = list(h5_file = mock_dmso_synergy, n_samples = args$n_samples))]
+                                         MoreArgs = list(h5_file = mock_dmso_synergy,
+                                                         n_samples = args$n_samples))]
 rhdf5::h5closeAll()
 #
 
