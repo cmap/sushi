@@ -32,56 +32,50 @@ l2fc= data.table::fread(args$l2fc, header= TRUE, sep= ',')
 # Parse some parameters ----
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 sig_cols= unlist(strsplit(args$sig_cols, ","))
-dose_cols= unlist(strsplit(args$dose_cols, ","))
+args$dose_cols = unlist(strsplit(args$dose_cols, ","))
 l2fc_col= args$l2fc_col
 type_col= args$type_col
 cap_for_viability= as.numeric(args$cap_for_viability)
 build_dir = args$build_dir
-out_dir = args$out_dir
-
-
-# Set up list of drc outputs
-drc_outputs = base::list()
-idx = 1
-treatment_cols = sig_cols[!grepl("dose", sig_cols)]
 
 # What dose columns were detected?
-print(paste0("Detecting the following dose column(s): ", dose_cols))
-if(length(dose_cols) > 1) {
+print(paste0("Detecting the following dose column(s): ", args$dose_cols))
+if (length(args$dose_cols) > 1) {
   print("More than one does column was supplied.")
-} else if(length(dose_cols > 2)) {
-  print("More than two dose columns were detected!")
-  stop()
+} else if (length(args$dose_cols) > 2) {
+  stop("More than two dose columns were detected!")
 }
 
 # Set DRCs as a loop
-drc_output = list()
+drc_outputs = list()
 
-for (idx in seq_along(dose_cols)) {
-  drc_outputs[idx] = create_drc_table(LFC = l2fc[!is.na(l2fc[[dose_cols[idx]]])],
-                                      cell_line_cols = cell_line_cols,
-                                      treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],
-                                      dose_col = dose_cols[idx],
-                                      l2fc_col = l2fc_col,
-                                      cap_for_viability = cap_for_viability)
+for (idx in seq_along(args$dose_cols)) {
+  drc_outputs[[idx]] = create_drc_table(
+    LFC = l2fc[!is.na(get(args$dose_cols[idx])), ],
+    cell_line_cols = cell_line_cols,
+    treatment_cols = sig_cols[!grepl(args$dose_cols[idx], sig_cols)],
+    dose_col = args$dose_cols[idx],
+    l2fc_col = l2fc_col,
+    cap_for_viability = cap_for_viability
+  )
 }
 
 dose_response = dplyr::bind_rows(drc_outputs)
 
 # Validation: Check that dose_response is not empty ----
-if(nrow(dose_response) == 0) {
-  stop('Dose response table is empty.')
+if (nrow(dose_response) == 0) {
+  stop("Dose response table is empty.")
 }
 
 # Check if the output directory exists, if not create it
-if (!dir.exists(paste0(out_dir))) {
-  dir.create(paste0(out_dir))
+if (!dir.exists(args$out_dir)) {
+  dir.create(args$out_dir)
 }
 
 # Write out the DRC table ----
-drc_outpath= paste0(out_dir, "/DRC_TABLE.csv")
+drc_outpath = file.path(args$out_dir, "DRC_TABLE.csv")
 paste0("Writing DRC_TABLE.csv to ", drc_outpath)
-write.csv(dose_response, drc_outpath, row.names= FALSE)
+write.csv(dose_response, drc_outpath, row.names = FALSE)
 
 # Check to make sure that the file was generated
 check_file_exists(drc_outpath)
