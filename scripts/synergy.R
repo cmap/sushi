@@ -14,20 +14,22 @@ parser = ArgumentParser()
 parser$add_argument("-v", "--verbose", action = "store_true", default = TRUE, help = "Print extra output [default]")
 parser$add_argument("-q", "--quietly", action = "store_false", dest = "verbose", help = "Print little output")
 parser$add_argument("--wkdir", default = getwd(), help = "Working directory")
+parser$add_argument("--normalized_counts", default = "normalized_counts.csv",
+                    help = "Path to file containing normalized counts")
 parser$add_argument("--l2fc", default = "l2fc.csv", help = "Path to file containing l2fc values")
 parser$add_argument("--cell_line_cols", default = "pool_id,depmap_id,lua",
                     help = "Column names that describe a cell line")
-parser$add_argument("--ctrl_cols", default="cell_set,day", 
+parser$add_argument("--ctrl_cols", default = "cell_set,day",
                     help = "columns used to collapse controls to generate l2fc")
-parser$add_argument("--control_type", default="ctl_vehicle", help="pert_type to use as control")
-parser$add_argument("--count_col_name", default="log2_normalized_n", 
-                    help = "column containing counts with which to calculate l2fc")
-parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("--sig_cols", default = "cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "Column names that describe a unique profile")
+parser$add_argument("--control_type", default = "ctl_vehicle", help = "pert_type to use as control")
+parser$add_argument("--count_col_name", default = "log2_normalized_n",
+                    help = "column containing counts with which to calculate l2fc")
+parser$add_argument("--count_threshold", default = 40, help = "Low counts threshold")
 parser$add_argument("--l2fc_col", default = "median_l2fc", help = "Name of column containing l2fc values")
-parser$add_argument("--viab_cap", default = 1, help = "Maximum value for the viability")
 parser$add_argument("--n_samples", default = 10000, help = "Number of samples used to create the null distribution")
+parser$add_argument("--viab_cap", default = 1, help = "Maximum value for the viability")
 parser$add_argument("-o", "--out", default = "", help = "Output path, defaults to working directory")
 
 args = parser$parse_args()
