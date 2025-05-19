@@ -72,6 +72,7 @@ pipeline {
         booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
         booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
         booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
+        booleanParam(name: 'SYNERGY', defaultValue: false, description: 'Compute synergy for CPS.')
 
         separator(
           name: "qc_modules",
@@ -388,6 +389,9 @@ pipeline {
                         }
                         if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
                             scriptsToRun.add('biomarker.sh')
+                        }
+                        if (params.SYNERGY) {
+                            scriptsToRun.add('synergy.sh')
                         }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filteredCounts_QC.sh')
