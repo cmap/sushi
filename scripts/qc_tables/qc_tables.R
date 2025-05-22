@@ -8,7 +8,7 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 source("qc_tables/qc_tables_functions.R")
-source("../utils/kitchen_utensils.R")
+source("utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
