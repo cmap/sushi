@@ -110,9 +110,9 @@ univariate_biomarker_table <- function(Y, file,
   }
   
   if(is.null(features)){
-    features <-  substr(setdiff(h5ls(file)$group, "/"),2,100)
+    features <-  substr(setdiff(h5ls(file)$group, c("/",  "/Lineage_Table")),2,100)
   }else{
-    features <- intersect(features, substr(setdiff(h5ls(file)$group, "/"),2,100))
+    features <- intersect(features, substr(setdiff(h5ls(file)$group, c("/",  "/Lineage_Table")),2,100))
   }
   print(features)
   
@@ -447,7 +447,9 @@ multivariate_biomarker_table <- function(Y, W = NULL, file, k = 10) {
     rf_RNA <- random_forest(cbind(X$X.DNA[cl_, ], X$X.RNA[cl_, ]), y[cl_], folds = rf_DNA$folds, k = k)
     
     cl_ = intersect(cl_, rownames(X$X.CRISPR))
-    rf_CRISPR <- random_forest(cbind(X$X.DNA[cl_, ], X$X.RNA[cl_, ], X$CRISPR[cl_, ]), y[cl_], k = k)
+    
+    
+    rf_CRISPR <- random_forest(cbind(X$X.DNA[cl_, ], X$X.RNA[cl_, ], X$X.CRISPR[cl_, ]), y[cl_], k = k)
 
     rf.DNA[[ix]] <- rf_DNA$model_table %>%
       dplyr::mutate(y = colnames(Y)[ix],

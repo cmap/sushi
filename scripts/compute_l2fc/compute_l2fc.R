@@ -71,9 +71,9 @@ if (args$filter_failed_lines) {
 
   l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
   # Filter lines that fail for a pcr_plate
-  join_cols = c(cell_line_cols, "pcr_plate")
-  failed_lines_pcr_plate = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
-  l2fc = l2fc %>% anti_join(failed_lines_pcr_plate, by= join_cols)
+  #join_cols = c(cell_line_cols, "pcr_plate")
+  #failed_lines_pcr_plate = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
+  #l2fc = l2fc %>% anti_join(failed_lines_pcr_plate, by= join_cols)
 }
 
 # Write out file ----
