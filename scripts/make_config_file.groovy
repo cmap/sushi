@@ -375,7 +375,7 @@ pipeline {
                             scriptsToRun.add('filter_counts/filter_counts.sh')
                         }
                         if (params.CBNORMALIZE) {
-                            scriptsToRun.add('normalized/normalize.sh')
+                            scriptsToRun.add('normalize/normalize.sh')
                         }
                         if (params.GENERATE_QC_TABLES) {
                             scriptsToRun.add('qc_tables/qc_tables.sh')
