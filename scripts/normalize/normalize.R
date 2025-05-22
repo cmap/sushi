@@ -3,7 +3,7 @@ library(argparse)
 library(magrittr)
 source("normalize/normalize_functions.R")
 source("utils/kitchen_utensils.R")
-source("qc_tables/qc_table_functions.R")
+source("qc_tables/qc_tables_functions.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
