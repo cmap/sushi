@@ -84,11 +84,11 @@ for (i in unique_group_names) {
   mock_values[, pert2_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
   mock_values[, combo_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
 
-  # Calculate synergy
-  subset_synergy = calculate_synergy(restructured_l2fc = mock_values,
-                                     l2fc_cols = c("pert1_l2fc", "pert2_l2fc", "combo_l2fc"))
+  # Calculate synergy - function occurs in place
+  calculate_synergy(restructured_l2fc = mock_values,
+                    l2fc_cols = c("pert1_l2fc", "pert2_l2fc", "combo_l2fc"))
   # Write to hdf5
-  rhdf5::h5write(obj = subset_synergy$synergy,
+  rhdf5::h5write(obj = mock_values$synergy,
                  file = file.path(args$out, "mock_dmso_synergy.h5"),
                  name = i)
 }
