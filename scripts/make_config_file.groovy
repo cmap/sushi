@@ -369,7 +369,7 @@ pipeline {
                             scriptsToRun.add('create_cell_meta/create_cell_meta.sh')
                         }
                         if (params.COLLATE_FASTQ_READS) {
-                            scriptsToRun.add('collate/collate.sh')
+                            scriptsToRun.add('collate_counts/collate_counts.sh')
                         }
                         if (params.FILTER_COUNTS) {
                             scriptsToRun.add('filter_counts/filter_counts.sh')
