@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo Starting collate_fastq_reads...
+echo Starting collate_counts...
 
 export API_KEY=$(cat /local/jenkins/.clue_api_key)
 export API_URL="https://api.clue.io/api/"

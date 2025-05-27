@@ -3,7 +3,7 @@ library(argparse)
 library(magrittr)
 library(tidyverse)
 library(data.table)
-source("collate/collate_counts_functions.R")
+source("collate_counts/collate_counts_functions.R")
 source("utils/kitchen_utensils.R")
 
 # Argument parser ----
