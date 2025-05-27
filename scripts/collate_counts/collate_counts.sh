@@ -118,5 +118,5 @@ args=(
 --out "$BUILD_DIR"
 )
 
-echo Rscript collate/collate_counts.R "${args[@]}"
-Rscript collate/collate_counts.R "${args[@]}"
+echo Rscript collate_counts/collate_counts.R "${args[@]}"
+Rscript collate_counts/collate_counts.R "${args[@]}"
