@@ -9,7 +9,7 @@ source("utils/kitchen_utensils.R")
 parser <- ArgumentParser()
 # specify desired options
 parser$add_argument("--collapsed_lfc", default="collapsed_l2fc.csv", help="file containing replicate collapsed log fold change values")
-parser$add_argument("--cell_line_cols", default="pool_id,depmap_id",
+parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
