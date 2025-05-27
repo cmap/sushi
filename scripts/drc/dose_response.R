@@ -9,7 +9,7 @@ source("utils/kitchen_utensils.R")
 parser <- ArgumentParser()
 # specify desired options
 parser$add_argument("--l2fc", default="l2fc.csv", help="file containing log fold change values")
-parser$add_argument("--cell_line_cols", default="pool_id,depmap_id",
+parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
@@ -60,7 +60,7 @@ if(nrow(dose_response) == 0) {
   stop('Dose response table is empty.')
 }
 
-# Check if the output durectory exists, if not create it
+# Check if the output directory exists, if not create it
 if (!dir.exists(paste0(out_dir))) {
   dir.create(paste0(out_dir))
 }
