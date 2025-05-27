@@ -62,29 +62,41 @@ def generate_compound_key(df):
 
 
 def generate_merge_key(df, merge_patterns):
-    # Filter out the positive and vehicle controls
+    # 1) filter out controls
     df = df[~df["pert_type"].isin(["trt_poscon", "ctl_vehicle"])]
 
-    # Get a list of x_project_ids
-    project_ids = df["x_project_id"].unique()
+    # 2) compute the list of plates per project
+    plates_per_project = (
+        df
+        .groupby("x_project_id")["pert_plate"]
+        .unique()                       # gives numpy arrays
+        .reset_index(name="pert_plates")
+    )
+    # you now have a DataFrame:
+    #    x_project_id   pert_plates
+    # 0         P1      [A, B, C]
+    # 1         P2      [B, D]
+    # …
 
-    # Creat a dataframe with each row containing a project_id and each of the merge_patterns
-    merge_keys = []
-    for project_id in project_ids:
-        for pattern in merge_patterns:
-            merge_keys.append([project_id, pattern])
+    # 3) build the cross-product of project IDs × merge_patterns
+    project_ids = plates_per_project["x_project_id"].astype(str)
+    merge_keys = pd.DataFrame([
+        (pid, pat)
+        for pid in project_ids
+        for pat in merge_patterns
+    ], columns=["x_project_id", "merge_pattern"])
 
-    # Create a dataframe from the merge_keys
-    merge_df = pd.DataFrame(merge_keys, columns=["x_project_id", "merge_pattern"])
+    # 4) drop duplicates (if any)
+    merge_keys = merge_keys.drop_duplicates().reset_index(drop=True)
 
-    # Ensure uniqueness
-    distinct_df = merge_df.drop_duplicates().reset_index(drop=True)
+    # 5) attach the pert_plates list
+    merge_keys = merge_keys.merge(
+        plates_per_project,
+        on="x_project_id",
+        how="left"
+    )
 
-    # Ensure that x_project_id is a string
-    distinct_df["x_project_id"] = distinct_df["x_project_id"].astype(str)
-
-    # Return the merge_df
-    return distinct_df
+    return merge_keys
 
 
 def generate_pert_plate_project_list(df):
