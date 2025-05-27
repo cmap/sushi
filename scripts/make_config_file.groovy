@@ -363,46 +363,46 @@ pipeline {
                     if (params.TRIGGER_BUILD) {
                         def scriptsToRun = []
                         if (params.CREATE_SAMPLE_META) {
-                            scriptsToRun.add('create_sample_meta.sh')
+                            scriptsToRun.add('create_sample_meta/create_sample_meta.sh')
                         }
                         if (params.CREATE_CELLDB_METADATA) {
-                            scriptsToRun.add('create_celldb_metadata.sh')
+                            scriptsToRun.add('create_cell_meta/create_cell_meta.sh')
                         }
                         if (params.COLLATE_FASTQ_READS) {
-                            scriptsToRun.add('collate_fastq_reads.sh')
+                            scriptsToRun.add('collate_counts/collate_counts.sh')
                         }
                         if (params.FILTER_COUNTS) {
-                            scriptsToRun.add('filter_counts.sh')
+                            scriptsToRun.add('filter_counts/filter_counts.sh')
                         }
                         if (params.CBNORMALIZE) {
-                            scriptsToRun.add('CBnormalize.sh')
+                            scriptsToRun.add('normalize/normalize.sh')
                         }
                         if (params.GENERATE_QC_TABLES) {
-                            scriptsToRun.add('generate_qc_tables.sh')
+                            scriptsToRun.add('qc_tables/qc_tables.sh')
                         }
                         if (params.COMPUTE_LFC) {
-                            scriptsToRun.add('compute_l2fc.sh')
+                            scriptsToRun.add('compute_l2fc/compute_l2fc.sh')
                         }
                         if (params.COLLAPSE) {
-                            scriptsToRun.add('collapse_replicates.sh')
+                            scriptsToRun.add('collapse_replicates/collapse_replicates.sh')
                         }
                         if (params.DRC) {
-                            scriptsToRun.add('dose_response.sh')
+                            scriptsToRun.add('drc/dose_response.sh')
                         }
                         if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
-                            scriptsToRun.add('biomarker.sh')
+                            scriptsToRun.add('biomarker/biomarker.sh')
                         }
                         if (params.QC_IMAGES) {
-                            scriptsToRun.add('filteredCounts_QC.sh')
+                            scriptsToRun.add('filter_counts_qc/filter_counts_qc.sh')
                         }
                         if (params.JOIN_METADATA) {
-                            scriptsToRun.add('join_metadata.sh')
+                            scriptsToRun.add('join_metadata/join_metadata.sh')
                         }
                         if (params.RUN_EPS_QC) {
-                            scriptsToRun.add('eps_qc.sh')
+                            scriptsToRun.add('eps_qc/eps_qc.sh')
                         }
                         if (params.CONVERT_SUSHI) {
-                            scriptsToRun.add('sushi_2_s3.sh')
+                            scriptsToRun.add('sushi_2_s3/sushi_2_s3.sh')
                         }
 
                         scriptsToRun.each { scriptName ->
