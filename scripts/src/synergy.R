@@ -21,9 +21,8 @@
 #' @return A data.table
 restructure_l2fc = function(cps_l2fc, join_cols, pert_cols_list,
                             l2fc_col = "median_l2fc",
-                            single_type = "trt_cp",
-                            combo_type = "trt_combo",
-                            new_col_names = c("pert1_l2fc", "pert2_l2fc", "combo_l2fc")) {
+                            new_col_names = c("pert1_l2fc", "pert2_l2fc", "combo_l2fc"),
+                            combination_col = "is_combination") {
 
   # Check that pert_type is a column in cps_l2fc
   if (!"pert_type" %in% colnames(cps_l2fc)) {
@@ -31,8 +30,8 @@ restructure_l2fc = function(cps_l2fc, join_cols, pert_cols_list,
   }
 
   # Check that the specified types are in the pert_type column
-  if (!all(c(single_type, combo_type) %in% unique(cps_l2fc$pert_type))) {
-    stop(paste0(single_type, " and ", combo_type, " are not both present in the pert_type column."))
+  if (!combination_col %in% colnames(cps_l2fc)) {
+    stop(paste0(combination_col, " is not present as a column in the data table."))
   }
 
   # Check that vectors in pert_cols_list are of the same size
@@ -42,8 +41,8 @@ restructure_l2fc = function(cps_l2fc, join_cols, pert_cols_list,
   }
 
   # Slice dataframe into single agents and combos
-  singles_df = cps_l2fc[pert_type == single_type, ]
-  combos_df = cps_l2fc[pert_type == combo_type,
+  singles_df = cps_l2fc[get(combination_col) == FALSE, ]
+  combos_df = cps_l2fc[get(combination_col) == TRUE,
                        data.table::setnames(.SD, l2fc_col, new_col_names[length(new_col_names)])]
   # In combos_df rename l2fc_col to last item of new_col_names
 
@@ -55,7 +54,7 @@ restructure_l2fc = function(cps_l2fc, join_cols, pert_cols_list,
     combos_df[singles_df, new_col_names[idx] := get(l2fc_col), on = c(join_cols, cross_join_cols)]
   }
 
-  # Rorder columns - move combo l2fc to after single l2fcs
+  # Reorder columns - move combo l2fc to after single l2fcs
   data.table::setcolorder(combos_df, neworder = new_col_names[length(new_col_names)],
                           after = new_col_names[length(new_col_names) - 1], skip_absent = TRUE)
 
@@ -89,6 +88,7 @@ calculate_synergy = function(restructured_l2fc, l2fc_cols, viab_cap = 1) {
                                                    temp_viab >= bliss & temp_viab <= hsa, 0,
                                                    temp_viab > hsa, hsa - temp_viab,
                                                    default = NA)]
+
   restructured_l2fc[, temp_viab := NULL] # drop temp_viab column
 
   return(restructured_l2fc)
@@ -101,8 +101,8 @@ median_sample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, prob
   print(paste0(length(x), " choose ", size, " = ", num_pick_combinations))
 
   # Stop if the number to sample up to is too high
-  if(num_pick_combinations < n_samples) {
-    stop("ERROR: Cannot sample up to n.")
+  if (num_pick_combinations < n_samples) {
+    print(paste0("WARNING: Cannot sample up to ", n_samples, "."))
   }
 
   # Set seed
@@ -124,7 +124,7 @@ get_pvalue = function(group_name, synergy_value, h5_file, n_samples = 10000) {
   ecdf_obj = stats::ecdf(rhdf5::H5Dread(rhdf5::H5Dopen(h5_file, name = group_name)))
   cdf_value = smooth_pvalue(ecdf_obj(synergy_value), n_samples)
   pvalue = 2 * pmin(1 - cdf_value, cdf_value)
-  
+
   return(pvalue)
 }
 
