@@ -15,9 +15,8 @@
 #' @param join_cols A vector of column names used for joining.
 #' @param pert_cols_list A list of vectors where each item is a vector of column names describing a perturbation.
 #' @param l2fc_col A string name of the column containing the l2fc values.
-#' @param single_type String value in the pert_type column that denotes single agent conditions.
-#' @param combo_type String value in the pert_type column that denotes combination conditions.
 #' @param new_col_names A vector of l2fc column names to be created by this function.
+#' @param combination_col Name of the column that identifies a treatment as a combination.
 #' @return A data.table
 restructure_l2fc = function(cps_l2fc, join_cols, pert_cols_list,
                             l2fc_col = "median_l2fc",

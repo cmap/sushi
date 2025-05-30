@@ -107,15 +107,13 @@ pert1_cols = args$sig_cols[grepl(paste0(names_prefix[1], "_"), args$sig_cols) & 
 pert2_cols = args$sig_cols[grepl(paste0(names_prefix[2], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
 
 # Pull columns to join on
-# These are cell line columns and additional columns from sig_cols that don't describe the pertubation
+# These are cell line columns and additional columns from sig_cols that don't describe the perturbation
 filt_sig_cols = args$sig_cols[!args$sig_cols %in% c(pert1_cols, pert2_cols, "pert_type")]
 
 restructured_l2fc = restructure_l2fc(cps_l2fc = cps_l2fc,
                                      join_cols = unique(c(args$cell_line_cols, filt_sig_cols)),
                                      pert_cols_list = list(pert1_cols, pert2_cols),
                                      l2fc_col = args$l2fc_col,
-                                     single_type = "trt_cp",
-                                     combo_type = "trt_combo",
                                      new_col_names = new_names)
 
 trt_synergy_scores = calculate_synergy(restructured_l2fc = restructured_l2fc,
