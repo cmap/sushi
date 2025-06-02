@@ -76,6 +76,19 @@ pipeline {
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
 
         separator(
+          name: "analytics_modules",
+          sectionHeader: "Analytics Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
+        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
+        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
+        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
+        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
+        booleanParam(name: 'SYNERGY', defaultValue: false, description: 'Compute synergy for CPS.')
+
+        separator(
           name: "qc_modules",
           sectionHeader: "QC Modules",
           separatorStyle: separatorStyleCss,
@@ -391,6 +404,9 @@ pipeline {
                         }
                         if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
                             scriptsToRun.add('biomarker/biomarker.sh')
+                        }
+                        if (params.SYNERGY) {
+                            scriptsToRun.add('synergy.sh')
                         }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filter_counts_qc/filter_counts_qc.sh')

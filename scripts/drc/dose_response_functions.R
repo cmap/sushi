@@ -114,7 +114,6 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   var_data = var(FC)
 
   minimum_dose = min(dose); maximum_dose = max(dose)
-
   results.df <- list(); ix = 1
 
 
@@ -302,7 +301,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
 create_drc_table <- function(LFC,
                              cell_line_cols = c("depmap_id", "cell_set", "pool_id"),
                              treatment_cols = c("pert_id", "x_project_id", "pert_name", "pert_plate"),
-                             dose_column = "pert_dose", l2fc_column = "median_l2fc", type_column = "pert_type",
+                             dose_col = "pert_dose", l2fc_col = "median_l2fc", type_column = "pert_type",
                              cap_for_viability = 1.5) {
   require(data.table)
   require(tidyverse)
@@ -313,31 +312,24 @@ create_drc_table <- function(LFC,
     stop("LFC is empty!")
   }
 
-  print(paste0("dose_column:", dose_column))
-  print(paste0("l2fc_column:", l2fc_column))
-  print(paste0("type_column:", type_column))
+  print(paste0("dose_column:", dose_col))
+  print(paste0("l2fc_column:", l2fc_col))
   print(paste0("cell_line_cols:", cell_line_cols))
   print(paste0("treatment_cols:", treatment_cols))
   print(paste0("cap_for_viability:", cap_for_viability))
   print(paste0("Columns in LFC:", colnames(LFC)))
 
   # Check for missing critical columns
-  necessary_columns <- unique(c(dose_column,l2fc_column,type_column,treatment_cols,cell_line_cols))
+  necessary_columns <- unique(c(dose_col,l2fc_col,type_column,treatment_cols,cell_line_cols))
 
   print("Necessary columns:")
   print(necessary_columns)
 
-  # Check pert_type contains trt_cp
-  LFC <- dplyr::filter(LFC, .data[[type_column]] == "trt_cp")
-  if (nrow(LFC) == 0) {
-    stop(paste0(type_column, " doesn't contain any trt_cp!"))
-  }
-
   # Convert columns to numeric explicitly and check for NA generation
   LFC <- LFC %>%
     dplyr::mutate(
-      dose_ = as.numeric(.data[[dose_column]]),
-      l2fc_ = as.numeric(.data[[l2fc_column]])
+      dose_ = as.numeric(.data[[dose_col]]),
+      l2fc_ = as.numeric(.data[[l2fc_col]])
     )
 
   # Verify conversion results
@@ -349,7 +341,7 @@ create_drc_table <- function(LFC,
     stop("Conversion to numeric resulted in NA values!")
   }
 
-  # Fit the curves for single compounds
+  # Fit the curves for the grouped data
   DRC_SINGLE <- LFC %>%
     dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
     dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
