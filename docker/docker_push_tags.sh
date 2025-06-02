@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-#docker push prismcmap/sushi:v0.0.2
-docker push prismcmap/sushi:latest
+
+docker push prismcmap/base-clue-pseq:v0.0.1
+docker push prismcmap/base-clue-pseq:latest
