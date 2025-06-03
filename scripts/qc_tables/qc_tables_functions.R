@@ -65,7 +65,7 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #' @param cell_set_meta A data frame containing metadata about cell sets and their expected cell lines.
 #' @param group_cols A character vector specifying the grouping columns (default: `c("pcr_plate", "pcr_well")`).
 #' @param metric A string indicating the column name of the metric to use for calculations (default: `"n"`).
-#' @param cell_line_cols A character vector specifying the column names that define a unique cell line (default: `c("depmap_id", "pool_id")`).
+#' @param cell_line_cols A character vector specifying the column names that define a unique cell line (default: `c("depmap_id", "lua", "pool_id")`).
 #' @param count_threshold An integer specifying the minimum count threshold for a cell line to be considered recovered (default: `40`).
 #'
 #' @return A data frame summarizing read statistics for each group, including total reads, expected reads, control barcode reads,
