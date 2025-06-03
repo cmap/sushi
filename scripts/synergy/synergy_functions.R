@@ -20,7 +20,7 @@
 #' @return A data.table
 restructure_l2fc = function(cps_l2fc, join_cols, pert_cols_list,
                             l2fc_col = "median_l2fc",
-                            new_col_names = c("pert1_l2fc", "pert2_l2fc", "combo_l2fc"),
+                            new_col_names = c("pert_l2fc", "pert2_l2fc", "combo_l2fc"),
                             combination_col = "is_combination") {
 
   # Check that pert_type is a column in cps_l2fc

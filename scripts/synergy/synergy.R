@@ -4,9 +4,9 @@ library(tidyverse)
 library(data.table)
 library(rhdf5)
 
-source("./src/kitchen_utensils.R")
-source("./src/compute_l2fc.R")
-source("./src/synergy.R")
+source("utils/kitchen_utensils.R")
+source("compute_l2fc/compute_l2fc_functions.R")
+source("synergy/synergy.R")
 
 # Shell script argument parser ----
 parser = ArgumentParser()
@@ -62,7 +62,7 @@ dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
                          sig_cols = args$sig_cols)
 #
 
-# Loop to resample and write to an hdf5 ----
+# Loop to resample and write to an h5 ----
 # Create an hdf file
 rhdf5::h5createFile(file.path(args$out, "mock_dmso_synergy.h5"))
 
