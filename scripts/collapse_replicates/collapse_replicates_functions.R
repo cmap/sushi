@@ -29,7 +29,7 @@ validate_num_bio_reps= function(num_unique_bio_reps, max_bio_rep_count) {
 #'                  The columns in this list should be present in the l2fc dataframe.
 #' @param cell_line_cols List of columns that define a cell line. Defaults to "project_code" and "depmap_id"
 #' @returns - collapsed_counts
-collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('project_code', 'depmap_id')) {
+collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('depmap_id', 'lua', 'pool_id')) {
   # Validation: Check that sig_cols are present in l2fc ----
   if(validate_columns_exist(sig_cols, l2fc) == FALSE) {
     print(sig_cols)
