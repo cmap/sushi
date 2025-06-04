@@ -173,6 +173,8 @@ pipeline {
         string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
         string(name: 'COLLAPSED_L2FC_COLUMN', defaultValue: 'median_l2fc', description: 'Name of the column containing the collapsed log2 fold change values used in biomarker. This defaults to \"collapsed_l2fc\".')
         string(name: 'VIABILITY_CAP', defaultValue: '1.5', description: 'Cap for viability values used when computing LFC. This defaults to \"1.5\".')
+        string(name: 'COMBINATION_COL', defaultValue: 'is_combination', description: 'Name of the column describing if a row has a combination. This defaults to \"is_combination\".')
+        string(name: 'N_SAMPLES', defaultValue: '10000', description: 'Size of the reampling. This defaults to \"10000\".')
 
         // Files created by sushi
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts. This file is created by COLLATE_FASTQ_READS.')
@@ -273,6 +275,9 @@ pipeline {
 
                         //qc parameters
                         'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES'
+
+                        //combinations
+                        'COMBINATION_COL', 'N_SAMPLES'
                     ]
 
                     def config = [:]
@@ -406,7 +411,7 @@ pipeline {
                             scriptsToRun.add('biomarker/biomarker.sh')
                         }
                         if (params.SYNERGY) {
-                            scriptsToRun.add('synergy.sh')
+                            scriptsToRun.add('synergy/synergy.sh')
                         }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filter_counts_qc/filter_counts_qc.sh')
