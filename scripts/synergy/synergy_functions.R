@@ -6,7 +6,7 @@
 #' columns containing the l2fc values for the single agents.
 #'
 #' This function splits the l2fc data.table into rows with single agents and rows with combinations using
-#' `combination_col`. The single agent rows are joined onto the combination rows - 
+#' `combination_col`. The single agent rows are joined onto the combination rows -
 #' once for each member of the combination. The new l2fc columns created by the joins
 #' are named following `new_l2fc_col_names`.
 #'
@@ -51,7 +51,7 @@ restructure_l2fc = function(cps_l2fc, pert_cols_list, join_cols,
   for (idx in seq_along(new_l2fc_col_names[-num_names])) {
     # The first iterations will not be a cross join, but subsequent joins will be
     cross_join_cols = setNames(pert_cols_list[[1]], pert_cols_list[[idx]])
-    combos_df[singles_df, new_col_names[idx] := get(l2fc_col), on = c(join_cols, cross_join_cols)]
+    combos_df[singles_df, new_l2fc_col_names[idx] := get(l2fc_col), on = c(join_cols, cross_join_cols)]
   }
 
   # Reorder columns - move combo l2fc to after single l2fcs
@@ -66,7 +66,7 @@ restructure_l2fc = function(cps_l2fc, pert_cols_list, join_cols,
 #' In the context of a CPS, this function calculates synergy scores from l2fc values.
 #'
 #' From the restructure l2fc data.table, l2fc columns are converted to viabilities which are then used
-#' to calculate HSA, Bliss, and synergy scores. Only the synergy related columns are reported. 
+#' to calculate HSA, Bliss, and synergy scores. Only the synergy related columns are reported.
 #' This function relies on the `data.table` package for speed and thus will modify the `restructured_l2fc` input.
 #'
 #' @import data.table
@@ -119,9 +119,9 @@ median_resample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, pr
 }
 
 #' Calculate pvalue for a synergy score
-#' 
+#'
 #' Calculates a pvalue for a given synergy score using a vector of values representing a null distribution.
-#' 
+#'
 #' @import rhdf5
 #' @param group_name String name in the `hf_file` hierarchy.
 #' @param synergy_value Synergy value

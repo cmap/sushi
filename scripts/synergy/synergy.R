@@ -19,13 +19,13 @@ parser$add_argument("--normalized_counts", default = "normalized_counts.csv",
 parser$add_argument("--l2fc", default = "l2fc.csv", help = "Path to file containing l2fc values")
 # Used to create mock DMSO l2fcs and to restructure l2fcs
 parser$add_argument("--cell_line_cols", default = "pool_id,depmap_id,lua",
-                    help = "Column names that describe a cell line") 
+                    help = "Column names that describe a cell line")
 # Used to create mock DMSO l2fcs
 parser$add_argument("--ctrl_cols", default = "cell_set,day",
                     help = "Column names that describe the control conditions")
 # Used to create mock DMSO l2fcs and to restructure l2fcs
 parser$add_argument("--sig_cols", default = "cell_set,pert_name,pert_dose,pert_dose_unit,day",
-                    help = "Column names that describe a unique profile") 
+                    help = "Column names that describe a unique profile")
 # Used to restructure l2fcs
 parser$add_argument("--combination_col", default = "is_combination", help = "Column name used to identify combinations")
 # Used to create mock DMSO l2fcs
@@ -38,7 +38,7 @@ parser$add_argument("--l2fc_col", default = "median_l2fc", help = "Column name c
 # Used to create mock DMSO l2fcs
 parser$add_argument("--n_samples", default = 10000, help = "Size of the resampling")
 # Used to create mock DMSO l2fcs
-parser$add_argument("--negcon_type", default = "ctl_vehicle", 
+parser$add_argument("--negcon_type", default = "ctl_vehicle",
                     help = "String in pert_type that identifies the negative control")
 # Used to calculate synergy
 parser$add_argument("--viab_cap", default = 1, help = "Maximum value for the viability")
