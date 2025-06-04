@@ -114,6 +114,7 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
   var_data = var(FC)
 
   minimum_dose = min(dose); maximum_dose = max(dose)
+  n_doses = length(unique(dose))
   results.df <- list(); ix = 1
 
 
@@ -269,7 +270,9 @@ get_best_fit <- function(FC, dose, UL_low=0.8, UL_up=1.01, slope_decreasing=TRUE
       dplyr::rowwise() %>%
       dplyr::mutate(auc = compute_auc(lower_limit, upper_limit, inflection, slope, minimum_dose, maximum_dose),
                     log2_auc = log2(auc),
-                    log2_ic50 = compute_log_ic50(lower_limit, upper_limit, inflection, slope, minimum_dose, maximum_dose))
+                    log2_ic50 = ifelse(n_doses>5, ## IC50 is not computed if we don't measure viability at at least 5 doses
+                                       compute_log_ic50(lower_limit, upper_limit, inflection, slope, minimum_dose, maximum_dose),
+                                       NA))
 
   }else{
     results.df  <- data.frame(successful_fit=FALSE,
