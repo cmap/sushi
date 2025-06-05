@@ -27,7 +27,7 @@ enforce_abs_path LFC
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
---l2fc "$LFC"
+--l2fc "$COLLAPSED_LFC"
 --cell_line_cols "$CELL_LINE_COLS"
 --ctrl_cols "$CONTROL_COLS"
 --sig_cols "$SIG_COLS"
@@ -35,7 +35,7 @@ args=(
 --control_type "$CTL_TYPES"
 --count_col_name "$COUNT_COL_NAME" 
 --count_threshold "$COUNT_THRESHOLD"
---l2fc_col "$L2FC_COLUMN"
+--l2fc_col "$COLLAPSED_L2FC_COLUMN"
 --n_samples "$N_SAMPLES"
 --negcon_type "$CTL_TYPES"
 --viab_cap "$VIABILITY_CAP"
