@@ -274,7 +274,7 @@ pipeline {
                         'MERGE_PATTERNS',
 
                         //qc parameters
-                        'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES'
+                        'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES',
 
                         //combinations
                         'COMBINATION_COL', 'N_SAMPLES'
