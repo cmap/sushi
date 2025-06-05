@@ -478,7 +478,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
         median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
       dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 1) %>%
+      dplyr::mutate(qc_pass_pert_plate = ifelse(dplyr::n() == 1, n_passing_plates > 0, n_passing_plates > 1)) %>%
       dplyr::ungroup() %>%
       dplyr::select(-n_passing_plates)
     # Add the n_expected_controls values
