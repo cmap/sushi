@@ -472,7 +472,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
       dplyr::left_join(error_rates, by = cell_line_plate_grouping) %>%
       dplyr::left_join(poscon_lfc, by = cell_line_plate_grouping) %>%
       dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
-    # QC pass criteria, currently with hardcoded pert_types
+    # QC pass criteria
     plate_cell_table <- plate_cell_table %>%
       dplyr::mutate(qc_pass = error_rate < error_rate_threshold & viability_trt_poscon < pc_viability_threshold &
         median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
@@ -500,9 +500,9 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     print(colnames(cell_line_fractions))
     plate_cell_table <- medians_and_mad %>%
       dplyr::left_join(cell_line_fractions, by = cell_line_plate_grouping)
-    # QC pass criteria, currently with hardcoded pert_types
+    # QC pass criteria
     plate_cell_table <- plate_cell_table %>%
-      dplyr::mutate(qc_pass = median_raw_ctl_vehicle > log(40) & mad_log_normalized_ctl_vehicle < 1) %>%
+      dplyr::mutate(qc_pass = median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
       dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
       dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 1) %>%
