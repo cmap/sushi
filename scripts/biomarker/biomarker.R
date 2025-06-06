@@ -56,8 +56,7 @@ print(paste0("univariate_biomarker is " , univariate_biomarker))
 print(paste0("multivariate_biomarker is " , multivariate_biomarker))
 
 # Create the treatment columns ----
-trt_cols_lfc = unique(c("day", sig_cols[grepl("pert", sig_cols)]))
-trt_cols_auc = unique(c("day", sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)]))
+trt_cols = unique(c("day", sig_cols[grepl("pert", sig_cols)]))
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
@@ -71,7 +70,7 @@ if (univariate_biomarker) {
       in_path = lfc_path,
       out_path = out_path,
       output_file_name = "median_l2fc_univariate_biomarkers.csv",
-      treatment_columns = sig_cols[grepl("pert", sig_cols)],
+      treatment_columns = trt_cols,
       response_column = lfc_column,
       depmap_file = bio_file
     )
@@ -81,7 +80,7 @@ if (univariate_biomarker) {
       in_path = drc_file,
       out_path = out_path,
       output_file_name = "log2_auc_univariate_biomarkers.csv",
-      treatment_columns = trt_cols_auc,
+      treatment_columns = trt_cols,
       response_column = dr_column,
       depmap_file = bio_file
     )
