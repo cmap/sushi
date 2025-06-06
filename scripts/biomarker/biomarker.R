@@ -56,7 +56,7 @@ print(paste0("univariate_biomarker is " , univariate_biomarker))
 print(paste0("multivariate_biomarker is " , multivariate_biomarker))
 
 # Create the treatment columns ----
-trt_cols = unique(c("day", sig_cols[grepl("pert", sig_cols)]))
+trt_cols = unique(c("day", sig_cols[grepl("pert|is_combination", sig_cols)]))
 # ABOVE: Is this reason to include cell set in cell line cols instead of sig_cols?
 
 # Check if the output directory exists, if not create it
