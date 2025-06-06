@@ -23,14 +23,9 @@ restructure_l2fc = function(cps_l2fc, pert_cols_list, join_cols,
                             new_l2fc_col_names = c("pert_l2fc", "pert2_l2fc", "combo_l2fc"),
                             combination_col = "is_combination") {
 
-  # Check that pert_type is a column in cps_l2fc
-  if (!"pert_type" %in% colnames(cps_l2fc)) {
-    stop("The column pert_type is not in the provided data.table.")
-  }
-
-  # Check that the specified types are in the pert_type column
+  # Check that combination_col is a column in cps_l2fc
   if (!combination_col %in% colnames(cps_l2fc)) {
-    stop(paste0(combination_col, " is not present as a column in the data table."))
+    stop(paste0("The combination_col ", combination_col, " is not in the provided data.table."))
   }
 
   # Check that vectors in pert_cols_list are of the same size
