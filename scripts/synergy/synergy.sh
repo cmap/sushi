@@ -23,7 +23,7 @@ enforce_abs_path() {
 }
 
 enforce_abs_path NORMALIZED_COUNTS
-enforce_abs_path LFC
+enforce_abs_path COLLAPSED_LFC
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
