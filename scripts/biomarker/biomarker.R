@@ -71,7 +71,7 @@ if (univariate_biomarker) {
       in_path = lfc_path,
       out_path = out_path,
       output_file_name = "median_l2fc_univariate_biomarkers.csv",
-      treatment_columns = sig_cols[grepl("pert", sig_cols)],
+      treatment_columns = trt_cols_lfc,
       response_column = lfc_column,
       depmap_file = bio_file
     )
