@@ -56,7 +56,7 @@ restructure_l2fc = function(cps_l2fc, pert_cols_list, join_cols,
 
   # Reorder columns - move combo l2fc to after single l2fcs
   data.table::setcolorder(combos_df, neworder = new_l2fc_col_names[num_names],
-                          after = new_l2fc_col_names[num_names - 1], skip_absent = TRUE)
+                          after = new_l2fc_col_names[num_names - 1])
 
   return(combos_df)
 }
