@@ -639,7 +639,7 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   # Export the biomarker table -----
   print(paste0("Writing the univariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
-    dplyr::select(pick(any_of(treatment_columns))) %>%
+    dplyr::select(any_of(treatment_columns)) %>%
     dplyr::distinct() %>%
     tidyr::unite(y, treatment_columns, sep = "::", remove = FALSE) %>%
     dplyr::inner_join(univariate_biomarker_table) %>%
