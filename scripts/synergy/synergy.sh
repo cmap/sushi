@@ -42,5 +42,5 @@ args=(
 --out "$BUILD_DIR"
 )
 
-echo Rscript synergy.R "${args[@]}"
-Rscript synergy.R "${args[@]}"
+echo Rscript synergy/synergy.R "${args[@]}"
+Rscript synergy/synergy.R "${args[@]}"
