@@ -114,13 +114,14 @@ pert1_cols = args$sig_cols[grepl(paste0(names_prefix[1], "_"), args$sig_cols) & 
 pert2_cols = args$sig_cols[grepl(paste0(names_prefix[2], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
 
 # Pull columns to join on - these are sig_cols that don't describe the perturbations
-filt_sig_cols = args$sig_cols[!args$sig_cols %in% c(pert1_cols, pert2_cols)]
+filt_sig_cols = args$sig_cols[!args$sig_cols %in% c(pert1_cols, pert2_cols, args$combination_col)]
 
 trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
                                join_cols = unique(c(args$cell_line_cols, filt_sig_cols)),
                                pert_cols_list = list(pert1_cols, pert2_cols),
                                l2fc_col = args$l2fc_col,
-                               new_l2fc_col_names = new_names)
+                               new_l2fc_col_names = new_names,
+                               combination_col = args$combination_col)
 
 # Add synergy scores to data.table in-place
 calculate_synergy(restructured_l2fc = trt_synergy,
