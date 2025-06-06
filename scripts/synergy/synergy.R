@@ -6,7 +6,7 @@ library(rhdf5)
 
 source("utils/kitchen_utensils.R")
 source("compute_l2fc/compute_l2fc_functions.R")
-source("synergy/synergy.R")
+source("synergy/synergy_functions.R")
 
 # Shell script argument parser ----
 parser = ArgumentParser()
