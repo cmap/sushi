@@ -86,7 +86,7 @@ for (i in unique_group_names) {
   subset = dmso_l2fc[group_name == i, ]
 
   # Resample to n_samples and create pert1, pert2, combo
-  resampled_l2fc = median_resample(x = subset$l2fc, n_samples = args$n_samples, size = 4, replace = FALSE, seed = 2)
+  resampled_l2fc = median_resample(x = subset$l2fc, n_samples = args$n_samples, size = 3, replace = FALSE, seed = 2)
   mock_values = data.table(pert1_l2fc = resampled_l2fc)
   mock_values[, pert2_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
   mock_values[, combo_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
