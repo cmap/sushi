@@ -267,7 +267,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 #' @export
 #'
 #' @examples
-read_dataset <- function(file = '/data/biomarker/current/depmap_datasets_public.h5', dataset,
+read_dataset <- function(file = "/data/biomarker/current/prism_biomarker_public_0625.h5", dataset,
                          rownames_depmap_ids = TRUE) {
   require(rhdf5)
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
@@ -304,7 +304,7 @@ read_dataset <- function(file = '/data/biomarker/current/depmap_datasets_public.
 #' @export
 #'
 #' @examples
-read_features <- function(file = '/data/biomarker/current/depmap_datasets_public.h5',
+read_features <- function(file = "/data/biomarker/current/prism_biomarker_public_0625.h5",
                           dataset, feature_names = NULL,
                           rownames_depmap_ids = TRUE) {
   require(rhdf5)
@@ -405,7 +405,7 @@ RF_feature_sets <- function(Y, W = NULL, file) {
   X.RNA <- EXP[cl, ]
   rm(EXP)
 
-  CRISPR <- read_dataset(file = file, dataset = "GeneEffect")
+  CRISPR <- read_dataset(file = file, dataset = "CRISPR")
   CRISPR <- CRISPR[rowMeans(is.finite(CRISPR)) > 0.9, ,drop = FALSE]
   colnames(CRISPR) %<>% paste0("CRISPR_", .)
   
