@@ -8,7 +8,8 @@ source("utils/kitchen_utensils.R")
 # Argument parser ----
 parser <- ArgumentParser()
 # specify desired options
-parser$add_argument("--collapsed_lfc", default="collapsed_l2fc.csv", help="file containing replicate collapsed log fold change values")
+parser$add_argument("--collapsed_lfc", default = "collapsed_l2fc.csv",
+                    help = "file containing replicate collapsed log fold change values")
 parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
@@ -22,7 +23,8 @@ parser$add_argument("--univariate_biomarker", default="true", help="Whether to c
 parser$add_argument("--multivariate_biomarker", default="true", help="Whether to calculate multivariate biomarkers")
 parser$add_argument("--lfc_biomarker", default="true", help="Whether to calculate lfc biomarkers")
 parser$add_argument("--auc_biomarker", default="true", help="Whether to calculate auc biomarkers")
-parser$add_argument("--biomarker_file", default="/data/biomarker/current/depmap_datasets_public.h5", help="File containing depmap data")
+parser$add_argument("--biomarker_file", default="/data/biomarker/current/prism_biomarker_public_0625.h5",
+                    help="File containing depmap data")
 parser$add_argument("--drc_file", default="DRC_TABLE.csv", help="File containing auc values from dose response")
 parser$add_argument("--out_path", default= "", help = "Path to the output directory (per comppound)")
 
@@ -51,17 +53,16 @@ multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 
 # Print some arguments ----
 print(paste0("lfc_biomarker is ", lfc_biomarker))
-print(paste0("auc_biomarker is " , auc_biomarker))
-print(paste0("univariate_biomarker is " , univariate_biomarker))
-print(paste0("multivariate_biomarker is " , multivariate_biomarker))
+print(paste0("auc_biomarker is ", auc_biomarker))
+print(paste0("univariate_biomarker is ", univariate_biomarker))
+print(paste0("multivariate_biomarker is ", multivariate_biomarker))
 
 # Create the treatment columns ----
-trt_cols = unique(c("day", sig_cols[grepl("pert|is_combination", sig_cols)]))
-# ABOVE: Is this reason to include cell set in cell line cols instead of sig_cols?
+trt_cols = sig_cols[grepl("pert|is_combination|day", sig_cols)]
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
-    dir.create(out_path)
+  dir.create(out_path)
 }
 
 # Call the biomarker functions ----
