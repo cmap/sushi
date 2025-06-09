@@ -405,7 +405,7 @@ RF_feature_sets <- function(Y, W = NULL, file) {
   X.RNA <- EXP[cl, ]
   rm(EXP)
 
-  CRISPR <- read_dataset(file = file, dataset = 'CRISPR')
+  CRISPR <- read_dataset(file = file, dataset = "GeneEffect")
   CRISPR <- CRISPR[rowMeans(is.finite(CRISPR)) > 0.9, ,drop = FALSE]
   colnames(CRISPR) %<>% paste0("CRISPR_", .)
   
