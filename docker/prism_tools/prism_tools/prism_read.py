@@ -44,6 +44,7 @@ class SushiBuild:
             if needs_override:
                 kwargs["schema_overrides"] = {"pert_dose": pl.Utf8}
             df = pl.read_csv(p, **kwargs)
+
             # Force day to be an int
             if "day" in df.columns:
                 df = df.with_columns([
