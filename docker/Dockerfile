@@ -31,7 +31,7 @@ RUN apt-get update -qq && \
 
 # Install Python dependencies
 RUN pip3 install pandas requests boto3 polars
-COPY docker/prism-tools ./prism-tools
+COPY prism-tools ./prism-tools
 RUN pip3 install -e prism-tools
 
 # First set of R dependencies
