@@ -29,11 +29,11 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Python dependencies
+# Install Python dependencießs
 RUN pip3 install pandas requests boto3 polars
 
 # First set of R dependencies
-COPY docker/install_packages.R /src/install_packages.R
+COPY ./docker/install_packages.R /src/install_packages.R
 
 RUN Rscript /src/install_packages.R
 
