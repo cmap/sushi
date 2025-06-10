@@ -120,7 +120,6 @@ class SushiBuild:
         return self.concat_builds([other, self])
 
     def update_tables(self, fn: Callable[[pl.DataFrame], pl.DataFrame]) -> "SushiBuild":
-        print("TESTING CODE SOURCE")
         skipped = []
         for attr, rel, _ in self._FILES:
             df = getattr(self, attr, None)
