@@ -34,7 +34,7 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Python dependencießs
+# Install Python dependencies
 RUN pip3 install pandas requests boto3 polars
 
 # Install curl (why post update?)

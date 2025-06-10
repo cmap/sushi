@@ -107,7 +107,7 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
-        string(name: 'DAYS', defaultValue: '', description: 'Provide any days/timepoints (separated by commas) that should be dropped from the portal output data. Note that the portal does not currently support multiple timepoints. No quotes needed (ie, 2,8).')
+        string(name: 'DAYS', defaultValue: '5', description: 'Provide any days/timepoints (separated by commas) that should be maintained. If left blank, all days will be maintained.')
 
         // Parameters that we don't expect users to change
         separator(
