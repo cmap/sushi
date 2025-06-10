@@ -15,6 +15,6 @@ args=(
 --days "$DAYS"
 )
 
-echo python3 sushi_2_s3/sushi_2_s3.py "${args[@]}"
+echo python3 -m sushi_2_s3.sushi_2_s3.py "${args[@]}"
 
-python3 sushi_2_s3/sushi_2_s3.py "${args[@]}"
+python3 -m sushi_2_s3.sushi_2_s3.py "${args[@]}"
