@@ -42,8 +42,14 @@ class SushiBuild:
                 continue
             kwargs = {"ignore_errors": True, "truncate_ragged_lines": True}
             if needs_override:
-                kwargs["schema_overrides"] = {"pert_dose": pl.Utf8, "day": pl.Int64}
+                kwargs["schema_overrides"] = {"pert_dose": pl.Utf8}
             df = pl.read_csv(p, **kwargs)
+            # Force day to be an int
+            if "day" in df.columns:
+                df = df.with_columns([
+                    pl.col("day").cast(pl.Int64).alias("day")
+                ])
+
             setattr(self, attr, df)
 
     def __repr__(self):
