@@ -8,6 +8,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Set root user for installs
 USER root
 
+# First set of R dependencies
+COPY install_packages.R /src/install_packages.R
+
+RUN Rscript /src/install_packages.R
+
 # Install required packages
 RUN apt-get update -qq && \
     mkdir -p /src && \
@@ -31,11 +36,6 @@ RUN apt-get update -qq && \
 
 # Install Python dependencießs
 RUN pip3 install pandas requests boto3 polars
-
-# First set of R dependencies
-COPY install_packages.R /src/install_packages.R
-
-RUN Rscript /src/install_packages.R
 
 # Install curl (why post update?)
 RUN apt-get update -qq && \
