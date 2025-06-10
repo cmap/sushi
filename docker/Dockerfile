@@ -33,7 +33,7 @@ RUN apt-get update -qq && \
 RUN pip3 install pandas requests boto3 polars
 
 # First set of R dependencies
-COPY ./docker/install_packages.R /src/install_packages.R
+COPY install_packages.R /src/install_packages.R
 
 RUN Rscript /src/install_packages.R
 
