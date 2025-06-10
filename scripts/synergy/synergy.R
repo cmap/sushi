@@ -139,11 +139,18 @@ trt_synergy[, group_name := do.call(paste, c(.SD, sep = "___")), .SDcols = group
 # Filter out names not in hf file
 trt_synergy = trt_synergy[group_name %in% existing_groups$name, ]
 
-# Mapply vectorize
+# Calculate emperical pvalues using mapply
 trt_synergy[, p_val_emp := mapply(get_pvalue, group_name, synergy,
                                   MoreArgs = list(h5_file = dmso_synergy, n_samples = args$n_samples))]
 rhdf5::h5closeAll()
 print("Added empirical pvalues to synergies.")
+
+# Calculate qvalues
+trt_synergy[, q_val := p.adjust(p_val_emp, method = "BH"), by = c(args$sig_cols)]
+
+# Count number of significant cell lines for a combination profile
+no_dose_sig_cols = args$sig_cols[!grepl("_dose", args$sig_cols)]
+trt_synergy[, num_sig_profiles := sum(q_val < 0.005), by = c(args$cell_line_cols, no_dose_sig_cols)]
 
 # Write out file ----
 outpath = file.path(args$out, "synergy_scores.csv")
