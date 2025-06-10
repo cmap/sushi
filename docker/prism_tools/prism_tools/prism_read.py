@@ -59,7 +59,7 @@ class SushiBuild:
 
     def __iter__(self):
         """Iterate over (attribute_name, DataFrame) pairs for all loaded tables."""
-        for attr, _, _ in self._FILES:
+        for attr, rel in self._FILES:
             df = getattr(self, attr, None)
             if df is not None:
                 yield attr, df
@@ -74,7 +74,7 @@ class SushiBuild:
 
     def apply_to_tables(self, fn):
         """Apply fn(df) to every non-None table in this instance, replacing it."""
-        for attr, _, _ in self._FILES:
+        for attr, rel in self._FILES:
             df = getattr(self, attr, None)
             if df is not None:
                 setattr(self, attr, fn(df))
@@ -89,7 +89,7 @@ class SushiBuild:
                 combined.build_paths.extend(b.build_paths)
             else:
                 combined.build_paths.append(b.build_path)
-        for attr, _, _ in cls._FILES:
+        for attr, rel in cls._FILES:
             dfs = [getattr(b, attr, None) for b in builds if getattr(b, attr, None) is not None]
             if len(dfs) >= 2:
                 ref = dfs[0]
@@ -121,7 +121,7 @@ class SushiBuild:
 
     def update_tables(self, fn: Callable[[pl.DataFrame], pl.DataFrame]) -> "SushiBuild":
         skipped = []
-        for attr, rel, _ in self._FILES:
+        for attr, rel in self._FILES:
             df = getattr(self, attr, None)
             if df is None:
                 continue
