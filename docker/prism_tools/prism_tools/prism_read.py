@@ -14,20 +14,20 @@ class SushiBuild:
 
     # manifest: (attribute_name, relative_path, needs_pert_dose_override)
     _FILES = [
-        ("normalized_counts_filtered",     "normalized_counts.csv",                      True),
-        ("normalized_counts_original",     "normalized_counts_original.csv",             True),
-        ("annotated_counts",               "annotated_counts.csv",                       True),
-        ("filtered_counts_filtered",       "filtered_counts.csv",                        True),
-        ("filtered_counts_original",       "filtered_counts_original.csv",               True),
-        ("l2fc_filtered",                  "l2fc.csv",                                   True),
-        ("l2fc_original",                  "l2fc_original.csv",                          True),
-        ("collapsed_l2fc",                 "collapsed_l2fc.csv",                         True),
-        ("qc_table",                       "qc_tables/plate_cell_qc_table_internal.csv", False),
-        ("qc_flags",                       "qc_tables/plate_cell_qc_flags.csv",          False),
-        ("id_cols_table",                  "qc_tables/id_cols_qc_table.csv",             False),
-        ("id_cols_flags",                  "qc_tables/id_cols_qc_flags.csv",             False),
-        ("pool_well_table",                "qc_tables/pool_well_qc_table.csv",           False),
-        ("sample_meta",                    "sample_meta.csv",                            False),
+        ("normalized_counts_filtered",     "normalized_counts.csv"),
+        ("normalized_counts_original",     "normalized_counts_original.csv"),
+        ("annotated_counts",               "annotated_counts.csv"),
+        ("filtered_counts_filtered",       "filtered_counts.csv"),
+        ("filtered_counts_original",       "filtered_counts_original.csv"),
+        ("l2fc_filtered",                  "l2fc.csv"),
+        ("l2fc_original",                  "l2fc_original.csv"),
+        ("collapsed_l2fc",                 "collapsed_l2fc.csv"),
+        ("qc_table",                       "qc_tables/plate_cell_qc_table_internal.csv"),
+        ("qc_flags",                       "qc_tables/plate_cell_qc_flags.csv"),
+        ("id_cols_table",                  "qc_tables/id_cols_qc_table.csv"),
+        ("id_cols_flags",                  "qc_tables/id_cols_qc_flags.csv"),
+        ("pool_well_table",                "qc_tables/pool_well_qc_table.csv"),
+        ("sample_meta",                    "sample_meta.csv"),
     ]
 
     def __init__(self, build_path):
@@ -35,7 +35,7 @@ class SushiBuild:
         self._load_all()
 
     def _load_all(self):
-        for attr, rel, needs_override in self._FILES:
+        for attr, rel in self._FILES:
             p = self.build_path / rel
             if not p.exists():
                 setattr(self, attr, None)
@@ -120,6 +120,7 @@ class SushiBuild:
         return self.concat_builds([other, self])
 
     def update_tables(self, fn: Callable[[pl.DataFrame], pl.DataFrame]) -> "SushiBuild":
+        print("TESTING CODE SOURCE")
         skipped = []
         for attr, rel, _ in self._FILES:
             df = getattr(self, attr, None)
