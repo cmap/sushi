@@ -42,7 +42,7 @@ class SushiBuild:
                 continue
             kwargs = {"ignore_errors": True, "truncate_ragged_lines": True}
             if needs_override:
-                kwargs["schema_overrides"] = {"pert_dose": pl.Utf8}
+                kwargs["schema_overrides"] = {"pert_dose": pl.Utf8, "day": pl.Int64}
             df = pl.read_csv(p, **kwargs)
             setattr(self, attr, df)
 
