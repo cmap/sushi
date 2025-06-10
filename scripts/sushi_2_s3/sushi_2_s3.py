@@ -229,7 +229,7 @@ def main(args):
         logging.info("No days specified, not filtering dataframes.")
 
     logger.info("Reading SushiBuild object...")
-    build = prism_read.SushiBuild(build_path)
+    build = SushiBuild(build_path)
     logger.info(f"Loaded build: {build}")
     build.update_tables(lambda df: df.filter(pl.col("day").is_in(days)))
 
