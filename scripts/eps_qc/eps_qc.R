@@ -21,7 +21,7 @@ parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default
 parser$add_argument("-n", "--name", default="", help = "Build name. Default is none")
 parser$add_argument("--control_type", default = "ctl_vehicle", help = "how negative control wells are distinguished in the pert_type column")
 parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
-parser$add_argument("-d","--days",default="", help='Day timepoints to drop from output data separated by commas.')
+parser$add_argument("-d","--days",default="", help='Day timepoints to keep in output data separated by commas, others will be dropped.')
 parser$add_argument("--pseudocount", default=20, help = "pseudocount for normalization")
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -30,9 +30,9 @@ base_dir <- args$build_dir
 out_dir <- args$out
 build_name <- args$name
 control_type <- args$control_type
-days_to_drop.arg <- args$days
-count_threshold <- as.numeric(args$count_threshold) #default is 40 
-days_to_drop <- as.numeric(unlist(strsplit(days_to_drop.arg, ","))) ## convert from string to numeric vector
+days_to_keep <- args$days
+days_to_keep <- as.numeric(unlist(strsplit(days_to_keep, ",")))
+count_threshold <- as.numeric(args$count_threshold) #default is 40
 pseudocount= as.numeric(args$pseudocount)
 
 if (!dir.exists(out_dir)) {dir.create(out_dir, recursive = T)} ## create output dir if it doesn't exist
@@ -50,7 +50,7 @@ if (length(norm_count_files) == 1) {
 ## get negcon counts at day in QC table to pass to portal
 cell_counts_negcon <- norm_counts %>% 
     filter_control_barcodes() %>%
-    dplyr::filter(!(day %in% days_to_drop)) %>% 
+    dplyr::filter(day %in% days_to_keep) %>%
     dplyr::filter(pert_type==control_type)
 
 # validation: only one day should in QC table to pass to portal
