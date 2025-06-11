@@ -7,12 +7,15 @@ import json
 import boto3
 from botocore.exceptions import NoCredentialsError
 import logging
+from prism_tools.prism_read import SushiBuild
+import polars as pl
 
 logger = logging.getLogger("sushi_2_s3")
 
 
 class Config:
     def __init__(self, config_dict):
+        self.MERGE_PATTERNS = None
         for key, value in config_dict.items():
             setattr(self, key, value)
 
@@ -26,6 +29,9 @@ def build_parser():
     )
     parser.add_argument(
         "--build_path", "-b", help="Path to the build directory.", required=True
+    )
+    parser.add_argument(
+        "--days", "-d", help="Comma separated string of days to keep, defaults to 5.", default="5", required=False
     )
     parser.add_argument(
         "--verbose",
@@ -214,6 +220,20 @@ def main(args):
         os.path.join(build_path, "pert_plate_project_key.json"), "w"
     ) as f:
         json.dump(pert_plate_project_list, f, indent=2)
+
+    # Filter data to only the specified days
+    days = args.days
+    if days:
+        days = [int(day.strip()) for day in days.split(",")]
+    else:
+        logging.info("No days specified, not filtering dataframes.")
+
+    logger.info("Reading SushiBuild object...")
+    build = SushiBuild(build_path)
+    for name, df in build:
+        print(name, df.schema, df.shape)
+    logger.info(f"Loaded build: {build}")
+    build.update_tables(lambda df: df.filter(pl.col("day").is_in(days)))
 
 
     # Sync the build directory to S3

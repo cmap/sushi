@@ -30,10 +30,12 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python dependencies
-RUN pip3 install pandas requests boto3 --break-system-packages
+COPY prism_tools ./prism_tools
+RUN pip3 install -e prism_tools
+RUN pip3 install pandas requests boto3 polars
 
 # First set of R dependencies
-COPY docker/install_packages.R /src/install_packages.R
+COPY install_packages.R /src/install_packages.R
 
 RUN Rscript /src/install_packages.R
 
