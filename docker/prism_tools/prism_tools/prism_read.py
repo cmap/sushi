@@ -28,6 +28,7 @@ class SushiBuild:
         ("id_cols_flags",                  "qc_tables/id_cols_qc_flags.csv"),
         ("pool_well_table",                "qc_tables/pool_well_qc_table.csv"),
         ("sample_meta",                    "sample_meta.csv"),
+        ("eps_qc_table",                   "qc_tables/eps_qc_table.csv"),
     ]
 
     def __init__(self, build_path):
