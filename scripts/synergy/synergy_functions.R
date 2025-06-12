@@ -74,15 +74,52 @@ calculate_synergy = function(restructured_l2fc, l2fc_cols, viab_cap = 1) {
   # Calculate synergy score from HSA and Bliss
   restructured_l2fc[, hsa := pmin(2^pmin(get(l2fc_cols[1]), get(l2fc_cols[2])), viab_cap)]
   restructured_l2fc[, bliss := pmin(2^get(l2fc_cols[1]), viab_cap) * pmin(2^get(l2fc_cols[2]), viab_cap)]
-  restructured_l2fc[, temp_combo_viab := pmin(2^get(l2fc_cols[3]), viab_cap)]
-  restructured_l2fc[, synergy := data.table::fcase(temp_combo_viab < bliss, bliss - temp_combo_viab,
-                                                   temp_combo_viab >= bliss & temp_combo_viab <= hsa, 0,
-                                                   temp_combo_viab > hsa, hsa - temp_combo_viab,
+  restructured_l2fc[, combo_viab := pmin(2^get(l2fc_cols[3]), viab_cap)]
+  restructured_l2fc[, synergy := data.table::fcase(combo_viab < bliss, bliss - combo_viab,
+                                                   combo_viab >= bliss & combo_viab <= hsa, 0,
+                                                   combo_viab > hsa, hsa - combo_viab,
                                                    default = NA)]
 
-  restructured_l2fc[, temp_combo_viab := NULL] # drop temp_combo_viab column
+  restructured_l2fc[, combo_viab := NULL] # drop combo_viab column
 
   return(restructured_l2fc)
+}
+
+create_dmso_synergy_hdf5 = function(dmso_l2fc, group_name_cols, path,
+                                    n_samples, size = 3, replace = FALSE, seed = 2) {
+  # Remove exisitng hdf5 file of the same name
+  if (file.exists(path)) {
+    print(paste0("Removing existing h5 file at ", path))
+    file.remove(path)
+  }
+
+  print(paste0("Creating new h5 file at ", path))
+  rhdf5::h5createFile(path)
+
+  # Create unique group names for each plate + cell line for hdf5 hierarchy
+  dmso_l2fc[, group_name := do.call(paste, c(.SD, sep = "__")), .SDcols = group_name_cols]
+
+  # Loop through each unique name
+  unique_group_names = unique(dmso_l2fc$group_name)
+  for (i in unique_group_names) {
+    subset = dmso_l2fc[group_name == i, ]
+
+    # Resample to n_samples and create pert1, pert2, combo
+    resampled_l2fc = median_resample(x = subset$l2fc, n_samples = n_samples, size = size,
+                                     replace = replace, seed = seed)
+    mock_values = data.table(mock1 = resampled_l2fc)
+    mock_values[, mock2 := sample(mock1, size = n_samples, replace = TRUE)]
+    mock_values[, mock3 := sample(mock1, size = n_samples, replace = TRUE)]
+
+    # Calculate synergy - function occurs in place
+    calculate_synergy(restructured_l2fc = mock_values, l2fc_cols = colnames(mock_values))
+
+    # Write to hdf5
+    rhdf5::h5write(obj = mock_values$synergy, file = path, name = i)
+  }
+
+  print("Closing h5 file.")
+  rhdf5::h5closeAll()
 }
 
 # Sample DMSO l2fc values

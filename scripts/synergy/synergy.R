@@ -57,7 +57,7 @@ args$count_threshold = as.numeric(args$count_threshold)
 args$n_samples = as.numeric(args$n_samples)
 args$viab_cap = as.numeric(args$viab_cap)
 
-# Create DMSO l2fc ----
+# Create DMSO L2FC ----
 dmso_norm_ctrl = normalized_counts[pert_type == args$negcon_type, ]
 dmso_norm_trt = dmso_norm_ctrl
 dmso_norm_trt$pert_type = "trt_cp"
@@ -71,37 +71,12 @@ dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
                          ctrl_cols = args$ctrl_cols,
                          sig_cols = args$sig_cols)
 
-# Loop to resample and write to an h5 ----
-# Create an hdf file
-rhdf5::h5createFile(file.path(args$out, "dmso_synergy.h5"))
-
-# Create unique group names for each plate + cell line for hdf5 hierarchy
-dmso_l2fc = data.table::as.data.table(dmso_l2fc)
-group_name_cols = unique(c(args$cell_line_cols, args$ctrl_cols)) # also used later for mapping
-dmso_l2fc[, group_name := do.call(paste, c(.SD, sep = "___")), .SDcols = group_name_cols]
-
-# Loop through each unique name
-unique_group_names = unique(dmso_l2fc$group_name)
-for (i in unique_group_names) {
-  subset = dmso_l2fc[group_name == i, ]
-
-  # Resample to n_samples and create pert1, pert2, combo
-  resampled_l2fc = median_resample(x = subset$l2fc, n_samples = args$n_samples, size = 3, replace = FALSE, seed = 2)
-  mock_values = data.table(pert1_l2fc = resampled_l2fc)
-  mock_values[, pert2_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
-  mock_values[, combo_l2fc := sample(pert1_l2fc, size = args$n_samples, replace = TRUE)]
-
-  # Calculate synergy - function occurs in place
-  calculate_synergy(restructured_l2fc = mock_values,
-                    l2fc_cols = colnames(mock_values))
-  # Write to hdf5
-  rhdf5::h5write(obj = mock_values$synergy,
-                 file = file.path(args$out, "dmso_synergy.h5"),
-                 name = i)
-}
-
-print("Populated dmso_synergy.h5.")
-rhdf5::h5closeAll()
+# Resample DMSO L2FC to create mock synergy values ----
+group_name_cols = unique(c(args$cell_line_cols, args$ctrl_cols)) # Also used later in pval calc
+create_dmso_synergy_hdf5(dmso_l2fc = dmso_l2fc,
+                         group_name_cols = group_name_cols,
+                         path = file.path(args$out, "dmso_synergy.h5"),
+                         n_samples =  args$n_samples)
 
 # Restructure L2FCs with single agent L2FCs and calculate synergy ----
 # Create vector of new column names
@@ -126,7 +101,7 @@ trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
 # Add synergy scores to data.table in-place
 calculate_synergy(restructured_l2fc = trt_synergy,
                   l2fc_cols = new_names,
-                  viab_cap = as.numeric(args$viab_cap))
+                  viab_cap = args$viab_cap)
 print("Calculated synergies.")
 
 # Pull out pvalues ----
@@ -149,8 +124,8 @@ print("Added empirical pvalues to synergies.")
 trt_synergy[, q_val := p.adjust(p_val_emp, method = "BH"), by = c(args$sig_cols)]
 
 # Count number of significant cell lines for a combination profile
-no_dose_sig_cols = args$sig_cols[!grepl("_dose", args$sig_cols)]
-trt_synergy[, num_sig_profiles := sum(q_val < 0.005), by = c(args$cell_line_cols, no_dose_sig_cols)]
+sig_cols_wo_dose = args$sig_cols[!grepl("_dose", args$sig_cols)]
+trt_synergy[, num_sig_profiles := sum(q_val < 0.005), by = c(args$cell_line_cols, sig_cols_wo_dose)]
 
 # Write out file ----
 outpath = file.path(args$out, "synergy_scores.csv")
