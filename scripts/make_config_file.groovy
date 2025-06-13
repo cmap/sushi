@@ -94,7 +94,6 @@ pipeline {
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
         booleanParam(name: 'QC_IMAGES', defaultValue: false, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'FILTER_QC_FLAGS', defaultValue: true, description: 'Filters data that have qc_flags.')
@@ -232,7 +231,7 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
                         'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'BUILD_TYPE', 'PERT_VEHICLE',
 
@@ -401,9 +400,6 @@ pipeline {
                         }
                         if (params.JOIN_METADATA) {
                             scriptsToRun.add('join_metadata/join_metadata.sh')
-                        }
-                        if (params.RUN_EPS_QC) {
-                            scriptsToRun.add('eps_qc/eps_qc.sh')
                         }
                         if (params.CONVERT_SUSHI) {
                             scriptsToRun.add('sushi_2_s3/sushi_2_s3.sh')
