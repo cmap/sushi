@@ -46,6 +46,7 @@ parser$add_argument("-n", "--negcon_type", default = "ctl_vehicle")
 parser$add_argument("-p", "--poscon_type", default = "trt_poscon")
 parser$add_argument("--cell_line_cols", default = "depmap_id,pool_id,lua")
 parser$add_argument("--id_cols", default = "pcr_plate,pcr_well")
+parser$add_argument("--sig_cols", default = "")
 parser$add_argument("--count_threshold", default = 40)
 parser$add_argument("--pseudocount", default = 20)
 parser$add_argument("--filter_qc_flags",
@@ -103,6 +104,7 @@ cell_line_cols_list <- strsplit(cell_line_cols, ",")[[1]]
 cell_plate_list <- c(cell_line_cols, "pcr_plate")
 id_cols <- args$id_cols
 id_cols_list <- strsplit(id_cols, ",")[[1]]
+sig_cols = unlist(strsplit(args$sig_cols, ","))
 count_threshold <- as.numeric(args$count_threshold)
 pseudocount <- as.numeric(args$pseudocount)
 filter_qc_flags <- as.logical(toupper(args$filter_qc_flags))
@@ -170,7 +172,7 @@ filtered_counts_rm_ctl <- filtered_counts %>%
 
 plate_cell_table <- generate_cell_plate_table(
   normalized_counts = filtered_normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
-  cell_line_cols = cell_plate_list, pseudocount = pseudocount, contains_poscon = contains_poscon,
+  cell_line_cols = cell_plate_list, sig_cols = sig_cols, pseudocount = pseudocount, contains_poscon = contains_poscon,
   poscon = poscon, negcon = negcon,
   nc_variability_threshold = thresholds$nc_variability_threshold,
   error_rate_threshold = thresholds$error_rate_threshold,
