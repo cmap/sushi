@@ -30,7 +30,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python dependencies
-COPY prism_tools ./prism_tools
+COPY scripts/utils/prism_tools ./prism_tools
 RUN pip3 install -e prism_tools
 RUN pip3 install pandas requests boto3 polars
 
