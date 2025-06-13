@@ -401,6 +401,28 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
   return(result)
 }
 
+#' Compute median number of biological replicates in treatments
+#'
+#' Actions:
+#' Grab normalized counts, filter for treatments
+#' Group by cell lines + sig cols + plate and count number of bio reps,
+#' Group by cell lines + plate and get median number of bio reps
+#' 
+#' @param norm_counts A dataframe of filtered nromalized counts.
+#' @param cell_line_cols A vector of columns describing cell lines.
+#' @param sig_cols A vector of columns describing treatment profiles.
+#' @return A dataframe.
+compute_med_trt_bio_rep = function(norm_counts, cell_line_cols, sig_cols) {
+  med_trt_bio_reps = norm_counts |>
+    dplyr::filter(pert_type == "trt_cp") |>
+    dplyr::group_by(pick(all_of(unique(c(cell_line_cols, sig_cols, "pert_plate"))))) |>
+    dplyr::summarise(num_trt_bio_reps = dplyr::n(), .groups = "drop") |>
+    dplyr::group_by(pick(all_of(unique(c(cell_line_cols, "pert_plate"))))) |>
+    dplyr::summarise(med_num_trt_bio_reps = median(num_trt_bio_reps), .groups = "drop")
+
+  return(med_trt_bio_reps)
+}
+
 #' Generate cell plate table
 #'
 #' This function generates a comprehensive QC table for cell_lines +pcr plates by computing and merging various QC metrics, including medians, MADs, error rates, log fold changes (LFC), and cell line fractions.
@@ -416,7 +438,8 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, pseudocount = 20, contains_poscon = TRUE, poscon = NULL, negcon = NULL,
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, sig_cols,
+                                      cell_line_cols, pseudocount = 20, contains_poscon = TRUE, poscon = NULL, negcon = NULL,
                                       nc_variability_threshold = 1, error_rate_threshold = 0.05, pc_viability_threshold = 0.25, nc_raw_count_threshold = 40) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code", "day") # Define columns to group by
@@ -456,6 +479,9 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
     grouping_cols = cell_line_plate_grouping
   )
 
+  med_trt_bio_reps = compute_med_trt_bio_rep(norm_counts = normalized_counts,
+                                             cell_line_cols = cell_line_plate_grouping,
+                                             sig_cols = sig_cols)
 
   # Merge all tables together
   if (contains_poscon) {
@@ -478,7 +504,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
         median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
       dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = ifelse(dplyr::n() == 1, n_passing_plates > 0, n_passing_plates > 1)) %>%
+      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & med_num_trt_bio_reps > 1) %>%
       dplyr::ungroup() %>%
       dplyr::select(-n_passing_plates)
     # Add the n_expected_controls values

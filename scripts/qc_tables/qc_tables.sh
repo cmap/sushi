@@ -42,6 +42,7 @@ args=(
 --out "$BUILD_DIR"
 --id_cols "$ID_COLS"
 --cell_line_cols "$CELL_LINE_COLS"
+--sig_cols "$SIG_COLS"
 --count_threshold "$COUNT_THRESHOLD"
 --control_barcode_meta "$BUILD_DIR/CB_meta.csv"
 --unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
