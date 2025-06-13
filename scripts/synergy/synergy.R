@@ -4,9 +4,8 @@ library(tidyverse)
 library(data.table)
 library(rhdf5)
 
-source("./src/kitchen_utensils.R")
-source("./src/compute_l2fc.R")
-source("./src/synergy.R")
+source("utils/kitchen_utensils.R")
+source("compute_l2fc/compute_l2fc.R")
 
 # Shell script argument parser ----
 parser = ArgumentParser()
