@@ -29,10 +29,19 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Python dependencies
+# Setup venvironment for Python
+RUN apt-get update \
+ && apt-get install -y python3-venv python3-pip \
+ && python3 -m venv /opt/venv \
+ && /opt/venv/bin/pip install --upgrade pip setuptools wheel
+
+# install package & deps inside the venv
 COPY scripts/utils/prism_tools ./prism_tools
-RUN pip3 install -e prism_tools
-RUN pip3 install pandas requests boto3 polars
+RUN /opt/venv/bin/pip install -e prism_tools \
+ && /opt/venv/bin/pip install pandas requests boto3 polars
+
+# make the venv’s python/pip the default
+ENV PATH="/opt/venv/bin:${PATH}"
 
 # First set of R dependencies
 COPY docker/install_packages.R /src/install_packages.R
