@@ -40,6 +40,11 @@ COPY scripts/utils/prism_tools ./prism_tools
 RUN /opt/venv/bin/pip install -e prism_tools \
  && /opt/venv/bin/pip install pandas requests boto3 polars
 
+# Copy the R scripts to the container (for use with AWS)
+COPY scripts/drc /scripts/drc
+COPY scripts/biomarker /scripts/biomarker
+COPY scripts/utils /scripts/utils
+
 # make the venv’s python/pip the default
 ENV PATH="/opt/venv/bin:${PATH}"
 
