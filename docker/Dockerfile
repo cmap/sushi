@@ -35,7 +35,7 @@ RUN pip3 install -e prism_tools
 RUN pip3 install pandas requests boto3 polars
 
 # First set of R dependencies
-COPY install_packages.R /src/install_packages.R
+COPY docker/install_packages.R /src/install_packages.R
 
 RUN Rscript /src/install_packages.R
 
