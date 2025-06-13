@@ -48,7 +48,7 @@ pipeline {
         )
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB. Requires that all sample_meta column entries for cell_set exist in cellDB.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
-        choice(name: 'PERT_VEHICLE', choices: ['DMSO', 'H2O', 'PBS'], description: 'Select the vehicle used in this screen.')
+        choice(name: 'PERT_VEHICLE', choices: ['DMSO', 'AQUEOUS', 'H2O', 'PBS'], description: 'Select the vehicle used in this screen.')
 
         separator(
             name: "controls",
