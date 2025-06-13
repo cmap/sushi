@@ -501,11 +501,14 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
       dplyr::left_join(med_trt_bio_reps, by = cell_line_plate_grouping)
     # QC pass criteria
     plate_cell_table <- plate_cell_table %>%
-      dplyr::mutate(qc_pass = error_rate < error_rate_threshold & viability_trt_poscon < pc_viability_threshold &
-        median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
+      dplyr::mutate(qc_pass = error_rate < error_rate_threshold &
+                      viability_trt_poscon < pc_viability_threshold &
+                      median_raw_ctl_vehicle > nc_raw_count_threshold &
+                      mad_log_normalized_ctl_vehicle < nc_variability_threshold,
+                    n_passing_med_num_trt_reps = ifelse(qc_pass, med_num_trt_bio_reps, 0))  %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
       dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & med_num_trt_bio_reps > 1) %>%
+      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & sum(n_passing_med_num_trt_reps) > 1) %>%
       dplyr::ungroup() %>%
       dplyr::select(-n_passing_plates)
     # Add the n_expected_controls values
@@ -530,10 +533,12 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
       dplyr::left_join(med_trt_bio_reps, by = cell_line_plate_grouping)
     # QC pass criteria
     plate_cell_table <- plate_cell_table %>%
-      dplyr::mutate(qc_pass = median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
+      dplyr::mutate(qc_pass = median_raw_ctl_vehicle > nc_raw_count_threshold &
+                      mad_log_normalized_ctl_vehicle < nc_variability_threshold,
+                    n_passing_med_num_trt_reps = ifelse(qc_pass, med_num_trt_bio_reps, 0))  %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
       dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & med_num_trt_bio_reps > 1) %>%
+      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & sum(n_passing_med_num_trt_reps) > 1) %>%
       dplyr::ungroup() %>%
       dplyr::select(-n_passing_plates)
     # Add the n_expected_controls values
