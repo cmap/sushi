@@ -507,10 +507,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
                       mad_log_normalized_ctl_vehicle < nc_variability_threshold,
                     n_passing_med_num_trt_reps = ifelse(qc_pass, med_num_trt_bio_reps, 0))  %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
-      dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & sum(n_passing_med_num_trt_reps) > 1) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(-n_passing_plates)
+      dplyr::mutate(qc_pass_pert_plate = sum(n_passing_med_num_trt_reps) > 1) %>%
+      dplyr::ungroup()
     # Add the n_expected_controls values
     plate_cell_table <- plate_cell_table %>%
       dplyr::left_join(
@@ -537,10 +535,8 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
                       mad_log_normalized_ctl_vehicle < nc_variability_threshold,
                     n_passing_med_num_trt_reps = ifelse(qc_pass, med_num_trt_bio_reps, 0))  %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
-      dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & sum(n_passing_med_num_trt_reps) > 1) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(-n_passing_plates)
+      dplyr::mutate(qc_pass_pert_plate = sum(n_passing_med_num_trt_reps) > 1) %>%
+      dplyr::ungroup()
     # Add the n_expected_controls values
     plate_cell_table <- plate_cell_table %>%
       dplyr::left_join(
