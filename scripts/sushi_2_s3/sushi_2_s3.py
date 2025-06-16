@@ -224,8 +224,8 @@ def main(args):
     # Filter data to only the specified days
     days = args.days
     if days:
-        logger.info(f"Filtering dataframes to only include days: {days}")
         days = [int(day.strip()) for day in days.split(",")]
+        logger.info(f"Filtering dataframes to only include days: {days}")
     else:
         logging.info("No days specified, not filtering dataframes.")
 
