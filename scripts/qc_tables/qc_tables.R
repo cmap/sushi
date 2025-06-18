@@ -203,7 +203,7 @@ pcr_plate_qc_flags_table <- generate_pcr_plate_qc_flags_table(plate_cell_table =
                                                               fraction_expected_controls = thresholds$fraction_expected_controls,
                                                               contains_poscon = contains_poscon)
 
-final_filtered_normalized_counts <- id_cols_filtered_normalized_counts
+final_filtered_normalized_counts <- plate_cell_filtered_normalized_counts
 #  dplyr::anti_join(
 #    plate_cell_filtered_normalized_counts, pcr_plate_qc_flags_table,
 #    by = c("pcr_plate", "pert_plate"))
