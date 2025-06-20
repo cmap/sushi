@@ -59,6 +59,7 @@ api_key= args$api_key
 if(file.exists(args$skipped_wells)){
   skipped_wells <- data.table::fread(args$skipped_wells, header= TRUE, sep= ',')
   skipped_wells <- skipped_wells %>%
+    drop_na(pool_id) %>%
     dplyr::rename(
       replicate_plate = replicate,
       pcr_well = assay_well_position
