@@ -255,7 +255,7 @@ remove_data = function(filtered_counts, data_to_remove) {
 #'
 filter_skipped_wells <- function(filtered_counts, skipped_wells) {
   # Ensure the required columns exist in the dataframes
-  cols <- c("pcr_well", "pert_plate", "pool_id", "replicate")
+  cols <- c("pcr_well", "pert_plate", "pool_id", "replicate_plate")
   if (!all(cols %in% names(filtered_counts))) {
       stop("The filtered counts dataframe is missing one or more required columns.")
   }
