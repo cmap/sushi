@@ -134,7 +134,7 @@ pipeline {
         string(name: 'cb_cl_ratio_high_negcon', defaultValue: '100', description: 'High threshold for control barcode ratio in negative controls')
         string(name: 'cb_cl_ratio_low_poscon', defaultValue: '0', description: 'Low threshold for control barcode ratio in positive controls')
         string(name: 'cb_cl_ratio_high_poscon', defaultValue: '100', description: 'High threshold for control barcode ratio in positive controls')
-        string(name: 'well_reads_threshold', defaultValue: '100', description: 'Minimum median control barcode reads per well')
+        string(name: 'well_reads_threshold', defaultValue: '40', description: 'Minimum median control barcode reads per well')
         string(name: 'pool_well_delta_threshold', defaultValue: '5', description: 'Maximum delta of log2_normalized_n between a cell line and the pool median in a given well before it is considered an outlier')
         string(name: 'pool_well_fraction_threshold', defaultValue: '0.4', description: 'Minimum fraction of cells in a pool that must be outliers in order to flag that pool/well')
         string(name: 'fraction_expected_controls', defaultValue: '0.667', description: 'Fraction of expected controls that must be present in a given pcr_plate for it to be considered a valid well. If either vehicle or poscon wells fall below this threshold, the entire pcr_plate will be removed.')
