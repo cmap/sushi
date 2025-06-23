@@ -22,6 +22,5 @@ fi
 cd ${BUILD_CONTEXT_DIR}
 
 # Run the podman build command with the specified context directory
-podman build -t sushi-podman .
-# podman build --no-cache -t sushi-podman .
+podman build --pull --no-cache -t sushi-podman -f docker/Dockerfile .
 
