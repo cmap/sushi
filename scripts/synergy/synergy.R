@@ -40,8 +40,6 @@ parser$add_argument("--n_samples", default = 10000, help = "Size of the resampli
 # Used to create mock DMSO l2fcs
 parser$add_argument("--negcon_type", default = "ctl_vehicle",
                     help = "String in pert_type that identifies the negative control")
-# Used to calculate synergy
-parser$add_argument("--viab_cap", default = 1, help = "Maximum value for the viability")
 parser$add_argument("-o", "--out", default = "", help = "Output path, defaults to working directory")
 
 args = parser$parse_args()
@@ -55,7 +53,11 @@ args$ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 args$sig_cols = unlist(strsplit(args$sig_cols, ","))
 args$count_threshold = as.numeric(args$count_threshold)
 args$n_samples = as.numeric(args$n_samples)
-args$viab_cap = as.numeric(args$viab_cap)
+
+# Check if combination_col is present ----
+if (!args$combination_col %in% colnames(cps_l2fc)) {
+  stop("The combination column is not detected!")
+}
 
 # Create DMSO L2FC ----
 dmso_norm_ctrl = normalized_counts[pert_type == args$negcon_type, ]
@@ -100,8 +102,7 @@ trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
 
 # Add synergy scores to data.table in-place
 calculate_synergy(restructured_l2fc = trt_synergy,
-                  l2fc_cols = new_names,
-                  viab_cap = args$viab_cap)
+                  l2fc_cols = new_names)
 print("Calculated synergies.")
 
 # Pull out pvalues ----
