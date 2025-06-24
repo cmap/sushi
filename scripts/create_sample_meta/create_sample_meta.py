@@ -84,11 +84,6 @@ def filter_nan_flowcells(df, build_dir):
     return df.dropna(subset=["flowcell_names"])
 
 
-def add_pert_vehicle(df, pert_vehicle):
-    df["pert_vehicle"] = pert_vehicle
-    return df
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Fetch data from API and save to a CSV file."
@@ -98,13 +93,6 @@ def main():
     )
     parser.add_argument(
         "--api_key", "-k", type=str, required=True, help="API key for authentication"
-    )
-    parser.add_argument(
-        "--pert_vehicle",
-        "-pv",
-        type=str,
-        default="DMSO",
-        help="Perturbation vehicle to use, default is DMSO"
     )
     parser.add_argument(
         "--build_dir",
@@ -122,7 +110,6 @@ def main():
     api_key = args.api_key
     build_dir = args.build_dir
     pert_plates = args.pert_plates.replace(" ", "").split(",") if args.pert_plates else None
-    pert_vehicle = args.pert_vehicle
 
     try:
         df = (
@@ -132,7 +119,6 @@ def main():
             .pipe(rename_sample_meta)
             .pipe(remove_sample_meta_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
             .pipe(filter_nan_flowcells, build_dir)
-            .pipe(add_pert_vehicle, pert_vehicle)
         )
         # Subset to provided pert plates if any
         if pert_plates:
