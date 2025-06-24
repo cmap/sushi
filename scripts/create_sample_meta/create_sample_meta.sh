@@ -20,7 +20,6 @@ args=(
 --build_dir "$BUILD_DIR"
 --api_key "$API_KEY"
 --pert_plates "$PERT_PLATES"
---pert_vehicle "$PERT_VEHICLE"
 )
 
 echo python3 create_sample_meta/create_sample_meta.py "${args[@]}"
