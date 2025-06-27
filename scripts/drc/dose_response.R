@@ -79,18 +79,18 @@ dose_response = dplyr::bind_rows(drc_outputs)
 
 # Validation: Check that dose_response is not empty ----
 if (nrow(dose_response) == 0) {
-  stop("Dose response table is empty.")
+  warning("Dose response table is empty. An output file will not be created.")
+} else {
+  # Write out the DRC table ----
+  # Check if the output directory exists, if not create it
+  if (!dir.exists(args$out_dir)) {
+    dir.create(args$out_dir)
+  }
+
+  drc_outpath = file.path(args$out_dir, "DRC_TABLE.csv")
+  paste0("Writing DRC_TABLE.csv to ", drc_outpath)
+  write.csv(dose_response, drc_outpath, row.names = FALSE)
+
+  # Check to make sure that the file was generated
+  check_file_exists(drc_outpath)
 }
-
-# Check if the output directory exists, if not create it
-if (!dir.exists(args$out_dir)) {
-  dir.create(args$out_dir)
-}
-
-# Write out the DRC table ----
-drc_outpath = file.path(args$out_dir, "DRC_TABLE.csv")
-paste0("Writing DRC_TABLE.csv to ", drc_outpath)
-write.csv(dose_response, drc_outpath, row.names = FALSE)
-
-# Check to make sure that the file was generated
-check_file_exists(drc_outpath)
