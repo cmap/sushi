@@ -36,9 +36,9 @@ pipeline {
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Directory where the build output will go. Must contain the raw counts file from Nori. If not getting your metadata from cellDB & COMET this directory must also include the sample and cell line/pool metadata.')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts. Should match the directoty name from BUILD_DIR.')
         string(name: 'SCREEN', defaultValue: '', description: 'Name of the screen with which this build is associated. This is necessary if you are getting your metadata from COMET/cellDB and/or you plan to upload the data to the portal. This should be the same as the screen from the sample metadata file.')
-        choice(name: 'BUILD_TYPE', choices: ['', 'MTS', 'CPS', 'EPS', 'APS'], description: 'Select the type of build you are running. This is only necessary if these data are going to be put on the portal.')
+        choice(name: 'BUILD_TYPE', choices: ['', 'MTS_SEQ', 'CPS', 'EPS', 'APS'], description: 'Select the type of build you are running. This is only necessary if these data are going to be put on the portal.')
         string(name: 'PERT_PLATES', defaultValue: '', description: 'Comma separated list of pert_plates to include in this build. If not provided, all plates for the given screen will be used.')
-        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
+        string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate,pert_vehicle', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
 
         separator(
           name: "metadata",
@@ -48,7 +48,6 @@ pipeline {
         )
         booleanParam(name: 'CREATE_CELLDB_METADATA', defaultValue: true, description: 'Get cell line and pool metadata from cellDB. Requires that all sample_meta column entries for cell_set exist in cellDB.')
         booleanParam(name: 'CREATE_SAMPLE_META', defaultValue: false, description: 'Get sample metadata from COMET, project must be registered and all metadata steps completed.')
-        choice(name: 'PERT_VEHICLE', choices: ['DMSO', 'H2O', 'PBS'], description: 'Select the vehicle used in this screen.')
 
         separator(
             name: "controls",
@@ -59,7 +58,7 @@ pipeline {
         string(name: 'CONTROL_BARCODE_META', defaultValue: 'h-a', description: 'Metadata for control barcodes. If the CBs exist in cellDB, this can simply be the lowercase cb_ladder name (ie, h-a). Otherwise, this must be a csv file located in the build directory.')
         string(name: 'CTL_TYPES', defaultValue: 'ctl_vehicle', description: 'Value in the pert_type column of the sample meta that identifies the negative contols.')
         string(name: 'POSCON_TYPE', defaultValue: 'trt_poscon', description: 'Value in the pert_type column of the sample meta that identifies the positive controls.')
-        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day,pcr_plate,replicate_plate', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
+        string(name: 'CONTROL_COLS', defaultValue: 'cell_set,day,pcr_plate,replicate_plate,pert_vehicle', description: 'List of columns found in the sample meta that describe individual negative control conditions.')
 
         separator(
           name: "core_modules",
@@ -76,12 +75,24 @@ pipeline {
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
 
         separator(
+          name: "analytics_modules",
+          sectionHeader: "Analytics Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
+        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
+        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
+        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
+        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
+        booleanParam(name: 'SYNERGY', defaultValue: false, description: 'Compute synergy for CPS.')
+
+        separator(
           name: "qc_modules",
           sectionHeader: "QC Modules",
           separatorStyle: separatorStyleCss,
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
-        booleanParam(name: 'RUN_EPS_QC', defaultValue: false, description: 'Run EPS QC')
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
         booleanParam(name: 'QC_IMAGES', defaultValue: false, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'FILTER_QC_FLAGS', defaultValue: true, description: 'Filters data that have qc_flags.')
@@ -94,19 +105,7 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
-        string(name: 'DAYS', defaultValue: '', description: 'Provide any days/timepoints (separated by commas) that should be dropped from the portal output data. Note that the portal does not currently support multiple timepoints. No quotes needed (ie, 2,8).')
-
-        separator(
-          name: "analytics_modules",
-          sectionHeader: "Analytics Modules",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
-        )
-        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
-        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
-        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
-        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
-        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
+        string(name: 'DAYS', defaultValue: '5', description: 'Provide any days/timepoints (separated by commas) that should be maintained. If left blank, all days will be maintained.')
 
         // Parameters that we don't expect users to change
         separator(
@@ -134,7 +133,7 @@ pipeline {
         string(name: 'cb_cl_ratio_high_negcon', defaultValue: '100', description: 'High threshold for control barcode ratio in negative controls')
         string(name: 'cb_cl_ratio_low_poscon', defaultValue: '0', description: 'Low threshold for control barcode ratio in positive controls')
         string(name: 'cb_cl_ratio_high_poscon', defaultValue: '100', description: 'High threshold for control barcode ratio in positive controls')
-        string(name: 'well_reads_threshold', defaultValue: '100', description: 'Minimum median control barcode reads per well')
+        string(name: 'well_reads_threshold', defaultValue: '40', description: 'Minimum median control barcode reads per well')
         string(name: 'pool_well_delta_threshold', defaultValue: '5', description: 'Maximum delta of log2_normalized_n between a cell line and the pool median in a given well before it is considered an outlier')
         string(name: 'pool_well_fraction_threshold', defaultValue: '0.4', description: 'Minimum fraction of cells in a pool that must be outliers in order to flag that pool/well')
         string(name: 'fraction_expected_controls', defaultValue: '0.667', description: 'Fraction of expected controls that must be present in a given pcr_plate for it to be considered a valid well. If either vehicle or poscon wells fall below this threshold, the entire pcr_plate will be removed.')
@@ -172,7 +171,7 @@ pipeline {
         string(name: 'SKIPPED_WELLS', defaultValue: 'skipped_wells.csv', description: 'Filename in BUILD_DIR containing skipped wells. This file is created by create_sample_meta.')
         // Other
         string(name: 'API_URL', defaultValue: 'https://api.clue.io/api/', description: 'API URL')
-        string(name: 'MERGE_PATTERNS', defaultValue: 'normalized_counts*,collapsed_l2fc*,l2fc*,log2_auc_multivariate_biomarkers*,log2_auc_univariate_biomarkers*,median_l2fc_multivariate_biomarkers*,median_l2fc_univariate_biomarkers*,DRC_TABLE*', description: 'Patterns to search for when merging files by project. May be changed based on modules run.')
+        string(name: 'MERGE_PATTERNS', defaultValue: 'log2_auc_multivariate_biomarkers*,log2_auc_univariate_biomarkers*,median_l2fc_multivariate_biomarkers*,median_l2fc_univariate_biomarkers*,DRC_TABLE*', description: 'Patterns to search for when merging files by project. May be changed based on modules run.')
 
         // Biomarker
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
@@ -231,9 +230,9 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'RUN_EPS_QC', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
-                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'BUILD_TYPE', 'PERT_VEHICLE',
+                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'BUILD_TYPE',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
@@ -363,46 +362,46 @@ pipeline {
                     if (params.TRIGGER_BUILD) {
                         def scriptsToRun = []
                         if (params.CREATE_SAMPLE_META) {
-                            scriptsToRun.add('create_sample_meta.sh')
+                            scriptsToRun.add('create_sample_meta/create_sample_meta.sh')
                         }
                         if (params.CREATE_CELLDB_METADATA) {
-                            scriptsToRun.add('create_celldb_metadata.sh')
+                            scriptsToRun.add('create_cell_meta/create_cell_meta.sh')
                         }
                         if (params.COLLATE_FASTQ_READS) {
-                            scriptsToRun.add('collate_fastq_reads.sh')
+                            scriptsToRun.add('collate_counts/collate_counts.sh')
                         }
                         if (params.FILTER_COUNTS) {
-                            scriptsToRun.add('filter_counts.sh')
+                            scriptsToRun.add('filter_counts/filter_counts.sh')
                         }
                         if (params.CBNORMALIZE) {
-                            scriptsToRun.add('CBnormalize.sh')
+                            scriptsToRun.add('normalize/normalize.sh')
                         }
                         if (params.GENERATE_QC_TABLES) {
-                            scriptsToRun.add('generate_qc_tables.sh')
+                            scriptsToRun.add('qc_tables/qc_tables.sh')
                         }
                         if (params.COMPUTE_LFC) {
-                            scriptsToRun.add('compute_l2fc.sh')
+                            scriptsToRun.add('compute_l2fc/compute_l2fc.sh')
                         }
                         if (params.COLLAPSE) {
-                            scriptsToRun.add('collapse_replicates.sh')
+                            scriptsToRun.add('collapse_replicates/collapse_replicates.sh')
                         }
                         if (params.DRC) {
-                            scriptsToRun.add('dose_response.sh')
+                            scriptsToRun.add('drc/dose_response.sh')
                         }
                         if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
-                            scriptsToRun.add('biomarker.sh')
+                            scriptsToRun.add('biomarker/biomarker.sh')
+                        }
+                        if (params.SYNERGY) {
+                            scriptsToRun.add('synergy.sh')
                         }
                         if (params.QC_IMAGES) {
-                            scriptsToRun.add('filteredCounts_QC.sh')
+                            scriptsToRun.add('filter_counts_qc/filter_counts_qc.sh')
                         }
                         if (params.JOIN_METADATA) {
-                            scriptsToRun.add('join_metadata.sh')
-                        }
-                        if (params.RUN_EPS_QC) {
-                            scriptsToRun.add('eps_qc.sh')
+                            scriptsToRun.add('join_metadata/join_metadata.sh')
                         }
                         if (params.CONVERT_SUSHI) {
-                            scriptsToRun.add('sushi_2_s3.sh')
+                            scriptsToRun.add('sushi_2_s3/sushi_2_s3.sh')
                         }
 
                         scriptsToRun.each { scriptName ->
