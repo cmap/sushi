@@ -16,13 +16,12 @@ parser$add_argument("-q", "--quietly", action= "store_false", dest= "verbose",
                     help= "Print little output")
 parser$add_argument("-c", "--lfc", default= "l2fc.csv",
                     help= "path to file containing l2fc values")
-parser$add_argument("--sig_cols", default= "cell_set,pert_name,pert_dose,pert_dose_unit,day",
+parser$add_argument("--sig_cols", default= "cell_set,pert_name,pert_dose,pert_dose_unit,day,pert_vehicle",
                     help= "columns used to identify a unique condition")
 parser$add_argument("--cell_line_cols", default= "pool_id,depmap_id,lua",
                     help= "Columns that can describe a cell line")
 parser$add_argument("-o", "--out", default= getwd(), help= "Output path. Default is working directory")
-parser$add_argument("-pv", "--pert_vehicle", default= "DMSO",
-                    help= "Vehicle used in the experiment")
+
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
@@ -35,14 +34,6 @@ cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 print("Collapsing biological replicates ...")
 collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values, sig_cols= sig_cols, cell_line_cols= cell_line_cols)
 
-# Add pert_vehicle if it is specified ----
-if (args$pert_vehicle != "") {
-  print("Adding pert_vehicle to collapsed l2fc ...")
-  collapsed_l2fc= collapsed_l2fc %>%
-    mutate(pert_vehicle= args$pert_vehicle)
-} else {
-  print("No pert_vehicle specified, not adding to collapsed l2fc ...")
-}
 
 # Write out file ----
 collapsed_l2fc_outpath= paste(args$out, 'collapsed_l2fc.csv', sep='/')

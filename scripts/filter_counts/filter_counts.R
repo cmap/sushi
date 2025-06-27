@@ -58,6 +58,12 @@ api_key= args$api_key
 # If the skipped wells file exists, read it in ----
 if(file.exists(args$skipped_wells)){
   skipped_wells <- data.table::fread(args$skipped_wells, header= TRUE, sep= ',')
+  skipped_wells <- skipped_wells %>%
+    drop_na(pool_id) %>%
+    dplyr::rename(
+      replicate_plate = replicate,
+      pcr_well = assay_well_position
+    )
 } else {
   print("No skipped wells file found, not filtering skipped wells.")
 }
@@ -122,7 +128,7 @@ if(args$rm_data){
 }
 
 # Filter skipped wells if needed ----
-if(exists("skipped_wells") && args$filter_skipped_wells){
+if(exists("skipped_wells") && args$filter_skipped_wells && nrow(skipped_wells) > 0){
   print('filter_skipped_wells is TRUE and the skipped wells file contains entries, removing skipped wells.')
   print('Skipped wells:')
   print(head(skipped_wells))

@@ -27,7 +27,13 @@ linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.v
   require(WGCNA)
   
   X <- X[, (matrixStats::colVars(X, na.rm = T) >= v.X.min) & (colSums(!is.na(X)) >= n.min), drop = FALSE]
-  
+  if (ncol(X)==0){
+    print(paste("returning empty frame since data frame has ncol of X=",ncol(X)))
+    return (tibble(x = character(), y = character(), feat = character())) 
+    #' empty data frame if no columns left. 
+    #' for eg, this can occur when we are finding biomarkers within a lineage and we try to run biomarkers for lineages
+    #' then we have perfect agreement and so v.X will be 0.
+  }
   print("Calculating correlation coefficients and q-values...")
   res <- WGCNA::corAndPvalue(X,Y, use = "p")[c(1,2,5)] %>%
     reshape2::melt() %>% 
@@ -63,7 +69,8 @@ linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.v
       dplyr::mutate(regression_coef = correlation_coef * sqrt(var.y/var.x)) %>% 
       dplyr::select(-var.y)
     
-    # Experimental robustness score?
+    #' Robustness score that determines the number of samples, that when modified
+    #' flips the sign of corr/reg coefficient
     if(stability_score){
       print("Calculating stability scores...")
       S <- X_ * Y_
@@ -122,9 +129,9 @@ univariate_biomarker_table <- function(Y, file,
     
     X <- read_dataset(file , feat)
     cl = intersect(rownames(X), rownames(Y))
-    X <- X[cl, ]
+    X <- X[cl, , drop = FALSE] ## drop=false to handle single row situation
     
-    if((dim(X)[1] >= n.X.min) & (dim(X)[2] > 0)){
+    if((nrow(X) >= n.X.min) & (ncol(X) > 0)){ ## use nrow and ncol in case X is null
       
       print(paste0(feat, " - ", dim(X)[1] ,'x', dim(X)[2]))
       
@@ -134,8 +141,11 @@ univariate_biomarker_table <- function(Y, file,
                                                         regression_coef = regression_coef, stability_score = stability_score, ns.min = n_stable.min) %>%
         dplyr::rename(feature = x) %>%
         dplyr::mutate(feature_set = feat) 
-    }
-    print(feat)
+      print(feat)
+    }else{
+      print(paste("Skipping feature set", feat, "because it has too few samples or columns for the cell lines.",
+                  nrow(X),ncol(X) ))
+      }
   }
   
   RESULTS <- dplyr::bind_rows(RESULTS)

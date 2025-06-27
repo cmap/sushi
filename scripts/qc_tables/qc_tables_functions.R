@@ -65,7 +65,7 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #' @param cell_set_meta A data frame containing metadata about cell sets and their expected cell lines.
 #' @param group_cols A character vector specifying the grouping columns (default: `c("pcr_plate", "pcr_well")`).
 #' @param metric A string indicating the column name of the metric to use for calculations (default: `"n"`).
-#' @param cell_line_cols A character vector specifying the column names that define a unique cell line (default: `c("depmap_id", "pool_id")`).
+#' @param cell_line_cols A character vector specifying the column names that define a unique cell line (default: `c("depmap_id", "lua", "pool_id")`).
 #' @param count_threshold An integer specifying the minimum count threshold for a cell line to be considered recovered (default: `40`).
 #'
 #' @return A data frame summarizing read statistics for each group, including total reads, expected reads, control barcode reads,
@@ -73,7 +73,7 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #'
 #' @import dplyr
 compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, cb_metrics, group_cols = c("pcr_plate", "pcr_well", "pert_type", "pert_plate"),
-                               metric = "n", cell_line_cols = c("depmap_id", "pool_id"), count_threshold = 40,
+                               metric = "n", cell_line_cols = c("depmap_id", "pool_id", "lua"), count_threshold = 40,
                                expected_reads_threshold = 0.8, cb_threshold = 100, cb_spearman_threshold = 0.8, cb_mae_threshold = 1) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
@@ -407,7 +407,7 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 #' Grab normalized counts, filter for treatments
 #' Group by cell lines + sig cols + plate and count number of bio reps,
 #' Group by cell lines + plate and get median number of bio reps
-#' 
+#'
 #' @param norm_counts A dataframe of filtered nromalized counts.
 #' @param cell_line_cols A vector of columns describing cell lines.
 #' @param sig_cols A vector of columns describing treatment profiles.
@@ -415,9 +415,9 @@ compute_cl_fractions <- function(df, metric = "n", grouping_cols = c("pcr_plate"
 compute_med_trt_bio_rep = function(norm_counts, cell_line_cols, sig_cols) {
   med_trt_bio_reps = norm_counts |>
     dplyr::filter(pert_type == "trt_cp") |>
-    dplyr::group_by(pick(all_of(unique(c(cell_line_cols, sig_cols, "pert_plate"))))) |>
+    dplyr::group_by(dplyr::pick(tidyselect::all_of(unique(c(cell_line_cols, sig_cols, "pert_plate"))))) |>
     dplyr::summarise(num_trt_bio_reps = dplyr::n(), .groups = "drop") |>
-    dplyr::group_by(pick(all_of(unique(c(cell_line_cols, "pert_plate"))))) |>
+    dplyr::group_by(dplyr::pick(tidyselect::all_of(unique(c(cell_line_cols, "pert_plate"))))) |>
     dplyr::summarise(med_num_trt_bio_reps = median(num_trt_bio_reps), .groups = "drop")
 
   return(med_trt_bio_reps)
@@ -438,8 +438,7 @@ compute_med_trt_bio_rep = function(norm_counts, cell_line_cols, sig_cols) {
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, sig_cols,
-                                      cell_line_cols, pseudocount = 20, contains_poscon = TRUE, poscon = NULL, negcon = NULL,
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, sig_cols, pseudocount = 20, contains_poscon = TRUE, poscon = "trt_poscon", negcon = "ctl_vehicle",
                                       nc_variability_threshold = 1, error_rate_threshold = 0.05, pc_viability_threshold = 0.25, nc_raw_count_threshold = 40) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code", "day") # Define columns to group by
@@ -479,6 +478,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, sig_co
     grouping_cols = cell_line_plate_grouping
   )
 
+  # Calc median number of bio reps across the treatments for each cell line + plate
   med_trt_bio_reps = compute_med_trt_bio_rep(norm_counts = normalized_counts,
                                              cell_line_cols = cell_line_plate_grouping,
                                              sig_cols = sig_cols)
@@ -501,13 +501,14 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, sig_co
       dplyr::left_join(med_trt_bio_reps, by = cell_line_plate_grouping)
     # QC pass criteria, currently with hardcoded pert_types
     plate_cell_table <- plate_cell_table %>%
-      dplyr::mutate(qc_pass = error_rate < error_rate_threshold & viability_trt_poscon < pc_viability_threshold &
-        median_raw_ctl_vehicle > nc_raw_count_threshold & mad_log_normalized_ctl_vehicle < nc_variability_threshold) %>%
+      dplyr::mutate(qc_pass = error_rate < error_rate_threshold &
+                      viability_trt_poscon < pc_viability_threshold &
+                      median_raw_ctl_vehicle > nc_raw_count_threshold &
+                      mad_log_normalized_ctl_vehicle < nc_variability_threshold,
+                    n_passing_med_num_trt_reps = ifelse(qc_pass, med_num_trt_bio_reps, 0))  %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
-      dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & med_num_trt_bio_reps > 1) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(-n_passing_plates)
+      dplyr::mutate(qc_pass_pert_plate = sum(n_passing_med_num_trt_reps) > 1) %>%
+      dplyr::ungroup()
     # Add the n_expected_controls values
     plate_cell_table <- plate_cell_table %>%
       dplyr::left_join(
@@ -530,12 +531,12 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, sig_co
       dplyr::left_join(med_trt_bio_reps, by = cell_line_plate_grouping)
     # QC pass criteria, currently with hardcoded pert_types
     plate_cell_table <- plate_cell_table %>%
-      dplyr::mutate(qc_pass = median_raw_ctl_vehicle > log(40) & mad_log_normalized_ctl_vehicle < 1) %>%
+      dplyr::mutate(qc_pass = median_raw_ctl_vehicle > nc_raw_count_threshold &
+                      mad_log_normalized_ctl_vehicle < nc_variability_threshold,
+                    n_passing_med_num_trt_reps = ifelse(qc_pass, med_num_trt_bio_reps, 0))  %>%
       dplyr::group_by(across(all_of(c(cell_line_list, "pert_plate")))) %>%
-      dplyr::mutate(n_passing_plates = sum(qc_pass)) %>%
-      dplyr::mutate(qc_pass_pert_plate = n_passing_plates > 0 & med_num_trt_bio_reps > 1) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(-n_passing_plates)
+      dplyr::mutate(qc_pass_pert_plate = sum(n_passing_med_num_trt_reps) > 1) %>%
+      dplyr::ungroup()
     # Add the n_expected_controls values
     plate_cell_table <- plate_cell_table %>%
       dplyr::left_join(

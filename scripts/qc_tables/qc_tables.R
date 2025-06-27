@@ -172,8 +172,7 @@ filtered_counts_rm_ctl <- filtered_counts %>%
 
 plate_cell_table <- generate_cell_plate_table(
   normalized_counts = filtered_normalized_counts_rm_ctl, filtered_counts = filtered_counts_rm_ctl,
-  sig_cols = sig_cols,
-  cell_line_cols = cell_plate_list, pseudocount = pseudocount, contains_poscon = contains_poscon,
+  cell_line_cols = cell_plate_list, sig_cols = sig_cols, pseudocount = pseudocount, contains_poscon = contains_poscon,
   poscon = poscon, negcon = negcon,
   nc_variability_threshold = thresholds$nc_variability_threshold,
   error_rate_threshold = thresholds$error_rate_threshold,
@@ -204,7 +203,7 @@ pcr_plate_qc_flags_table <- generate_pcr_plate_qc_flags_table(plate_cell_table =
                                                               fraction_expected_controls = thresholds$fraction_expected_controls,
                                                               contains_poscon = contains_poscon)
 
-final_filtered_normalized_counts <- id_cols_filtered_normalized_counts
+final_filtered_normalized_counts <- pool_well_filtered_normalized_counts
 #  dplyr::anti_join(
 #    plate_cell_filtered_normalized_counts, pcr_plate_qc_flags_table,
 #    by = c("pcr_plate", "pert_plate"))
