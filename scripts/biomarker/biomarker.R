@@ -58,6 +58,7 @@ print(paste0("univariate_biomarker is ", univariate_biomarker))
 print(paste0("multivariate_biomarker is ", multivariate_biomarker))
 
 # Create the treatment columns ----
+# you are using select any of so not sure if we need trt_cols or just pass sig_cols
 trt_cols = sig_cols[grepl("pert|is_combination|day", sig_cols)]
 
 # Check if the output directory exists, if not create it

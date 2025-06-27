@@ -546,11 +546,11 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
     stop(paste0("Input file for multivariate biomarker is empty!"))
   }
 
-  # check for missing critical columns
+  # check for missing critical columns -  soft warning
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
 
   if(any(!necessary_columns %in% colnames(input_file))){
-    stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
+    warning(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
                 " are missing from multivariate biomarker input file!"))
   }
 
