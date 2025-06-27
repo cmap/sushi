@@ -340,7 +340,7 @@ Here is an example of how to run the dose_response module on your own data.`dose
 
 The following example uses two cell, one with a BRAF mutation and one without, in the presense of Encorafenib.
 ```{r example drc, echo = T, eval = T}
-# Load into environment ----Add commentMore actions
+# Load into environment ----
 require(dr4pl)
 require(drc)
 require(magrittr)
