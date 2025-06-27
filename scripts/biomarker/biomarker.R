@@ -77,7 +77,7 @@ if (univariate_biomarker) {
       depmap_file = bio_file
     )
   }
-  if (auc_biomarker) {
+  if (auc_biomarker && file.exists(drc_file)) {
     create_univariate_biomarker_table(
       in_path = drc_file,
       out_path = out_path,
@@ -100,7 +100,7 @@ if (multivariate_biomarker) {
       depmap_file = bio_file
     )
   }
-  if (auc_biomarker) {
+  if (auc_biomarker && file.exists(drc_file)) {
     create_multivariate_biomarker_table(
       in_path = drc_file,
       out_path = out_path,
