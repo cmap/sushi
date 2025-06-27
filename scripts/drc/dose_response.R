@@ -17,7 +17,9 @@ parser$add_argument("--l2fc_column", default="l2fc",
                     help = "column containing log fold change values")
 parser$add_argument("--type_col", default="pert_type",
                     help = "column containing perturbation type, only those with trt_cp will be considered.")
-parser$add_argument("--cap_for_viability", default= 1.5, help = "The upper threshold for the viability values for before fitting the curves. Default is 1.5, any viability value above this value will be made equal to 1.5")
+parser$add_argument("--cap_for_viability", default = 1.5,
+                    help = paste0("The upper threshold for the viability values for before fitting the curves.
+                                   Default is 1.5, any viability value above this value will be made equal to 1.5"))
 parser$add_argument("--build_dir", default= "", help = "Path to the build directory")
 parser$add_argument("--out_dir", default= "", help = "Path to the output directory")
 
@@ -35,22 +37,26 @@ type_col= args$type_col
 cap_for_viability= as.numeric(args$cap_for_viability)
 build_dir = args$build_dir
 
-# pull out dose columns from sig_cols
+# Pull out dose columns from sig_cols
 dose_cols = sig_cols[grepl("_dose$", sig_cols)]
 
-# What dose columns were detected?
+# Print a message if two dose columns were detected
 print(paste0("Detecting the following dose column(s): ", dose_cols))
 if (length(dose_cols) > 1) {
   print("More than one does column was supplied.")
+  # This suggests a CPS run
 } else if (length(dose_cols) > 2) {
   stop("More than two dose columns were detected!")
 }
 
-# Set DRCs as a loop
+# create_drc_table is called for each dose column detected.
+# For MTS, the function should just be called once.
+# For CPS, the function should be called twice.
 drc_outputs = list()
 
 for (idx in seq_along(dose_cols)) {
   drc_outputs[[idx]] = create_drc_table(
+    # LFC input is filtered only for rows where the current dose column is filled in
     LFC = l2fc[!is.na(get(dose_cols[idx])), ],
     cell_line_cols = cell_line_cols,
     treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],

@@ -55,12 +55,12 @@ def read_build_file(search_pattern, args):
     return pd.read_csv(fmatch[0])
 
 
-def generate_compound_key(df):
+def generate_compound_key(df, filt_cols: list):
     # Filter out the positive and vehicle controls
     df = df[~df["pert_type"].isin(["trt_poscon", "ctl_vehicle"])]
 
     # Select the columns we need
-    df = df[["pert_name", "pert_id", "pert_plate", "x_project_id"]]
+    df = df[filt_cols]
 
     # Drop duplicates
     distinct_df = df.drop_duplicates().reset_index(drop=True)
@@ -205,7 +205,14 @@ def main(args):
 
     # Generate the key_df
     logger.info("Generating compound key...")
-    key_df = generate_compound_key(sample_meta)
+
+    # From screen type, decide on which columns to use for compound key
+    if config.BUILD_TYPE == "CPS":
+        compound_key_cols = ["x_project_id", "pert_plate", "pert_name", "pert_id", "pert2_name", "pert2_id"]
+    else:
+        compound_key_cols = ["x_project_id", "pert_plate", "pert_name", "pert_id"]
+
+    key_df = generate_compound_key(sample_meta, filt_cols = compound_key_cols)
 
     # Convert the key_df to json and write to the build directory
     logger.info("Writing compound key to JSON...")

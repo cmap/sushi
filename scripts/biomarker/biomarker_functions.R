@@ -277,7 +277,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 #' @export
 #'
 #' @examples
-read_dataset <- function(file = '/data/biomarker/current/depmap_datasets_public.h5', dataset,
+read_dataset <- function(file = "/data/biomarker/current/prism_biomarker_public_0625.h5", dataset,
                          rownames_depmap_ids = TRUE) {
   require(rhdf5)
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
@@ -314,7 +314,7 @@ read_dataset <- function(file = '/data/biomarker/current/depmap_datasets_public.
 #' @export
 #'
 #' @examples
-read_features <- function(file = '/data/biomarker/current/depmap_datasets_public.h5',
+read_features <- function(file = "/data/biomarker/current/prism_biomarker_public_0625.h5",
                           dataset, feature_names = NULL,
                           rownames_depmap_ids = TRUE) {
   require(rhdf5)
@@ -415,7 +415,7 @@ RF_feature_sets <- function(Y, W = NULL, file) {
   X.RNA <- EXP[cl, ]
   rm(EXP)
 
-  CRISPR <- read_dataset(file = file, dataset = 'CRISPR')
+  CRISPR <- read_dataset(file = file, dataset = "CRISPR")
   CRISPR <- CRISPR[rowMeans(is.finite(CRISPR)) > 0.9, ,drop = FALSE]
   colnames(CRISPR) %<>% paste0("CRISPR_", .)
   
@@ -556,7 +556,7 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   # cast the responses into a matrix
   M <- input_file %>%
     dplyr::filter(is.finite(.data[[response_column]])) %>%
-    tidyr::unite(cn, treatment_columns, sep = "::") %>%
+    tidyr::unite(cn, any_of(treatment_columns), sep = "::") %>%
     reshape2::acast(depmap_id ~ cn, value.var = response_column, fun.aggregate = aggregate_function) %>%
     transform_function()
 
@@ -566,9 +566,9 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   # Export the biomarker table -----
   print(paste0("Writing the multivariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
-    dplyr::select_at(vars(treatment_columns)) %>%
+    dplyr::select(any_of(treatment_columns)) %>%
     dplyr::distinct() %>% 
-    tidyr::unite(y, treatment_columns, sep = "::", remove = FALSE) %>% 
+    tidyr::unite(y, any_of(treatment_columns), sep = "::", remove = FALSE) %>% 
     dplyr::inner_join(multivariate_biomarker_table) %>% 
     dplyr::select(-y) %>%  
     write_csv(paste0(out_path, "/", output_file_name))
@@ -625,16 +625,17 @@ create_univariate_biomarker_table <- function(in_path, out_path,
 
   # check for missing critical columns
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
-
+  
+  # soft warning
   if(any(!necessary_columns %in% colnames(input_file))){
-    stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
+    print(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
                 " are missing in univariate biomarker input file!"))
   }
 
   # cast the responses into a matrix
   M <- input_file %>%
     dplyr::filter(is.finite(.data[[response_column]])) %>%
-    tidyr::unite(cn, treatment_columns, sep = "::") %>%
+    tidyr::unite(cn, tidyselect::any_of(treatment_columns), sep = "::") %>%
     reshape2::acast(depmap_id ~ cn, value.var = response_column, fun.aggregate = aggregate_function) %>%
     transform_function()
 
@@ -648,9 +649,9 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   # Export the biomarker table -----
   print(paste0("Writing the univariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
-    dplyr::select_at(vars(treatment_columns)) %>%
+    dplyr::select(tidyselect::any_of(treatment_columns)) %>%
     dplyr::distinct() %>%
-    tidyr::unite(y, treatment_columns, sep = "::", remove = FALSE) %>%
+    tidyr::unite(y, any_of(treatment_columns), sep = "::", remove = FALSE) %>%
     dplyr::inner_join(univariate_biomarker_table) %>%
     dplyr::select(-y) %>%
     write_csv(paste0(out_path, "/", output_file_name))
