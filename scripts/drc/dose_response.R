@@ -55,15 +55,24 @@ if (length(dose_cols) > 1) {
 drc_outputs = list()
 
 for (idx in seq_along(dose_cols)) {
-  drc_outputs[[idx]] = create_drc_table(
-    # LFC input is filtered only for rows where the current dose column is filled in
-    LFC = l2fc[!is.na(get(dose_cols[idx])), ],
-    cell_line_cols = cell_line_cols,
-    treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],
-    dose_col = dose_cols[idx],
-    l2fc_col = l2fc_col,
-    cap_for_viability = cap_for_viability
-  )
+  print(paste0("Working on ", dose_cols[idx]))
+
+  # Filter l2fc dt by dropping NA in the current dose column
+  subset_l2fc = l2fc[!is.na(get(dose_cols[idx])), ]
+
+  # Run drc only if the subsetted dt is not empty. Otherwise continue.
+  # This was added for single agents to pass through module post-split
+  if (nrow(subset_l2fc) > 0) {
+    drc_outputs[[idx]] = create_drc_table(
+      # LFC input is filtered only for rows where the current dose column is filled in
+      LFC = subset_l2fc,
+      cell_line_cols = cell_line_cols,
+      treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],
+      dose_col = dose_cols[idx],
+      l2fc_col = l2fc_col,
+      cap_for_viability = cap_for_viability
+    )
+  }
 }
 
 dose_response = dplyr::bind_rows(drc_outputs)
