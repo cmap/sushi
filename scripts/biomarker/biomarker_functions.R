@@ -533,6 +533,7 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   require(rlang)
 
   # check if the input path exists
+  print(paste0("DEBUG inpath: ", in_path))
   if(!file.exists(in_path)){
     stop("Input path does not exist!")
   }
@@ -611,6 +612,7 @@ create_univariate_biomarker_table <- function(in_path, out_path,
 
   
   # check if the input path exists
+  print(paste0("DEBUG inpath: ", in_path))
   if(!file.exists(in_path)){
     stop("Input path does not exist!")
   }
@@ -656,8 +658,3 @@ create_univariate_biomarker_table <- function(in_path, out_path,
     dplyr::select(-y) %>%
     write_csv(paste0(out_path, "/", output_file_name))
 }
-
-
-
-
-
