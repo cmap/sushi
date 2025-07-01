@@ -383,20 +383,17 @@ RF_feature_sets <- function(Y, W = NULL, file) {
   colnames(FUS) %<>% paste0("FUS_", .)
   LIN <- read_dataset(file = file, dataset = 'Lineage')
   colnames(LIN) %<>% paste0("LIN_", .)
-  SIG <- read_dataset(file = file, dataset = 'Signatures')
-  colnames(SIG) %<>% paste0("SIG_", .)
 
 
   cl = intersect(rownames(MUT), rownames(CN)) %>%
     intersect(rownames(FUS)) %>%
     intersect(rownames(LIN)) %>%
-    intersect(rownames(SIG)) %>%
+    # intersect(rownames(SIG)) %>%
     intersect(rownames(Y))
 
   X.DNA <- cbind(CN[cl, ], MUT[cl, ]) %>%
     cbind(FUS[cl, ]) %>%
-    cbind(LIN[cl, ]) %>%
-    cbind(SIG[cl, ])
+    cbind(LIN[cl, ])
 
   if(!is.null(W)){
     X.DNA <- cbind(X.DNA, W[cl, , drop = FALSE])
@@ -404,7 +401,7 @@ RF_feature_sets <- function(Y, W = NULL, file) {
 
   X.DNA <- X.DNA[rowMeans(is.finite(X.DNA)) > 0.9, ,drop = FALSE]
 
-  rm(CN, MUT, FUS, LIN, SIG)
+  rm(CN, MUT, FUS, LIN)
   EXP <- read_dataset(file = file, dataset = 'Expression')
   EXP <- EXP[rowMeans(is.finite(EXP)) > 0.9, ,drop = FALSE]
   colnames(EXP) %<>% paste0("EXP_", .)
