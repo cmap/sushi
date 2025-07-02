@@ -193,58 +193,33 @@ convert_string_num_to_numeric <- function(df){
   return(df)
 }
 
-remove_data = function(filtered_counts, data_to_remove) {
-  filt_rm <- filtered_counts
-  num_col_rm <- length(colnames(data_to_remove))
-  
-  # remove data_to_remove has any NAs, NULL or empty spaces, throw error
-  if(sum(is.na(data_to_remove)) != 0){
-    print("ERROR: NAs in removal data. Please fix this and try again.")
-  }else if(any(sapply(data_to_remove, function(x) any(x == ""))) | any(sapply(data_to_remove, function(x) any(x == " ")))){
-    print("ERROR: Empty spaces in removal data. Please fix this and try again.")
-  }else if(any(sapply(data_to_remove, is.null))){
-    print("ERROR: NULL spaces in removal data. Please fix this and try again.")
+remove_data <- function(filtered_counts, data_to_remove, wild_string = "EVERY") {
+  # Ensure that no N/A values are present in the data_to_remove dataframe
+    if (any(is.na(data_to_remove))) {
+        stop("The data_to_remove dataframe contains N/A values. Please remove them before proceeding.")
+    }
+  f <- function(df){
+    df %>%
+      dplyr::select(setdiff(colnames(df)[df[1,] != wild_string], ".ix")) %>%
+      dplyr::inner_join(filtered_counts)
   }
-  
-  # make sure column names are in filtered_counts
-  if(sum(colnames(data_to_remove) %in% colnames(filtered_counts)) != num_col_rm){
-    print("ERROR: data_to_remove.csv columns names are not in filtered_counts.csv")
-  }
-  
-  print("Removing data...")
-  
-  # split data_to_remove into two df: wild_df (with wild string), full_df (no wild string in any row)
-  wild_string <- "EVERY"
-  wild_df <- data_to_remove %>%
-    filter(rowSums(sapply(., function(x) grepl(wild_string, x))) > 0)
-  full_df <- anti_join(data_to_remove, wild_df)
-  
-  # anti_join the full data
-  if(nrow(full_df) != 0){
-    # if a string can be a number, make it a number because it will be a number in filtered counts
-    full_df <- convert_string_num_to_numeric(full_df)
-    filt_rm <- anti_join(filt_rm, full_df)
-  }
-  
-  # anti_join the data with the wild string
-  if(nrow(wild_df) != 0){
-    # row-wise anti_join
-    for(r in 1:dim(wild_df)[1]){
-      crit_to_rm <- wild_df[r,]
-      #print(crit_to_rm)
-      
-      # if there is an "EVERY", remove that column
-      crit_to_rm <- crit_to_rm %>% 
-        select(which(colSums(crit_to_rm == wild_string) == 0))
-      
-      # if a string can be a number, make it a number because it will be a number in filtered counts
-      crit_to_rm <- convert_string_num_to_numeric(crit_to_rm)
-      filt_rm <- anti_join(filt_rm, crit_to_rm) 
-    } 
-  }
-  
-  return(filt_rm)
+
+  filtered <- data_to_remove %>%
+    dplyr::mutate(.ix = 1:n()) %>%
+    dplyr::group_split(.ix) %>%
+    lapply(f) %>%
+    dplyr::bind_rows()
+
+  remaining <- filtered_counts %>%
+    dplyr::anti_join(filtered)
+
+  # Compute the number of rows removed
+  rows_removed <- nrow(filtered_counts) - nrow(remaining)
+  print(paste("Number of rows removed: ", rows_removed))
+
+  return(remaining)
 }
+
 
 #' Filter Skipped Wells
 #'
