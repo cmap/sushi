@@ -57,22 +57,31 @@ drc_outputs = list()
 for (idx in seq_along(dose_cols)) {
   print(paste0("Working on ", dose_cols[idx]))
 
-  # Filter l2fc dt by dropping NA in the current dose column
+  # Filter l2fc dt by dropping NAs in the current dose column
   subset_l2fc = l2fc[!is.na(get(dose_cols[idx])), ]
 
-  # Run drc only if the subsetted dt is not empty. Otherwise continue.
-  # This was added for single agents to pass through module post-split
-  if (nrow(subset_l2fc) > 0) {
-    drc_outputs[[idx]] = create_drc_table(
-      # LFC input is filtered only for rows where the current dose column is filled in
-      LFC = subset_l2fc,
-      cell_line_cols = cell_line_cols,
-      treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],
-      dose_col = dose_cols[idx],
-      l2fc_col = l2fc_col,
-      cap_for_viability = cap_for_viability
-    )
+  # Move to the next iteration if subset at current dose column is empty.
+  if (nrow(subset_l2fc) == 0) {
+    warning(paste0("No avaliable doses detected for ", dose_cols[idx], ". Skipping this dose."))
+    next()
   }
+
+  # Move to the next iteration if there are very few unique dose values.
+  if (length(unique(subset_l2fc[[dose_cols[idx]]])) < 3) {
+    warning(paste0("Detected fewer than three unique doses in ", dose_cols[idx], ". Skipping this dose."))
+    next()
+  }
+
+  # DRC function should be called once for MTS, EPS, and CPS single agents.
+  # DRC function should be called twice for CPS 5x5s.
+  drc_outputs[[idx]] = create_drc_table(
+    LFC = subset_l2fc,
+    cell_line_cols = cell_line_cols,
+    treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],
+    dose_col = dose_cols[idx],
+    l2fc_col = l2fc_col,
+    cap_for_viability = cap_for_viability
+  )
 }
 
 dose_response = dplyr::bind_rows(drc_outputs)
