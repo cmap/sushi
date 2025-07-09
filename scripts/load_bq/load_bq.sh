@@ -11,6 +11,7 @@ echo "Build dir is: $BUILD_DIR"
 
 args=(
 --build_path "$BUILD_DIR"
+--build_name "$BUILD_NAME"
 )
 
 export GOOGLE_APPLICATION_CREDENTIALS=/.gcp_credentials.json
