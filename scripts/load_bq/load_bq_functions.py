@@ -6,7 +6,7 @@ import tempfile
 import polars as pl
 
 
-def filter_csv_to_matching_columns(file_path: str, table: bigquery.Table, build_name: str) -> str:
+def filter_csv_to_matching_columns(file_path: str, table: bigquery.Table, build_name: str, screen: str) -> str:
     """Create a temp CSV with only the columns that exist in the BigQuery table."""
     allowed_columns = {field.name for field in table.schema}
 
@@ -14,9 +14,10 @@ def filter_csv_to_matching_columns(file_path: str, table: bigquery.Table, build_
     filtered_cols = [col for col in df.columns if col in allowed_columns]
     df = df.select(filtered_cols)
 
-    # Add sushi_build column
+    # Add sushi_build and screen column
     if build_name:
         df = df.with_columns(pl.lit(build_name).alias("sushi_build"))
+        df = df.with_columns(pl.lit(screen).alias("screen"))
 
     # Write to temp file
     temp_fd, temp_path = tempfile.mkstemp(suffix=".csv")
@@ -56,7 +57,7 @@ def delete_rows_for_build(client, dataset_id, table_id, build_name):
     client.query(query, job_config=job_config).result()
 
 
-def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name):
+def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name, screen):
     if build_name:
         delete_rows_for_build(client, dataset_id, table_id, build_name)
 
@@ -64,7 +65,7 @@ def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name):
     table = client.get_table(table_ref)  # Get full table object including schema
 
     # Filter the CSV to only include matching columns
-    filtered_csv = filter_csv_to_matching_columns(file_path, table, build_name)
+    filtered_csv = filter_csv_to_matching_columns(file_path, table, build_name, screen)
 
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.CSV,
