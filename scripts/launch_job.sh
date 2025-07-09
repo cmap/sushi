@@ -145,6 +145,8 @@ echo "Running in container:"
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \
   -v /cmap/data/vdb/prismSeq:/data \
   -v "$BUILD_DIR:$BUILD_DIR" \
+  -v /local/jenkins/.gcp_credentials.json:/.gcp_credentials.json:ro \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/.gcp_credentials.json \
   -w /workspace/scripts \
   localhost/sushi-podman:latest \
   ./"$SCRIPT_NAME"

@@ -13,7 +13,7 @@ args=(
 --build_path "$BUILD_DIR"
 )
 
-export GOOGLE_APPLICATION_CREDENTIALS=/local/jenkins/.gcp_credentials.json
+export GOOGLE_APPLICATION_CREDENTIALS=/.gcp_credentials.json
 
 echo python3 load_bq/load_bq.py "${args[@]}"
 
