@@ -41,9 +41,8 @@ def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name):
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.CSV,
         skip_leading_rows=1,
-        autodetect=False,
-        write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-        ignore_unknown_values=True
+        autodetect=True,
+        write_disposition=bigquery.WriteDisposition.WRITE_APPEND
     )
 
     with open(file_path, "rb") as source_file:
