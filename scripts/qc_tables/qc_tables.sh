@@ -48,6 +48,7 @@ args=(
 --unknown_barcode_counts "$UNKNOWN_BARCODE_COUNTS"
 --filter_qc_flags "$FILTER_QC_FLAGS"
 --qc_params "$QC_PARAMS"
+--build_name "$BUILD_NAME"
 )
 
 echo Rscript qc_tables/qc_tables.R "${args[@]}"
