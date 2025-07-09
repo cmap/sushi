@@ -22,7 +22,7 @@ def load_csv_to_bigquery(client, dataset_id, table_id, file_path):
         source_format=bigquery.SourceFormat.CSV,
         skip_leading_rows=1,
         autodetect=True,
-        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+        write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
     )
     with open(file_path, "rb") as source_file:
         job = client.load_table_from_file(source_file, table_ref, job_config=job_config)
