@@ -33,7 +33,7 @@ RUN apt-get update -qq && \
 RUN apt-get update \
  && apt-get install -y python3-venv python3-pip \
  && python3 -m venv /opt/venv \
- && /opt/venv/bin/pip install --upgrade pip setuptools wheel
+ && /opt/venv/bin/pip install --upgrade pip setuptools wheel google-cloud-bigquery
 
 # install package & deps inside the venv
 COPY scripts/utils/prism_tools ./prism_tools
