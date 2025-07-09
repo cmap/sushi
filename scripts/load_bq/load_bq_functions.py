@@ -10,7 +10,7 @@ def filter_csv_to_matching_columns(file_path: str, table: bigquery.Table, build_
     """Create a temp CSV with only the columns that exist in the BigQuery table."""
     allowed_columns = {field.name for field in table.schema}
 
-    df = pl.read_csv(file_path, null_values="NA")
+    df = pl.read_csv(file_path, null_values="NA", infer_schema_length=10000)
     filtered_cols = [col for col in df.columns if col in allowed_columns]
     df = df.select(filtered_cols)
 
