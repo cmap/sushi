@@ -2,6 +2,25 @@
 import logging
 from google.cloud import bigquery
 import os
+import tempfile
+import polars as pl
+
+
+def filter_csv_to_matching_columns(file_path: str, table: bigquery.Table) -> str:
+    """Create a temp CSV with only the columns that exist in the BigQuery table."""
+    allowed_columns = {field.name for field in table.schema}
+
+    df = pl.read_csv(file_path)
+    filtered_cols = [col for col in df.columns if col in allowed_columns]
+    df = df.select(filtered_cols)
+
+    # Write to temp file
+    temp_fd, temp_path = tempfile.mkstemp(suffix=".csv")
+    os.close(temp_fd)  # Close file descriptor so Polars can write
+    df.write_csv(temp_path)
+    logging.info(f"Filtered {len(df.columns)} columns for upload: {filtered_cols}")
+    return temp_path
+
 
 def init_logger():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -38,16 +57,22 @@ def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name):
         delete_rows_for_build(client, dataset_id, table_id, build_name)
 
     table_ref = client.dataset(dataset_id).table(table_id)
+    table = client.get_table(table_ref)  # Get full table object including schema
+
+    # Filter the CSV to only include matching columns
+    filtered_csv = filter_csv_to_matching_columns(file_path, table)
+
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.CSV,
         skip_leading_rows=1,
-        autodetect=True,
-        write_disposition=bigquery.WriteDisposition.WRITE_APPEND
+        autodetect=False,
+        write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+        ignore_unknown_values=False  # extra protection
     )
 
-    with open(file_path, "rb") as source_file:
+    with open(filtered_csv, "rb") as source_file:
         job = client.load_table_from_file(source_file, table_ref, job_config=job_config)
 
     job.result()
-    logging.info(f"Appended {file_path} to {dataset_id}.{table_id}")
+    logging.info(f"Appended {filtered_csv} to {dataset_id}.{table_id}")
 

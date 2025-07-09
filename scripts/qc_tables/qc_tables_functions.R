@@ -554,7 +554,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
 
   # Add sushi_build column
   plate_cell_table <- plate_cell_table %>%
-  dplyr::mutate(sushi_build = build_name)
+    dplyr::mutate(sushi_build = build_name)
 
   return(plate_cell_table)
 }
