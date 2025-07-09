@@ -6,13 +6,6 @@ import urllib.parse
 import json
 
 
-def add_build_name(df, build_name):
-    """
-    Add a new column 'build_name' to the DataFrame with the provided build name.
-    """
-    df["sushi_build"] = build_name
-    return df
-
 def fetch_metadata(filter_dict, base_url, api_key):
     # Convert the filter to a JSON string
     filter_json = json.dumps(filter_dict)
@@ -112,13 +105,9 @@ def main():
     parser.add_argument(
         "--pert_plates", "-p", type=str, required=False, help="Pert plates in the screen to use. If not provided, all pert plates will be used."
     )
-    parser.add_argument(
-        "--build_name", "-n", type=str, required=False, help="Name of the build. If not provided, it will be derived from the screen name."
-    )
 
     args = parser.parse_args()
     screen = args.screen
-    build_name = args.build_name if args.build_name else screen
     api_key = args.api_key
     build_dir = args.build_dir
     pert_plates = args.pert_plates.replace(" ", "").split(",") if args.pert_plates else None
@@ -131,7 +120,6 @@ def main():
             .pipe(rename_sample_meta)
             .pipe(remove_sample_meta_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
             .pipe(filter_nan_flowcells, build_dir)
-            .pipe(add_build_name, build_name)
         )
         # Subset to provided pert plates if any
         if pert_plates:

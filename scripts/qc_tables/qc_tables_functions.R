@@ -204,7 +204,7 @@ calculate_cb_metrics <- function(normalized_counts,
 #' @return A data frame (`id_cols_table`) that combines QC metrics, including read statistics, skew, and control barcode metrics, grouped by the specified id_cols.
 #'
 #' @import dplyr
-generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols, build_name,
+generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
                                    count_threshold = 40, pseudocount = 20) {
   print(paste0("Computing id_cols QC metrics grouping by ", paste0(id_cols_list, collapse = ","), "....."))
 
@@ -224,10 +224,6 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = c(id_cols_list, "pert_plate")) %>%
     dplyr::left_join(cb_metrics, by = c(id_cols_list, "pert_plate"))
-
-  # Add sushi_build column
-  id_cols_table <- id_cols_table %>%
-    mutate(sushi_build = build_name)
 
   return(id_cols_table)
 }
@@ -442,7 +438,7 @@ compute_med_trt_bio_rep = function(norm_counts, cell_line_cols, sig_cols) {
 #' - Fractions of reads contributed by each cell line.
 #'
 #' @import dplyr
-generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, sig_cols, build_name, pseudocount = 20, contains_poscon = TRUE, poscon = "trt_poscon", negcon = "ctl_vehicle",
+generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_line_cols, sig_cols, pseudocount = 20, contains_poscon = TRUE, poscon = "trt_poscon", negcon = "ctl_vehicle",
                                       nc_variability_threshold = 1, error_rate_threshold = 0.05, pc_viability_threshold = 0.25, nc_raw_count_threshold = 40) {
   cell_line_list <- strsplit(cell_line_cols, ",")[[1]]
   cell_line_plate_grouping <- c(cell_line_list, "pcr_plate", "pert_plate", "project_code", "day") # Define columns to group by
@@ -551,10 +547,6 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
         fraction_expected_negcon = n_replicates_ctl_vehicle/n_expected_ctl_vehicle
       )
   }
-
-  # Add sushi_build column
-  plate_cell_table <- plate_cell_table %>%
-    dplyr::mutate(sushi_build = build_name)
 
   return(plate_cell_table)
 }

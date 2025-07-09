@@ -63,11 +63,6 @@ parser$add_argument(
   default = "sample_meta.csv",
   help = "Sample metadata file"
 )
-parser$add_argument(
-  "--build_name",
-  required = TRUE,
-    help = "Name of the build to be appended as sushi_build to each table."
-)
 
 args <- parser$parse_args()
 
@@ -118,10 +113,6 @@ filter_qc_flags <- as.logical(toupper(args$filter_qc_flags))
 poscon <- args$poscon_type
 negcon <- args$negcon_type
 
-# Set build name
-build_name <- args$build_name
-
-
 # LOAD QC PARAMETERS
 thresholds <- load_thresholds_from_json(args$qc_params)
 
@@ -141,7 +132,7 @@ n_expected_controls <- sample_meta %>%
 id_cols_table <- generate_id_cols_table(
   normalized_counts = normalized_counts, annotated_counts = annotated_counts, unknown_counts = unknown_counts,
   cell_set_meta = cell_set_meta, id_cols_list = id_cols_list, cell_line_cols = cell_line_cols_list,
-  count_threshold = count_threshold, cb_meta = cb_meta, pseudocount = pseudocount, build_name = build_name
+  count_threshold = count_threshold, cb_meta = cb_meta, pseudocount = pseudocount
 )
 
 id_cols_qc_flags_table <- id_cols_qc_flags(id_cols_table = id_cols_table,
@@ -186,7 +177,6 @@ plate_cell_table <- generate_cell_plate_table(
   error_rate_threshold = thresholds$error_rate_threshold,
   pc_viability_threshold = thresholds$pc_viability_threshold,
   nc_raw_count_threshold = thresholds$nc_raw_count_threshold,
-  build_name = build_name
 )
 
 plate_cell_qc_flags_table <- plate_cell_qc_flags(
