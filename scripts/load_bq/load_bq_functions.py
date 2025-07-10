@@ -6,7 +6,9 @@ import tempfile
 import polars as pl
 
 
-def filter_csv_to_matching_columns(file_path: str, table: bigquery.Table, build_name: str, screen: str) -> str:
+def filter_csv_to_matching_columns(
+    file_path: str, table: bigquery.Table, build_name: str, screen: str
+) -> str:
     """Create a temp CSV with only the columns that exist in the BigQuery table."""
     allowed_columns = {field.name for field in table.schema}
 
@@ -28,7 +30,9 @@ def filter_csv_to_matching_columns(file_path: str, table: bigquery.Table, build_
 
 
 def init_logger():
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 
 
 def get_bigquery_client():
@@ -49,11 +53,11 @@ def delete_rows_for_build(client, dataset_id, table_id, build_name):
     WHERE sushi_build = @build
     """
     job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("build", "STRING", build_name)
-        ]
+        query_parameters=[bigquery.ScalarQueryParameter("build", "STRING", build_name)]
     )
-    logging.info(f"Deleting rows from {dataset_id}.{table_id} for sushi_build='{build_name}'")
+    logging.info(
+        f"Deleting rows from {dataset_id}.{table_id} for sushi_build='{build_name}'"
+    )
     client.query(query, job_config=job_config).result()
 
 
@@ -72,7 +76,7 @@ def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name, sc
         skip_leading_rows=1,
         autodetect=True,
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-        ignore_unknown_values=True
+        ignore_unknown_values=True,
     )
 
     with open(filtered_csv, "rb") as source_file:
@@ -80,4 +84,3 @@ def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name, sc
 
     job.result()
     logging.info(f"Appended {filtered_csv} to {dataset_id}.{table_id}")
-

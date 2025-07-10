@@ -31,7 +31,11 @@ def build_parser():
         "--build_path", "-b", help="Path to the build directory.", required=True
     )
     parser.add_argument(
-        "--days", "-d", help="Comma separated string of days to keep, defaults to 5.", default="5", required=False
+        "--days",
+        "-d",
+        help="Comma separated string of days to keep, defaults to 5.",
+        default="5",
+        required=False,
     )
     parser.add_argument(
         "--verbose",
@@ -230,11 +234,8 @@ def main(args):
     # Generate the pert_plate_project key
     logger.info("Generating pert_plate_project key...")
     pert_plate_project_list = generate_pert_plate_project_list(sample_meta)
-    with open(
-        os.path.join(build_path, "pert_plate_project_key.json"), "w"
-    ) as f:
+    with open(os.path.join(build_path, "pert_plate_project_key.json"), "w") as f:
         json.dump(pert_plate_project_list, f, indent=2)
-
 
     # Sync the build directory to S3
     logger.info(f"Syncing {build_path} to {s3_prefix}...")
