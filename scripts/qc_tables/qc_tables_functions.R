@@ -112,7 +112,9 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
       # Fraction of cell lines with coverage above count threshold
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
       # Ratio of control barcode reads to cell line reads
-      cb_cl_ratio_well = n_cb_reads / n_expected_reads
+      cb_cl_ratio_well = n_cb_reads / n_expected_reads,
+      # Fraction of reads mapping to control barcodes
+      fraction_cb_reads = n_cb_reads / n_total_reads
     ) %>%
     dplyr::ungroup()
 
