@@ -228,7 +228,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
     dplyr::left_join(cb_metrics, by = c(id_cols_list, "pert_plate")) %>%
     dplyr::left_join(normalized_counts %>% dplyr::select(c(id_cols_list, "cell_set")),
       by = id_cols_list
-    )
+    ) %>% dplyr::distinct()
 
   return(id_cols_table)
 }
