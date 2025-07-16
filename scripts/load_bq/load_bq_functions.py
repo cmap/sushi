@@ -4,6 +4,57 @@ from google.cloud import bigquery
 import os
 import tempfile
 import polars as pl
+from typing import Dict, Any
+
+
+def get_polars_dtype_from_bq_field(field: bigquery.SchemaField) -> pl.DataType:
+    """Map BigQuery field types to Polars data types."""
+    type_mapping = {
+        "STRING": pl.Utf8,
+        "INTEGER": pl.Int64,
+        "INT64": pl.Int64,
+        "FLOAT": pl.Float64,
+        "FLOAT64": pl.Float64,
+        "BOOLEAN": pl.Boolean,
+        "BOOL": pl.Boolean,
+        "DATE": pl.Date,
+        "DATETIME": pl.Datetime,
+        "TIMESTAMP": pl.Datetime,
+        "TIME": pl.Time,
+        "NUMERIC": pl.Float64,
+        "BIGNUMERIC": pl.Float64,
+    }
+    
+    bq_type = field.field_type.upper()
+    polars_type = type_mapping.get(bq_type, pl.Utf8)  # Default to string if unknown
+    
+    if field.mode == "REPEATED":
+        # For repeated fields, wrap in List
+        return pl.List(polars_type)
+    
+    return polars_type
+
+
+def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFrame:
+    """Coerce DataFrame column types to match BigQuery table schema."""
+    schema_map = {field.name: field for field in table.schema}
+    
+    for col in df.columns:
+        if col in schema_map:
+            field = schema_map[col]
+            target_dtype = get_polars_dtype_from_bq_field(field)
+            
+            try:
+                # Only cast if the current type doesn't match the target
+                if df[col].dtype != target_dtype:
+                    logging.info(f"Coercing column '{col}' from {df[col].dtype} to {target_dtype}")
+                    df = df.with_columns(pl.col(col).cast(target_dtype, strict=False))
+            except Exception as e:
+                logging.warning(f"Failed to coerce column '{col}' to {target_dtype}: {e}")
+                # Continue without coercing this column
+                pass
+    
+    return df
 
 
 def filter_csv_to_matching_columns(
@@ -20,6 +71,9 @@ def filter_csv_to_matching_columns(
     if build_name:
         df = df.with_columns(pl.lit(build_name).alias("sushi_build"))
         df = df.with_columns(pl.lit(screen).alias("screen"))
+
+    # Coerce data types to match BigQuery schema
+    df = coerce_dataframe_types(df, table)
 
     # Write to temp file
     temp_fd, temp_path = tempfile.mkstemp(suffix=".csv")
