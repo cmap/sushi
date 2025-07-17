@@ -763,7 +763,7 @@ generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expecte
 }
 
 # Variance decomposition table
-compute_variance_decomposition <- function(normalized_counts, metric = 'log2_normalized_n', negcon = "ctl_vehicle",
+compute_variance_decomposition <- function(normalized_counts, metric = 'n', negcon = "ctl_vehicle",
                                            cell_line_cols = c("depmap_id", "lua", "pool_id", "cell_set"),
                                            id_cols = c("pcr_plate","pcr_well")) {
     # Add pool_id annotations to control pools
@@ -779,7 +779,7 @@ compute_variance_decomposition <- function(normalized_counts, metric = 'log2_nor
         dplyr::group_by(across(c(all_of(id_cols), all_of(cell_line_cols), cb_name))) %>%
         dplyr::mutate(fcell_line=sum(.data[[metric]]+1)/tot_counts) %>%
         dplyr::ungroup() %>%
-        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name))) %>%
+        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate))) %>%
         dplyr::summarise(var_log2_fline=var(log2(fcell_line)),
                          median_log2_fline=median(log2(fcell_line)),
                          mad_log2_fline=mad(log2(fcell_line)),
@@ -806,7 +806,7 @@ compute_variance_decomposition <- function(normalized_counts, metric = 'log2_nor
     # Compute fraction of reads in pools
     pwise_negcon_stats <- df %>%
         filter(pert_type==negcon) %>%
-        dplyr::group_by(cell_set, across(c(all_of(id_cols)))) %>%
+        dplyr::group_by(cell_set, across(all_of(id_cols))) %>%
         dplyr::mutate(tot_counts=sum(.data[[metric]]+1)) %>%
         dplyr::ungroup() %>%
         dplyr::group_by(across(c(all_of(id_cols), cell_set, pool_id))) %>%

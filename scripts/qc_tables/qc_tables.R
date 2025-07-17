@@ -346,7 +346,7 @@ if (args$filter_qc_flags) {
 print("Computing variance decomposition table...")
 variance_decomp <- compute_variance_decomposition(
   normalized_counts = normalized_counts,
-  metric = "log2_normalized_n",
+  metric = "n",
   cell_line_cols = cell_line_cols_list,
   id_cols = id_cols_list,
   negcon = negcon
