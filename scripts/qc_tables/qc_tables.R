@@ -342,4 +342,20 @@ if (args$filter_qc_flags) {
   print("Nomalized counts not filtered for qc_flags.")
 }
 
+# Compute variance decomposition table
+print("Computing variance decomposition table...")
+variance_decomp <- compute_variance_decomposition(
+  normalized_counts = normalized_counts,
+  metric = "log2_normalized_n",
+  cell_line_cols = cell_line_cols_list,
+  id_cols = id_cols_list,
+  negcon = negcon
+)
+variance_decomp_outpath <- paste0(args$out, "/qc_tables/variance_decomposition.csv")
+print(paste0("Writing out variance_decomposition to ", variance_decomp_outpath))
+write.csv(
+  x = variance_decomp, file = variance_decomp_outpath, row.names = FALSE,
+  quote = FALSE)
+check_file_exists(variance_decomp_outpath)
+
 paste0("QC module completed.")

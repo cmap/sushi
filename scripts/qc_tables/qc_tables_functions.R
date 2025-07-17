@@ -761,3 +761,76 @@ generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expecte
   }
   return(table)
 }
+
+# Variance decomposition table
+compute_variance_decomposition <- function(normalized_counts, metric = 'log2_normalized_n', negcon = "ctl_vehicle",
+                                           cell_line_cols = c("depmap_id", "lua", "pool_id", "cell_set"),
+                                           id_cols = c("pcr_plate","pcr_well")) {
+    # Add pool_id annotations to control pools
+    df <- normalized_counts %>%
+      dplyr::mutate(pool_id=ifelse(!is.na(cb_name), "CTLBC", pool_id))
+
+    # Compute variance of cell line fractions
+    var_log_fline <- df %>%
+        filter(pert_type==negcon) %>%
+        dplyr::group_by(across(c(all_of(id_cols), cell_set))) %>%
+        dplyr::mutate(tot_counts=sum(.data[[metric]]+1)) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(id_cols), all_of(cell_line_cols), cb_name))) %>%
+        dplyr::mutate(fcell_line=sum(.data[[metric]]+1)/tot_counts) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name))) %>%
+        dplyr::summarise(var_log2_fline=var(log2(fcell_line)),
+                         median_log2_fline=median(log2(fcell_line)),
+                         mad_log2_fline=mad(log2(fcell_line)),
+                         mean_log2_fline=mean(log2(fcell_line))) %>%
+        dplyr::ungroup()
+
+
+    # Compute variance of cell line fractions in pools
+    var_log_cl_in_pool <- df %>%
+        filter(pert_type==negcon) %>%
+        dplyr::group_by(across(c(all_of(id_cols), cell_set, pool_id))) %>%
+        dplyr::mutate(tot_counts=sum(.data[[metric]]+1)) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(id_cols), all_of(cell_line_cols), cb_name))) %>%
+        dplyr::mutate(fcl_in_pool=sum(.data[[metric]]+1)/tot_counts) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate))) %>%
+        dplyr::summarise(var_log2_fcl_in_pool=var(log2(fcl_in_pool)),
+                         mad_log2_fcl_in_pool=mad(log2(fcl_in_pool)),
+                         median_log2_fcl_in_pool=median(log2(fcl_in_pool)),
+                         mean_log2_fcl_in_pool=mean(log2(fcl_in_pool))) %>%
+        dplyr::ungroup()
+
+    # Compute fraction of reads in pools
+    pwise_negcon_stats <- df %>%
+        filter(pert_type==negcon) %>%
+        dplyr::group_by(cell_set, across(c(all_of(id_cols)))) %>%
+        dplyr::mutate(tot_counts=sum(.data[[metric]]+1)) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(id_cols), cell_set, pool_id))) %>%
+        dplyr::summarise(
+            frac_reads=sum(.data[[metric]]+1)/tot_counts) %>%
+        dplyr::ungroup() %>%
+        dplyr::distinct()
+
+
+    # Compute variance of fraction of reads in pools
+    var_log_fpool <- pwise_negcon_stats %>%
+        dplyr::group_by(cell_set, pcr_plate,
+                        pool_id) %>%
+        dplyr::summarise(var_log2_frac_pool_reads=var(log2(frac_reads)),
+                         mad_log2_frac_pool_reads=mad(log2(frac_reads)),
+                         median_log2_frac_pool_reads=median(log2(frac_reads)),
+                         mean_log2_frac_pool_reads=mean(log2(frac_reads))) %>%
+        dplyr::ungroup()
+
+
+    # Join all variance components together
+    var_decomp <- dplyr::left_join(var_log_cl_in_pool, var_log_fpool,
+                                       by=c("pool_id", "cell_set", "pcr_plate")) %>%
+        dplyr::left_join(var_log_fline)
+
+return(var_decomp)
+}

@@ -34,7 +34,7 @@ enforce_abs_path SAMPLE_META
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
 --annotated_counts "$ANNOTATED_COUNTS"
---filtered_counts "$FILTERED_COUNTS"
+-- "$FILTERED_COUNTS"
 --sample_meta "$SAMPLE_META"
 --negcon_type "$CTL_TYPES"
 --poscon_type "$POSCON_TYPE"
