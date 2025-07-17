@@ -5,3 +5,4 @@ scratch/
 .DS_Store
 /tests/assets/out/
 /tests/assets/build/
+.aider*
