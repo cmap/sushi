@@ -74,7 +74,7 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #' @import dplyr
 compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, cb_metrics, group_cols = c("pcr_plate", "pcr_well", "pert_type", "pert_plate"),
                                metric = "n", cell_line_cols = c("depmap_id", "pool_id", "lua"), count_threshold = 40,
-                               expected_reads_threshold = 0.8, cb_threshold = 100, cb_spearman_threshold = 0.8, cb_mae_threshold = 1) {
+                               expected_reads_threshold = 0.8, cb_threshold = 40, cb_spearman_threshold = 0.8, cb_mae_threshold = 1) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
@@ -207,7 +207,7 @@ calculate_cb_metrics <- function(normalized_counts,
 #'
 #' @import dplyr
 generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
-                                   count_threshold = 40, pseudocount = 20) {
+                                   count_threshold = 40, pseudocount = 20, cb_threshold = 40) {
   print(paste0("Computing id_cols QC metrics grouping by ", paste0(id_cols_list, collapse = ","), "....."))
 
   read_stats_grouping_cols <- c(id_cols_list, "pert_type", "pert_plate")
@@ -217,7 +217,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
   read_stats <- compute_read_stats(
     annotated_counts = annotated_counts, unknown_counts = unknown_counts, cb_metrics = cb_metrics, group_cols = read_stats_grouping_cols,
     cell_set_meta = cell_set_meta, metric = "n", cell_line_cols = cell_line_cols,
-    count_threshold = count_threshold
+    count_threshold = count_threshold, cb_threshold = 40
   )
 
   skew <- compute_skew(annotated_counts, group_cols = c(id_cols_list, "pert_plate"), metric = "n")
@@ -650,7 +650,7 @@ id_cols_qc_flags <- function(id_cols_table,
                              cb_cl_ratio_high_negcon = 2,
                              cb_cl_ratio_low_poscon = 0.5,
                              cb_cl_ratio_high_poscon = 2,
-                             well_reads_threshold = 100) {
+                             well_reads_threshold = 40) {
   # Add a qc_flag column using case_when (conditions are checked in order)
   qc_table <- id_cols_table %>%
     mutate(qc_flag = case_when(
