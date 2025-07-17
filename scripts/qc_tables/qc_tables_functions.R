@@ -74,7 +74,7 @@ compute_expected_lines <- function(cell_set_meta, cell_line_cols) {
 #' @import dplyr
 compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, cb_metrics, group_cols = c("pcr_plate", "pcr_well", "pert_type", "pert_plate"),
                                metric = "n", cell_line_cols = c("depmap_id", "pool_id", "lua"), count_threshold = 40,
-                               expected_reads_threshold = 0.8, cb_threshold = 100, cb_spearman_threshold = 0.8, cb_mae_threshold = 1) {
+                               expected_reads_threshold = 0.8, cb_threshold = 40, cb_spearman_threshold = 0.8, cb_mae_threshold = 1) {
   # Compute expected lines from cell_set_meta
   expected_lines <- compute_expected_lines(cell_set_meta, cell_line_cols)
 
