@@ -137,12 +137,27 @@ def main():
         if screen_type != "CPS_SEQ":
             logging.info("Screen type is not CPS_SEQ, filtering pert2* columns.")
             logging.info(f"Columns before filtering: {df.columns.tolist()}")
-            cols_removed = []
-            df = df.drop(columns=[col for col in df.columns if col.startswith("pert2")])
-            cols_removed = [col for col in df.columns if col.startswith("pert2")]
-            df = df.drop(columns=["treatment_2", "is_combination"])
-            cols_removed.extend(["treatment_2", "is_combination"])
+
+            # Store original columns
+            original_cols = set(df.columns)
+
+            # Remove pert2* columns (only if they exist)
+            pert2_cols = [col for col in df.columns if col.startswith("pert2")]
+            if pert2_cols:
+                df = df.drop(columns=pert2_cols)
+
+            # Remove additional columns (only if they exist)
+            additional_cols = ["treatment_2", "is_combination"]
+            existing_additional_cols = [col for col in additional_cols if col in df.columns]
+            if existing_additional_cols:
+                df = df.drop(columns=existing_additional_cols)
+
+            # Calculate what was actually removed
+            final_cols = set(df.columns)
+            cols_removed = list(original_cols - final_cols)
+
             logging.info(f"Columns removed: {cols_removed}")
+            logging.info(f"Columns after filtering: {df.columns.tolist()}")
 
         # Save the DataFrame to a CSV file
         save_dataframe(df=df, filename="sample_meta", build_dir=build_dir)
