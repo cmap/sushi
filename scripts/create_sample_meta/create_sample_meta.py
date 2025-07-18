@@ -4,6 +4,7 @@ import pandas as pd
 import os
 import urllib.parse
 import json
+import logging
 
 def fetch_metadata(filter_dict, base_url, api_key):
     # Convert the filter to a JSON string
@@ -134,8 +135,14 @@ def main():
 
         # Filter pert2* columns if screen type is not CPS_SEQ
         if screen_type != "CPS_SEQ":
+            logging.info("Screen type is not CPS_SEQ, filtering pert2* columns.")
+            logging.info(f"Columns before filtering: {df.columns.tolist()}")
+            cols_removed = []
             df = df.drop(columns=[col for col in df.columns if col.startswith("pert2")])
-            df = df.drop(columns=["treatment2", "is_combination"])
+            cols_removed = [col for col in df.columns if col.startswith("pert2")]
+            df = df.drop(columns=["treatment_2", "is_combination"])
+            cols_removed.extend(["treatment_2", "is_combination"])
+            logging.info(f"Columns removed: {cols_removed}")
 
         # Save the DataFrame to a CSV file
         save_dataframe(df=df, filename="sample_meta", build_dir=build_dir)
@@ -160,4 +167,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     main()
