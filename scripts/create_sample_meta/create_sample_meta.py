@@ -104,9 +104,13 @@ def main():
     parser.add_argument(
         "--pert_plates", "-p", type=str, required=False, help="Pert plates in the screen to use. If not provided, all pert plates will be used."
     )
+    parser.add_argument(
+        "--screen_type", "-t", type=str, required=False, default="MTS_SEQ",
+    )
 
     args = parser.parse_args()
     screen = args.screen
+    screen_type = args.screen_type
     api_key = args.api_key
     build_dir = args.build_dir
     pert_plates = args.pert_plates.replace(" ", "").split(",") if args.pert_plates else None
@@ -127,6 +131,13 @@ def main():
 
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
+
+        # Filter pert2* columns if screen type is not CPS_SEQ
+        if screen_type != "CPS_SEQ":
+            df = df.drop(columns=[col for col in df.columns if col.startswith("pert2")])
+            df = df.drop(columns=["treatment2", "is_combination"])
+
+        # Save the DataFrame to a CSV file
         save_dataframe(df=df, filename="sample_meta", build_dir=build_dir)
     except Exception as e:
         print(f"An error occurred: {e}")
