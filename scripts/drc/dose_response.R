@@ -74,6 +74,7 @@ for (idx in seq_along(dose_cols)) {
 
   # DRC function should be called once for MTS, EPS, and CPS single agents.
   # DRC function should be called twice for CPS 5x5s.
+  # Both pert_dose and pert_dose_unit will be dropped when grouping
   drc_outputs[[idx]] = create_drc_table(
     LFC = subset_l2fc,
     cell_line_cols = cell_line_cols,
