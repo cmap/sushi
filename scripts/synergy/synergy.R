@@ -63,7 +63,7 @@ if (!args$combination_col %in% colnames(cps_l2fc)) {
 dmso_norm_ctrl = normalized_counts[pert_type == args$negcon_type, ]
 dmso_norm_trt = dmso_norm_ctrl
 dmso_norm_trt$pert_type = "trt_cp"
-dmso_norm_input = data.table::rbindlist(list(dmso_norm_trt, dmso_norm_ctrl))
+dmso_norm_input = data.table::rbindlist(list(dmso_norm_trt, dmso_norm_ctrl), use.names = TRUE)
 
 dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
                          cell_line_cols = args$cell_line_cols,

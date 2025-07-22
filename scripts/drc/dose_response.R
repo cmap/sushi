@@ -39,13 +39,9 @@ build_dir = args$build_dir
 
 # Pull out dose columns from sig_cols
 dose_cols = sig_cols[grepl("_dose$", sig_cols)]
-
-# Print a message if two dose columns were detected
-print(paste0("Detecting the following dose column(s): ", dose_cols))
-if (length(dose_cols) > 1) {
-  print("More than one does column was supplied.")
-  # This suggests a CPS run
-} else if (length(dose_cols) > 2) {
+print(paste0("Detecting the following dose column(s): ", paste(dose_cols, collapse = ", ")))
+if (length(dose_cols) > 2) {
+  # Error out if more than two dose columns are detected.
   stop("More than two dose columns were detected!")
 }
 
@@ -55,20 +51,21 @@ if (length(dose_cols) > 1) {
 drc_outputs = list()
 
 for (idx in seq_along(dose_cols)) {
-  print(paste0("Working on ", dose_cols[idx]))
+  cur_dose_col = dose_cols[idx]
+  print(paste0("Working on DRC over ", cur_dose_col))
 
   # Filter l2fc dt by dropping NAs in the current dose column
-  subset_l2fc = l2fc[!is.na(get(dose_cols[idx])), ]
+  subset_l2fc = l2fc[!is.na(get(cur_dose_col)), ]
 
   # Move to the next iteration if subset at current dose column is empty.
   if (nrow(subset_l2fc) == 0) {
-    warning(paste0("No avaliable doses detected for ", dose_cols[idx], ". Skipping this dose."))
+    warning(paste0("No avaliable doses detected for ", cur_dose_col, ". Skipping this dose."))
     next()
   }
 
   # Move to the next iteration if there are very few unique dose values.
-  if (length(unique(subset_l2fc[[dose_cols[idx]]])) < 3) {
-    warning(paste0("Detected fewer than three unique doses in ", dose_cols[idx], ". Skipping this dose."))
+  if (length(na.omit(unique(subset_l2fc[[cur_dose_col]]))) <= 4) {
+    warning(paste0("Detected four or fewer unique doses in ", cur_dose_col, ". Skipping this dose."))
     next()
   }
 
@@ -78,8 +75,8 @@ for (idx in seq_along(dose_cols)) {
   drc_outputs[[idx]] = create_drc_table(
     LFC = subset_l2fc,
     cell_line_cols = cell_line_cols,
-    treatment_cols = sig_cols[!grepl(dose_cols[idx], sig_cols)],
-    dose_col = dose_cols[idx],
+    treatment_cols = sig_cols[!grepl(cur_dose_col, sig_cols)],
+    dose_col = cur_dose_col,
     l2fc_col = l2fc_col,
     cap_for_viability = cap_for_viability
   )
