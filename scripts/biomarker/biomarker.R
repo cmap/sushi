@@ -78,15 +78,19 @@ if (univariate_biomarker) {
       depmap_file = bio_file
     )
   }
-  if (auc_biomarker && file.exists(drc_file)) {
-    create_univariate_biomarker_table(
-      in_path = drc_file,
-      out_path = out_path,
-      output_file_name = "log2_auc_univariate_biomarkers.csv",
-      treatment_columns = trt_cols,
-      response_column = dr_column,
-      depmap_file = bio_file
-    )
+  if (auc_biomarker) {
+    if (file.exists(drc_file)) {
+      create_univariate_biomarker_table(
+        in_path = drc_file,
+        out_path = out_path,
+        output_file_name = "log2_auc_univariate_biomarkers.csv",
+        treatment_columns = trt_cols,
+        response_column = dr_column,
+        depmap_file = bio_file
+      )
+    } else {
+      warning("DRC file does not exist. Skipping univar with AUCs.")
+    }
   }
 }
 
@@ -101,14 +105,18 @@ if (multivariate_biomarker) {
       depmap_file = bio_file
     )
   }
-  if (auc_biomarker && file.exists(drc_file)) {
-    create_multivariate_biomarker_table(
-      in_path = drc_file,
-      out_path = out_path,
-      output_file_name = "log2_auc_multivariate_biomarkers.csv",
-      treatment_columns = trt_cols,
-      response_column = dr_column,
-      depmap_file = bio_file
-    )
+  if (auc_biomarker) {
+    if (file.exists(drc_file)) {
+      create_multivariate_biomarker_table(
+        in_path = drc_file,
+        out_path = out_path,
+        output_file_name = "log2_auc_multivariate_biomarkers.csv",
+        treatment_columns = trt_cols,
+        response_column = dr_column,
+        depmap_file = bio_file
+      )
+    } else {
+      warning("DRC file does not exist. Skipping multivar with AUCs.")
+    }
   }
 }
