@@ -5,6 +5,7 @@ import os
 import urllib.parse
 import json
 
+
 def fetch_metadata(filter_dict, base_url, api_key):
     # Convert the filter to a JSON string
     filter_json = json.dumps(filter_dict)
@@ -30,6 +31,7 @@ def fetch_metadata(filter_dict, base_url, api_key):
         print(response.text)  # Print the response content for more insight
         response.raise_for_status()
 
+
 def save_dataframe(df, filename, build_dir):
     # Ensure the directory exists
     os.makedirs(build_dir, exist_ok=True)
@@ -51,14 +53,14 @@ def rename_sample_meta(df):
         "dose": "pert_dose",
         "dose_unit": "pert_dose_unit",
         "control_barcodes": "cb_ladder",
-        "replicate": "replicate_plate"
+        "replicate": "replicate_plate",
     }
     return df.rename(columns=rename_map)
 
 
 def remove_sample_meta_columns(df, columns_to_remove):
     # Remove specified columns from the DataFrame
-    return df.drop(columns=columns_to_remove, errors='ignore')
+    return df.drop(columns=columns_to_remove, errors="ignore")
 
 
 def filter_nan_flowcells(df, build_dir):
@@ -69,7 +71,9 @@ def filter_nan_flowcells(df, build_dir):
     if nan_count > 0:
         # If the build_dir/logs directory does not exist, create it
         os.makedirs(os.path.join(build_dir, "logs"), exist_ok=True)
-        warning_message = f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped."
+        warning_message = (
+            f"Warning: {nan_count} rows with NaN in 'flowcell_names' will be dropped."
+        )
         print(warning_message)
         output_path = os.path.join(build_dir, "logs/critical_output.txt")
         with open(output_path, "a") as f:
@@ -78,7 +82,7 @@ def filter_nan_flowcells(df, build_dir):
         # Write the filtered DataFrame to a CSV file
         df_filtered = df.dropna(subset=["flowcell_names"])
         filtered_path = os.path.join(build_dir, "logs/na_flowcells.csv")
-        df_filtered.to_csv(filtered_path, index=False, mode='a', header=False)
+        df_filtered.to_csv(filtered_path, index=False, mode="a", header=False)
 
     # Drop rows with NaN in "flowcell_names"
     return df.dropna(subset=["flowcell_names"])
@@ -102,27 +106,46 @@ def main():
         help="Directory to save the CSV file",
     )
     parser.add_argument(
-        "--pert_plates", "-p", type=str, required=False, help="Pert plates in the screen to use. If not provided, all pert plates will be used."
+        "--pert_plates",
+        "-p",
+        type=str,
+        required=False,
+        help="Pert plates in the screen to use. If not provided, all pert plates will be used.",
     )
 
     args = parser.parse_args()
     screen = args.screen
     api_key = args.api_key
     build_dir = args.build_dir
-    pert_plates = args.pert_plates.replace(" ", "").split(",") if args.pert_plates else None
+    pert_plates = (
+        args.pert_plates.replace(" ", "").split(",") if args.pert_plates else None
+    )
 
     try:
         df = (
-            fetch_metadata(filter_dict={"where":{"project_code": screen}},
-                           base_url="https://api.clue.io/api/v_e_eps_metadata",
-                           api_key=api_key)
+            fetch_metadata(
+                filter_dict={"where": {"project_code": screen}},
+                base_url="https://api.clue.io/api/v_e_eps_metadata",
+                api_key=api_key,
+            )
             .pipe(rename_sample_meta)
-            .pipe(remove_sample_meta_columns, ["id", "pert_platemap_id", "prism_pcr_plate_id", "pcr_plate_well_id", "index_set"])
+            .pipe(
+                remove_sample_meta_columns,
+                [
+                    "id",
+                    "pert_platemap_id",
+                    "prism_pcr_plate_id",
+                    "pcr_plate_well_id",
+                    "index_set",
+                ],
+            )
             .pipe(filter_nan_flowcells, build_dir)
         )
         # Subset to provided pert plates if any
         if pert_plates:
-            print(f"pert_plate provided, filtering sample_metadata to pert plates: {pert_plates}")
+            print(
+                f"pert_plate provided, filtering sample_metadata to pert plates: {pert_plates}"
+            )
             df = df[df["pert_plate"].isin(pert_plates)]
 
         print("Retrieved following sample_metadata from COMET: ")
@@ -132,10 +155,10 @@ def main():
         print(f"An error occurred: {e}")
 
     try:
-        df = (
-            fetch_metadata(filter_dict={"where":{"screen": screen}},
-                           base_url="https://api.clue.io/api/v_e_assay_plate_skipped_well",
-                           api_key=api_key)
+        df = fetch_metadata(
+            filter_dict={"where": {"screen": screen}},
+            base_url="https://api.clue.io/api/v_e_assay_plate_skipped_well",
+            api_key=api_key,
         )
         # If skipped wells is not empty, save it to a csv file
         if not df.empty:

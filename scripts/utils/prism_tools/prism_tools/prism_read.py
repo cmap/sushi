@@ -2,6 +2,7 @@ import polars as pl
 from pathlib import Path
 from typing import Callable
 
+
 class SushiBuild:
     """
     Container for all of the CSV/JSON tables in a build directory.
@@ -14,21 +15,21 @@ class SushiBuild:
 
     # manifest: (attribute_name, relative_path, needs_pert_dose_override)
     _FILES = [
-        ("normalized_counts_filtered",     "normalized_counts.csv"),
-        ("normalized_counts_original",     "normalized_counts_original.csv"),
-        ("annotated_counts",               "annotated_counts.csv"),
-        ("filtered_counts_filtered",       "filtered_counts.csv"),
-        ("filtered_counts_original",       "filtered_counts_original.csv"),
-        ("l2fc_filtered",                  "l2fc.csv"),
-        ("l2fc_original",                  "l2fc_original.csv"),
-        ("collapsed_l2fc",                 "collapsed_l2fc.csv"),
-        ("qc_table",                       "qc_tables/plate_cell_qc_table_internal.csv"),
-        ("qc_flags",                       "qc_tables/plate_cell_qc_flags.csv"),
-        ("id_cols_table",                  "qc_tables/id_cols_qc_table.csv"),
-        ("id_cols_flags",                  "qc_tables/id_cols_qc_flags.csv"),
-        ("pool_well_table",                "qc_tables/pool_well_qc_table.csv"),
-        ("sample_meta",                    "sample_meta.csv"),
-        ("eps_qc_table",                   "qc_tables/eps_qc_table.csv"),
+        ("normalized_counts_filtered", "normalized_counts.csv"),
+        ("normalized_counts_original", "normalized_counts_original.csv"),
+        ("annotated_counts", "annotated_counts.csv"),
+        ("filtered_counts_filtered", "filtered_counts.csv"),
+        ("filtered_counts_original", "filtered_counts_original.csv"),
+        ("l2fc_filtered", "l2fc.csv"),
+        ("l2fc_original", "l2fc_original.csv"),
+        ("collapsed_l2fc", "collapsed_l2fc.csv"),
+        ("qc_table", "qc_tables/plate_cell_qc_table_internal.csv"),
+        ("qc_flags", "qc_tables/plate_cell_qc_flags.csv"),
+        ("id_cols_table", "qc_tables/id_cols_qc_table.csv"),
+        ("id_cols_flags", "qc_tables/id_cols_qc_flags.csv"),
+        ("pool_well_table", "qc_tables/pool_well_qc_table.csv"),
+        ("sample_meta", "sample_meta.csv"),
+        ("eps_qc_table", "qc_tables/eps_qc_table.csv"),
     ]
 
     def __init__(self, build_path):
@@ -41,21 +42,26 @@ class SushiBuild:
             if not p.exists():
                 setattr(self, attr, None)
                 continue
-            kwargs = {"ignore_errors": True, "truncate_ragged_lines": True, "schema_overrides":{"pert_dose": pl.Utf8,
-                                                                                                "day": pl.Int64}}
+            kwargs = {
+                "ignore_errors": True,
+                "truncate_ragged_lines": True,
+                "schema_overrides": {"pert_dose": pl.Utf8, "day": pl.Int64},
+            }
             df = pl.read_csv(p, **kwargs)
 
             setattr(self, attr, df)
 
     def __repr__(self):
         # Show single build or combined builds
-        if hasattr(self, 'build_path'):
+        if hasattr(self, "build_path"):
             path_repr = self.build_path
-        elif hasattr(self, 'build_paths'):
+        elif hasattr(self, "build_paths"):
             path_repr = list(self.build_paths)
         else:
             path_repr = None
-        loaded = [attr for attr, *_ in self._FILES if getattr(self, attr, None) is not None]
+        loaded = [
+            attr for attr, *_ in self._FILES if getattr(self, attr, None) is not None
+        ]
         return f"<SushiBuild path={path_repr!r} tables={loaded}>"
 
     def __iter__(self):
@@ -86,12 +92,16 @@ class SushiBuild:
         combined = object.__new__(cls)
         combined.build_paths = []
         for b in builds:
-            if hasattr(b, 'build_paths'):
+            if hasattr(b, "build_paths"):
                 combined.build_paths.extend(b.build_paths)
             else:
                 combined.build_paths.append(b.build_path)
         for attr, rel in cls._FILES:
-            dfs = [getattr(b, attr, None) for b in builds if getattr(b, attr, None) is not None]
+            dfs = [
+                getattr(b, attr, None)
+                for b in builds
+                if getattr(b, attr, None) is not None
+            ]
             if len(dfs) >= 2:
                 ref = dfs[0]
                 ref_cols, ref_dtypes = ref.columns, ref.dtypes
@@ -101,7 +111,12 @@ class SushiBuild:
                         if col not in df.columns:
                             df = df.with_columns(pl.lit(None).cast(dtype).alias(col))
                     df = df.select(ref_cols)
-                    df = df.with_columns([pl.col(col).cast(dtype) for col, dtype in zip(ref_cols, ref_dtypes)])
+                    df = df.with_columns(
+                        [
+                            pl.col(col).cast(dtype)
+                            for col, dtype in zip(ref_cols, ref_dtypes)
+                        ]
+                    )
                     aligned.append(df)
                 setattr(combined, attr, pl.concat(aligned, how="vertical"))
             else:
