@@ -112,7 +112,9 @@ compute_read_stats <- function(annotated_counts, cell_set_meta, unknown_counts, 
       # Fraction of cell lines with coverage above count threshold
       fraction_cl_recovered = n_lines_recovered / max(n_expected_lines, na.rm = TRUE),
       # Ratio of control barcode reads to cell line reads
-      cb_cl_ratio_well = n_cb_reads / n_expected_reads
+      cb_cl_ratio_well = n_cb_reads / n_expected_reads,
+      # Fraction of reads mapping to control barcodes
+      fraction_cb_reads = n_cb_reads / n_total_reads
     ) %>%
     dplyr::ungroup()
 
@@ -205,7 +207,7 @@ calculate_cb_metrics <- function(normalized_counts,
 #'
 #' @import dplyr
 generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_counts, cell_set_meta, cb_meta, id_cols_list, cell_line_cols,
-                                   count_threshold = 40, pseudocount = 20) {
+                                   count_threshold = 40, pseudocount = 20, cb_threshold = 40) {
   print(paste0("Computing id_cols QC metrics grouping by ", paste0(id_cols_list, collapse = ","), "....."))
 
   read_stats_grouping_cols <- c(id_cols_list, "pert_type", "pert_plate")
@@ -215,7 +217,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
   read_stats <- compute_read_stats(
     annotated_counts = annotated_counts, unknown_counts = unknown_counts, cb_metrics = cb_metrics, group_cols = read_stats_grouping_cols,
     cell_set_meta = cell_set_meta, metric = "n", cell_line_cols = cell_line_cols,
-    count_threshold = count_threshold
+    count_threshold = count_threshold, cb_threshold = 40
   )
 
   skew <- compute_skew(annotated_counts, group_cols = c(id_cols_list, "pert_plate"), metric = "n")
@@ -223,7 +225,10 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
 
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = c(id_cols_list, "pert_plate")) %>%
-    dplyr::left_join(cb_metrics, by = c(id_cols_list, "pert_plate"))
+    dplyr::left_join(cb_metrics, by = c(id_cols_list, "pert_plate")) %>%
+    dplyr::left_join(normalized_counts %>% dplyr::select(c(id_cols_list, "cell_set")) %>% dplyr::distinct(),
+      by = id_cols_list
+    ) %>% dplyr::distinct()
 
   return(id_cols_table)
 }
@@ -547,6 +552,7 @@ generate_cell_plate_table <- function(normalized_counts, filtered_counts, cell_l
         fraction_expected_negcon = n_replicates_ctl_vehicle/n_expected_ctl_vehicle
       )
   }
+
   return(plate_cell_table)
 }
 
@@ -644,7 +650,7 @@ id_cols_qc_flags <- function(id_cols_table,
                              cb_cl_ratio_high_negcon = 2,
                              cb_cl_ratio_low_poscon = 0.5,
                              cb_cl_ratio_high_poscon = 2,
-                             well_reads_threshold = 100) {
+                             well_reads_threshold = 40) {
   # Add a qc_flag column using case_when (conditions are checked in order)
   qc_table <- id_cols_table %>%
     mutate(qc_flag = case_when(
@@ -760,4 +766,79 @@ generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expecte
       filter(!is.na(qc_flag))
   }
   return(table)
+}
+
+# Variance decomposition table
+compute_variance_decomposition <- function(normalized_counts, metric = 'n', negcon = "ctl_vehicle",
+                                           cell_line_cols = c("depmap_id", "lua", "pool_id", "cell_set"),
+                                           id_cols = c("pcr_plate","pcr_well")) {
+    # Add pool_id annotations to control pools
+    df <- normalized_counts %>%
+      dplyr::mutate(pool_id=ifelse(!is.na(cb_name), "CTLBC", pool_id))
+
+    # Compute variance of cell line fractions
+    var_log_fline <- df %>%
+        filter(pert_type==negcon) %>%
+        dplyr::group_by(across(c(all_of(id_cols), cell_set))) %>%
+        dplyr::mutate(tot_counts=sum(.data[[metric]]+1)) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(id_cols), all_of(cell_line_cols), cb_name))) %>%
+        dplyr::mutate(fcell_line=sum(.data[[metric]]+1)/tot_counts) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate))) %>%
+        dplyr::summarise(var_log2_fline=var(log2(fcell_line)),
+                         median_log2_fline=median(log2(fcell_line)),
+                         mad_log2_fline=mad(log2(fcell_line)),
+                         mean_log2_fline=mean(log2(fcell_line))) %>%
+        dplyr::ungroup()
+
+
+    # Compute variance of cell line fractions in pools
+    var_log_cl_in_pool <- df %>%
+        filter(pert_type==negcon) %>%
+        dplyr::group_by(across(c(all_of(id_cols), cell_set, pool_id))) %>%
+        dplyr::mutate(tot_counts=sum(.data[[metric]]+1)) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(id_cols), all_of(cell_line_cols), cb_name))) %>%
+        dplyr::mutate(fcl_in_pool=sum(.data[[metric]]+1)/tot_counts) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate))) %>%
+        dplyr::summarise(var_log2_fcl_in_pool=var(log2(fcl_in_pool)),
+                         mad_log2_fcl_in_pool=mad(log2(fcl_in_pool)),
+                         median_log2_fcl_in_pool=median(log2(fcl_in_pool)),
+                         mean_log2_fcl_in_pool=mean(log2(fcl_in_pool))) %>%
+        dplyr::ungroup()
+
+    # Compute fraction of reads in pools
+    pwise_negcon_stats <- df %>%
+        filter(pert_type==negcon) %>%
+        dplyr::group_by(cell_set, across(all_of(id_cols))) %>%
+        dplyr::mutate(tot_counts=sum(.data[[metric]]+1)) %>%
+        dplyr::ungroup() %>%
+        dplyr::group_by(across(c(all_of(id_cols), cell_set, pool_id))) %>%
+        dplyr::summarise(
+            frac_reads=sum(.data[[metric]]+1)/tot_counts) %>%
+        dplyr::ungroup() %>%
+        dplyr::distinct()
+
+
+    # Compute variance of fraction of reads in pools
+    var_log_fpool <- pwise_negcon_stats %>%
+        dplyr::group_by(cell_set, pcr_plate,
+                        pool_id) %>%
+        dplyr::summarise(var_log2_frac_pool_reads=var(log2(frac_reads)),
+                         mad_log2_frac_pool_reads=mad(log2(frac_reads)),
+                         median_log2_frac_pool_reads=median(log2(frac_reads)),
+                         mean_log2_frac_pool_reads=mean(log2(frac_reads))) %>%
+        dplyr::ungroup()
+
+
+    # Join all variance components together
+    var_decomp <- dplyr::left_join(var_log_cl_in_pool, var_log_fpool,
+                                       by=c("pool_id", "cell_set", "pcr_plate")) %>%
+        dplyr::left_join(var_log_fline) %>%
+      dplyr::group_by(cell_set, pool_id, pcr_plate) %>%
+      dplyr::summarise(across(where(is.numeric), function(x) median(x, na.rm = TRUE)))
+
+return(var_decomp)
 }

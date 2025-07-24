@@ -28,6 +28,14 @@ pipeline {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build jobs below. If unchecked, the build will not be triggered and only the config.json will be generated.')
 
         separator(
+          name: "upload_to_bq",
+          sectionHeader: "Upload results to BigQuery",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'UPLOAD_TO_BQ', defaultValue: false, description: 'Check this to upload the results to BigQuery.')
+
+        separator(
           name: "build_details",
           sectionHeader: "Build Details",
           separatorStyle: separatorStyleCss,
@@ -182,6 +190,7 @@ pipeline {
     environment {
         CONFIG_FILE_PATH = "${params.BUILD_DIR}/config.json"
         QC_PARAMS_FILE_PATH = "${params.BUILD_DIR}/qc_params.json"
+        GOOGLE_APPLICATION_CREDENTIALS = '/local/jenkins/.gcp_credentials.json'
     }
 
     stages {
@@ -402,6 +411,9 @@ pipeline {
                         }
                         if (params.CONVERT_SUSHI) {
                             scriptsToRun.add('sushi_2_s3/sushi_2_s3.sh')
+                        }
+                        if (params.UPLOAD_TO_BQ) {
+                            scriptsToRun.add('load_bq/load_bq.sh')
                         }
 
                         scriptsToRun.each { scriptName ->
