@@ -7,13 +7,13 @@ source("utils/kitchen_utensils.R")
 
 # Argument parser ----
 parser <- ArgumentParser()
-# File paths
+# Data paths
 parser$add_argument("--biomarker_file", default="/data/biomarker/current/prism_biomarker_public_0625.h5",
                     help="File containing depmap data")
 parser$add_argument("--collapsed_lfc", default = "collapsed_l2fc.csv",
                     help = "file containing replicate collapsed log fold change values")
 parser$add_argument("--drc_file", default="DRC_TABLE.csv", help="File containing auc values from dose response")
-parser$add_argument("--synergy_file", default = "synergy_scores.csv",
+parser$add_argument("--synergy_path", default = "synergy_scores.csv",
                     help = "File containing auc values from dose response")
 
 # Columns and other params
@@ -44,7 +44,7 @@ parser$add_argument("--out_path", default= "", help = "Path to the output direct
 args <- parser$parse_args()
 
 # Basic parameters ----
-sig_cols= unlist(strsplit(args$sig_cols, ","))
+sig_cols = unlist(strsplit(args$sig_cols, ","))
 build_dir = args$build_dir
 bio_file = args$biomarker_file
 
@@ -53,6 +53,8 @@ lfc_path = args$collapsed_lfc
 lfc_column = args$collapsed_l2fc_column
 dr_column = args$dr_column
 drc_file = args$drc_file
+synergy_col = args$synergy_col
+synergy_path = args$synergy_path
 out_path = args$out_path
 
 # Parameters for determining which biomarker(s) to calculate
@@ -63,15 +65,16 @@ univariate_biomarker = as.logical(toupper(args$univariate_biomarker))
 multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 
 # Print some arguments ----
-print(paste0("lfc_biomarker is ", lfc_biomarker))
-print(paste0("auc_biomarker is ", auc_biomarker))
-print(paste0("synergy_biomarker is ", synergy_biomarker))
-print(paste0("univariate_biomarker is ", univariate_biomarker))
-print(paste0("multivariate_biomarker is ", multivariate_biomarker))
+message("INFO: univariate_biomarker is ", univariate_biomarker)
+message("INFO: multivariate_biomarker is ", multivariate_biomarker)
+message("INFO: lfc_biomarker is ", lfc_biomarker)
+message("INFO: auc_biomarker is ", auc_biomarker)
+message("INFO: synergy_biomarker is ", synergy_biomarker)
 
 # Create the treatment columns ----
-# you are using select any of so not sure if we need trt_cols or just pass sig_cols
+# Need to drop "cell_set"
 trt_cols = sig_cols[grepl("pert|is_combination|day", sig_cols)]
+message("INFO: Treatment cols are ", sig_cols)
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
@@ -80,8 +83,8 @@ if (!dir.exists(out_path)) {
 
 # Call the biomarker functions ----
 if (univariate_biomarker) {
-  # Create univariate biomarkers for lfc data
   if (lfc_biomarker) {
+    message("INFO: Creating univariate biomarkers for ", lfc_column)
     create_univariate_biomarker_table(
       in_path = lfc_path,
       out_path = out_path,
@@ -92,9 +95,9 @@ if (univariate_biomarker) {
     )
   }
 
-  # Create univariate biomarkers for AUC data
   if (auc_biomarker) {
     if (file.exists(drc_file)) {
+      message("INFO: Creating univariate biomarkers for ", dr_column)
       create_univariate_biomarker_table(
         in_path = drc_file,
         out_path = out_path,
@@ -108,15 +111,15 @@ if (univariate_biomarker) {
     }
   }
 
-  # Create univariate biomarkers for synergy data
   if (synergy_biomarker) {
-    if (file.exists(args$synergy_file)) {
+    if (file.exists(synergy_path)) {
+      message("INFO: Creating univariate biomarkers for ", synergy_col)
       create_multivariate_biomarker_table(
-        in_path = args$synergy_file,
+        in_path = synergy_path,
         out_path = out_path,
         output_file_name = "synergy_univariate_biomarkers.csv",
-        treatment_columns = sig_cols,
-        response_column = "synergy",
+        treatment_columns = trt_cols,
+        response_column = synergy_col,
         depmap_file = bio_file
       )
     } else {
@@ -127,8 +130,8 @@ if (univariate_biomarker) {
 }
 
 if (multivariate_biomarker) {
-  # Create multivariate biomarkers for lfc data
   if (lfc_biomarker) {
+    message("INFO: Creating multivariate biomarkers for ", lfc_column)
     create_multivariate_biomarker_table(
       in_path = lfc_path,
       out_path = out_path,
@@ -139,9 +142,9 @@ if (multivariate_biomarker) {
     )
   }
 
-  # Create multivariate biomarkers for AUC data
   if (auc_biomarker) {
     if (file.exists(drc_file)) {
+      message("INFO: Creating multivariate biomarkers for ", dr_column)
       create_multivariate_biomarker_table(
         in_path = drc_file,
         out_path = out_path,
@@ -155,15 +158,15 @@ if (multivariate_biomarker) {
     }
   }
 
-  # Create multivariate biomarkers for AUC data
   if (synergy_biomarker) {
-    if (file.exists(synergy_file)) {
+    if (file.exists(synergy_path)) {
+      message("INFO: Creating multivariate biomarkers for ", synergy_col)
       create_multivariate_biomarker_table(
-        in_path = args$synergy_file,
+        in_path = synergy_path,
         out_path = out_path,
         output_file_name = "synergy_multivariate_biomarkers.csv",
-        treatment_columns = sig_cols,
-        response_column = "synergy",
+        treatment_columns = trt_cols,
+        response_column = synergy_col,
         depmap_file = bio_file
       )
     } else {
