@@ -65,6 +65,7 @@ multivariate_biomarker = as.logical(toupper(args$multivariate_biomarker))
 # Print some arguments ----
 print(paste0("lfc_biomarker is ", lfc_biomarker))
 print(paste0("auc_biomarker is ", auc_biomarker))
+print(paste0("synergy_biomarker is ", synergy_biomarker))
 print(paste0("univariate_biomarker is ", univariate_biomarker))
 print(paste0("multivariate_biomarker is ", multivariate_biomarker))
 
@@ -109,7 +110,7 @@ if (univariate_biomarker) {
 
   # Create univariate biomarkers for synergy data
   if (synergy_biomarker) {
-    if (file.exists(synergy_file)) {
+    if (file.exists(args$synergy_file)) {
       create_multivariate_biomarker_table(
         in_path = args$synergy_file,
         out_path = out_path,
