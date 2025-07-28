@@ -114,7 +114,7 @@ if (univariate_biomarker) {
   if (synergy_biomarker) {
     if (file.exists(synergy_path)) {
       message("INFO: Creating univariate biomarkers for ", synergy_col)
-      create_multivariate_biomarker_table(
+      create_univariate_biomarker_table(
         in_path = synergy_path,
         out_path = out_path,
         output_file_name = "synergy_univariate_biomarkers.csv",
