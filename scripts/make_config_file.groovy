@@ -106,6 +106,7 @@ pipeline {
         booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
         booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
         booleanParam(name: 'SYNERGY', defaultValue: false, description: 'Compute synergy for CPS.')
+        booleanParam(name: 'SYNERGY_BIOMARKER', defaultValue: false, description: 'Use synergy values to run biomarker analysis. SYNERGY module to run.')
 
         // Parameters that we don't expect users to change
         separator(
@@ -179,6 +180,11 @@ pipeline {
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
         string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis.')
         string(name: 'DR_PATH', defaultValue: 'DRC_TABLE.csv', description: 'File in drc/BUILD_DIR containing dose response curve data. This file is created by DRC.')
+
+        //Synergy for combinations
+        string(name: 'SYNERGY_FILE', defaultValue: 'synergy_score.csv', description: 'File in BUILD_DIR containing the synergy scores.')
+        string(name: 'SYNERGY_COL', defaultValue: 'synergy', 
+               description: 'Name of the column in SYNERGY_FILE containing the synergy scores.')
     }
 
     environment {
@@ -263,7 +269,7 @@ pipeline {
                         'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES',
 
                         //combinations
-                        'COMBINATION_COL', 'N_SAMPLES'
+                        'COMBINATION_COL', 'N_SAMPLES', 'SYNERGY_BIOMARKER', 'SYNERGY_COL', 'SYNERGY_FILE'
                     ]
 
                     def config = [:]
@@ -393,11 +399,11 @@ pipeline {
                         if (params.DRC) {
                             scriptsToRun.add('drc/dose_response.sh')
                         }
-                        if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
-                            scriptsToRun.add('biomarker/biomarker.sh')
-                        }
                         if (params.SYNERGY) {
                             scriptsToRun.add('synergy/synergy.sh')
+                        }
+                        if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
+                            scriptsToRun.add('biomarker/biomarker.sh')
                         }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filter_counts_qc/filter_counts_qc.sh')
