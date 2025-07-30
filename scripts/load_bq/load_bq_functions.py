@@ -44,39 +44,41 @@ def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFr
             field = schema_map[col]
             target_dtype = get_polars_dtype_from_bq_field(field)
             
-            try:
-                # Only cast if the current type doesn't match the target
-                if df[col].dtype != target_dtype:
-                    logging.info(f"Coercing column '{col}' from {df[col].dtype} to {target_dtype}")
-                    
-                    # Special handling for numeric columns that might contain scientific notation
-                    if target_dtype == pl.Int64 and pl.col(col).is_float().any().item():
-                        # First convert to float, then to integer
-                        logging.info(f"Column '{col}' contains floating point values, converting to float first")
-                        df = df.with_columns(
-                            pl.when(pl.col(col).is_not_null())
-                              .then(pl.col(col).cast(pl.Float64).round().cast(pl.Int64))
-                              .otherwise(None)
-                              .alias(col)
-                        )
-                    else:
-                        df = df.with_columns(pl.col(col).cast(target_dtype, strict=False))
-            except Exception as e:
-                logging.warning(f"Failed to coerce column '{col}' to {target_dtype}: {e}")
-                # If the column should be integer but contains floats, try a different approach
+            # Check if current type doesn't match the target
+            if df[col].dtype != target_dtype:
+                logging.info(f"Coercing column '{col}' from {df[col].dtype} to {target_dtype}")
+                
+                # Special handling for integer target types
                 if target_dtype == pl.Int64:
                     try:
-                        logging.info(f"Trying alternative conversion for '{col}' to Int64")
+                        # First try to convert to float, then round, then to integer
+                        logging.info(f"Converting '{col}' to Int64 via float")
                         df = df.with_columns(
                             pl.when(pl.col(col).is_not_null())
-                              .then(pl.col(col).cast(pl.Float64).round().cast(pl.Int64))
+                              .then(pl.col(col).cast(pl.Utf8).cast(pl.Float64).round().cast(pl.Int64))
                               .otherwise(None)
                               .alias(col)
                         )
-                    except Exception as e2:
-                        logging.warning(f"Alternative conversion also failed for '{col}': {e2}")
-                # Continue without coercing this column if all attempts fail
-                pass
+                    except Exception as e:
+                        logging.warning(f"Failed to convert '{col}' to Int64: {e}")
+                        # Try a different approach for scientific notation
+                        try:
+                            # Convert to string first to handle scientific notation
+                            logging.info(f"Trying string-based conversion for '{col}'")
+                            df = df.with_columns(
+                                pl.col(col).map_elements(
+                                    lambda x: int(float(x)) if x is not None else None,
+                                    return_dtype=pl.Int64
+                                ).alias(col)
+                            )
+                        except Exception as e2:
+                            logging.warning(f"All conversion attempts failed for '{col}': {e2}")
+                else:
+                    # For non-integer types, use standard casting
+                    try:
+                        df = df.with_columns(pl.col(col).cast(target_dtype, strict=False))
+                    except Exception as e:
+                        logging.warning(f"Failed to coerce column '{col}' to {target_dtype}: {e}")
     
     return df
 
