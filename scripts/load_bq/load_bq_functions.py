@@ -4,7 +4,6 @@ from google.cloud import bigquery
 import os
 import tempfile
 import polars as pl
-import pandas as pd
 from typing import Dict, Any
 
 
@@ -40,9 +39,6 @@ def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFr
     """Coerce DataFrame column types to match BigQuery table schema."""
     schema_map = {field.name: field for field in table.schema}
     
-    # Process the DataFrame in a single pass to avoid multiple transformations
-    expressions = []
-    
     for col in df.columns:
         if col in schema_map:
             field = schema_map[col]
@@ -54,41 +50,20 @@ def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFr
                 
                 # Special handling for integer target types
                 if target_dtype == pl.Int64:
-                    # Pre-process the column to handle scientific notation
-                    # Convert to Python objects first to handle the conversion manually
                     try:
-                        # Create a new temporary column with the converted values
-                        temp_col_name = f"{col}_temp"
+                        # Convert to string first, then to float, then to integer
+                        # This handles scientific notation properly
                         df = df.with_columns(
-                            pl.col(col).alias(temp_col_name)
+                            pl.col(col)
+                              .cast(pl.Utf8)
+                              .map_elements(
+                                  lambda x: int(float(x)) if x is not None and x.strip() != "" else None,
+                                  return_dtype=pl.Int64
+                              )
+                              .alias(col)
                         )
-                        
-                        # Convert the column to a list, process it, and create a new column
-                        col_values = df[temp_col_name].to_list()
-                        converted_values = []
-                        
-                        for val in col_values:
-                            try:
-                                if val is None or pd.isna(val):
-                                    converted_values.append(None)
-                                else:
-                                    # Handle scientific notation by converting to float first
-                                    float_val = float(val)
-                                    converted_values.append(int(float_val))
-                            except (ValueError, TypeError):
-                                converted_values.append(None)
-                        
-                        # Replace the original column with the converted values
-                        df = df.with_columns(
-                            pl.Series(name=col, values=converted_values, dtype=pl.Int64)
-                        )
-                        
-                        # Drop the temporary column
-                        df = df.drop(temp_col_name)
-                        
                     except Exception as e:
                         logging.warning(f"Failed to convert '{col}' to Int64: {e}")
-                        # Keep the original column if conversion fails
                 else:
                     # For non-integer types, use standard casting
                     try:
@@ -107,23 +82,25 @@ def filter_csv_to_matching_columns(
     """Create a temp CSV with only the columns that exist in the BigQuery table."""
     allowed_columns = {field.name for field in table.schema}
 
-    # Import pandas only when needed
-    import pandas as pd
-    
-    # First read with pandas to better handle scientific notation
-    pandas_df = pd.read_csv(file_path, na_values="NA")
+    # Read CSV with polars, treating all columns as strings initially
+    # This prevents scientific notation parsing issues
+    df = pl.read_csv(
+        file_path, 
+        null_values=["NA", ""], 
+        infer_schema_length=0,  # Disable schema inference
+        dtypes={col: pl.Utf8 for col in pl.scan_csv(file_path, n_rows=5).collect().columns}
+    )
     
     # Filter columns
-    filtered_cols = [col for col in pandas_df.columns if col in allowed_columns]
-    pandas_df = pandas_df[filtered_cols]
+    filtered_cols = [col for col in df.columns if col in allowed_columns]
+    df = df.select(filtered_cols)
     
     # Add sushi_build and screen column
     if build_name:
-        pandas_df["sushi_build"] = build_name
-        pandas_df["screen"] = screen
-    
-    # Convert to polars
-    df = pl.from_pandas(pandas_df)
+        df = df.with_columns(
+            pl.lit(build_name).alias("sushi_build"),
+            pl.lit(screen).alias("screen")
+        )
     
     # Coerce data types to match BigQuery schema
     df = coerce_dataframe_types(df, table)
