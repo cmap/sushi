@@ -4,6 +4,7 @@ from google.cloud import bigquery
 import os
 import tempfile
 import polars as pl
+import pandas as pd
 from typing import Dict, Any
 
 
@@ -39,6 +40,9 @@ def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFr
     """Coerce DataFrame column types to match BigQuery table schema."""
     schema_map = {field.name: field for field in table.schema}
     
+    # Process the DataFrame in a single pass to avoid multiple transformations
+    expressions = []
+    
     for col in df.columns:
         if col in schema_map:
             field = schema_map[col]
@@ -50,33 +54,47 @@ def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFr
                 
                 # Special handling for integer target types
                 if target_dtype == pl.Int64:
+                    # Pre-process the column to handle scientific notation
+                    # Convert to Python objects first to handle the conversion manually
                     try:
-                        # First try to convert to float, then round, then to integer
-                        logging.info(f"Converting '{col}' to Int64 via float")
+                        # Create a new temporary column with the converted values
+                        temp_col_name = f"{col}_temp"
                         df = df.with_columns(
-                            pl.when(pl.col(col).is_not_null())
-                              .then(pl.col(col).cast(pl.Utf8).cast(pl.Float64).round().cast(pl.Int64))
-                              .otherwise(None)
-                              .alias(col)
+                            pl.col(col).alias(temp_col_name)
                         )
+                        
+                        # Convert the column to a list, process it, and create a new column
+                        col_values = df[temp_col_name].to_list()
+                        converted_values = []
+                        
+                        for val in col_values:
+                            try:
+                                if val is None or pd.isna(val):
+                                    converted_values.append(None)
+                                else:
+                                    # Handle scientific notation by converting to float first
+                                    float_val = float(val)
+                                    converted_values.append(int(float_val))
+                            except (ValueError, TypeError):
+                                converted_values.append(None)
+                        
+                        # Replace the original column with the converted values
+                        df = df.with_columns(
+                            pl.Series(name=col, values=converted_values, dtype=pl.Int64)
+                        )
+                        
+                        # Drop the temporary column
+                        df = df.drop(temp_col_name)
+                        
                     except Exception as e:
                         logging.warning(f"Failed to convert '{col}' to Int64: {e}")
-                        # Try a different approach for scientific notation
-                        try:
-                            # Convert to string first to handle scientific notation
-                            logging.info(f"Trying string-based conversion for '{col}'")
-                            df = df.with_columns(
-                                pl.col(col).map_elements(
-                                    lambda x: int(float(x)) if x is not None else None,
-                                    return_dtype=pl.Int64
-                                ).alias(col)
-                            )
-                        except Exception as e2:
-                            logging.warning(f"All conversion attempts failed for '{col}': {e2}")
+                        # Keep the original column if conversion fails
                 else:
                     # For non-integer types, use standard casting
                     try:
-                        df = df.with_columns(pl.col(col).cast(target_dtype, strict=False))
+                        df = df.with_columns(
+                            pl.col(col).cast(target_dtype, strict=False)
+                        )
                     except Exception as e:
                         logging.warning(f"Failed to coerce column '{col}' to {target_dtype}: {e}")
     
@@ -89,15 +107,24 @@ def filter_csv_to_matching_columns(
     """Create a temp CSV with only the columns that exist in the BigQuery table."""
     allowed_columns = {field.name for field in table.schema}
 
-    df = pl.read_csv(file_path, null_values="NA", infer_schema_length=10000)
-    filtered_cols = [col for col in df.columns if col in allowed_columns]
-    df = df.select(filtered_cols)
-
+    # Import pandas only when needed
+    import pandas as pd
+    
+    # First read with pandas to better handle scientific notation
+    pandas_df = pd.read_csv(file_path, na_values="NA")
+    
+    # Filter columns
+    filtered_cols = [col for col in pandas_df.columns if col in allowed_columns]
+    pandas_df = pandas_df[filtered_cols]
+    
     # Add sushi_build and screen column
     if build_name:
-        df = df.with_columns(pl.lit(build_name).alias("sushi_build"))
-        df = df.with_columns(pl.lit(screen).alias("screen"))
-
+        pandas_df["sushi_build"] = build_name
+        pandas_df["screen"] = screen
+    
+    # Convert to polars
+    df = pl.from_pandas(pandas_df)
+    
     # Coerce data types to match BigQuery schema
     df = coerce_dataframe_types(df, table)
 
