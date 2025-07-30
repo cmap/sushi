@@ -57,15 +57,29 @@ def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFr
                             pl.col(col)
                               .cast(pl.Utf8)
                               .map_elements(
-                                  lambda x: int(float(x)) if x is not None and x.strip() != "" else None,
+                                  lambda x: int(float(x)) if x is not None and x.strip() != "" and x.upper() != "NA" else None,
                                   return_dtype=pl.Int64
                               )
                               .alias(col)
                         )
                     except Exception as e:
                         logging.warning(f"Failed to convert '{col}' to Int64: {e}")
+                elif target_dtype == pl.Float64:
+                    try:
+                        # Handle NA values for float columns
+                        df = df.with_columns(
+                            pl.col(col)
+                              .cast(pl.Utf8)
+                              .map_elements(
+                                  lambda x: float(x) if x is not None and x.strip() != "" and x.upper() != "NA" else None,
+                                  return_dtype=pl.Float64
+                              )
+                              .alias(col)
+                        )
+                    except Exception as e:
+                        logging.warning(f"Failed to convert '{col}' to Float64: {e}")
                 else:
-                    # For non-integer types, use standard casting
+                    # For non-numeric types, use standard casting
                     try:
                         df = df.with_columns(
                             pl.col(col).cast(target_dtype, strict=False)
@@ -84,12 +98,21 @@ def filter_csv_to_matching_columns(
 
     # Read CSV with polars, treating all columns as strings initially
     # This prevents scientific notation parsing issues
-    df = pl.read_csv(
-        file_path, 
-        null_values=["NA", ""], 
-        infer_schema_length=0,  # Disable schema inference
-        dtypes={col: pl.Utf8 for col in pl.scan_csv(file_path, n_rows=5).collect().columns}
-    )
+    try:
+        column_names = pl.scan_csv(file_path, n_rows=5).collect().columns
+        df = pl.read_csv(
+            file_path, 
+            null_values=["NA", ""], 
+            infer_schema_length=0,  # Disable schema inference
+            dtypes={col: pl.Utf8 for col in column_names}
+        )
+    except Exception as e:
+        logging.warning(f"Error with schema inference, falling back to basic CSV reading: {e}")
+        df = pl.read_csv(
+            file_path,
+            null_values=["NA", ""],
+            infer_schema_length=0
+        )
     
     # Filter columns
     filtered_cols = [col for col in df.columns if col in allowed_columns]
