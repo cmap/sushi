@@ -12,7 +12,6 @@
 #'                    cell_set,day by default.
 #' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. 
 #'          Generally log2_normalized_n if running on normalized_counts or n if running on filtered_counts
-#' @param count_threshold - threshold for determining low counts, defaults to 40.
 #' @param cell_line_cols - Vector of columns that define a cell line. Defaults to lua, depmap_id, and pool_id
 #' @return - l2fc data.frame with l2fc column
 #' @export
@@ -20,7 +19,7 @@ compute_l2fc= function(normalized_counts,
                        control_type = "ctl_vehicle",
                        sig_cols=c('cell_set','pert_name','pert_dose','pert_dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
-                       count_col_name="log2_normalized_n", count_threshold= 40,
+                       count_col_name="log2_normalized_n",
                        cell_line_cols= c('lua', 'depmap_id', 'pool_id')) {
   
   # Validation: Check that sig_cols are in normalized_counts ----
