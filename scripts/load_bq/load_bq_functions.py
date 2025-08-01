@@ -58,28 +58,45 @@ def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFr
 
 
 def filter_csv_to_matching_columns(
-    file_path: str, table: bigquery.Table, build_name: str, screen: str
+        file_path: str, table: bigquery.Table, build_name: str, screen: str
 ) -> str:
-    """Create a temp CSV with only the columns that exist in the BigQuery table."""
-    allowed_columns = {field.name for field in table.schema}
+    """Creates a temp CSV with columns correctly aligned to the BigQuery table schema."""
+    schema_map = {field.name: field for field in table.schema}
 
     df = pl.read_csv(file_path, null_values="NA", infer_schema_length=10000)
-    filtered_cols = [col for col in df.columns if col in allowed_columns]
-    df = df.select(filtered_cols)
 
-    # Add sushi_build and screen column
+    # 1. Identify missing columns and columns to drop
+    columns_to_keep = [field.name for field in table.schema]
+    original_columns = set(df.columns)
+
+    missing_cols = [col for col in columns_to_keep if col not in original_columns]
+    extra_cols = original_columns - set(columns_to_keep)
+
+    # 2. Add missing columns with null values
+    for col in missing_cols:
+        # Get the correct Polars dtype from the BQ schema
+        field = schema_map.get(col)
+        if field:
+            dtype = get_polars_dtype_from_bq_field(field)
+            df = df.with_columns(pl.lit(None).cast(dtype).alias(col))
+        else:
+            logging.warning(f"Could not find schema for missing column: {col}")
+
+    # 3. Select columns in the correct order
+    df = df.select(columns_to_keep)
+
+    # 4. Add sushi_build and screen column
     if build_name:
         df = df.with_columns(pl.lit(build_name).alias("sushi_build"))
         df = df.with_columns(pl.lit(screen).alias("screen"))
 
-    # Coerce data types to match BigQuery schema
+    # 5. Coerce data types and write to file...
     df = coerce_dataframe_types(df, table)
 
-    # Write to temp file
     temp_fd, temp_path = tempfile.mkstemp(suffix=".csv")
-    os.close(temp_fd)  # Close file descriptor so Polars can write
+    os.close(temp_fd)
     df.write_csv(temp_path)
-    logging.info(f"Filtered {len(df.columns)} columns for upload: {filtered_cols}")
+    logging.info(f"Final columns for upload: {df.columns}")
     return temp_path
 
 
