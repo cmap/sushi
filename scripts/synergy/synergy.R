@@ -100,10 +100,13 @@ trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
                                new_l2fc_col_names = new_names,
                                combination_col = args$combination_col)
 
+print("post restructure")
+print(head(trt_synergy))
 # Add synergy scores to data.table in-place
 calculate_synergy(restructured_l2fc = trt_synergy,
                   l2fc_cols = new_names)
 print("Calculated synergies.")
+print(head(trt_synergy))
 
 # Pull out pvalues ----
 # Open hdf5 connection
