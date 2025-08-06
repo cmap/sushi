@@ -100,13 +100,10 @@ trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
                                new_l2fc_col_names = new_names,
                                combination_col = args$combination_col)
 
-print("post restructure")
-print(head(trt_synergy))
 # Add synergy scores to data.table in-place
 calculate_synergy(restructured_l2fc = trt_synergy,
                   l2fc_cols = new_names)
 print("Calculated synergies.")
-print(head(trt_synergy))
 
 # Pull out pvalues ----
 # Open hdf5 connection
@@ -114,7 +111,7 @@ dmso_synergy = rhdf5::H5Fopen(file.path(args$out, "dmso_synergy.h5"))
 existing_groups = rhdf5::h5ls(file.path(args$out, "dmso_synergy.h5"))
 
 # Create group name and filter for only cls that were sampled
-trt_synergy[, group_name := do.call(paste, c(.SD, sep = "___")), .SDcols = group_name_cols]
+trt_synergy[, group_name := do.call(paste, c(.SD, sep = "__")), .SDcols = group_name_cols]
 # Filter out names not in hf file
 trt_synergy = trt_synergy[group_name %in% existing_groups$name, ]
 
