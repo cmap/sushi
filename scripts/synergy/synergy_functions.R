@@ -87,13 +87,19 @@ calculate_synergy = function(restructured_l2fc, l2fc_cols, viab_cap = 1) {
 
 create_dmso_synergy_hdf5 = function(dmso_l2fc, group_name_cols, path,
                                     n_samples, size = 3, replace = FALSE, seed = 2) {
+  # Convert dmso_l2fc to data.table if it is not
+  if (data.table::is.data.table(dmso_l2fc) == FALSE) {
+    message("Converting dmso_l2fc to data.table object.")
+    dmso_l2fc = data.table::as.data.table(dmso_l2fc)
+  }
+
   # Remove exisitng hdf5 file of the same name
   if (file.exists(path)) {
-    print(paste0("Removing existing h5 file at ", path))
+    message("Removing existing h5 file at ", path)
     file.remove(path)
   }
 
-  print(paste0("Creating new h5 file at ", path))
+  message("Creating new h5 file at ", path)
   rhdf5::h5createFile(path)
 
   # Create unique group names for each plate + cell line for hdf5 hierarchy
