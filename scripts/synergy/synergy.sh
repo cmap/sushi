@@ -37,7 +37,6 @@ args=(
 --l2fc_col "$COLLAPSED_L2FC_COLUMN"
 --n_samples "$N_SAMPLES"
 --negcon_type "$CTL_TYPES"
---viab_cap "$VIABILITY_CAP"
 --out "$BUILD_DIR"
 )
 
