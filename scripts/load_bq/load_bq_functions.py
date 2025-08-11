@@ -137,7 +137,7 @@ def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name, sc
         delete_rows_for_build(client, dataset_id, table_id, build_name)
 
     table_ref = client.dataset(dataset_id).table(table_id)
-    table = client.get_table(table_ref)  # Get full table object including schema
+    table = client.get_table(table_ref)  # Get full table object including schemaIn the
 
     # Filter the CSV to only include matching columns
     filtered_csv = filter_csv_to_matching_columns(file_path, table, build_name, screen)
