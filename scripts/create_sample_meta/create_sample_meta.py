@@ -114,7 +114,11 @@ def main():
         help="Pert plates in the screen to use. If not provided, all pert plates will be used.",
     )
     parser.add_argument(
-        "--screen_type", "-t", type=str, required=False, default="MTS_SEQ",
+        "--screen_type",
+        "-t",
+        type=str,
+        required=False,
+        default="MTS_SEQ",
     )
 
     args = parser.parse_args()
@@ -171,7 +175,9 @@ def main():
 
             # Remove additional columns (only if they exist)
             additional_cols = ["treatment_2", "is_combination"]
-            existing_additional_cols = [col for col in additional_cols if col in df.columns]
+            existing_additional_cols = [
+                col for col in additional_cols if col in df.columns
+            ]
             if existing_additional_cols:
                 df = df.drop(columns=existing_additional_cols)
 
@@ -205,5 +211,7 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     main()

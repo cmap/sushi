@@ -23,63 +23,219 @@ def get_polars_dtype_from_bq_field(field: bigquery.SchemaField) -> pl.DataType:
         "TIME": pl.Time,
         "NUMERIC": pl.Float64,
         "BIGNUMERIC": pl.Float64,
+        "BYTES": pl.Binary,
+        "JSON": pl.Utf8,  # JSON stored as string in Polars
     }
-    
+
     bq_type = field.field_type.upper()
     polars_type = type_mapping.get(bq_type, pl.Utf8)  # Default to string if unknown
-    
+
     if field.mode == "REPEATED":
         # For repeated fields, wrap in List
         return pl.List(polars_type)
-    
+
     return polars_type
 
 
 def coerce_dataframe_types(df: pl.DataFrame, table: bigquery.Table) -> pl.DataFrame:
     """Coerce DataFrame column types to match BigQuery table schema."""
     schema_map = {field.name: field for field in table.schema}
-    
+
+    cast_expressions = []
+
     for col in df.columns:
         if col in schema_map:
             field = schema_map[col]
             target_dtype = get_polars_dtype_from_bq_field(field)
-            
+            current_dtype = df[col].dtype
+
+            # Skip if types already match
+            if current_dtype == target_dtype:
+                cast_expressions.append(pl.col(col))
+                continue
+
             try:
-                # Only cast if the current type doesn't match the target
-                if df[col].dtype != target_dtype:
-                    logging.info(f"Coercing column '{col}' from {df[col].dtype} to {target_dtype}")
-                    df = df.with_columns(pl.col(col).cast(target_dtype, strict=False))
+                logging.info(
+                    f"Coercing column '{col}' from {current_dtype} to {target_dtype}"
+                )
+
+                # Handle special cases for type coercion
+                if target_dtype == pl.Boolean:
+                    # Handle various boolean representations
+                    cast_expr = (
+                        pl.col(col)
+                        .map_elements(
+                            lambda x: _coerce_to_boolean(x), return_dtype=pl.Boolean
+                        )
+                        .alias(col)
+                    )
+                elif target_dtype in [pl.Int64, pl.Float64]:
+                    # Handle numeric coercion with null handling
+                    cast_expr = (
+                        pl.col(col)
+                        .map_elements(
+                            lambda x: _coerce_to_numeric(x, target_dtype),
+                            return_dtype=target_dtype,
+                        )
+                        .alias(col)
+                    )
+                elif target_dtype == pl.Date:
+                    # Handle date parsing
+                    cast_expr = (
+                        pl.col(col)
+                        .str.strptime(pl.Date, format=None, strict=False)
+                        .alias(col)
+                    )
+                elif target_dtype == pl.Datetime:
+                    # Handle datetime parsing
+                    cast_expr = (
+                        pl.col(col)
+                        .str.strptime(pl.Datetime, format=None, strict=False)
+                        .alias(col)
+                    )
+                else:
+                    # Default casting
+                    cast_expr = pl.col(col).cast(target_dtype, strict=False).alias(col)
+
+                cast_expressions.append(cast_expr)
+
             except Exception as e:
-                logging.warning(f"Failed to coerce column '{col}' to {target_dtype}: {e}")
-                # Continue without coercing this column
-                pass
-    
+                logging.warning(
+                    f"Failed to coerce column '{col}' to {target_dtype}: {e}"
+                )
+                # Keep original column if coercion fails
+                cast_expressions.append(pl.col(col))
+        else:
+            # Keep columns not in schema as-is
+            cast_expressions.append(pl.col(col))
+
+    # Apply all transformations at once
+    df = df.with_columns(cast_expressions)
     return df
+
+
+def _coerce_to_boolean(value) -> bool:
+    """Helper function to coerce various values to boolean."""
+    if value is None or (
+        isinstance(value, str) and value.lower() in ["", "na", "null"]
+    ):
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() in ["true", "1", "yes", "t", "y"]
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return None
+
+
+def _coerce_to_numeric(value, target_dtype):
+    """Helper function to coerce values to numeric types."""
+    if value is None or (
+        isinstance(value, str) and value.lower() in ["", "na", "null"]
+    ):
+        return None
+    try:
+        if target_dtype == pl.Int64:
+            return int(float(value))  # Convert through float to handle "1.0" -> 1
+        elif target_dtype == pl.Float64:
+            return float(value)
+    except (ValueError, TypeError):
+        return None
+    return None
 
 
 def filter_csv_to_matching_columns(
     file_path: str, table: bigquery.Table, build_name: str, screen: str
 ) -> str:
-    """Create a temp CSV with only the columns that exist in the BigQuery table."""
-    allowed_columns = {field.name for field in table.schema}
+    """Creates a temp CSV with columns correctly aligned to the BigQuery table schema."""
+    schema_map = {field.name: field for field in table.schema}
 
-    df = pl.read_csv(file_path, null_values="NA", infer_schema_length=10000)
-    filtered_cols = [col for col in df.columns if col in allowed_columns]
-    df = df.select(filtered_cols)
+    # Read CSV with more robust null handling
+    null_values = ["", "NA", "NULL", "null", "N/A", "n/a", "NaN", "nan"]
 
-    # Add sushi_build and screen column
-    if build_name:
-        df = df.with_columns(pl.lit(build_name).alias("sushi_build"))
-        df = df.with_columns(pl.lit(screen).alias("screen"))
+    try:
+        df = pl.read_csv(
+            file_path,
+            null_values=null_values,
+            infer_schema_length=10000,
+            ignore_errors=True,  # More forgiving parsing
+        )
+        logging.info(
+            f"Successfully read CSV with {len(df)} rows and columns: {df.columns}"
+        )
+    except Exception as e:
+        logging.error(f"Failed to read CSV {file_path}: {e}")
+        raise
 
-    # Coerce data types to match BigQuery schema
+    # 1. Get expected columns from BQ schema (excluding metadata columns we'll add)
+    metadata_cols = {"sushi_build", "screen"}
+    bq_columns = [
+        field.name for field in table.schema if field.name not in metadata_cols
+    ]
+    original_columns = set(df.columns)
+
+    missing_cols = [col for col in bq_columns if col not in original_columns]
+    extra_cols = original_columns - set(bq_columns) - metadata_cols
+
+    if missing_cols:
+        logging.info(f"Missing columns (will be added as null): {missing_cols}")
+    if extra_cols:
+        logging.info(f"Extra columns (will be dropped): {extra_cols}")
+
+    # 2. Add missing columns with appropriate null values
+    add_expressions = []
+    for col in missing_cols:
+        field = schema_map.get(col)
+        if field:
+            dtype = get_polars_dtype_from_bq_field(field)
+            add_expressions.append(pl.lit(None).cast(dtype).alias(col))
+        else:
+            logging.warning(f"Could not find schema for missing column: {col}")
+            add_expressions.append(pl.lit(None).alias(col))
+
+    if add_expressions:
+        df = df.with_columns(add_expressions)
+
+    # 3. Add metadata columns
+    metadata_expressions = []
+    if build_name and "sushi_build" in schema_map:
+        metadata_expressions.append(pl.lit(build_name).alias("sushi_build"))
+    if screen and "screen" in schema_map:
+        metadata_expressions.append(pl.lit(screen).alias("screen"))
+
+    if metadata_expressions:
+        df = df.with_columns(metadata_expressions)
+
+    # 4. Select and order columns exactly as in BQ schema
+    final_columns = [field.name for field in table.schema]
+    available_columns = [col for col in final_columns if col in df.columns]
+
+    if len(available_columns) != len(final_columns):
+        missing_final = set(final_columns) - set(available_columns)
+        logging.warning(f"Still missing columns after processing: {missing_final}")
+
+    df = df.select(available_columns)
+
+    # 5. Coerce data types to match BQ schema
     df = coerce_dataframe_types(df, table)
 
-    # Write to temp file
+    # 6. Validate the final DataFrame
+    logging.info(f"Final DataFrame shape: {df.shape}")
+    logging.info(f"Final columns: {df.columns}")
+    logging.info(f"Column types: {dict(zip(df.columns, df.dtypes))}")
+
+    # 7. Write to temporary file
     temp_fd, temp_path = tempfile.mkstemp(suffix=".csv")
-    os.close(temp_fd)  # Close file descriptor so Polars can write
-    df.write_csv(temp_path)
-    logging.info(f"Filtered {len(df.columns)} columns for upload: {filtered_cols}")
+    os.close(temp_fd)
+
+    try:
+        df.write_csv(temp_path, null_value="")  # Use empty string for nulls in CSV
+        logging.info(f"Successfully wrote processed data to {temp_path}")
+    except Exception as e:
+        logging.error(f"Failed to write CSV to {temp_path}: {e}")
+        raise
+
     return temp_path
 
 
@@ -116,25 +272,64 @@ def delete_rows_for_build(client, dataset_id, table_id, build_name):
 
 
 def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name, screen):
-    if build_name:
-        delete_rows_for_build(client, dataset_id, table_id, build_name)
+    """Load CSV to BigQuery with robust schema matching and error handling."""
+    try:
+        # Delete existing rows for this build if specified
+        if build_name:
+            delete_rows_for_build(client, dataset_id, table_id, build_name)
 
-    table_ref = client.dataset(dataset_id).table(table_id)
-    table = client.get_table(table_ref)  # Get full table object including schema
+        table_ref = client.dataset(dataset_id).table(table_id)
+        table = client.get_table(table_ref)  # Get full table object including schema
 
-    # Filter the CSV to only include matching columns
-    filtered_csv = filter_csv_to_matching_columns(file_path, table, build_name, screen)
+        logging.info(f"BQ table schema has {len(table.schema)} fields")
+        for field in table.schema:
+            logging.debug(f"  {field.name}: {field.field_type} ({field.mode})")
 
-    job_config = bigquery.LoadJobConfig(
-        source_format=bigquery.SourceFormat.CSV,
-        skip_leading_rows=1,
-        autodetect=True,
-        write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-        ignore_unknown_values=True,
-    )
+        # Filter and align CSV to match BQ schema
+        filtered_csv = filter_csv_to_matching_columns(
+            file_path, table, build_name, screen
+        )
 
-    with open(filtered_csv, "rb") as source_file:
-        job = client.load_table_from_file(source_file, table_ref, job_config=job_config)
+        # Configure load job with strict schema enforcement
+        job_config = bigquery.LoadJobConfig(
+            source_format=bigquery.SourceFormat.CSV,
+            skip_leading_rows=1,
+            autodetect=False,  # Use explicit schema
+            schema=table.schema,
+            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            ignore_unknown_values=False,  # Be strict about unknown values
+            allow_jagged_rows=False,  # Require consistent row structure
+            allow_quoted_newlines=True,  # Handle quoted newlines in data
+            field_delimiter=",",
+            null_marker="",  # Empty string represents null
+        )
 
-    job.result()
-    logging.info(f"Appended {filtered_csv} to {dataset_id}.{table_id}")
+        # Load the data
+        with open(filtered_csv, "rb") as source_file:
+            job = client.load_table_from_file(
+                source_file, table_ref, job_config=job_config
+            )
+
+        # Wait for job completion and handle errors
+        try:
+            job.result()  # Wait for the job to complete
+            logging.info(f"Successfully loaded {file_path} to {dataset_id}.{table_id}")
+            logging.info(f"Loaded {job.output_rows} rows")
+        except Exception as load_error:
+            logging.error(f"BigQuery load job failed: {load_error}")
+            if hasattr(job, "errors") and job.errors:
+                for error in job.errors:
+                    logging.error(f"  Error: {error}")
+            raise
+
+    except Exception as e:
+        logging.error(f"Failed to load {file_path} to BigQuery: {e}")
+        raise
+    finally:
+        # Clean up temporary file
+        if "filtered_csv" in locals() and os.path.exists(filtered_csv):
+            try:
+                os.unlink(filtered_csv)
+                logging.debug(f"Cleaned up temporary file: {filtered_csv}")
+            except Exception as cleanup_error:
+                logging.warning(f"Failed to clean up {filtered_csv}: {cleanup_error}")
