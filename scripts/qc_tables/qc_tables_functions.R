@@ -642,7 +642,7 @@ plate_cell_qc_flags <- function(plate_cell_table,
 #'
 #' @import dplyr
 id_cols_qc_flags <- function(id_cols_table,
-                             group_cols = c("pcr_plate", "pcr_well", "pert_type"),
+                             group_cols = c("pcr_plate", "pcr_well", "pert_type", "pert_plate", "cell_set"),
                              contamination_threshold = contamination_threshold,
                              cb_mae_threshold = 1,
                              cb_spearman_threshold = 0.8,
