@@ -838,7 +838,7 @@ compute_variance_decomposition <- function(normalized_counts, metric = 'n', negc
 
     # Join all variance components together
     var_decomp <- dplyr::left_join(var_log_cl_in_pool, var_log_fpool,
-                                       by=c("pool_id", "cell_set", "pcr_plate", "pert_plate")) %>%
+                                       by=c("pool_id", "cell_set", "pcr_plate")) %>%
         dplyr::left_join(var_log_fline) %>%
       dplyr::group_by(cell_set, pool_id, pcr_plate, pert_plate) %>%
       dplyr::summarise(across(where(is.numeric), function(x) median(x, na.rm = TRUE)))
