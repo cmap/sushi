@@ -788,7 +788,7 @@ compute_variance_decomposition <- function(normalized_counts, metric = 'n', negc
         dplyr::group_by(across(c(all_of(id_cols), all_of(cell_line_cols), cb_name))) %>%
         dplyr::mutate(fcell_line=sum(.data[[metric]]+1)/tot_counts) %>%
         dplyr::ungroup() %>%
-        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate))) %>%
+        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate, pert_plate))) %>%
         dplyr::summarise(var_log2_fline=var(log2(fcell_line)),
                          median_log2_fline=median(log2(fcell_line)),
                          mad_log2_fline=mad(log2(fcell_line)),
@@ -805,7 +805,7 @@ compute_variance_decomposition <- function(normalized_counts, metric = 'n', negc
         dplyr::group_by(across(c(all_of(id_cols), all_of(cell_line_cols), cb_name))) %>%
         dplyr::mutate(fcl_in_pool=sum(.data[[metric]]+1)/tot_counts) %>%
         dplyr::ungroup() %>%
-        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate))) %>%
+        dplyr::group_by(across(c(all_of(cell_line_cols), cb_name, pcr_plate, pert_plate))) %>%
         dplyr::summarise(var_log2_fcl_in_pool=var(log2(fcl_in_pool)),
                          mad_log2_fcl_in_pool=mad(log2(fcl_in_pool)),
                          median_log2_fcl_in_pool=median(log2(fcl_in_pool)),
@@ -827,7 +827,7 @@ compute_variance_decomposition <- function(normalized_counts, metric = 'n', negc
 
     # Compute variance of fraction of reads in pools
     var_log_fpool <- pwise_negcon_stats %>%
-        dplyr::group_by(cell_set, pcr_plate,
+        dplyr::group_by(cell_set, pcr_plate, pert_plate,
                         pool_id) %>%
         dplyr::summarise(var_log2_frac_pool_reads=var(log2(frac_reads)),
                          mad_log2_frac_pool_reads=mad(log2(frac_reads)),
@@ -838,7 +838,7 @@ compute_variance_decomposition <- function(normalized_counts, metric = 'n', negc
 
     # Join all variance components together
     var_decomp <- dplyr::left_join(var_log_cl_in_pool, var_log_fpool,
-                                       by=c("pool_id", "cell_set", "pcr_plate")) %>%
+                                       by=c("pool_id", "cell_set", "pcr_plate", "pert_plate")) %>%
         dplyr::left_join(var_log_fline) %>%
       dplyr::group_by(cell_set, pool_id, pcr_plate, pert_plate) %>%
       dplyr::summarise(across(where(is.numeric), function(x) median(x, na.rm = TRUE)))
