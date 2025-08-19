@@ -772,6 +772,9 @@ generate_pcr_plate_qc_flags_table <- function(plate_cell_table, fraction_expecte
 compute_variance_decomposition <- function(normalized_counts, metric = 'n', negcon = "ctl_vehicle",
                                            cell_line_cols = c("depmap_id", "lua", "pool_id", "cell_set"),
                                            id_cols = c("pcr_plate","pcr_well")) {
+    # Add "pert_plate" to id_cols if not already present
+    id_cols <- c(id_cols, "pert_plate")
+
     # Add pool_id annotations to control pools
     df <- normalized_counts %>%
       dplyr::mutate(pool_id=ifelse(!is.na(cb_name), "CTLBC", pool_id))
