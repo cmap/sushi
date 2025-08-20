@@ -854,12 +854,21 @@ compute_contamination_qc_tables <- function(prism_barcode_counts,
                                             cell_line_meta,
                                             cb_meta,
                                             sample_meta) {
+  # --- 0. Ensure all required columns are present ---
+  prism_barcode_counts_all <- prism_barcode_counts %>%
+    dplyr::left_join(sample_meta %>% select(pcr_plate, pcr_well, pert_plate),
+         by = c("pcr_plate", "pcr_well"))
+
+  unknown_barcode_counts_all <- unknown_barcode_counts %>%
+      dplyr::left_join(sample_meta %>% select(pcr_plate, pcr_well, pert_plate),
+           by = c("pcr_plate", "pcr_well"))
+
   # --- 1. Create total counts df with known and unknown barcodes ---
-  total_counts <- bind_rows(prism_barcode_counts, unknown_barcode_counts)
+  total_counts <- bind_rows(prism_barcode_counts_all, unknown_barcode_counts_all)
 
   # --- 2. Compute total counts for each well ---
   total_counts_by_well <- total_counts %>%
-    group_by(pcr_plate, pcr_well) %>%
+    group_by(pcr_plate, pcr_well, pert_plate) %>%
     summarise(well_count = sum(n), .groups = "drop")
 
   # --- 3. Get a list of expected reads ---
@@ -891,12 +900,12 @@ compute_contamination_qc_tables <- function(prism_barcode_counts,
 
   # --- 5. Annotate with sample metadata ---
   total_counts_with_read_type_annotated <- total_counts_with_read_type %>%
-    left_join(sample_meta, by = c("pcr_plate", "pcr_well"))
+    left_join(sample_meta, by = c("pcr_plate", "pcr_well", "pert_plate"))
 
   # --- 6. Join with total well counts and aggregate ---
   well_counts_by_read_type <- total_counts_with_read_type_annotated %>%
-    left_join(total_counts_by_well, by = c("pcr_plate", "pcr_well")) %>%
-    group_by(pcr_plate, pcr_well, read_type) %>%
+    left_join(total_counts_by_well, by = c("pcr_plate", "pcr_well", "pert_plate")) %>%
+    group_by(pcr_plate, pcr_well, pert_plate, read_type) %>%
     summarise(
       n = sum(n),
       well_count = first(well_count), # pl.first() is equivalent to first()
@@ -909,18 +918,10 @@ compute_contamination_qc_tables <- function(prism_barcode_counts,
 
   # --- 8. Compute the mean of the fractions per plate ---
   fraction_read_type_by_plate <- fraction_read_type_by_well %>%
-    group_by(pcr_plate, read_type) %>%
+    group_by(pcr_plate, pert_plate, read_type) %>%
     summarise(mean_fraction_reads = mean(fraction_well_reads), .groups = "drop")
 
-  # --- 9. Compute unexpected_barcode_counts ---
-  unexpected_barcode_counts <- total_counts_with_read_type_annotated %>%
-  filter(read_type == "unexpected_cell_line") %>%
-  group_by(forward_read_barcode) %>%
-  summarise(total_count = sum(n), .groups = "drop") %>%
-  arrange(desc(total_count))
-
   return(list(fraction_read_type_by_well = fraction_read_type_by_well,
-              fraction_read_type_by_plate = fraction_read_type_by_plate,
-              unexpected_barcode_counts = unexpected_barcode_counts))
+              fraction_read_type_by_plate = fraction_read_type_by_plate))
 }
 
