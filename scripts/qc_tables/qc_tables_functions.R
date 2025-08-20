@@ -921,7 +921,11 @@ compute_contamination_qc_tables <- function(prism_barcode_counts,
     group_by(pcr_plate, pert_plate, read_type) %>%
     summarise(mean_fraction_reads = mean(fraction_well_reads), .groups = "drop")
 
+  # --- 9. Filter the total_counts_with_read_type_annotated to include only relevant columns ---
+  total_counts_by_read_type <- total_counts_with_read_type_annotated %>% select(c("pcr_plate","pert_plate","pcr_well","forward_read_barcode","read_type","n"))
+
   return(list(fraction_read_type_by_well = fraction_read_type_by_well,
-              fraction_read_type_by_plate = fraction_read_type_by_plate))
+              fraction_read_type_by_plate = fraction_read_type_by_plate,
+              total_counts_by_read_type = total_counts_by_read_type))
 }
 
