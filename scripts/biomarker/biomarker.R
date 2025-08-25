@@ -73,7 +73,7 @@ message("INFO: synergy_biomarker is ", synergy_biomarker)
 
 # Create the treatment columns ----
 # Need to drop "cell_set"
-trt_cols = sig_cols[grepl("pert|is_combination|day", sig_cols)]
+trt_cols = sig_cols[!grepl("cell_set", sig_cols)]
 message("INFO: Treatment cols are ", sig_cols)
 
 # Check if the output directory exists, if not create it
