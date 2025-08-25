@@ -64,6 +64,8 @@ dmso_norm_ctrl = normalized_counts[pert_type == args$negcon_type, ]
 dmso_norm_trt = dmso_norm_ctrl
 dmso_norm_trt$pert_type = "trt_cp"
 dmso_norm_input = data.table::rbindlist(list(dmso_norm_trt, dmso_norm_ctrl), use.names = TRUE)
+# Center dmso values before calculating l2fc
+dmso_norm_input[, log2_normalized_n := log2_normalized_n - mean(log2_normalized_n), by = pcr_plate]
 
 dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
                          cell_line_cols = args$cell_line_cols,
