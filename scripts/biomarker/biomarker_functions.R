@@ -550,14 +550,14 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   necessary_columns <- unique(c(response_column, treatment_columns, "depmap_id"))
 
   if(any(!necessary_columns %in% colnames(input_file))){
-    warning(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
+    stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
                 " are missing from multivariate biomarker input file!"))
   }
 
   # cast the responses into a matrix
   M <- input_file %>%
     dplyr::filter(is.finite(.data[[response_column]])) %>%
-    tidyr::unite(cn, any_of(treatment_columns), sep = "::") %>%
+    tidyr::unite(cn, all_of(treatment_columns), sep = "::") %>%
     reshape2::acast(depmap_id ~ cn, value.var = response_column, fun.aggregate = aggregate_function) %>%
     transform_function()
 
@@ -567,9 +567,9 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
   # Export the biomarker table -----
   print(paste0("Writing the multivariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
-    dplyr::select(any_of(treatment_columns)) %>%
+    dplyr::select(all_of(treatment_columns)) %>%
     dplyr::distinct() %>% 
-    tidyr::unite(y, any_of(treatment_columns), sep = "::", remove = FALSE) %>% 
+    tidyr::unite(y, all_of(treatment_columns), sep = "::", remove = FALSE) %>% 
     dplyr::inner_join(multivariate_biomarker_table) %>% 
     dplyr::select(-y) %>%
     write.csv(file.path(out_path, output_file_name), row.names = FALSE)
@@ -629,14 +629,14 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   
   # soft warning
   if(any(!necessary_columns %in% colnames(input_file))){
-    print(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
+    stop(paste0(paste0(setdiff(necessary_columns, colnames(input_file)), collapse = ", "),
                 " are missing in univariate biomarker input file!"))
   }
 
   # cast the responses into a matrix
   M <- input_file %>%
     dplyr::filter(is.finite(.data[[response_column]])) %>%
-    tidyr::unite(cn, tidyselect::any_of(treatment_columns), sep = "::") %>%
+    tidyr::unite(cn, tidyselect::all_of(treatment_columns), sep = "::") %>%
     reshape2::acast(depmap_id ~ cn, value.var = response_column, fun.aggregate = aggregate_function) %>%
     transform_function()
 
@@ -650,9 +650,9 @@ create_univariate_biomarker_table <- function(in_path, out_path,
   # Export the biomarker table -----
   print(paste0("Writing the univariate output file to ", paste0(out_path, "/", output_file_name)))
   input_file %>%
-    dplyr::select(tidyselect::any_of(treatment_columns)) %>%
+    dplyr::select(tidyselect::all_of(treatment_columns)) %>%
     dplyr::distinct() %>%
-    tidyr::unite(y, any_of(treatment_columns), sep = "::", remove = FALSE) %>%
+    tidyr::unite(y, all_of(treatment_columns), sep = "::", remove = FALSE) %>%
     dplyr::inner_join(univariate_biomarker_table) %>%
     dplyr::select(-y) %>%
     write.csv(file.path(out_path, output_file_name), row.names = FALSE)
