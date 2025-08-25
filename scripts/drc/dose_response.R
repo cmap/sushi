@@ -17,6 +17,7 @@ parser$add_argument("--l2fc_column", default="l2fc",
                     help = "column containing log fold change values")
 parser$add_argument("--type_col", default="pert_type",
                     help = "column containing perturbation type, only those with trt_cp will be considered.")
+parser$add_argument("--build_type", default = "MTS", help = "Type of PRISM screen.")
 parser$add_argument("--cap_for_viability", default = 1.5,
                     help = paste0("The upper threshold for the viability values for before fitting the curves.
                                    Default is 1.5, any viability value above this value will be made equal to 1.5"))
@@ -74,6 +75,7 @@ for (idx in seq_along(dose_cols)) {
   # Both pert_dose and pert_dose_unit will be dropped when grouping
   drc_outputs[[idx]] = create_drc_table(
     LFC = subset_l2fc,
+    screen_type = args$build_type,
     cell_line_cols = cell_line_cols,
     treatment_cols = sig_cols[!grepl(cur_dose_col, sig_cols)],
     dose_col = cur_dose_col,
