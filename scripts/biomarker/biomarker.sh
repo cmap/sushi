@@ -48,19 +48,23 @@ enforce_abs_path() {
 
 enforce_abs_path COLLAPSED_LFC
 enforce_abs_path DR_PATH
+enforce_abs_path SYNERGY_FILE
 
 args=(
 --collapsed_lfc "$COLLAPSED_LFC"
 --drc_file "$DR_PATH"
+--synergy_path "${SYNERGY_FILE}"
 --build_dir "$BUILD_DIR"
 --sig_cols "$SIG_COLS"
 --univariate_biomarker "$UNIVARIATE_BIOMARKER"
 --multivariate_biomarker "$MULTIVARIATE_BIOMARKER"
 --biomarker_file "$BIOMARKER_FILE"
 --dr_column "$DR_COLUMN"
+--synergy_col "${SYNERGY_COL}"
 --collapsed_l2fc_column "$COLLAPSED_L2FC_COLUMN"
 --lfc_biomarker "$LFC_BIOMARKER"
 --auc_biomarker "$AUC_BIOMARKER"
+--synergy_biomarker "${SYNERGY_BIOMARKER}"
 --out_path "$BUILD_DIR/biomarker"
 )
 

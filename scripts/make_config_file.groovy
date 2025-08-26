@@ -83,19 +83,6 @@ pipeline {
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
 
         separator(
-          name: "analytics_modules",
-          sectionHeader: "Analytics Modules",
-          separatorStyle: separatorStyleCss,
-          sectionHeaderStyle: sectionHeaderStyleBlue
-        )
-        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
-        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
-        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
-        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
-        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
-        booleanParam(name: 'SYNERGY', defaultValue: false, description: 'Compute synergy for CPS.')
-
-        separator(
           name: "qc_modules",
           sectionHeader: "QC Modules",
           separatorStyle: separatorStyleCss,
@@ -114,6 +101,20 @@ pipeline {
         )
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
         string(name: 'DAYS', defaultValue: '5', description: 'Provide any days/timepoints (separated by commas) that should be maintained. If left blank, all days will be maintained.')
+        
+        separator(
+          name: "analytics_modules",
+          sectionHeader: "Analytics Modules",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'DRC', defaultValue: false, description: 'Generate dose response curves.')
+        booleanParam(name: 'UNIVARIATE_BIOMARKER', defaultValue: false, description: 'Run univariate biomarker analysis.')
+        booleanParam(name: 'MULTIVARIATE_BIOMARKER', defaultValue: false, description: 'Run multivariate biomarker analysis.')
+        booleanParam(name: 'LFC_BIOMARKER', defaultValue: false, description: 'Use log fold change values to run biomarker analysis. Requires the COMPUTE_LFC module to have been run.')
+        booleanParam(name: 'AUC_BIOMARKER', defaultValue: false, description: 'Use AUC values to run biomarker analysis. Requires the DRC module to have been run.')
+        booleanParam(name: 'SYNERGY', defaultValue: false, description: 'Compute synergy for CPS.')
+        booleanParam(name: 'SYNERGY_BIOMARKER', defaultValue: false, description: 'Use synergy values to run biomarker analysis. SYNERGY module to run.')
 
         // Parameters that we don't expect users to change
         separator(
@@ -167,6 +168,8 @@ pipeline {
         string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
         string(name: 'COLLAPSED_L2FC_COLUMN', defaultValue: 'median_l2fc', description: 'Name of the column containing the collapsed log2 fold change values used in biomarker. This defaults to \"collapsed_l2fc\".')
         string(name: 'VIABILITY_CAP', defaultValue: '1.5', description: 'Cap for viability values used when computing LFC. This defaults to \"1.5\".')
+        string(name: 'COMBINATION_COL', defaultValue: 'is_combination', description: 'Name of the column describing if a row has a combination. This defaults to \"is_combination\".')
+        string(name: 'N_SAMPLES', defaultValue: '10000', description: 'Size of the reampling. This defaults to \"10000\".')
 
         // Files created by sushi
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts. This file is created by COLLATE_FASTQ_READS.')
@@ -185,6 +188,11 @@ pipeline {
         string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_datasets_public.h5', description: 'Biomarker reference file.')
         string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis.')
         string(name: 'DR_PATH', defaultValue: 'DRC_TABLE.csv', description: 'File in drc/BUILD_DIR containing dose response curve data. This file is created by DRC.')
+
+        //Synergy for combinations
+        string(name: 'SYNERGY_FILE', defaultValue: 'synergy_score.csv', description: 'File in BUILD_DIR containing the synergy scores.')
+        string(name: 'SYNERGY_COL', defaultValue: 'synergy', 
+               description: 'Name of the column in SYNERGY_FILE containing the synergy scores.')
     }
 
     environment {
@@ -267,7 +275,10 @@ pipeline {
                         'MERGE_PATTERNS',
 
                         //qc parameters
-                        'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES'
+                        'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES',
+
+                        //combinations
+                        'COMBINATION_COL', 'N_SAMPLES', 'SYNERGY_BIOMARKER', 'SYNERGY_COL', 'SYNERGY_FILE'
                     ]
 
                     def config = [:]
@@ -397,11 +408,11 @@ pipeline {
                         if (params.DRC) {
                             scriptsToRun.add('drc/dose_response.sh')
                         }
+                        if (params.SYNERGY) {
+                            scriptsToRun.add('synergy/synergy.sh')
+                        }
                         if (params.UNIVARIATE_BIOMARKER || params.MULTIVARIATE_BIOMARKER) {
                             scriptsToRun.add('biomarker/biomarker.sh')
-                        }
-                        if (params.SYNERGY) {
-                            scriptsToRun.add('synergy.sh')
                         }
                         if (params.QC_IMAGES) {
                             scriptsToRun.add('filter_counts_qc/filter_counts_qc.sh')

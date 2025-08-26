@@ -7,6 +7,7 @@ import json
 import logging
 
 
+
 def fetch_metadata(filter_dict, base_url, api_key):
     # Convert the filter to a JSON string
     filter_json = json.dumps(filter_dict)
@@ -51,6 +52,7 @@ def rename_sample_meta(df):
         "index2": "index_2",
         "trt_type": "pert_type",
         "treatment": "pert_name",
+        "treatment_2": "pert2_name",
         "dose": "pert_dose",
         "dose_unit": "pert_dose_unit",
         "control_barcodes": "cb_ladder",
