@@ -17,7 +17,7 @@ parser$add_argument("--l2fc_column", default="l2fc",
                     help = "column containing log fold change values")
 parser$add_argument("--type_col", default="pert_type",
                     help = "column containing perturbation type, only those with trt_cp will be considered.")
-parser$add_argument("--build_type", default = "MTS", help = "Type of PRISM screen.")
+parser$add_argument("--build_type", default = "", help = "Type of PRISM screen.")
 parser$add_argument("--cap_for_viability", default = 1.5,
                     help = paste0("The upper threshold for the viability values for before fitting the curves.
                                    Default is 1.5, any viability value above this value will be made equal to 1.5"))

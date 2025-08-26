@@ -347,7 +347,7 @@ create_drc_table <- function(LFC, build_type,
   }
 
   # Fit the curves for the grouped data
-  if (build_type == "CPS") {
+  if (build_type == "CPS_SEQ") {
     DRC_SINGLE <- LFC %>%
       dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
       dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
@@ -361,7 +361,7 @@ create_drc_table <- function(LFC, build_type,
         get_best_fit(FC = pmin(2^l2fc_, cap_for_viability), dose = dose_)
       }) %>%
       dplyr::ungroup()
-  } else {
+  } else if (build_type %in% c("MTS_SEQ", "EPS_SEQ", "APS_SEQ")) {
     DRC_SINGLE <- LFC %>%
       dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
       dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
@@ -370,6 +370,8 @@ create_drc_table <- function(LFC, build_type,
         get_best_fit(FC = pmin(2^l2fc_, cap_for_viability), dose = dose_)
       }) %>%
       dplyr::ungroup()
+  } else {
+    stop(build_type, " is not a valid build type.")
   }
   return(DRC_SINGLE)
 }
