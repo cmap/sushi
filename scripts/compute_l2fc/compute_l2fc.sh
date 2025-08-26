@@ -35,7 +35,6 @@ args=(
 --count_col_name "$COUNT_COL_NAME"
 --sig_cols "$SIG_COLS"
 --ctrl_cols "$CONTROL_COLS"
---count_threshold "$COUNT_THRESHOLD"
 --cell_line_cols "$CELL_LINE_COLS"
 --qc_path "$PLATE_CELL_QC_TABLE"
 --filter_failed_lines "$FILTER_FAILED_LINES"

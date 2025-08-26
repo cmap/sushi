@@ -25,7 +25,6 @@ parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
 parser$add_argument("-ccn", "--count_col_name", default="log2_normalized_n", 
                     help = "column containing counts with which to calculate l2fc")
-parser$add_argument("--count_threshold", default= 40, help = "Low counts threshold")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
 parser$add_argument("-ff", "--filter_failed_lines", type="logical",
                     help = "Filter out failed cell lines from the output file")
@@ -41,7 +40,6 @@ sig_cols = unlist(strsplit(args$sig_cols, ","))
 ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 count_col_name = args$count_col_name
-count_threshold = as.numeric(args$count_threshold)
 qc_path = args$qc_path
 
 print("Collapsing tech reps and computing log-fold change ...")
@@ -49,8 +47,7 @@ l2fc= compute_l2fc(normalized_counts= normalized_counts,
                    control_type= control_type, 
                    sig_cols= sig_cols, 
                    ctrl_cols= ctrl_cols, 
-                   count_col_name= count_col_name, 
-                   count_threshold = count_threshold,
+                   count_col_name= count_col_name,
                    cell_line_cols= cell_line_cols)
 
 # If filter_failed_lines is TRUE, filter out failed cell lines from the output file

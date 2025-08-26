@@ -28,6 +28,14 @@ pipeline {
         booleanParam(name: 'TRIGGER_BUILD', defaultValue: true, description: 'Check this to trigger the build jobs below. If unchecked, the build will not be triggered and only the config.json will be generated.')
 
         separator(
+          name: "upload_to_bq",
+          sectionHeader: "Upload results to BigQuery",
+          separatorStyle: separatorStyleCss,
+          sectionHeaderStyle: sectionHeaderStyleBlue
+        )
+        booleanParam(name: 'UPLOAD_TO_BQ', defaultValue: false, description: 'Check this to upload the results to BigQuery.')
+
+        separator(
           name: "build_details",
           sectionHeader: "Build Details",
           separatorStyle: separatorStyleCss,
@@ -36,7 +44,7 @@ pipeline {
         string(name: 'BUILD_DIR', defaultValue: '/cmap/obelix/pod/prismSeq/', description: 'Directory where the build output will go. Must contain the raw counts file from Nori. If not getting your metadata from cellDB & COMET this directory must also include the sample and cell line/pool metadata.')
         string(name: 'BUILD_NAME', defaultValue: '', description: 'Build name; used to name output files from the adapter and QC scripts. Should match the directoty name from BUILD_DIR.')
         string(name: 'SCREEN', defaultValue: '', description: 'Name of the screen with which this build is associated. This is necessary if you are getting your metadata from COMET/cellDB and/or you plan to upload the data to the portal. This should be the same as the screen from the sample metadata file.')
-        choice(name: 'BUILD_TYPE', choices: ['', 'MTS_SEQ', 'CPS', 'EPS', 'APS'], description: 'Select the type of build you are running. This is only necessary if these data are going to be put on the portal.')
+        choice(name: 'SCREEN_TYPE', choices: ['MTS_SEQ', 'CPS_SEQ', 'EPS_SEQ', 'APS_SEQ'], description: 'Select the type of build you are running.')
         string(name: 'PERT_PLATES', defaultValue: '', description: 'Comma separated list of pert_plates to include in this build. If not provided, all plates for the given screen will be used.')
         string(name: 'SIG_COLS', defaultValue: 'cell_set,pert_type,pert_name,pert_id,pert_dose,pert_dose_unit,day,x_project_id,pert_plate,pert_vehicle', description: 'List of signature columns found in the sample meta that describe unique treatment conditions. Generally, this list should NOT include replicate information such as \"tech_rep\" or \"bio_rep\".')
 
@@ -190,6 +198,7 @@ pipeline {
     environment {
         CONFIG_FILE_PATH = "${params.BUILD_DIR}/config.json"
         QC_PARAMS_FILE_PATH = "${params.BUILD_DIR}/qc_params.json"
+        GOOGLE_APPLICATION_CREDENTIALS = '/local/jenkins/.gcp_credentials.json'
     }
 
     stages {
@@ -240,7 +249,7 @@ pipeline {
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
                         'BUILD_NAME', 'CONVERT_SUSHI', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
-                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'BUILD_TYPE',
+                        'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'SCREEN_TYPE',
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
@@ -413,6 +422,9 @@ pipeline {
                         }
                         if (params.CONVERT_SUSHI) {
                             scriptsToRun.add('sushi_2_s3/sushi_2_s3.sh')
+                        }
+                        if (params.UPLOAD_TO_BQ) {
+                            scriptsToRun.add('load_bq/load_bq.sh')
                         }
 
                         scriptsToRun.each { scriptName ->

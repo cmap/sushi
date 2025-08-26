@@ -12,7 +12,6 @@
 #'                    cell_set,day by default.
 #' @param count_col_name - a string containing the name of the column to use as counts to calculate l2fc values. 
 #'          Generally log2_normalized_n if running on normalized_counts or n if running on filtered_counts
-#' @param count_threshold - threshold for determining low counts, defaults to 40.
 #' @param cell_line_cols - Vector of columns that define a cell line. Defaults to lua, depmap_id, and pool_id
 #' @return - l2fc data.frame with l2fc column
 #' @export
@@ -20,7 +19,7 @@ compute_l2fc= function(normalized_counts,
                        control_type = "ctl_vehicle",
                        sig_cols=c('cell_set','pert_name','pert_dose','pert_dose_unit','day'),
                        ctrl_cols= c('cell_set', 'day'), # will probably be a subset of sig_cols
-                       count_col_name="log2_normalized_n", count_threshold= 40,
+                       count_col_name="log2_normalized_n",
                        cell_line_cols= c('lua', 'depmap_id', 'pool_id')) {
   
   # Validation: Check that sig_cols are in normalized_counts ----
@@ -73,14 +72,12 @@ compute_l2fc= function(normalized_counts,
   if(nrow(controls) == 0) {
     stop("No samples found for the indicated control_type.")
   }
-  
+
   # Join neg_cons and compute l2fc ----
   l2fc= collapsed_tech_rep %>% dplyr::filter(!pert_type %in% c(control_type, 'day_0')) %>% 
     dplyr::inner_join(controls, by= union(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
-    dplyr::mutate(l2fc = log2(mean_normalized_n) - log2(control_median_normalized_n),
-                  counts_flag= ifelse(control_median_n < count_threshold, paste0('negcon<', count_threshold), NA)) %>%
-    dplyr::filter(is.na(counts_flag)) %>% # remove low count cell lines
-    dplyr::select(-mean_n, -control_median_n, -counts_flag)
-  
+    dplyr::mutate(l2fc = log2(mean_normalized_n) - log2(control_median_normalized_n)) %>%
+    dplyr::select(-mean_n, -control_median_n)
+
   return(l2fc)
 }

@@ -123,8 +123,6 @@ if(args$rm_data){
 
   # re-point to what filtered_counts should be
   filtered_counts <- filt_rm
-  rows_removed = nrow(filtered_counts_original) - nrow(filtered_counts)
-  paste("Number of rows removed: ", rows_removed)
 }
 
 # Filter skipped wells if needed ----

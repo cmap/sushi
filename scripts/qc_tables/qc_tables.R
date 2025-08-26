@@ -63,6 +63,16 @@ parser$add_argument(
   default = "sample_meta.csv",
   help = "Sample metadata file"
 )
+parser$add_argument(
+  "--prism_barcode_counts",
+  default = "prism_barcode_counts.csv",
+  help = "Prism barcode counts file"
+)
+parser$add_argument(
+  "--cell_line_meta",
+    default = "cell_line_meta.csv",
+    help = "Cell line metadata file containing all PRISM cell lines"
+)
 
 args <- parser$parse_args()
 
@@ -89,6 +99,10 @@ if (file.exists(normalized_counts_original_path)) {
 print(paste0("Reading in ", args$normalized_counts, "....."))
 normalized_counts <- data.table::fread(args$normalized_counts, header = TRUE, sep = ",")
 }
+print(paste0("Reading in ", args$prism_barcode_counts, "....."))
+prism_barcode_counts <- data.table::fread(args$prism_barcode_counts, header = TRUE, sep = ",")
+print(paste0("Reading in ", args$cell_line_meta, "....."))
+cell_line_meta <- data.table::fread(args$cell_line_meta, header = TRUE, sep = ",")
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(paste0(args$out, "/qc_tables"))) {
@@ -112,7 +126,6 @@ filter_qc_flags <- as.logical(toupper(args$filter_qc_flags))
 # Set control types
 poscon <- args$poscon_type
 negcon <- args$negcon_type
-
 
 # LOAD QC PARAMETERS
 thresholds <- load_thresholds_from_json(args$qc_params)
@@ -340,6 +353,43 @@ if (args$filter_qc_flags) {
   check_file_exists(filtered_normalized_counts_outpath)
 } else {
   print("Nomalized counts not filtered for qc_flags.")
+}
+
+# Compute variance decomposition table
+print("Computing variance decomposition table...")
+variance_decomp <- compute_variance_decomposition(
+  normalized_counts = normalized_counts,
+  metric = "n",
+  cell_line_cols = cell_line_cols_list,
+  id_cols = id_cols_list,
+  negcon = negcon
+)
+variance_decomp_outpath <- paste0(args$out, "/qc_tables/variance_decomposition.csv")
+print(paste0("Writing out variance_decomposition to ", variance_decomp_outpath))
+write.csv(
+  x = variance_decomp, file = variance_decomp_outpath, row.names = FALSE,
+  quote = FALSE)
+check_file_exists(variance_decomp_outpath)
+
+# Compute contamination tables
+contamination_tables <- compute_contamination_qc_tables(
+  prism_barcode_counts = prism_barcode_counts,
+  unknown_barcode_counts = unknown_counts,
+  cell_set_and_pool_meta = cell_set_meta,
+  cell_line_meta = cell_line_meta,
+  cb_meta = cb_meta,
+  sample_meta = sample_meta
+)
+
+# Write out contamination tables
+for (table_name in names(contamination_tables)) {
+  table_outpath <- paste0(args$out, "/qc_tables/", table_name, ".csv")
+  print(paste0("Writing out ", table_name, " to ", table_outpath))
+  write.csv(
+    x = contamination_tables[[table_name]], file = table_outpath, row.names = FALSE,
+    quote = FALSE
+  )
+  check_file_exists(table_outpath)
 }
 
 paste0("QC module completed.")

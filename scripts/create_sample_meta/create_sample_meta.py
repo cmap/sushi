@@ -4,6 +4,8 @@ import pandas as pd
 import os
 import urllib.parse
 import json
+import logging
+
 
 
 def fetch_metadata(filter_dict, base_url, api_key):
@@ -113,9 +115,17 @@ def main():
         required=False,
         help="Pert plates in the screen to use. If not provided, all pert plates will be used.",
     )
+    parser.add_argument(
+        "--screen_type",
+        "-t",
+        type=str,
+        required=False,
+        default="MTS_SEQ",
+    )
 
     args = parser.parse_args()
     screen = args.screen
+    screen_type = args.screen_type
     api_key = args.api_key
     build_dir = args.build_dir
     pert_plates = (
@@ -151,6 +161,36 @@ def main():
 
         print("Retrieved following sample_metadata from COMET: ")
         print(df.head())
+
+        # Filter pert2* columns if screen type is not CPS_SEQ
+        if screen_type != "CPS_SEQ":
+            logging.info("Screen type is not CPS_SEQ, filtering pert2* columns.")
+            logging.info(f"Columns before filtering: {df.columns.tolist()}")
+
+            # Store original columns
+            original_cols = set(df.columns)
+
+            # Remove pert2* columns (only if they exist)
+            pert2_cols = [col for col in df.columns if col.startswith("pert2")]
+            if pert2_cols:
+                df = df.drop(columns=pert2_cols)
+
+            # Remove additional columns (only if they exist)
+            additional_cols = ["treatment_2", "is_combination"]
+            existing_additional_cols = [
+                col for col in additional_cols if col in df.columns
+            ]
+            if existing_additional_cols:
+                df = df.drop(columns=existing_additional_cols)
+
+            # Calculate what was actually removed
+            final_cols = set(df.columns)
+            cols_removed = list(original_cols - final_cols)
+
+            logging.info(f"Columns removed: {cols_removed}")
+            logging.info(f"Columns after filtering: {df.columns.tolist()}")
+
+        # Save the DataFrame to a CSV file
         save_dataframe(df=df, filename="sample_meta", build_dir=build_dir)
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -173,4 +213,7 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     main()

@@ -26,6 +26,7 @@ PARAMS=(
   SEQ_TYPE BUILD_DIR INDEX_1 INDEX_2 BARCODE_SUFFIX REVERSE_INDEX2 BUILD_NAME
   CONVERT_SUSHI PULL_POOL_ID RUN_EPS_QC REMOVE_DATA DAYS COUNTS API_URL SCREEN
   CONTROL_BARCODES GENERATE_QC_TABLES POSCON_TYPE L2FC_COLUMN DRC FILTER_QC_FLAGS
+  SCREEN_TYPE
   # sushi input files
   RAW_COUNTS_UNCOLLAPSED SAMPLE_META CELL_SET_AND_POOL_META CELL_LINE_META CONTROL_BARCODE_META
   # susi files
@@ -147,11 +148,14 @@ echo "Running in container:"
   -e QC_PARAMS="$QC_PARAMS" \
   -e FILTER_FAILED_LINES="$FILTER_FAILED_LINES" \
   -e PERT_PLATES="$PERT_PLATES" \
+  -e SCREEN_TYPE="$SCREEN_TYPE" \
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \
   -v /cmap/data/vdb/prismSeq:/data \
   -v "$BUILD_DIR:$BUILD_DIR" \
+  -v /local/jenkins/.gcp_credentials.json:/.gcp_credentials.json:ro \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/.gcp_credentials.json \
   -w /workspace/scripts \
   localhost/sushi-podman:latest \
   ./"$SCRIPT_NAME"
