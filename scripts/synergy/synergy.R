@@ -59,14 +59,19 @@ if (!args$combination_col %in% colnames(cps_l2fc)) {
   stop("The combination column is not detected!")
 }
 
-# Create DMSO L2FC ----
+# Create DMSO L2FC for synergy pvalue calculations ----
+# DMSO L2FCs will be resampled to generate a null distribution for each cell line + pcr_plate
+
+# Pull out negcon wells from norm counts and duplicate with different pert_type
 dmso_norm_ctrl = normalized_counts[pert_type == args$negcon_type, ]
 dmso_norm_trt = dmso_norm_ctrl
 dmso_norm_trt$pert_type = "trt_cp"
 dmso_norm_input = data.table::rbindlist(list(dmso_norm_trt, dmso_norm_ctrl), use.names = TRUE)
-# Center dmso values before calculating l2fc
+
+# Center dmso values for each pcr plate
 dmso_norm_input[, log2_normalized_n := log2_normalized_n - mean(log2_normalized_n), by = pcr_plate]
 
+# Call compute_l2fc to get l2fc values
 dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
                          cell_line_cols = args$cell_line_cols,
                          control_type = args$negcon_type,
@@ -92,9 +97,10 @@ ignore_cols = c("pert_type", "pert_plate") # common columns with "pert" to be ig
 pert1_cols = args$sig_cols[grepl(paste0(names_prefix[1], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
 pert2_cols = args$sig_cols[grepl(paste0(names_prefix[2], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
 
-# Pull columns to join on - these are sig_cols that don't describe the perturbations
+# Pull out other columns to join on - these are sig_cols that don't describe the perturbations
 filt_sig_cols = args$sig_cols[!args$sig_cols %in% c(pert1_cols, pert2_cols, args$combination_col)]
 
+# Call restructure to "pivot" single agent l2fcs to additional columns for combination data
 trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
                                join_cols = unique(c(args$cell_line_cols, filt_sig_cols)),
                                pert_cols_list = list(pert1_cols, pert2_cols),
@@ -102,9 +108,8 @@ trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
                                new_l2fc_col_names = new_names,
                                combination_col = args$combination_col)
 
-# Add synergy scores to data.table in-place
-calculate_synergy(restructured_l2fc = trt_synergy,
-                  l2fc_cols = new_names)
+# Add synergy scores by comparing the single agent l2fc columns to the combination l2fc column
+calculate_synergy(restructured_l2fc = trt_synergy, l2fc_cols = new_names)
 print("Calculated synergies.")
 
 # Pull out pvalues ----

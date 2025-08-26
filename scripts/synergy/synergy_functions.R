@@ -3,7 +3,7 @@
 #' restructure_l2fc
 #'
 #' In the context of a CPS, this function restructures a l2fc file by creating additional
-#' columns containing the l2fc values for the single agents.
+#' columns containing the l2fc values for the single agents of a combination.
 #'
 #' This function splits the l2fc data.table into rows with single agents and rows with combinations using
 #' `combination_col`. The single agent rows are joined onto the combination rows -
