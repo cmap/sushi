@@ -31,7 +31,7 @@ parser$add_argument("--univariate_biomarker", default="true", help="Whether to c
 parser$add_argument("--multivariate_biomarker", default="true", help="Whether to calculate multivariate biomarkers")
 parser$add_argument("--lfc_biomarker", default="true", help="Whether to calculate lfc biomarkers")
 parser$add_argument("--auc_biomarker", default="true", help="Whether to calculate auc biomarkers")
-parser$add_argument("--synergy_biomarker", default = "true",
+parser$add_argument("--synergy_biomarker", default = "false",
                     help = "Toggle to calculate biomarkers using synergy scores.")
 
 # Paths
@@ -40,7 +40,7 @@ parser$add_argument("--out_path", default= "", help = "Path to the output direct
 
 #TODO: Update column headers
 
-# Get command line options, if help option encountered p3rint help and exit
+# Get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
 # Basic parameters ----
