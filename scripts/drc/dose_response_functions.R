@@ -352,7 +352,7 @@ create_drc_table <- function(LFC, build_type,
       dplyr::filter(is.finite(dose_), is.finite(l2fc_)) %>%
       dplyr::group_by(across(all_of(c(cell_line_cols, treatment_cols)))) %>%
       dplyr::filter(length(unique(dose_)) > 4) %>%
-      dplyr::summarise(!!!if (dplyr::first(is_combination)) {
+      dplyr::summarise(if (dplyr::first(is_combination)) {
         # For combinations, use expanded fitting parameters
         get_best_fit(FC = pmin(2^l2fc_, cap_for_viability), dose = dose_,
                      UL_low = 0, UL_up = 1.01, slope_decreasing = FALSE)
