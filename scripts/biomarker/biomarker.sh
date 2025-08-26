@@ -54,7 +54,6 @@ args=(
 --collapsed_lfc "$COLLAPSED_LFC"
 --drc_file "$DR_PATH"
 --synergy_path "${SYNERGY_FILE}"
---build_type "$BUILD_TYPE"
 --build_dir "$BUILD_DIR"
 --sig_cols "$SIG_COLS"
 --univariate_biomarker "$UNIVARIATE_BIOMARKER"
