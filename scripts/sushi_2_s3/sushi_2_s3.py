@@ -211,7 +211,7 @@ def main(args):
     logger.info("Generating compound key...")
 
     # From screen type, decide on which columns to use for compound key
-    if config.BUILD_TYPE == "CPS":
+    if config.SCREEN_TYPE == "CPS_SEQ":
         compound_key_cols = ["x_project_id", "pert_plate", "pert_name", "pert_id", "pert2_name", "pert2_id"]
     else:
         compound_key_cols = ["x_project_id", "pert_plate", "pert_name", "pert_id"]
