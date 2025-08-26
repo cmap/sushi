@@ -17,6 +17,7 @@ parser$add_argument("--synergy_path", default = "synergy_scores.csv",
                     help = "File containing auc values from dose response")
 
 # Columns and other params
+parser$add_argument("--build_type", default = "MTS", help = "Type of PRISM screen.")
 parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
@@ -73,8 +74,23 @@ message("INFO: synergy_biomarker is ", synergy_biomarker)
 
 # Create the treatment columns ----
 # Need to drop "cell_set"
-trt_cols = sig_cols[!grepl("cell_set", sig_cols)]
-message("INFO: Treatment cols are ", sig_cols)
+trt_cols_lfc = sig_cols[!grepl("cell_set", sig_cols)]
+
+# Set AUC cols
+if (args$build_type == "CPS") {
+  lfc = data.table::fread(lfc_path)
+  if (any(lfc$is_combination)) {
+    trt_cols_auc = trt_cols_lfc
+    message("INFO: Trt cols are the same for lfc and aucs.")
+  } else {
+    trt_cols_auc = trt_cols_lfc[!grepl("pert_dose", trt_cols_lfc)]
+  }
+} else {
+  trt_cols_auc = trt_cols_lfc[!grepl("pert_dose", trt_cols_lfc)]
+}
+
+message("INFO: Trt cols for lfcs are ", paste(trt_cols_lfc, collapse = ", "))
+message("INFO: Trt cols for AUCs are  ", paste(trt_cols_auc, collapse = ", "))
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
@@ -89,7 +105,7 @@ if (univariate_biomarker) {
       in_path = lfc_path,
       out_path = out_path,
       output_file_name = "median_l2fc_univariate_biomarkers.csv",
-      treatment_columns = trt_cols,
+      treatment_columns = trt_cols_lfc,
       response_column = lfc_column,
       depmap_file = bio_file
     )
@@ -102,7 +118,7 @@ if (univariate_biomarker) {
         in_path = drc_file,
         out_path = out_path,
         output_file_name = "log2_auc_univariate_biomarkers.csv",
-        treatment_columns = trt_cols,
+        treatment_columns = trt_cols_auc,
         response_column = dr_column,
         depmap_file = bio_file
       )
@@ -118,7 +134,7 @@ if (univariate_biomarker) {
         in_path = synergy_path,
         out_path = out_path,
         output_file_name = "synergy_univariate_biomarkers.csv",
-        treatment_columns = trt_cols,
+        treatment_columns = trt_cols_lfc,
         response_column = synergy_col,
         depmap_file = bio_file
       )
@@ -136,7 +152,7 @@ if (multivariate_biomarker) {
       in_path = lfc_path,
       out_path = out_path,
       output_file_name = "median_l2fc_multivariate_biomarkers.csv",
-      treatment_columns = trt_cols,
+      treatment_columns = trt_cols_lfc,
       response_column = lfc_column,
       depmap_file = bio_file
     )
@@ -149,7 +165,7 @@ if (multivariate_biomarker) {
         in_path = drc_file,
         out_path = out_path,
         output_file_name = "log2_auc_multivariate_biomarkers.csv",
-        treatment_columns = trt_cols,
+        treatment_columns = trt_cols_auc,
         response_column = dr_column,
         depmap_file = bio_file
       )
@@ -165,7 +181,7 @@ if (multivariate_biomarker) {
         in_path = synergy_path,
         out_path = out_path,
         output_file_name = "synergy_multivariate_biomarkers.csv",
-        treatment_columns = trt_cols,
+        treatment_columns = trt_cols_lfc,
         response_column = synergy_col,
         depmap_file = bio_file
       )
