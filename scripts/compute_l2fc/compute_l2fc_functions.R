@@ -76,7 +76,7 @@ compute_l2fc= function(normalized_counts,
   # Join neg_cons and compute l2fc ----
   l2fc= collapsed_tech_rep %>% dplyr::filter(!pert_type %in% c(control_type, 'day_0')) %>% 
     dplyr::inner_join(controls, by= union(cell_line_cols, ctrl_cols), relationship= 'many-to-one') %>%
-    dplyr::mutate(l2fc = log2(mean_normalized_n / control_median_normalized_n)) %>%
+    dplyr::mutate(l2fc = log2(mean_normalized_n) - log2(control_median_normalized_n)) %>%
     dplyr::select(-mean_n, -control_median_n)
 
   return(l2fc)

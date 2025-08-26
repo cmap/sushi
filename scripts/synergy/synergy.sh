@@ -23,21 +23,22 @@ enforce_abs_path() {
 }
 
 enforce_abs_path NORMALIZED_COUNTS
-enforce_abs_path LFC
+enforce_abs_path COLLAPSED_LFC
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
---l2fc "$LFC"
+--l2fc "$COLLAPSED_LFC"
 --cell_line_cols "$CELL_LINE_COLS"
 --ctrl_cols "$CONTROL_COLS"
 --sig_cols "$SIG_COLS"
---control_type "$CTL_TYPES"
+--combination_col "$COMBINATION_COL"
 --count_col_name "$COUNT_COL_NAME" 
 --count_threshold "$COUNT_THRESHOLD"
---l2fc_col "$L2FC_COLUMN"
---viab_cap "$VIABILITY_CAP"
+--l2fc_col "$COLLAPSED_L2FC_COLUMN"
+--n_samples "$N_SAMPLES"
+--negcon_type "$CTL_TYPES"
 --out "$BUILD_DIR"
 )
 
-echo Rscript synergy.R "${args[@]}"
-Rscript synergy.R "${args[@]}"
+echo Rscript synergy/synergy.R "${args[@]}"
+Rscript synergy/synergy.R "${args[@]}"
