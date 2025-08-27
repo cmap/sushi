@@ -78,6 +78,9 @@ dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
 
 # Resample DMSO L2FC to create mock synergy values ----
 group_name_cols = unique(c(args$cell_line_cols, args$ctrl_cols)) # Also used later in pval calc
+# HOTFIX: Remove pcr_plate and replicate from group_name_cols if present (not in l2fc file)
+group_name_cols = group_name_cols[!group_name_cols %in% c("pcr_plate", "replicate")]
+
 create_dmso_synergy_hdf5(dmso_l2fc = dmso_l2fc,
                          group_name_cols = group_name_cols,
                          path = file.path(args$out, "dmso_synergy.h5"),
