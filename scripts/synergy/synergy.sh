@@ -33,7 +33,6 @@ args=(
 --sig_cols "$SIG_COLS"
 --combination_col "$COMBINATION_COL"
 --count_col_name "$COUNT_COL_NAME" 
---count_threshold "$COUNT_THRESHOLD"
 --l2fc_col "$COLLAPSED_L2FC_COLUMN"
 --n_samples "$N_SAMPLES"
 --negcon_type "$CTL_TYPES"

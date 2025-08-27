@@ -31,8 +31,6 @@ parser$add_argument("--combination_col", default = "is_combination", help = "Col
 # Used to create mock DMSO l2fcs
 parser$add_argument("--count_col_name", default = "log2_normalized_n",
                     help = "Column name containing counts to be used to calculate l2fcs")
-# Used to create mock DMSO l2fcs
-parser$add_argument("--count_threshold", default = 40, help = "Low counts threshold")
 # Used to restructure l2fcs and to calculate synergy
 parser$add_argument("--l2fc_col", default = "median_l2fc", help = "Column name containing l2fc values")
 # Used to create mock DMSO l2fcs
@@ -51,7 +49,6 @@ cps_l2fc = data.table::fread(args$l2fc, sep = ",", header = TRUE)
 args$cell_line_cols = unlist(strsplit(args$cell_line_cols, ","))
 args$ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 args$sig_cols = unlist(strsplit(args$sig_cols, ","))
-args$count_threshold = as.numeric(args$count_threshold)
 args$n_samples = as.numeric(args$n_samples)
 
 # Check if combination_col is present ----
@@ -76,7 +73,6 @@ dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
                          cell_line_cols = args$cell_line_cols,
                          control_type = args$negcon_type,
                          count_col_name = args$count_col_name,
-                         count_threshold = args$count_threshold,
                          ctrl_cols = args$ctrl_cols,
                          sig_cols = args$sig_cols)
 
