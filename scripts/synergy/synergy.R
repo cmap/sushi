@@ -90,8 +90,8 @@ new_names = paste(names_prefix, args$l2fc_col, sep = "_")
 
 # Pull out columns that describe each perturbation
 ignore_cols = c("pert_type", "pert_plate", "pert_vehicle") # common columns with "pert" to be ignored
-pert1_cols = args$sig_cols[grepl(paste0(names_prefix[1], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
-pert2_cols = args$sig_cols[grepl(paste0(names_prefix[2], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols]
+pert1_cols = sort(args$sig_cols[grepl(paste0(names_prefix[1], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols])
+pert2_cols = sort(args$sig_cols[grepl(paste0(names_prefix[2], "_"), args$sig_cols) & !args$sig_cols %in% ignore_cols])
 
 # Pull out other columns to join on - these are sig_cols that don't describe the perturbations
 filt_sig_cols = args$sig_cols[!args$sig_cols %in% c(pert1_cols, pert2_cols, args$combination_col)]
