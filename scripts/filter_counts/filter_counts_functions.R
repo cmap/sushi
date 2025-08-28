@@ -75,16 +75,21 @@ filter_raw_reads= function(prism_barcode_counts,
     print('There may be multiple entries in the sample meta that have the same combination of id_cols.')
     stop('The specified ID columns do NOT uniquely identify every PCR well.')
   }
+
+  # Check if pool_id is present before checking for duplicates between pools of the same cell sets  
+  if('pool_id' %in% colnames(cell_set_and_pool_meta)){
+    
+    # Validation: Check that cell sets do not contain duplicate depmap ids ----
+    # This will produce a warning if a depmap_id appears in a cell set more than once!
+    # This currently does NOT error out
+    validate_cell_set(cell_set_and_pool_meta)
   
-  # Validation: Check that cell sets do not contain duplicate depmap ids ----
-  # This will produce a warning if a depmap_id appears in a cell set more than once!
-  # This currently does NOT error out
-  validate_cell_set(cell_set_and_pool_meta)
-  
-  # Drop cell lines that appear in more than one pool of a cell set
-  cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id, lua) %>%
-    dplyr::summarise(pool_id= paste(sort(unique(pool_id)), collapse= ';')) %>% dplyr::ungroup()
-  
+    # Drop cell lines that appear in more than one pool of a cell set
+    cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id, lua) %>%
+      dplyr::summarise(pool_id= paste(sort(unique(pool_id)), collapse= ';')) %>% dplyr::ungroup()
+
+  }
+    
   # Creating a template of all expected reads in the run ----
   # Use all 4 metadata files to create a "template" dataframe where
   # every row is a cell line that is expected in a PCR well. 
