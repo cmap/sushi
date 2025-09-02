@@ -86,7 +86,7 @@ filter_raw_reads= function(prism_barcode_counts,
   
     # Drop cell lines that appear in more than one pool of a cell set
     cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id, lua) %>%
-      dplyr::summarise(pool_id= paste(sort(unique(pool_id)), collapse= '|')) %>% dplyr::ungroup()
+      dplyr::summarise(pool_id = paste(sort(unique(pool_id)), collapse = "_+_"), .groups = "drop")
 
   }
     
