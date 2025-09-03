@@ -18,7 +18,7 @@ get_cell_api_info = function(api_url, api_key, filter = NULL) {
   
   if (!is.null(filter)){
     # Convert the filter to a JSON string
-    filter_json <- toJSON(filter)
+    filter_json <- toJSON(filter, auto_unbox = TRUE)
     filter_encoded <- URLencode(filter_json)
     api_url <- paste0(api_url, "?filter=", filter_encoded)
   }
@@ -44,10 +44,10 @@ get_cell_api_info = function(api_url, api_key, filter = NULL) {
 
 get_LUAs_from_sets <- function(cell_set_name) {
   
-  cell_set_definition_api_url <- "https://api.clue.io/api/cell-db/cell-set-definitions"
+  cell_set_definition_api_url <- "https://api.clue.io/api/cell-db/cell-sets"
   # Construct the filter object as a JSON string
-  filter <- list(where = list(cell_set = cell_set_name),
-                 fields = c("cell_set","depmap_id")
+  filter <- list(where = list(davepool_id = cell_set_name),
+                 fields = c("davepool_id","depmap_id")
   )
   cell_set_DepMap_df <- get_cell_api_info(cell_set_definition_api_url, api_key, filter)
   depmap_ids <- list(cell_set_DepMap_df$depmap_id)
@@ -82,7 +82,7 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
     all_DepMapIDs <- list()
     cell_set_failed <- FALSE
     for (j in 1:length(cs)) {
-      if (cs[j] %in% cell_sets_df$name) {
+      if (cs[j] %in% cell_sets_df$davepool_id) {
         print(paste(cs[j], "is a cell set.")) 
         known_cell_sets = c(known_cell_sets, cs[j])
 
@@ -90,7 +90,7 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
         cs_members = get_LUAs_from_sets(cs[j])
         all_DepMapIDs = append(all_DepMapIDs, cs_members)
         
-      } else if (cs[j] %in% cell_pools_df$name){
+      } else if (cs[j] %in% cell_pools_df$cell_pool){
         print(paste(cs[j], "is a cell pool")) 
         known_cell_sets = append(known_cell_sets, cs[j])
         
@@ -99,7 +99,7 @@ create_cell_set_meta = function(sample_meta, cell_sets_df, cell_pools_df, cell_l
         all_DepMapIDs = append(all_DepMapIDs, pool_members)
         print(paste(cs[j], "has a DepMap ID length of:", length(pool_members[[1]])))
         
-      } else if (cs[j] %in% cell_line_meta$DepMap_ID){
+      } else if (cs[j] %in% cell_line_meta$depmap_id){
         print(paste(cs[j], "is a cell line")) 
         all_DepMapIDs = append(all_DepMapIDs, cs[j])
         known_cell_sets = c(known_cell_sets, cs[j])
