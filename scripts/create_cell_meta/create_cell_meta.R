@@ -269,15 +269,15 @@ if (args$verbose) {
   message("Preparing control barcode metadata...")
 }
 
-CB_meta <- control_bc_df
+cb_meta <- control_bc_df
 
 # Add depmap_id and lua if missing
-if (!all(c("depmap_id", "lua") %in% colnames(CB_meta))) {
+if (!all(c("depmap_id", "lua") %in% colnames(cb_meta))) {
   if (args$verbose) {
     message("Adding depmap_id and lua columns to control barcode metadata")
   }
   
-  CB_meta <- CB_meta %>%
+  cb_meta <- cb_meta %>%
     dplyr::left_join(cell_line_meta, by = "forward_read_barcode")
 }
 
@@ -306,7 +306,7 @@ if (nrow(control_bc_df) > 0) {
   if (args$verbose) {
     message(sprintf("Writing control barcode metadata to: %s", control_barcode_out_file))
   }
-  write.csv(CB_meta, control_barcode_out_file, row.names = FALSE, quote = FALSE)
+  write.csv(cb_meta, control_barcode_out_file, row.names = FALSE, quote = FALSE)
 }
 
 # Verify output files ----

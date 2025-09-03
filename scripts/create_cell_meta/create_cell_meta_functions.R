@@ -62,12 +62,12 @@ get_cell_api_info <- function(api_url, api_key, filter = NULL) {
   })
 }
 
-#' @title Get DepMap IDs from Cell Set
-#' @description Retrieves DepMap IDs associated with a specific cell set
+#' @title Get depmap_ids for a given cell_set
+#' @description Retrieves depmap_ids associated with a specific cell set
 #' @param cell_set_name The name of the cell set
 #' @param api_key Authentication key for API access
 #' @param api_base_url Base URL for the API
-#' @return A list of DepMap IDs or empty list if not found
+#' @return A list of depmap_ids or empty list if not found
 get_depmap_ids_from_cell_set <- function(cell_set_name, api_key, 
                                          api_base_url = "https://api.clue.io/api") {
   # Construct API URL
@@ -84,19 +84,19 @@ get_depmap_ids_from_cell_set <- function(cell_set_name, api_key,
   
   # Return empty list if no results
   if (is.null(cell_set_depmap_ids) || nrow(cell_set_depmap_ids) == 0) {
-    message(sprintf("No DepMap IDs found for cell set: %s", cell_set_name))
+    message(sprintf("No depmap_ids found for cell set: %s", cell_set_name))
     return(list())
   }
   
   return(list(cell_set_depmap_ids$depmap_id))
 }
 
-#' @title Get DepMap IDs from Cell Pool
-#' @description Retrieves DepMap IDs associated with a specific cell pool
+#' @title Get depmap_ids from a given cell pool
+#' @description Retrieves depmap_ids associated with a specific cell pool
 #' @param cell_pool_name The name of the cell pool
 #' @param api_key Authentication key for API access
 #' @param api_base_url Base URL for the API
-#' @return A list of DepMap IDs or empty list if not found
+#' @return A list of depmap_ids or empty list if not found
 get_depmap_ids_from_pool <- function(cell_pool_name, api_key, 
                                      api_base_url = "https://api.clue.io/api") {
   # Construct API URL
@@ -113,7 +113,7 @@ get_depmap_ids_from_pool <- function(cell_pool_name, api_key,
   
   # Return empty list if no results
   if (is.null(cell_pool_depmap_ids) || nrow(cell_pool_depmap_ids) == 0) {
-    message(sprintf("No DepMap IDs found for cell pool: %s", cell_pool_name))
+    message(sprintf("No depmap_ids found for cell pool: %s", cell_pool_name))
     return(list())
   }
   
@@ -121,7 +121,7 @@ get_depmap_ids_from_pool <- function(cell_pool_name, api_key,
 }
 
 #' @title Create Cell Set Metadata
-#' @description Creates metadata for cell sets by expanding cell set definitions
+#' @description Creates a build level cell set and pool metadata table
 #' @param sample_meta Sample metadata containing cell set information
 #' @param cell_sets_df Data frame of cell sets
 #' @param cell_pools_df Data frame of cell pools
@@ -170,7 +170,7 @@ create_cell_set_meta <- function(sample_meta, cell_sets_df, cell_pools_df, cell_
     # Split cell set by semicolon to get components
     components <- unlist(strsplit(current_cell_set, ";"))
     
-    # Track cell groups and their DepMap IDs
+    # Track cell groups and their depmap_ids
     known_cell_groups <- character()
     all_depmap_ids <- list()
     cell_group_failed <- FALSE
@@ -185,17 +185,17 @@ create_cell_set_meta <- function(sample_meta, cell_sets_df, cell_pools_df, cell_
         
         known_cell_groups <- c(known_cell_groups, component)
         
-        # Get DepMap IDs for this cell set
+        # Get depmap_ids for this cell set
         component_members <- get_depmap_ids_from_cell_set(component, api_key, api_base_url)
         
         if (length(component_members) > 0 && length(component_members[[1]]) > 0) {
           all_depmap_ids <- append(all_depmap_ids, component_members)
           
           if (verbose) {
-            message(sprintf("    Found %d DepMap IDs", length(component_members[[1]])))
+            message(sprintf("    Found %d depmap_ids", length(component_members[[1]])))
           }
         } else {
-          message(sprintf("    No DepMap IDs found for cell set: %s", component))
+          message(sprintf("    No depmap_ids found for cell set: %s", component))
         }
         
       } else if (component %in% cell_pools_df$cell_pool) {
@@ -206,17 +206,17 @@ create_cell_set_meta <- function(sample_meta, cell_sets_df, cell_pools_df, cell_
         
         known_cell_groups <- c(known_cell_groups, component)
         
-        # Get DepMap IDs for this pool
+        # Get depmap_ids for this pool
         pool_members <- get_depmap_ids_from_pool(component, api_key, api_base_url)
         
         if (length(pool_members) > 0 && length(pool_members[[1]]) > 0) {
           all_depmap_ids <- append(all_depmap_ids, pool_members)
           
           if (verbose) {
-            message(sprintf("    Found %d DepMap IDs", length(pool_members[[1]])))
+            message(sprintf("    Found %d depmap_ids", length(pool_members[[1]])))
           }
         } else {
-          message(sprintf("    No DepMap IDs found for cell pool: %s", component))
+          message(sprintf("    No depmap_ids found for cell pool: %s", component))
         }
         
       } else if (component %in% cell_line_meta$depmap_id) {
@@ -239,10 +239,10 @@ create_cell_set_meta <- function(sample_meta, cell_sets_df, cell_pools_df, cell_
     
     # Add to results if all components were found
     if (!cell_group_failed && length(all_depmap_ids) > 0) {
-      # Join cell groups and DepMap IDs
+      # Join cell groups and depmap_ids
       known_cell_groups_str <- paste(known_cell_groups, collapse = ";")
       
-      # Flatten and join DepMap IDs
+      # Flatten and join depmap_o
       joined_depmap_ids <- sapply(all_depmap_ids, function(row) {
         if (is.character(row) && length(row) == 1) {
           return(row)
@@ -257,7 +257,7 @@ create_cell_set_meta <- function(sample_meta, cell_sets_df, cell_pools_df, cell_
       cell_set_meta$members[i] <- all_depmap_ids_str
       
       if (verbose) {
-        message(sprintf("  Added cell set with %d components and %d total DepMap IDs", 
+        message(sprintf("  Added cell set with %d components and %d total depmap_ids",
                        length(known_cell_groups), 
                        length(unlist(strsplit(all_depmap_ids_str, ";")))))
       }
