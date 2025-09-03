@@ -46,8 +46,8 @@ get_LUAs_from_sets <- function(cell_set_name) {
   
   cell_set_definition_api_url <- "https://api.clue.io/api/cell-db/cell-set-definitions"
   # Construct the filter object as a JSON string
-  filter <- list(where = list(davepool_id = cell_set_name),
-                 fields = c("davepool_id","depmap_id")
+  filter <- list(where = list(cell_set = cell_set_name),
+                 fields = c("cell_set","depmap_id")
   )
   cell_set_DepMap_df <- get_cell_api_info(cell_set_definition_api_url, api_key, filter)
   depmap_ids <- list(cell_set_DepMap_df$depmap_id)
