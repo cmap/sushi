@@ -44,7 +44,7 @@ get_cell_api_info = function(api_url, api_key, filter = NULL) {
 
 get_LUAs_from_sets <- function(cell_set_name) {
   
-  cell_set_definition_api_url <- "https://api.clue.io/api/e_cell_set_definition_files"
+  cell_set_definition_api_url <- "https://api.clue.io/api/cell-db/cell-set-definitions"
   # Construct the filter object as a JSON string
   filter <- list(where = list(davepool_id = cell_set_name),
                  fields = c("davepool_id","depmap_id")
@@ -55,7 +55,7 @@ get_LUAs_from_sets <- function(cell_set_name) {
 }
 
 get_LUAs_from_pools <- function(cell_pool_name) {
-  v_assay_pool_api_url <- "https://api.clue.io/api/v_e_assay_pools"
+  v_assay_pool_api_url <- "https://api.clue.io/api/cell-db/assay-pools"
   filter <- list(where = list(assay_pool = cell_pool_name), fields = c("assay_pool","depmap_id"))
   cell_pool_DepMap_df <- get_cell_api_info(v_assay_pool_api_url, api_key, filter)
   depmap_ids <- list(cell_pool_DepMap_df$depmap_id)
