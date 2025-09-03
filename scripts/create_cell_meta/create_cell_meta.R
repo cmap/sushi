@@ -24,8 +24,8 @@ suppressPackageStartupMessages({
 })
 
 # Load utility functions
-source("/Users/jdavis/code/sushi/scripts/utils/kitchen_utensils.R")
-source("/Users/jdavis/code/sushi/scripts/create_cell_meta/create_cell_meta_functions.R")
+source("utils/kitchen_utensils.R")
+source("create_cell_meta/create_cell_meta_functions.R")
 
 # Parse command line arguments ----
 parser <- ArgumentParser(description = "Create cell metadata files from CellDB")
