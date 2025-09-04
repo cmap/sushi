@@ -115,9 +115,7 @@ cell_pools_df <- get_cell_api_info(cell_pools_url, api_key)
 cell_lines_df <- get_cell_api_info(cell_lines_url, api_key)
 assay_pools_df <- get_cell_api_info(assay_pools_url, api_key)
 control_barcodes_df <- get_cell_api_info(control_barcodes_url, api_key)
-# Need to append control barcodes to cell_lines_df
 
-# Check if data was retrieved successfully
 if (is.null(cell_sets_df) || is.null(cell_pools_df) || 
     is.null(cell_lines_df) || is.null(assay_pools_df)) {
   stop("ERROR: Failed to retrieve data from CellDB API")
