@@ -106,12 +106,16 @@ cell_sets_url <- paste(args$api_url, "cell-db", "cell-sets", sep = "/")
 cell_pools_url <- paste(args$api_url, "cell-db", "assay-pools", sep = "/")
 cell_lines_url <- paste(args$api_url, "cell-db", "cell-lines", sep = "/")
 assay_pools_url <- paste(args$api_url, "cell-db", "cell-sets", sep = "/")
+control_barcodes_url <- paste(args$api_url, "cell-db", "bq-control-barcodes", sep = "/")
+# Need to add control barcodes
 
 # Fetch data
 cell_sets_df <- get_cell_api_info(cell_sets_url, api_key)
 cell_pools_df <- get_cell_api_info(cell_pools_url, api_key)
 cell_lines_df <- get_cell_api_info(cell_lines_url, api_key)
 assay_pools_df <- get_cell_api_info(assay_pools_url, api_key)
+control_barcodes_df <- get_cell_api_info(control_barcodes_url, api_key)
+# Need to append control barcodes to cell_lines_df
 
 # Check if data was retrieved successfully
 if (is.null(cell_sets_df) || is.null(cell_pools_df) || 
@@ -191,8 +195,15 @@ cell_line_cols <- c('depmap_id', 'forward_read_barcode', 'lua')
 cell_line_meta <- cell_lines_df %>%
   dplyr::rename("forward_read_barcode" = "dna_sequence") %>% 
   dplyr::select(dplyr::any_of(c(cell_line_cols))) %>%
-  dplyr::distinct()
+  dplyr::distinct() %>%
+  dplyr::filter(!is.na(depmap_id)) %>%
+    dplyr::filter(!is.na(forward_read_barcode))
 
+# Set LUA to null for control barcodes
+if (nrow(control_barcodes_df) > 0) {
+    cell_line_meta <- cell_line_meta %>%
+    dplyr::mutate(depmap_id = ifelse(forward_read_barcode %in% control_barcodes_df$dna_sequence, NA, depmap_id))
+}
 if (args$verbose) {
   message(sprintf("Found metadata for %d cell lines", nrow(cell_line_meta)))
 }
@@ -274,12 +285,16 @@ cb_meta <- control_bc_df
 # Add depmap_id and lua if missing
 if (!all(c("depmap_id", "lua") %in% colnames(cb_meta))) {
   if (args$verbose) {
-    message("Adding depmap_id and lua columns to control barcode metadata")
+    message("Adding lua column to control barcode metadata")
   }
-  
+
   cb_meta <- cb_meta %>%
-    dplyr::left_join(cell_line_meta, by = "forward_read_barcode")
+    dplyr::left_join(cell_line_meta %>% select(c("forward_read_barcode","lua")), by = "forward_read_barcode")
 }
+
+# Add null depmap_ids
+cb_meta <- cb_meta %>%
+  dplyr::mutate(depmap_id = NA)
 
 # Write output files ----
 if (args$verbose) {
