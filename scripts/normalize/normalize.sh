@@ -36,11 +36,17 @@ echo Rscript normalize/normalize.R -c $FILTERED_COUNTS	\
 --CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
+--min_read_count $MIN_READ_COUNT \
+--negcon_cols $CONTROL_COLS \
+--negcon_type $CTL_TYPES \
 --out $BUILD_DIR
 
 Rscript normalize/normalize.R -c $FILTERED_COUNTS	\
 --CB_meta $BUILD_DIR/CB_meta.csv \
 --pseudocount $PSEUDOCOUNT \
 --id_cols $ID_COLS \
+--min_read_count $MIN_READ_COUNT \
+--negcon_cols $CONTROL_COLS \
+--negcon_type $CTL_TYPES \
 --out $BUILD_DIR
 
