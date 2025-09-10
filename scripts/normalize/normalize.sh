@@ -39,6 +39,7 @@ echo Rscript normalize/normalize.R -c $FILTERED_COUNTS	\
 --min_read_count $MIN_READ_COUNT \
 --negcon_cols $CONTROL_COLS \
 --negcon_type $CTL_TYPES \
+--output_file $NORMALIZED_COUNTS \
 --out $BUILD_DIR
 
 Rscript normalize/normalize.R -c $FILTERED_COUNTS	\
@@ -48,5 +49,6 @@ Rscript normalize/normalize.R -c $FILTERED_COUNTS	\
 --min_read_count $MIN_READ_COUNT \
 --negcon_cols $CONTROL_COLS \
 --negcon_type $CTL_TYPES \
+--output_file $NORMALIZED_COUNTS \
 --out $BUILD_DIR
 

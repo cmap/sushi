@@ -23,7 +23,8 @@ parser$add_argument("--negcon_cols", default = "pcr_plate,pert_vehicle",
                     help = "List of columns in filtered counts that describe a negative control condition.")
 parser$add_argument("--negcon_type", default = "ctl_vehicle",
                     help = "String in the column pert_type that indicates a negative control.")
-parser$add_argument("--pseudocount", default=20, help = "pseudocount for normalization")
+parser$add_argument("--pseudocount", default = 20, help = "Pseudocount used in normalization.")
+parser$add_argument("--output_file", default = "normalized_counts.csv", help = "File name for normalized counts.")
 parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults to working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -37,6 +38,7 @@ input_id_cols= unlist(strsplit(args$id_cols, ","))
 min_read_count = as.integer(args$min_read_count)
 negcon_cols = unlist(strsplit(args$negcon_cols, split = ","))
 negcon_type = args$negcon_type
+output_file = args$output_file
 
 # Run normalize ----
 print("Creating normalized count file ...")
@@ -48,7 +50,7 @@ normalized_counts = add_pseudovalue(normalized_counts, negcon_cols = negcon_cols
                                     min_read_count = min_read_count, negcon_type = negcon_type)
 
 # Write out file ----
-normcounts_outpath = paste(args$out, "normalized_counts.csv", sep='/')
+normcounts_outpath = file.path(args$out, output_file)
 print(paste0("Writing normalized count file to ", normcounts_outpath))
 write.csv(normalized_counts, normcounts_outpath, row.names= FALSE, quote= FALSE)
 
