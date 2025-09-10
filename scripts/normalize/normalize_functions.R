@@ -85,3 +85,36 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
 
   return(normalized)
 }
+
+#'  add_pseudovalues
+#'
+#' After normalization without a pseudocount, compute a pseudovalue using the negative controls.
+#' Add the pseudovalue to normalized counts.
+#'
+#' @param norm_counts Dataframe of normalized counts.
+#' @param negcon_cols Vector of columns names in norm_counts that describe a negative control condition.
+#' @param min_read_count Minimum read count value.
+#' @param negcon_type String in column pert_type of norm_counts that indicates negative control samples.
+#' @returns Dataframe with normalized count adjusted with a pseudovalue.
+#' @import tidyverse
+add_pseudovalue = function(norm_counts, negcon_cols, min_read_count = 10, negcon_type = "ctl_vehicle") {
+  # Pseudovalue is calculated over negative control groups.
+  # Check that all of those columns are present.
+  missing_cols = setdiff(negcon_cols, colnames(norm_counts))
+  if (length(missing_cols) > 0) {
+    stop("normalize - add_pseudovalue: The following column(s) are missng: ",
+         paste(missing_cols, collapse = ","))
+  }
+
+  # Calculate the pseudovalue over each control group.
+  pv_per_group = norm_counts |> dplyr::filter(pert_type == negcon_type) |>
+    dplyr::group_by(dplyr::across(tidyselect::all_of(negcon_cols))) |>
+    dplyr::summarise(log2_pv = median(log2(min_read_count) + cb_intercept), .groups = "drop")
+
+  # Join pseudovalues to the main df and add them to all rows/samples.
+  norm_counts = norm_counts |>
+    dplyr::left_join(pv_per_group, by = negcon_cols) |>
+    dplyr::mutate(log2_normalized_n = log2(2^log2_normalized_n + 2^log2_pv))
+
+  return(norm_counts)
+}
