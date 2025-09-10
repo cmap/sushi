@@ -156,18 +156,25 @@ pipeline {
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
 
         // Additional parameters ordered by when they first appear
+        // Collate FASTQ reads
         string(name: 'BARCODE_COL', defaultValue: 'forward_read_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_barcode\", and the paramter is first used in COLLATE_FASTQ_READS.')
         string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'List of sequencing related columns found in the sample meta. These columns are used to uniquely identify every PCR well in the run. Default value is \"flowcell_names,index_1,index_2\", and the parameter is used in COLLATE_FASTQ_READS.')
         string(name: 'ID_COLS', defaultValue: 'pcr_plate,pcr_well', description: 'List of columns found in the sample meta that are used to create a unique ID for each sample-replicate. This defaults to \"pcr_plate,pcr_well\", but could be any combination sample meta columns that uniquely identifies every well in the run. This parameter is first used in COLLATE_FASTQ_READS.')
         string(name: 'CHUNK_SIZE', defaultValue: '10000000', description: 'Number of rows for a chunk. Due to the large size of the Nori output, some actions are performed in chunks to conserve memory. This parameter sets the size of a chunk and defaults to 10^6 or \"10000000\". This paramter is first used in COLLATE_FASTQ_READS.')
         string(name: 'LOW_ABUNDANCE_THRESHOLD', defaultValue: '20', description: 'Threshold for unknown barcodes. Unknown barcodes below this threshold will be deidentified and their counts will be included under the term unknown_low_abundance_barcode. This paramter defaults to \"20\" and is used in COLLATE_FASTQ_READS.')
+        // Normalize
         string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Pseudocount value added to all reads before log transformations. This defaults to \"20\" and is used in CBNORMALIZE.')
+        string(name: 'MIN_READ_COUNT', defaultValue: '10', description: 'Smallest read count value used to compute pseudovalues.')
+        // Compute l2fc 
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua,cell_set', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'log2_normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
         string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Threshold for filtering the negative controls. In the negative control conditions, cell lines whose median counts are below this threshold are not confidently detected and thus are dropped. This defaults to \"40\" and is used in COMPUTE_LFC.')
+        // Collapse replicates
         string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
         string(name: 'COLLAPSED_L2FC_COLUMN', defaultValue: 'median_l2fc', description: 'Name of the column containing the collapsed log2 fold change values used in biomarker. This defaults to \"collapsed_l2fc\".')
+        // DRC
         string(name: 'VIABILITY_CAP', defaultValue: '1.5', description: 'Cap for viability values used when computing LFC. This defaults to \"1.5\".')
+        // CPS
         string(name: 'COMBINATION_COL', defaultValue: 'is_combination', description: 'Name of the column describing if a row has a combination. This defaults to \"is_combination\".')
         string(name: 'N_SAMPLES', defaultValue: '10000', description: 'Size of the reampling. This defaults to \"10000\".')
 
@@ -262,7 +269,7 @@ pipeline {
                         'SEQUENCING_INDEX_COLS', 'ID_COLS', 'BARCODE_COL', 'LOW_ABUNDANCE_THRESHOLD', 'CHUNK_SIZE', 'REVERSE_INDEX2',
 
                         // normalize parameters
-                        'PSEUDOCOUNT',
+                        'PSEUDOCOUNT', 'MIN_READ_COUNT',
 
                         // compute_l2fc paramters
                         'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
