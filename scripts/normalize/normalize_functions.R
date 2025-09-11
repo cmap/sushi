@@ -109,12 +109,12 @@ add_pseudovalue = function(norm_counts, negcon_cols, min_read_count = 10, negcon
   # Calculate the pseudovalue over each control group.
   pv_per_group = norm_counts |> dplyr::filter(pert_type == negcon_type) |>
     dplyr::group_by(dplyr::across(tidyselect::all_of(negcon_cols))) |>
-    dplyr::summarise(log2_pv = median(log2(min_read_count) + cb_intercept), .groups = "drop")
+    dplyr::summarise(log2_pseudovalue = median(log2(min_read_count) + cb_intercept), .groups = "drop")
 
   # Join pseudovalues to the main df and add them to all rows/samples.
   norm_counts = norm_counts |>
     dplyr::left_join(pv_per_group, by = negcon_cols) |>
-    dplyr::mutate(log2_normalized_n = log2(2^log2_normalized_n + 2^log2_pv))
+    dplyr::mutate(log2_normalized_n = log2(2^log2_normalized_n + 2^log2_pseudovalue))
 
   return(norm_counts)
 }

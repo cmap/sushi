@@ -185,7 +185,7 @@ calculate_cb_metrics <- function(normalized_counts,
       cb_spearman = cor(cb_log2_dose, log2(n + pseudocount), method = "spearman", use = "pairwise.complete.obs")
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::distinct(across(all_of(c(group_cols, "cb_mae", "cb_r2", "cb_spearman", "cb_intercept", "log2_pv"))))
+    dplyr::distinct(across(all_of(c(group_cols, "cb_mae", "cb_r2", "cb_spearman", "cb_intercept", "log2_pseudovalue"))))
   return(fit_stats)
 }
 
