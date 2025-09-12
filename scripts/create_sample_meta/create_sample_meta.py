@@ -136,7 +136,7 @@ def main():
         df = (
             fetch_metadata(
                 filter_dict={"where": {"project_code": screen}},
-                base_url="https://api.clue.io/api/v_c_prism_seq_metadata",
+                base_url="https://api.clue.io/api/v_seq_metadata",
                 api_key=api_key,
             )
             .pipe(rename_sample_meta)
