@@ -145,8 +145,9 @@ median_resample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, pr
   # Stop if the number to sample up to is too high
   num_pick_combinations = base::choose(length(x), size)
   if (num_pick_combinations < n_samples) {
-    print(paste0(length(x), " choose ", size, " = ", num_pick_combinations))
-    print(paste0("WARNING: Cannot sample up to ", n_samples, "."))
+    message(length(x), " choose ", size, " = ", num_pick_combinations)
+    message("WARNING: Cannot sample up to ", n_samples, ". Using ", num_pick_combinations, " instead.")
+    n_samples = num_pick_combinations
   }
 
   # Reset seed and resample

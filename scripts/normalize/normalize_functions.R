@@ -27,7 +27,7 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   if('pool_id' %in% colnames(X)) {
     X %<>% dplyr::filter(!grepl('|', pool_id, fixed = TRUE))
   }
-  
+
   # Validation: Check that id_cols are present in the dataframe ----
   if(!validate_columns_exist(id_cols, X)) {
     stop('One or more id_cols (printed above) is NOT present in the supplied dataframe.')
