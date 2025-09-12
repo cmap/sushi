@@ -45,6 +45,10 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
     }
   }
 
+  # Filter out cbs that are bad on a plate.
+  # dropping these row so that calcs are reproducible with calculate_cb_metrics in qc_tables_functions
+  X = filter_poor_cbs(X)
+
   # Identify valid profiles and valid control barcodes to determine intercept ----
   # Drop wells with invalid pert_type, wells without control barcodes, cell line entries or other CBs,
   # cbs with zero reads, and profiles with fewer than 4 CBs.
@@ -84,6 +88,24 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
     dplyr::select(-log2_n)
 
   return(normalized)
+}
+
+filter_poor_cbs = function(norm_counts, threshold = 0.25) {
+  cb_cols = c("pcr_plate", "cb_name")
+
+  poor_barcodes = norm_counts |> dplyr::group_by(across(all_of(cb_cols))) |>
+    dplyr::summarize(median_log2_n = median(log2_n),
+                     pct_missing = sum(n == 0) / dplyr::n(),
+                     pct_below_10 = sum(n <= 10)/ dplyr::n(), .groups = "drop") |>
+    dplyr::filter(pct_missing > threshold)
+
+  if (nrow(poor_barcodes) > 0) {
+    message("The following CBs are undetected in more than ", threshold * 100, "% of wells of a PCR plate.")
+    print(poor_barcodes)
+    norm_counts  = norm_counts |> dplyr::anti_join(poor_barcodes, by = cb_cols)
+  }
+
+  return(norm_counts)
 }
 
 #'  add_pseudovalues
