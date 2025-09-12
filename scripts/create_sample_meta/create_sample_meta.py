@@ -136,7 +136,7 @@ def main():
         df = (
             fetch_metadata(
                 filter_dict={"where": {"project_code": screen}},
-                base_url="https://api.clue.io/api/v_e_eps_metadata",
+                base_url="https://api.clue.io/api/v_c_prism_seq_metadata",
                 api_key=api_key,
             )
             .pipe(rename_sample_meta)
@@ -198,7 +198,7 @@ def main():
     try:
         df = fetch_metadata(
             filter_dict={"where": {"screen": screen}},
-            base_url="https://api.clue.io/api/v_e_assay_plate_skipped_well",
+            base_url="https://api.clue.io/api/v_c_assay_plate_skipped_well",
             api_key=api_key,
         )
         # If skipped wells is not empty, save it to a csv file
