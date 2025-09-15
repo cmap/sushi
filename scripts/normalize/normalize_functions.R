@@ -115,11 +115,11 @@ filter_poor_cbs = function(norm_counts, threshold = 0.25) {
 #'
 #' @param norm_counts Dataframe of normalized counts.
 #' @param negcon_cols Vector of columns names in norm_counts that describe a negative control condition.
-#' @param min_read_count Minimum read count value.
+#' @param read_detection_limit Read count detection limit.
 #' @param negcon_type String in column pert_type of norm_counts that indicates negative control samples.
 #' @returns Dataframe with normalized count adjusted with a pseudovalue.
 #' @import tidyverse
-add_pseudovalue = function(norm_counts, negcon_cols, min_read_count = 10, negcon_type = "ctl_vehicle") {
+add_pseudovalue = function(norm_counts, negcon_cols, read_detection_limit = 10, negcon_type = "ctl_vehicle") {
   # Pseudovalue is calculated over negative control groups.
   # Check that all of those columns are present.
   missing_cols = setdiff(negcon_cols, colnames(norm_counts))
@@ -131,7 +131,7 @@ add_pseudovalue = function(norm_counts, negcon_cols, min_read_count = 10, negcon
   # Calculate the pseudovalue over each control group.
   pv_per_group = norm_counts |> dplyr::filter(pert_type == negcon_type) |>
     dplyr::group_by(dplyr::across(tidyselect::all_of(negcon_cols))) |>
-    dplyr::summarise(log2_pseudovalue = median(log2(min_read_count) + cb_intercept), .groups = "drop")
+    dplyr::summarise(log2_pseudovalue = median(log2(read_detection_limit) + cb_intercept), .groups = "drop")
 
   # Join pseudovalues to the main df and add them to all rows/samples.
   norm_counts = norm_counts |>

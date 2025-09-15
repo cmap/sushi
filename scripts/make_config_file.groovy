@@ -164,7 +164,7 @@ pipeline {
         string(name: 'LOW_ABUNDANCE_THRESHOLD', defaultValue: '20', description: 'Threshold for unknown barcodes. Unknown barcodes below this threshold will be deidentified and their counts will be included under the term unknown_low_abundance_barcode. This paramter defaults to \"20\" and is used in COLLATE_FASTQ_READS.')
         // Normalize
         string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Pseudocount value added to all reads before log transformations. This defaults to \"20\" and is used in CBNORMALIZE.')
-        string(name: 'MIN_READ_COUNT', defaultValue: '10', description: 'Smallest read count value used to compute pseudovalues.')
+        string(name: 'READ_DETECTION_LIMIT', defaultValue: '10', description: 'Smallest read count value used to compute pseudovalues.')
         // Compute l2fc 
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua,cell_set', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'log2_normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
@@ -269,7 +269,7 @@ pipeline {
                         'SEQUENCING_INDEX_COLS', 'ID_COLS', 'BARCODE_COL', 'LOW_ABUNDANCE_THRESHOLD', 'CHUNK_SIZE', 'REVERSE_INDEX2',
 
                         // normalize parameters
-                        'PSEUDOCOUNT', 'MIN_READ_COUNT',
+                        'PSEUDOCOUNT', 'READ_DETECTION_LIMIT',
 
                         // compute_l2fc paramters
                         'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',

@@ -17,7 +17,7 @@ parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
 parser$add_argument("--id_cols", default="pcr_plate,pcr_well",
                     help = "Columns to identify each PCR well")
 parser$add_argument("--CB_meta", default="CB_meta.csv", help= "Control Barcode metadata")
-parser$add_argument("--min_read_count", default = "10", 
+parser$add_argument("--read_detection_limit", default = "10",
                     help = "Smallest read count value. Used to compute pseudovalue.")
 parser$add_argument("--negcon_cols", default = "pcr_plate,pert_vehicle",
                     help = "List of columns in filtered counts that describe a negative control condition.")
@@ -35,7 +35,7 @@ filtered_counts= data.table::fread(args$filtered_counts, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 input_pseudocount= as.numeric(args$pseudocount)
 input_id_cols= unlist(strsplit(args$id_cols, ","))
-min_read_count = as.integer(args$min_read_count)
+read_detection_limit = as.integer(args$read_detection_limit)
 negcon_cols = unlist(strsplit(args$negcon_cols, split = ","))
 negcon_type = args$negcon_type
 output_file = args$output_file
@@ -45,9 +45,9 @@ print("Creating normalized count file ...")
 normalized_counts = normalize(X= filtered_counts, id_cols= input_id_cols,
                               CB_meta= CB_meta, pseudocount= input_pseudocount)
 # Add pseudovalue
-message("Adding pseudovalue corresponding to a read count of ", min_read_count, "...")
+message("Adding pseudovalue corresponding to a read count of ", read_detection_limit, "...")
 normalized_counts = add_pseudovalue(normalized_counts, negcon_cols = negcon_cols,
-                                    min_read_count = min_read_count, negcon_type = negcon_type)
+                                    read_detection_limit = read_detection_limit, negcon_type = negcon_type)
 
 # Write out file ----
 normcounts_outpath = file.path(args$out, output_file)
