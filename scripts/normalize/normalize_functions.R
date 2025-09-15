@@ -53,7 +53,7 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   # Valid CBs per plate
   invalid_cbs_plate = X |> dplyr::filter(!is.na(cb_name)) |>
     dplyr::group_by(across(all_of(id_cols))) |>
-    dplyr::mutate(cb_frac = log2((n + 1) / sum(n))) |>
+    dplyr::mutate(cb_frac = (n + 1) / sum(n)) |>
     dplyr::group_by(pcr_plate, cb_name) |>
     dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)), .groups = "drop") |>
     dplyr::filter(mad_log2_cb_frac > 1)
