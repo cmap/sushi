@@ -50,11 +50,20 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   X = filter_poor_cbs(X)
 
   # Identify valid profiles and valid control barcodes to determine intercept ----
+  # Valid CBs per plate
+  valid_cbs_plate = X |> dplyr::filter(pert_type == "ctl_vehicle", !is.na(cb_name)) |>
+    dplyr::group_by(across(all_of(id_cols))) |>
+    dplyr::mutate(cb_frac = log2((n + 1) / sum(n))) |>
+    dplyr::group_by(pcr_plate, cb_name) |>
+    dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)), .groups = "drop") |>
+    dplyr::filter(mad_log2_cb_frac > 1)
+
   # Drop wells with invalid pert_type, wells without control barcodes, cell line entries or other CBs,
   # cbs with zero reads, and profiles with fewer than 4 CBs.
   valid_profiles= X %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
                                       cb_ladder %in% unique(CB_meta$cb_ladder),
                                       cb_name %in% unique(CB_meta$cb_name)) %>%
+    dplyr::anti_join(valid_cbs_plate, by = c("pcr_plate", "cb_name")) |>
     dplyr::group_by(dplyr::pick(tidyselect::all_of(id_cols))) %>%
     dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
 
@@ -85,6 +94,8 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   # Normalize entries ----
   normalized= X %>% dplyr::inner_join(fit_intercepts, by=id_cols) %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept) %>%
+    dplyr::left_join(valid_cbs_plate, by = c("pcr_plate", "cb_name")) %>%
+    dplyr::mutate(cb_ladder = ifelse(is.na(mad_log2_cb_frac), cb_ladder, paste0(cb_ladder, " - dropped"))) |>
     dplyr::select(-log2_n)
 
   return(normalized)
