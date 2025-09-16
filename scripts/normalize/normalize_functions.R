@@ -15,7 +15,7 @@
 #' @returns Dataframe with counts normalized to control barcodes
 #' @import tidyverse
 #' @import magrittr
-normalize <- function(X, id_cols, CB_meta, pseudocount) {
+normalize <- function(X, id_cols, CB_meta, pseudocount, cb_mad_cutoff = 1) {
   # Required functions
   require(magrittr)
   require(tidyverse)
@@ -23,7 +23,7 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   # Create log2_n with pseudocount ----
   X %<>% dplyr::mutate(log2_n = log2(n + pseudocount))
 
-  # Filter out any duplicate cell lines if hte pool_id column exists ----
+  # Filter out any duplicate cell lines if pool_id has a particular string ----
   if('pool_id' %in% colnames(X)) {
     X %<>% dplyr::filter(!grepl("_+_", pool_id))
   }
@@ -48,7 +48,7 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   # Identify valid profiles and valid control barcodes to determine intercept ----
   # Valid CBs per plate
   message("Calculating MADs for the control barcodes...")
-  cb_mad = get_cb_mad(X |> dplyr::filter(!is.na(cb_name)), id_cols = id_cols)
+  cb_mad = get_cb_mad(X |> dplyr::filter(!is.na(cb_name)), id_cols = id_cols, cb_mad_cutoff = cb_mad_cutoff)
 
   print("The following CBs are dropped due to high variance:")
   invalid_cbs = cb_mad |> dplyr::filter(cb_status == "drop")
