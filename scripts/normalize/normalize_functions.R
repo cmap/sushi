@@ -51,19 +51,19 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
 
   # Identify valid profiles and valid control barcodes to determine intercept ----
   # Valid CBs per plate
-  invalid_cbs_plate = X |> dplyr::filter(!is.na(cb_name)) |>
-    dplyr::group_by(across(all_of(id_cols))) |>
-    dplyr::mutate(cb_frac = (n + 1) / sum(n)) |>
-    dplyr::group_by(pcr_plate, cb_name) |>
-    dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)), .groups = "drop") |>
-    dplyr::filter(mad_log2_cb_frac > 1)
+  message("Calculating MADs for the control barcodes...")
+  cb_mad = get_cb_mad(X |> dplyr::filter(!is.na(cb_name)), id_cols = id_cols)
+
+  print("The following CBs are dropped due to high variance:")
+  invalid_cbs = cb_mad |> dplyr::filter(cb_status == "drop")
+  print(invalid_cbs)
 
   # Drop wells with invalid pert_type, wells without control barcodes, cell line entries or other CBs,
-  # cbs with zero reads, and profiles with fewer than 4 CBs.
+  # cbs with zero reads, cbs with high MADs, and profiles with fewer than 4 CBs.
   valid_profiles= X %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
                                       cb_ladder %in% unique(CB_meta$cb_ladder),
                                       cb_name %in% unique(CB_meta$cb_name)) %>%
-    dplyr::anti_join(invalid_cbs_plate, by = c("pcr_plate", "cb_name")) |>
+    dplyr::anti_join(invalid_cbs, by = c("pcr_plate", "cb_ladder", "cb_name")) |>
     dplyr::group_by(dplyr::pick(tidyselect::all_of(id_cols))) %>%
     dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
 
@@ -94,29 +94,22 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
   # Normalize entries ----
   normalized= X %>% dplyr::inner_join(fit_intercepts, by=id_cols) %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept) %>%
-    dplyr::left_join(invalid_cbs_plate, by = c("pcr_plate", "cb_name")) %>%
-    dplyr::mutate(cb_ladder = ifelse(is.na(mad_log2_cb_frac), cb_ladder, paste0(cb_ladder, " - dropped"))) |>
-    dplyr::select(-log2_n)
+    dplyr::left_join(cb_mad, by = c("pcr_plate", "cb_ladder", "cb_name")) %>%
+    dplyr::mutate(cb_ladder = ifelse(cb_status == "drop", paste0(cb_ladder, " - dropped"), cb_ladder)) |>
+    dplyr::select(-log2_n, -cb_status)
 
   return(normalized)
 }
 
-filter_poor_cbs = function(norm_counts, threshold = 0.25) {
-  cb_cols = c("pcr_plate", "cb_name")
+get_cb_mad = function(cb_reads, id_cols, cb_mad_cutoff = 1) {
+  cb_mad = cb_reads |>
+    dplyr::group_by(across(all_of(id_cols))) |>
+    dplyr::mutate(cb_frac = (n + 1) / sum(n)) |>
+    dplyr::group_by(pcr_plate, cb_ladder, cb_name) |>
+    dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)), .groups = "drop") |>
+    dplyr::mutate(cb_status = ifelse(mad_log2_cb_frac > cb_mad_cutoff, "drop", "keep"))
 
-  poor_barcodes = norm_counts |> dplyr::group_by(across(all_of(cb_cols))) |>
-    dplyr::summarize(median_log2_n = median(log2_n),
-                     pct_missing = sum(n == 0) / dplyr::n(),
-                     pct_below_10 = sum(n <= 10)/ dplyr::n(), .groups = "drop") |>
-    dplyr::filter(pct_missing > threshold)
-
-  if (nrow(poor_barcodes) > 0) {
-    message("The following CBs are undetected in more than ", threshold * 100, "% of wells of a PCR plate.")
-    print(poor_barcodes)
-    norm_counts  = norm_counts |> dplyr::anti_join(poor_barcodes, by = cb_cols)
-  }
-
-  return(norm_counts)
+  return(cb_mad)
 }
 
 #'  add_pseudovalues
