@@ -266,9 +266,7 @@ if (contains_poscon) {
 }
 write.csv(
   x = plate_cell_table %>%
-    dplyr::select(
-      columns_to_write
-    ),
+    dplyr::select(all_of(columns_to_write)),
   file = plate_cell_qc_table_outpath_external, row.names = FALSE,
   quote = FALSE
 )
