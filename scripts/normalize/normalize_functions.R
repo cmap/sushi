@@ -45,10 +45,6 @@ normalize <- function(X, id_cols, CB_meta, pseudocount) {
     }
   }
 
-  # Filter out cbs that are bad on a plate.
-  # dropping these row so that calcs are reproducible with calculate_cb_metrics in qc_tables_functions
-  X = filter_poor_cbs(X)
-
   # Identify valid profiles and valid control barcodes to determine intercept ----
   # Valid CBs per plate
   message("Calculating MADs for the control barcodes...")
