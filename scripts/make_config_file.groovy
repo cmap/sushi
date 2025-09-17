@@ -190,7 +190,7 @@ pipeline {
         string(name: 'DR_PATH', defaultValue: 'DRC_TABLE.csv', description: 'File in drc/BUILD_DIR containing dose response curve data. This file is created by DRC.')
 
         //Synergy for combinations
-        string(name: 'SYNERGY_FILE', defaultValue: 'synergy_score.csv', description: 'File in BUILD_DIR containing the synergy scores.')
+        string(name: 'SYNERGY_FILE', defaultValue: 'synergy_scores.csv', description: 'File in BUILD_DIR containing the synergy scores.')
         string(name: 'SYNERGY_COL', defaultValue: 'synergy', 
                description: 'Name of the column in SYNERGY_FILE containing the synergy scores.')
     }
