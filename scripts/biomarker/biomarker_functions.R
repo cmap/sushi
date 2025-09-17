@@ -101,7 +101,7 @@ linear_model <- function(X, Y, v.X.min = 0.0025, n.min = 25, rank.max = 250, q.v
 #' @examples
 #'
 univariate_biomarker_table <- function(Y, file,
-                                       features = NULL, n.X.min = 100,
+                                       features = NULL, n.X.min = 20,
                                        v.X.min = 0.0025,
                                        n_stable.min = 3, q_val_max = .1,
                                        regression_coef = TRUE,
