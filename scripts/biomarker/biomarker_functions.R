@@ -597,7 +597,7 @@ create_univariate_biomarker_table <- function(in_path, out_path,
                                               output_file_name = "l2fc_univariate_biomarkers", depmap_file,
                                                 treatment_columns = c("pert_id", "x_project_id", "pert_name", "pert_plate", "pert_dose"),
                                                 response_column = "median_l2fc", aggregate_function = median, transform_function = function(x){x},
-                                              features = NULL, min_sample_size = 100,
+                                              features = NULL, min_sample_size = 20,
                                               regression_coef = TRUE, stability_score = TRUE, rank.max = 250,
                                               min_x_variance = 0.0025, n_stable_min = 3, q_val_max = .1
                                               ) {
