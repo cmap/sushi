@@ -97,9 +97,16 @@ normalize <- function(X, id_cols, CB_meta, pseudocount, cb_mad_cutoff = 1) {
   return(normalized)
 }
 
+#' get_cb_mad
+#'
+#' Calculates MAD for each control barcodes across all PCR wells of a plate.
+#'
+#' @param cb_reads Dataframe of control barcode read counts.
+#' @param id_cols Vector of columns that uniquely identify each PCR well.
+#' @param cb_mad_cutoff Maximum MAD value for a control barcode.
 get_cb_mad = function(cb_reads, id_cols, cb_mad_cutoff = 1) {
   cb_mad = cb_reads |>
-    dplyr::group_by(across(all_of(id_cols))) |>
+    dplyr::group_by(dplyr::across(tidyselect::all_of(id_cols))) |>
     dplyr::mutate(cb_frac = (n + 1) / sum(n)) |>
     dplyr::group_by(pcr_plate, cb_ladder, cb_name) |>
     dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)), .groups = "drop") |>
@@ -108,7 +115,7 @@ get_cb_mad = function(cb_reads, id_cols, cb_mad_cutoff = 1) {
   return(cb_mad)
 }
 
-#'  add_pseudovalues
+#' add_pseudovalues
 #'
 #' After normalization without a pseudocount, compute a pseudovalue using the negative controls.
 #' Add the pseudovalue to normalized counts.
