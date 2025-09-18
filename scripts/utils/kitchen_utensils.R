@@ -147,3 +147,22 @@ append_critical_output <- function(statement, out) {
   # Append to file
   cat(statement, file = paste0(out, "/logs/critical_output.txt"), append = TRUE, sep = "\n")
 }
+
+#' Delete existing files when re-running a module
+#'
+#' This function deletes existing files in a given output directory that match a given pattern.
+#' This is useful when re-running a module to ensure that old files do not interfere with
+#' the new output.
+#' @param out_dir The output directory to check for existing files.
+#' @param pattern A pattern to match files against. This can be a regular expression.
+delete_existing_files <- function(out_dir, pattern) {
+  files_to_delete <- list.files(path = out_dir, pattern = pattern, full.names = TRUE)
+  if (length(files_to_delete) > 0) {
+    file.remove(files_to_delete)
+    message(paste("Deleted", length(files_to_delete), "existing files in", out_dir))
+    message("Deleted files:")
+    print(files_to_delete)
+  } else {
+    message(paste("No existing files to delete in", out_dir))
+  }
+}

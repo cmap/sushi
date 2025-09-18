@@ -26,6 +26,9 @@ parser$add_argument("-o", "--out", default= getwd(), help= "Output path. Default
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
+# If the output file already exists, remove it ----
+delete_existing_files(args$out, "collapsed_l2fc")
+
 # Collapse biological replicates ----
 lfc_values= data.table::fread(args$lfc, header=T, sep=',', data.table=F)
 sig_cols= unlist(strsplit(args$sig_cols, ","))

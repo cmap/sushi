@@ -42,6 +42,9 @@ cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 count_col_name = args$count_col_name
 qc_path = args$qc_path
 
+# If l2fc files already exist, remove them ----
+delete_existing_files(args$out, "^l2fc")
+
 print("Collapsing tech reps and computing log-fold change ...")
 l2fc= compute_l2fc(normalized_counts= normalized_counts, 
                    control_type= control_type, 
