@@ -51,7 +51,7 @@ normalize <- function(X, id_cols, CB_meta, pseudocount, cb_mad_cutoff = 1) {
   cb_mad = get_cb_mad(X |> dplyr::filter(!is.na(cb_name)), id_cols = id_cols, cb_mad_cutoff = cb_mad_cutoff)
 
   print("The following CBs are dropped due to high variance:")
-  invalid_cbs = cb_mad |> dplyr::filter(cb_status == "drop")
+  invalid_cbs = cb_mad |> dplyr::filter(keep_cb == FALSE)
   print(invalid_cbs)
 
   # Drop wells with invalid pert_type, wells without control barcodes, cell line entries or other CBs,
@@ -91,8 +91,8 @@ normalize <- function(X, id_cols, CB_meta, pseudocount, cb_mad_cutoff = 1) {
   normalized= X %>% dplyr::inner_join(fit_intercepts, by=id_cols) %>%
     dplyr::mutate(log2_normalized_n= log2_n + cb_intercept) %>%
     dplyr::left_join(cb_mad, by = c("pcr_plate", "cb_ladder", "cb_name")) %>%
-    dplyr::mutate(cb_ladder = ifelse(cb_status == "drop", paste0(cb_ladder, " - dropped"), cb_ladder)) |>
-    dplyr::select(-log2_n, -cb_status)
+    dplyr::mutate(cb_ladder = ifelse(keep_cb == FALSE, paste0(cb_ladder, " - dropped"), cb_ladder)) |>
+    dplyr::select(-log2_n, -keep_cb)
 
   return(normalized)
 }
@@ -110,7 +110,7 @@ get_cb_mad = function(cb_reads, id_cols, cb_mad_cutoff = 1) {
     dplyr::mutate(cb_frac = (n + 1) / sum(n)) |>
     dplyr::group_by(pcr_plate, cb_ladder, cb_name) |>
     dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)), .groups = "drop") |>
-    dplyr::mutate(cb_status = ifelse(mad_log2_cb_frac > cb_mad_cutoff, "drop", "keep"))
+    dplyr::mutate(keep_cb = ifelse(mad_log2_cb_frac < cb_mad_cutoff, TRUE, FALSE))
 
   return(cb_mad)
 }
@@ -131,7 +131,7 @@ add_pseudovalue = function(norm_counts, negcon_cols, read_detection_limit = 10, 
   # Check that all of those columns are present.
   missing_cols = setdiff(negcon_cols, colnames(norm_counts))
   if (length(missing_cols) > 0) {
-    stop("normalize - add_pseudovalue: The following column(s) are missng: ",
+    stop("normalize - add_pseudovalue: The following column(s) are missng from normalized_counts: ",
          paste(missing_cols, collapse = ","))
   }
 
