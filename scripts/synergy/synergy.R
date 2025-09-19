@@ -65,8 +65,8 @@ dmso_norm_trt = dmso_norm_ctrl
 dmso_norm_trt$pert_type = "trt_cp"
 dmso_norm_input = data.table::rbindlist(list(dmso_norm_trt, dmso_norm_ctrl), use.names = TRUE)
 
-# Center dmso values for each pcr plate
-dmso_norm_input[, log2_normalized_n := log2_normalized_n - mean(log2_normalized_n), by = pcr_plate]
+# Median center dmso values for each pcr plate
+dmso_norm_input[, log2_normalized_n := log2_normalized_n - median(log2_normalized_n), by = pcr_plate]
 
 # Call compute_l2fc to get l2fc values
 dmso_l2fc = compute_l2fc(normalized_counts = dmso_norm_input,
