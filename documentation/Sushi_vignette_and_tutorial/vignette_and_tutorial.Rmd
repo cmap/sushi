@@ -260,7 +260,8 @@ head(l2fc)
 
 Cell lines that failed QC can be removed from the log fold-change files as described below:
 ```{r l2fc opt filt, echo = T, eval = F}
-qc_path <- data.table::fread("~/Desktop/data/vignette_test_data/data/qc_table.csv") # THIS FILE DOES NOT EXIST
+# CURRENTLY DOES NOT EXISTS!
+qc_path <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
   
 # remove cell lines that fail for an entire pert_plate
 join_cols = c(cell_line_cols, "pert_plate")
