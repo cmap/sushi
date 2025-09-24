@@ -46,6 +46,10 @@ if (args$out == ""){
 }
 #print_args(args)
 
+# If output files already exist, remove them ----
+delete_existing_files(args$out, "filtered_counts")
+delete_existing_files(args$out, "annotated_counts")
+
 # Read in all input files ----
 prism_barcode_counts= data.table::fread(args$prism_barcode_counts, header= TRUE, sep= ',')
 sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')

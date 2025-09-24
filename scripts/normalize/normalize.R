@@ -29,6 +29,9 @@ CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
 input_pseudocount= as.numeric(args$pseudocount)
 input_id_cols= unlist(strsplit(args$id_cols, ","))
 
+# If normalized counts files already exists, remove them ----
+delete_existing_files(args$out, "normalized_counts")
+
 # Run normalize ----
 print("Creating normalized count file ...")
 normalized_counts = normalize(X= filtered_counts, id_cols= input_id_cols,

@@ -37,6 +37,9 @@ if (args$out == "") {
   args$out = args$wkdir
 }
 
+# If the output files already exist, remove them ----
+delete_existing_files(args$out, "barcode_counts")
+
 # Read in metadata files as data.table objects ----
 cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
 CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
