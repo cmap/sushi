@@ -73,12 +73,16 @@ def run_backfill(build_dirs_file, workspace_path):
 
             command = [launch_script_path, script_name]
 
+            proc_env = os.environ.copy()
+            proc_env["CONFIG_FILE_PATH"] = os.path.abspath(config_path)
+
             try:
                 # The key is to execute the command with the 'current working directory' (cwd)
                 # set to the build_dir. This allows the scripts to find 'config.json'.
                 result = subprocess.run(
                     command,
                     cwd=build_dir,
+                    env=proc_env,
                     check=True,  # Raises an exception if the command returns a non-zero exit code
                     capture_output=True,  # Captures stdout and stderr
                     text=True,  # Decodes stdout/stderr as text
