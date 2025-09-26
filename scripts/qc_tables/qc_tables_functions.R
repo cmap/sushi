@@ -18,7 +18,7 @@ compute_pool_delta_df <- function(l2fc, threshold = 2.0) {
     # Create the 'fc' column (2^l2fc)
     mutate(fc = 2^l2fc) %>%
     # Group by all replicate-specific columns
-    group_by(pert_type, pool_id, day, pert_name, pert_dose, pert_plate, bio_rep, cell_set) %>%
+    group_by(across(all_of(grouping_cols)), bio_rep) %>%
     # Calculate the median for each pool
     summarise(
       pool_l2fc = median(l2fc, na.rm = TRUE),
@@ -47,7 +47,8 @@ compute_pool_delta_df <- function(l2fc, threshold = 2.0) {
     ) %>%
     # Filter out rows where pool_id is the string "NA"
     filter(pool_id != "NA") %>%
-    select(pert_dose, pert_name, bio_rep, pert_plate, cell_set, delta_from_median_fc, is_outlier_fc, pool_id)
+    select(pert_dose, pert_name, bio_rep, pert_plate, cell_set, delta_from_median_fc, delta_from_median_lfc, is_outlier_fc, pool_id,
+           group_median_fc, group_median_l2fc)
 
   return(delta_df)
 }
