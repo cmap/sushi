@@ -13,15 +13,14 @@ compute_pool_delta_df <- function(l2fc, threshold = 2.0) {
   grouping_cols <- c('day', 'pert_name', 'pert_dose', 'pert_type', 'pool_id', 'pert_plate', 'cell_set')
   DELTA_THRESHOLD <- threshold
 
-  # NEW: Calculate the fraction of cell lines with low fold change for each pool.
+  # NEW: Calculate the number of cell lines with low fold change for each pool.
   # This must be done before the main data is summarized.
-  fraction_df <- l2fc %>%
+  killed_df <- l2fc %>%
     mutate(fc = 2^l2fc) %>%
     group_by(pert_name, pert_dose) %>%
     summarise(
-      # Numerator: Count distinct cell lines where fc < 0.25
-      # Denominator: Count all distinct cell lines in the group
-      pert_dose_fraction_low_fc = n_distinct(depmap_id[fc < 0.25 & !is.na(fc)]) / n_distinct(depmap_id),
+      # Count distinct cell lines where fc < 0.25
+      n_lines_killed = n_distinct(depmap_id[fc < 0.25 & !is.na(fc)]),
       .groups = 'drop'
     )
 
@@ -58,14 +57,14 @@ compute_pool_delta_df <- function(l2fc, threshold = 2.0) {
       is_outlier_fc = delta_from_median_fc > DELTA_THRESHOLD
     ) %>%
     # NEW: Join the fraction data back into the main results
-    left_join(fraction_df, by = c("pert_name", "pert_dose")) %>%
+    left_join(killed_df, by = c("pert_name", "pert_dose")) %>%
     # Filter out rows where pool_id is the string "NA"
     filter(pool_id != "NA") %>%
     select(
       pert_dose, pert_name, bio_rep, pert_plate, cell_set,
       delta_from_median_fc, delta_from_median_l2fc, is_outlier_fc, pool_id,
       group_median_fc, group_median_l2fc,
-      pert_dose_fraction_low_fc
+      n_lines_killed
     )
 
   return(delta_df)
