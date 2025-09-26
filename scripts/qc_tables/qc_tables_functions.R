@@ -47,7 +47,7 @@ compute_pool_delta_df <- function(l2fc, threshold = 2.0) {
     ) %>%
     # Filter out rows where pool_id is the string "NA"
     filter(pool_id != "NA") %>%
-    select(pert_dose, pert_name, bio_rep, pert_plate, cell_set, delta_from_median_fc, delta_from_median_lfc, is_outlier_fc, pool_id,
+    select(pert_dose, pert_name, bio_rep, pert_plate, cell_set, delta_from_median_fc, delta_from_median_l2fc, is_outlier_fc, pool_id,
            group_median_fc, group_median_l2fc)
 
   return(delta_df)
