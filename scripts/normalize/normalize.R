@@ -23,7 +23,7 @@ parser$add_argument("--negcon_cols", default = "pcr_plate,pert_vehicle",
                     help = "List of columns in filtered counts that describe a negative control condition.")
 parser$add_argument("--negcon_type", default = "ctl_vehicle",
                     help = "String in the column pert_type that indicates a negative control.")
-parser$add_argument("--pseudocount", default = 20, help = "Pseudocount used in normalization.")
+parser$add_argument("--pseudocount", default = 0, help = "Pseudocount used in normalization.")
 parser$add_argument("--output_file", default = "normalized_counts.csv", help = "File name for normalized counts.")
 parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults to working directory")
 

@@ -163,7 +163,7 @@ pipeline {
         string(name: 'CHUNK_SIZE', defaultValue: '10000000', description: 'Number of rows for a chunk. Due to the large size of the Nori output, some actions are performed in chunks to conserve memory. This parameter sets the size of a chunk and defaults to 10^6 or \"10000000\". This paramter is first used in COLLATE_FASTQ_READS.')
         string(name: 'LOW_ABUNDANCE_THRESHOLD', defaultValue: '20', description: 'Threshold for unknown barcodes. Unknown barcodes below this threshold will be deidentified and their counts will be included under the term unknown_low_abundance_barcode. This paramter defaults to \"20\" and is used in COLLATE_FASTQ_READS.')
         // Normalize
-        string(name: 'PSEUDOCOUNT', defaultValue: '20', description: 'Pseudocount value added to all reads before log transformations. This defaults to \"20\" and is used in CBNORMALIZE.')
+        string(name: 'PSEUDOCOUNT', defaultValue: '0', description: 'Pseudocount value added to all reads before log transformations. This defaults to \"20\" and is used in CBNORMALIZE.')
         string(name: 'READ_DETECTION_LIMIT', defaultValue: '10', description: 'Smallest read count value used to compute pseudovalues.')
         // Compute l2fc 
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua,cell_set', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
