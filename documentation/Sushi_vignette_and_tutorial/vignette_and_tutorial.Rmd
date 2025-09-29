@@ -61,9 +61,23 @@ document.addEventListener("DOMContentLoaded", function () {
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-# Location of the local copy of the Sushi repository
+# ==============================
+# TO DO: Please update both paths below before running this markdown!
+# ==============================
+# Path to local copy of the Sushi repository
 local_sushi_path = "~/GitHub/cmap/sushi"
+# Path to local copy of the vignette data
 local_test_data_path = "~/Downloads/vignette_test_data"
+# ==============================
+
+# Check that the provided directories exist
+if (!dir.exists(local_sushi_path)) {
+  stop("Local sushi repo not found at ", local_sushi_path)
+}
+
+if (!dir.exists(local_test_data_path)) {
+  stop("Local vignette data not found at ", local_sushi_path)
+}
 ```
 
 # Sushi pipeline overview
