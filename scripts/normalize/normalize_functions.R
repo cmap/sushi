@@ -15,7 +15,8 @@
 #' @returns Dataframe with counts normalized to control barcodes
 #' @import tidyverse
 #' @import magrittr
-normalize <- function(X, id_cols, CB_meta, pseudocount, cb_mad_cutoff = 1) {
+normalize <- function(X, id_cols, CB_meta, req_negcon_reps, negcon_type = "ctl_vehicle",
+                      pseudocount = 0, cb_mad_cutoff = 1) {
   # Required functions
   require(magrittr)
   require(tidyverse)
@@ -48,20 +49,29 @@ normalize <- function(X, id_cols, CB_meta, pseudocount, cb_mad_cutoff = 1) {
   # Identify valid profiles and valid control barcodes to determine intercept ----
   # Valid CBs per plate
   message("Calculating MADs for the control barcodes...")
-  cb_mad = get_cb_mad(X |> dplyr::filter(!is.na(cb_name)), id_cols = id_cols, cb_mad_cutoff = cb_mad_cutoff)
+  cb_mad = get_cb_mad(X[!is.na(cb_name) & pert_type == negcon_type],
+                      id_cols = id_cols, cb_mad_cutoff = cb_mad_cutoff)
 
-  print("The following CBs are dropped due to high variance:")
-  invalid_cbs = cb_mad |> dplyr::filter(keep_cb == FALSE)
+  print("The following CBs are dropped due to high MAD.")
+  invalid_cbs = cb_mad |> dplyr::filter(keep_cb == FALSE, num_reps >= req_negcon_reps)
   print(invalid_cbs)
+
+  print("The MAD filter did not apply to these CBs due to low replicate counts.")
+  print(cb_mad |> dplyr::filter(keep_cb == FALSE, num_reps < req_negcon_reps))
 
   # Drop wells with invalid pert_type, wells without control barcodes, cell line entries or other CBs,
   # cbs with zero reads, cbs with high MADs, and profiles with fewer than 4 CBs.
   valid_profiles= X %>% dplyr::filter(!pert_type %in% c(NA, "empty", "", "CB_only"), n != 0,
                                       cb_ladder %in% unique(CB_meta$cb_ladder),
                                       cb_name %in% unique(CB_meta$cb_name)) %>%
-    dplyr::anti_join(invalid_cbs, by = c("pcr_plate", "cb_ladder", "cb_name")) |>
     dplyr::group_by(dplyr::pick(tidyselect::all_of(id_cols))) %>%
     dplyr::filter(dplyr::n() > 4) %>% dplyr::ungroup()
+
+  # Drop high MAD CBs
+  if (nrow(invalid_cbs) > 0) {
+    valid_profiles = valid_profiles |>
+      dplyr::anti_join(invalid_cbs, by = c("pcr_plate", "cb_ladder", "cb_name"))
+  }
 
   # Validation: Check which wells/profiles were dropped ----
   distinct_all_profiles= X %>% dplyr::distinct(dplyr::pick(tidyselect::all_of(id_cols)))
@@ -99,7 +109,7 @@ normalize <- function(X, id_cols, CB_meta, pseudocount, cb_mad_cutoff = 1) {
 
 #' get_cb_mad
 #'
-#' Calculates MAD for each control barcodes across all PCR wells of a plate.
+#' Calculates MAD for each control barcodes across all negative control wells of a plate
 #'
 #' @param cb_reads Dataframe of control barcode read counts.
 #' @param id_cols Vector of columns that uniquely identify each PCR well.
@@ -109,7 +119,8 @@ get_cb_mad = function(cb_reads, id_cols, cb_mad_cutoff = 1) {
     dplyr::group_by(dplyr::across(tidyselect::all_of(id_cols))) |>
     dplyr::mutate(cb_frac = (n + 1) / sum(n)) |>
     dplyr::group_by(pcr_plate, cb_ladder, cb_name) |>
-    dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)), .groups = "drop") |>
+    dplyr::summarise(mad_log2_cb_frac = mad(log2(cb_frac)),
+                     num_reps = dplyr::n(), .groups = "drop") |>
     dplyr::mutate(keep_cb = ifelse(mad_log2_cb_frac < cb_mad_cutoff, TRUE, FALSE))
 
   return(cb_mad)
