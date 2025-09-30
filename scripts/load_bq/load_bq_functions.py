@@ -279,6 +279,27 @@ def delete_rows_for_build(client, dataset_id, table_id, build_name):
     client.query(query, job_config=job_config).result()
 
 
+def add_screen_to_lookup_if_not_exists(client, dataset_id, screen_name):
+    """Adds a screen to the lookup table if it doesn't already exist."""
+    table_id = "sushi_screens_lookup"
+
+    merge_query = f"""
+    MERGE `{dataset_id}.{table_id}` T
+    USING (SELECT @screen AS screen) S
+    ON T.screen = S.screen
+    WHEN NOT MATCHED THEN
+      INSERT (screen) VALUES (screen)
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[bigquery.ScalarQueryParameter("screen", "STRING", screen_name)]
+    )
+
+    logging.info(f"Ensuring screen '{screen_name}' exists in {dataset_id}.{table_id}")
+    client.query(merge_query, job_config=job_config).result()  # Wait for completion
+    logging.info(f"Screen '{screen_name}' is present in {dataset_id}.{table_id}")
+
+
 def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name, screen):
     """Load CSV to BigQuery with robust schema matching and error handling."""
     try:
