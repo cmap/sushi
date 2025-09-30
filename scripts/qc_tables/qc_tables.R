@@ -110,6 +110,13 @@ prism_barcode_counts <- data.table::fread(args$prism_barcode_counts, header = TR
 print(paste0("Reading in ", args$cell_line_meta, "....."))
 cell_line_meta <- data.table::fread(args$cell_line_meta, header = TRUE, sep = ",")
 
+# Join unknown_counts and prism_barcode_counts with sample_meta to ensure only appropriate wells are kept
+unknown_counts <- unknown_counts %>%
+  right_join(sample_meta %>% select(pcr_plate, pcr_well), by = c("pcr_plate", "pcr_well"))
+
+prism_barcode_counts <- prism_barcode_counts %>%
+    right_join(sample_meta %>% select(pcr_plate, pcr_well), by =c("pcr_plate", "pcr_well"))
+
 # Check if the output directory exists, if not create it
 if (!dir.exists(paste0(args$out, "/qc_tables"))) {
   dir.create(paste0(args$out, "/qc_tables"))
