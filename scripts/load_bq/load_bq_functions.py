@@ -5,6 +5,7 @@ import os
 import tempfile
 import polars as pl
 from typing import Dict, Any
+import pyfarmhash
 
 
 def get_polars_dtype_from_bq_field(field: bigquery.SchemaField) -> pl.DataType:
@@ -169,7 +170,7 @@ def filter_csv_to_matching_columns(
         raise
 
     # 1. Get expected columns from BQ schema (excluding metadata columns we'll add)
-    metadata_cols = {"sushi_build", "screen"}
+    metadata_cols = {"sushi_build", "screen", "screen_hash"}
     bq_columns = [
         field.name for field in table.schema if field.name not in metadata_cols
     ]
@@ -203,6 +204,11 @@ def filter_csv_to_matching_columns(
         metadata_expressions.append(pl.lit(build_name).alias("sushi_build"))
     if screen and "screen" in schema_map:
         metadata_expressions.append(pl.lit(screen).alias("screen"))
+    if screen and "screen_hash" in schema_map:
+        screen_hash = pyfarmhash.hash64(screen)
+        metadata_expressions.append(
+            pl.lit(screen_hash, dtype=pl.Int64).alias("screen_hash")
+        )
 
     if metadata_expressions:
         df = df.with_columns(metadata_expressions)
