@@ -46,7 +46,7 @@ if (NA %in% unique(l2fc$growth_pattern)) {
 
 # Correct l2fcs by regressing out cell line growth patterns
 corrected_l2fc = l2fc |>
-  dplyr::group_split(dplyr::across(tidyrselect::all_of(bio_rep_id_cols))) |>
+  dplyr::group_split(dplyr::across(tidyselect::all_of(bio_rep_id_cols))) |>
   lapply(apply_growth_correction, raw_l2fc_col = "l2fc") |>
   dplyr::bind_rows() |>
   dplyr::ungroup() |>
