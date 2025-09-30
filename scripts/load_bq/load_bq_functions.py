@@ -6,6 +6,7 @@ import tempfile
 import polars as pl
 from typing import Dict, Any
 import farmhash
+import ctypes
 
 
 def get_polars_dtype_from_bq_field(field: bigquery.SchemaField) -> pl.DataType:
@@ -205,9 +206,10 @@ def filter_csv_to_matching_columns(
     if screen and "screen" in schema_map:
         metadata_expressions.append(pl.lit(screen).alias("screen"))
     if screen and "screen_hash" in schema_map:
-        screen_hash = farmhash.hash64(screen)
+        unsigned_hash = farmhash.hash64(screen)
+        signed_hash = ctypes.c_int64(unsigned_hash).value
         metadata_expressions.append(
-            pl.lit(screen_hash, dtype=pl.Int64).alias("screen_hash")
+            pl.lit(signed_hash, dtype=pl.Int64).alias("screen_hash")
         )
 
     if metadata_expressions:
