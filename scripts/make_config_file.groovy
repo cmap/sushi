@@ -80,6 +80,7 @@ pipeline {
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Uses a data_to_remove.csv files to remove data. Runs as part of filter counts.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
+        booleanParam(name: 'GROWTH_CORRECTION', defaultValue: true, description: 'Correct fold change values using cell line growth annotations.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
 
         separator(
@@ -154,7 +155,9 @@ pipeline {
         string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name in BUILD_DIR of the sample meta.')
         string(name: 'CELL_SET_AND_POOL_META', defaultValue: 'cell_set_and_pool_meta.csv', description: 'Cell set and pool information for this run.')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
-
+        // Growth annotations file
+        string(name: 'GROWTH_ANNOTATIONS', defaultValue: 'growth_annotations.csv', description: 'File name in BUILD_DIR containining growth annotations.')
+        
         // Additional parameters ordered by when they first appear
         string(name: 'BARCODE_COL', defaultValue: 'forward_read_barcode', description: 'Name of the column containing the barcode sequence. The column containing the barcode sequence should have the same name across the Nori output file, the cell line metadata, and the CB metadata. This defaults to \"forward_read_barcode\", and the paramter is first used in COLLATE_FASTQ_READS.')
         string(name: 'SEQUENCING_INDEX_COLS', defaultValue: 'flowcell_names,index_1,index_2', description: 'List of sequencing related columns found in the sample meta. These columns are used to uniquely identify every PCR well in the run. Default value is \"flowcell_names,index_1,index_2\", and the parameter is used in COLLATE_FASTQ_READS.')
@@ -170,6 +173,7 @@ pipeline {
         string(name: 'VIABILITY_CAP', defaultValue: '1.5', description: 'Cap for viability values used when computing LFC. This defaults to \"1.5\".')
         string(name: 'COMBINATION_COL', defaultValue: 'is_combination', description: 'Name of the column describing if a row has a combination. This defaults to \"is_combination\".')
         string(name: 'N_SAMPLES', defaultValue: '10000', description: 'Size of the reampling. This defaults to \"10000\".')
+        string(name: 'SYNERGY_LFC_COL', defaultValue: 'median_l2fc_uncorrected', description: '[Synergy] Column name in collapsed_l2fc.csv to be used for synergy calculations. Theis defaults to \"median_l2fc_uncorrected\".')
 
         // Files created by sushi
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts. This file is created by COLLATE_FASTQ_READS.')
@@ -253,6 +257,7 @@ pipeline {
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
+                        'GROWTH_ANNOTATIONS',
 
                         // sushi output files
                         'PRISM_BARCODE_COUNTS', 'UNKNOWN_BARCODE_COUNTS', 'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS',
@@ -278,7 +283,7 @@ pipeline {
                         'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES',
 
                         //combinations
-                        'COMBINATION_COL', 'N_SAMPLES', 'SYNERGY_BIOMARKER', 'SYNERGY_COL', 'SYNERGY_FILE'
+                        'COMBINATION_COL', 'N_SAMPLES', 'SYNERGY_BIOMARKER', 'SYNERGY_COL', 'SYNERGY_FILE', 'SYNERGY_LFC_COL'
                     ]
 
                     def config = [:]
@@ -401,6 +406,9 @@ pipeline {
                         }
                         if (params.COMPUTE_LFC) {
                             scriptsToRun.add('compute_l2fc/compute_l2fc.sh')
+                        }
+                        if (params.GROWTH_CORRECTION) {
+                            scriptsToRun.add('growth_correction/growth_correction.sh')
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates/collapse_replicates.sh')
