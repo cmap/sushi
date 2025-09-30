@@ -34,11 +34,11 @@ if("bio_rep" %in% colnames(l2fc)) {
 }
 
 # Add annotations to l2fcs
-l2fc[growth_annotations, on = c("pool_id", "lua", "DepMap_ID"), growth_pattern := i.growth_pattern]
+l2fc[growth_annotations, on = c("pool_id", "lua", "depmap_id"), growth_pattern := i.growth_pattern]
 
 # Throw an error if a cell line does not have a growth annotation.
 if (NA %in% unique(l2fc$growth_pattern)) {
-  no_annot_cls = unique(l2fc[is.na(growth_pattern),  c("pool_id", "lua", "DepMap_ID")])
+  no_annot_cls = unique(l2fc[is.na(growth_pattern),  c("pool_id", "lua", "depmap_id")])
   message("The following cell lines are missing growth annotations...")
   print(no_annot_cls)
   stop("Some cell lines do not have growth annotations!")
