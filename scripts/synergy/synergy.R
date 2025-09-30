@@ -89,7 +89,7 @@ create_dmso_synergy_hdf5(dmso_l2fc = dmso_l2fc,
 # Restructure L2FCs with single agent L2FCs and calculate synergy ----
 # Create vector of new column names
 names_prefix = c("pert", "pert2", "combo")
-new_names = paste(names_prefix, "median_l2fc", sep = "_")
+new_names = paste(names_prefix, args$synergy_l2fc_col, sep = "_")
 
 # Pull out columns that describe each perturbation
 ignore_cols = c("pert_type", "pert_plate", "pert_vehicle") # common columns with "pert" to be ignored
