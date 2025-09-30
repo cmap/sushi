@@ -1,13 +1,24 @@
 
-# Initial function from MK
-apply_growth_correction = function(df) {
-  df = df |>
-    dplyr::mutate(culture = as.factor(culture)) |>
-    dplyr::filter(is.finite(LFC_corrected), !is.na(culture)) %>%
-    dplyr::mutate(y = LFC_corrected - mean(LFC_corrected))
+# Function expects annotation column to be "growth_pattern"
+apply_growth_correction = function(df, raw_l2fc_col = "l2fc") {
+  centered_df = df |>
+    dplyr::filter(is.finite(.data[[raw_l2fc_col]])) |>
+    dplyr::mutate(growth_pattern = as.factor(growth_pattern),
+                  centered_l2fc = .data[[raw_l2fc_col]] - mean(.data[[raw_l2fc_col]]))
 
-  fit <- lm(y ~ culture, df)
-  df$LFC_regressed <- fit$residuals + mean(df$LFC_corrected)
+  # Identify number of growth patterns
+  num_growth_annots = length(unique(centered_df$growth_pattern))
 
-  df
+  # Run correction if there are more than 1 growth pattern
+  if (num_growth_annots > 1) {
+    fit = lm(centered_l2fc ~ growth_pattern, centered_df)
+    centered_df$l2fc_uncorrected = centered_df$l2fc
+    centered_df$l2fc = fit$residuals + mean(centered_df$l2fc)
+  } else {
+    message("Only one growth pattern was detected. Growth pattern correction is not applied.")
+    centered_df$l2fc_uncorrected = centered_df$l2fc
+  }
+
+  # Drop columns created by this function and return output
+  return(centered_df |> dplyr::select(-centered_l2fc))
 }
