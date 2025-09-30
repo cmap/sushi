@@ -2,16 +2,15 @@ FROM rocker/r-ver:4.4
 
 MAINTAINER John Davis <cmap-soft@broadinstitute.org>
 
-# Set environment variables
+# Set environment variables to allow non-interactive installs
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Set root user for installs
+# Switch to root user for system-wide installations
 USER root
 
-# Install required packages
-RUN apt-get update -qq && \
-    mkdir -p /src && \
-    apt-get -y --no-install-recommends install \
+# 1. Install all system dependencies in a single layer
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    # R package dependencies
     libssl-dev \
     libxml2-dev \
     libcairo2-dev \
@@ -22,39 +21,38 @@ RUN apt-get update -qq && \
     libssh2-1-dev \
     libhdf5-dev \
     libcurl4-openssl-dev \
+    libbz2-dev \
+    liblzma-dev \
+    # Python build dependencies (Fixes the pyfarmhash error)
+    python3-dev \
+    build-essential \
+    # General utilities
     jq \
     python3 \
-    python3-pip && \
-    apt-get -y --no-install-recommends install libbz2-dev liblzma-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    python3-pip \
+    python3-venv \
+    curl \
+    # Clean up apt cache to reduce image size
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Setup venvironment for Python
-RUN apt-get update \
- && apt-get install -y python3-venv python3-pip \
- && python3 -m venv /opt/venv \
- && /opt/venv/bin/pip install --upgrade pip setuptools wheel google-cloud-bigquery pyfarmhash
+# 2. Setup Python virtual environment and install Python packages
+RUN python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --upgrade pip setuptools wheel \
+    && /opt/venv/bin/pip install google-cloud-bigquery pyfarmhash pandas requests boto3 polars
 
-# install package & deps inside the venv
+# 3. Install local Python tools
 COPY scripts/utils/prism_tools ./prism_tools
-RUN /opt/venv/bin/pip install -e prism_tools \
- && /opt/venv/bin/pip install pandas requests boto3 polars
+RUN /opt/venv/bin/pip install -e prism_tools
 
-# Copy the R scripts to the container (for use with AWS)
+# 4. Make the virtual environment's python/pip the default
+ENV PATH="/opt/venv/bin:${PATH}"
+
+# 5. Copy R scripts into the container
 COPY scripts/drc /scripts/drc
 COPY scripts/biomarker /scripts/biomarker
 COPY scripts/utils /scripts/utils
-
-# make the venv’s python/pip the default
-ENV PATH="/opt/venv/bin:${PATH}"
-
-# First set of R dependencies
 COPY docker/install_packages.R /src/install_packages.R
 
+# 6. Install R dependencies
 RUN Rscript /src/install_packages.R
-
-# Install curl (why post update?)
-RUN apt-get update -qq && \
-    apt-get -y install --no-install-recommends curl && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
