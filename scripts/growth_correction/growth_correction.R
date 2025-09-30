@@ -14,7 +14,6 @@ parser$add_argument("--growth_annotations", default = "growth_annotations.csv",
                     help = "Path to metadata containing growth annotations.")
 parser$add_argument("--sig_cols", default = "cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
-parser$add_argument("-o", "--out", default = getwd(), help = "Output path. Default is working directory")
 
 args = parser$parse_args()
 
@@ -53,6 +52,5 @@ corrected_l2fc = l2fc |>
   dplyr::select(-growth_pattern)
 
 # Write out
-outpath = file.path(args$out, args$l2fc)
-message("Writing corrected l2fc value to ", outpath)
-write.csv(corrected_l2fc, outpath, row.names = FALSE, quote = FALSE)
+message("Writing corrected l2fc value to ", args$l2fc)
+write.csv(corrected_l2fc, args$l2fc, row.names = FALSE, quote = FALSE)

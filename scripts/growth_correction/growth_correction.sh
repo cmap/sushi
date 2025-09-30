@@ -27,7 +27,6 @@ args=(
 --l2fc "$LFC"
 --growth_annotations "$GROWTH_ANNOTATIONS"
 --sig_cols "$SIG_COLS"
---out "$BUILD_DIR"
 )
 
 echo Rscript growth_correction/growth_correction.R "${args[@]}"
