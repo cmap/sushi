@@ -33,7 +33,7 @@ args=(
 --sig_cols "$SIG_COLS"
 --combination_col "$COMBINATION_COL"
 --count_col_name "$COUNT_COL_NAME" 
---l2fc_col "$COLLAPSED_L2FC_COLUMN"
+--synergy_l2fc_col "$SYNERGY_LFC_COL"
 --n_samples "$N_SAMPLES"
 --negcon_type "$CTL_TYPES"
 --out "$BUILD_DIR"

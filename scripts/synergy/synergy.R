@@ -32,7 +32,7 @@ parser$add_argument("--combination_col", default = "is_combination", help = "Col
 parser$add_argument("--count_col_name", default = "log2_normalized_n",
                     help = "Column name containing counts to be used to calculate l2fcs")
 # Used to restructure l2fcs and to calculate synergy
-parser$add_argument("--l2fc_col", default = "median_l2fc", help = "Column name containing l2fc values")
+parser$add_argument("--synergy_l2fc_col", default = "median_l2fc", help = "Column name containing l2fc values")
 # Used to create mock DMSO l2fcs
 parser$add_argument("--n_samples", default = 10000, help = "Size of the resampling")
 # Used to create mock DMSO l2fcs
@@ -89,7 +89,7 @@ create_dmso_synergy_hdf5(dmso_l2fc = dmso_l2fc,
 # Restructure L2FCs with single agent L2FCs and calculate synergy ----
 # Create vector of new column names
 names_prefix = c("pert", "pert2", "combo")
-new_names = paste(names_prefix, args$l2fc_col, sep = "_")
+new_names = paste(names_prefix, args$synergy_l2fc_col, sep = "_")
 
 # Pull out columns that describe each perturbation
 ignore_cols = c("pert_type", "pert_plate", "pert_vehicle") # common columns with "pert" to be ignored
@@ -103,7 +103,7 @@ filt_sig_cols = args$sig_cols[!args$sig_cols %in% c(pert1_cols, pert2_cols, args
 trt_synergy = restructure_l2fc(cps_l2fc = cps_l2fc,
                                join_cols = unique(c(args$cell_line_cols, filt_sig_cols)),
                                pert_cols_list = list(pert1_cols, pert2_cols),
-                               l2fc_col = args$l2fc_col,
+                               l2fc_col = args$synergy_l2fc_col,
                                new_l2fc_col_names = new_names,
                                combination_col = args$combination_col)
 
