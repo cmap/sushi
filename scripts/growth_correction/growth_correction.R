@@ -25,7 +25,7 @@ l2fc = data.table::fread(args$l2fc)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 
 # Detect if bio_rep column exists - TO DO - MAKE THIS INTO A PARAMETER!
-if("bio_rep" %in% colnames(l2fc)) {
+if ("bio_rep" %in% colnames(l2fc)) {
   bio_rep_id_cols = c(sig_cols, "bio_rep")
 } else {
   bio_rep_id_cols = sig_cols
@@ -50,6 +50,17 @@ corrected_l2fc = l2fc |>
   dplyr::bind_rows() |>
   dplyr::ungroup() |>
   dplyr::select(-growth_pattern)
+
+# Check the column has been generated
+if ("l2fc_uncorrected" %in% colnames(corrected_l2fc)) {
+  if (!NA %in% unique(corrected_l2fc$l2fc_uncorrected)) {
+    message("Success: l2fc_uncorrected column was generated.")
+  } else {
+    message("Warning: l2fc_uncorrected column was generated but with NA values.")
+  }
+} else {
+  stop("Error: l2fc_uncorrected was not generated.")
+}
 
 # Write out
 message("Writing corrected l2fc value to ", args$l2fc)
