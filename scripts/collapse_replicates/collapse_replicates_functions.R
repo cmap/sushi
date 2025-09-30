@@ -43,11 +43,19 @@ collapse_bio_reps= function(l2fc, sig_cols, cell_line_cols= c('depmap_id', 'lua'
   }
   
   # Median collapsing bio replicates ----
-  collapsed_counts= l2fc %>%
-    tidyr::unite(col= 'sig_id', all_of(sig_cols), sep= ':', na.rm= FALSE, remove= FALSE) %>%
-    dplyr::group_by(pick(all_of(c(cell_line_cols, 'sig_id', sig_cols)))) %>%
-    dplyr::summarise(median_l2fc= median(l2fc), num_bio_reps= dplyr::n()) %>% dplyr::ungroup() %>%
-    dplyr::select(-sig_id)
+  if ("l2fc_uncorrected" %in% colnames(l2fc)) {
+    message("Detecting l2fc_uncorrected. Calculating median for both l2fc and l2fc_uncorrected.")
+    collapsed_counts = l2fc |>
+      dplyr::group_by(across(all_of(c(cell_line_cols, sig_cols)))) |>
+      dplyr::summarise(median_l2fc = median(l2fc),
+                       median_l2fc_uncorrected = median(l2fc_uncorrected),
+                       num_bio_reps= dplyr::n(), .groups = "drop")
+  } else {
+    collapsed_counts = l2fc |>
+      dplyr::group_by(across(all_of(c(cell_line_cols, sig_cols)))) |>
+      dplyr::summarise(median_l2fc = median(l2fc),
+                       num_bio_reps = dplyr::n(), .groups = "drop")
+  }
   
   # Validation: Check that replicates were collapsed ----
   if('bio_rep' %in% colnames(l2fc)) {
