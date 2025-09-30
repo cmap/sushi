@@ -23,7 +23,7 @@ growth_annotations = data.table::fread(args$growth_annotations)
 l2fc = data.table::fread(args$l2fc)
 
 # Set up some parameters
-args$sig_cols = unlist(strsplit(args$sig_cols, ","))
+sig_cols = unlist(strsplit(args$sig_cols, ","))
 
 # Detect if bio_rep column exists - TO DO - MAKE THIS INTO A PARAMETER!
 if("bio_rep" %in% colnames(l2fc)) {
