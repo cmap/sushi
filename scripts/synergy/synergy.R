@@ -32,7 +32,8 @@ parser$add_argument("--combination_col", default = "is_combination", help = "Col
 parser$add_argument("--count_col_name", default = "log2_normalized_n",
                     help = "Column name containing counts to be used to calculate l2fcs")
 # Used to restructure l2fcs and to calculate synergy
-parser$add_argument("--synergy_l2fc_col", default = "median_l2fc", help = "Column name containing l2fc values")
+parser$add_argument("--synergy_l2fc_col", default = "median_l2fc_uncorrected",
+                    help = "Column name containing l2fc values")
 # Used to create mock DMSO l2fcs
 parser$add_argument("--n_samples", default = 10000, help = "Size of the resampling")
 # Used to create mock DMSO l2fcs
