@@ -173,7 +173,7 @@ pipeline {
         string(name: 'VIABILITY_CAP', defaultValue: '1.5', description: 'Cap for viability values used when computing LFC. This defaults to \"1.5\".')
         string(name: 'COMBINATION_COL', defaultValue: 'is_combination', description: 'Name of the column describing if a row has a combination. This defaults to \"is_combination\".')
         string(name: 'N_SAMPLES', defaultValue: '10000', description: 'Size of the reampling. This defaults to \"10000\".')
-        string(name: 'SYNERGY_LFC_COL', defaultValue: 'median_l2fc_uncorrected', description: '[SYNERGY] Column name in collapsed_l2fc.csv to be used for synergy calculations. This defaults to \"median_l2fc_uncorrected\".')
+        string(name: 'SYNERGY_L2FC_COL', defaultValue: 'median_l2fc_uncorrected', description: '[SYNERGY] Column name in collapsed_l2fc.csv to be used for synergy calculations. This defaults to \"median_l2fc_uncorrected\".')
 
         // Files created by sushi
         string(name: 'PRISM_BARCODE_COUNTS', defaultValue: 'prism_barcode_counts.csv', description: 'Filename in BUILD_DIR containing PRISM barcode counts. This file is created by COLLATE_FASTQ_READS.')
@@ -284,7 +284,7 @@ pipeline {
                         'QC_PARAMS', 'FRACTION_EXPECTED_CONTROLS', 'FILTER_FAILED_LINES',
 
                         //combinations
-                        'COMBINATION_COL', 'N_SAMPLES', 'SYNERGY_BIOMARKER', 'SYNERGY_COL', 'SYNERGY_FILE', 'SYNERGY_LFC_COL'
+                        'COMBINATION_COL', 'N_SAMPLES', 'SYNERGY_BIOMARKER', 'SYNERGY_COL', 'SYNERGY_FILE', 'SYNERGY_L2FC_COL'
                     ]
 
                     def config = [:]
