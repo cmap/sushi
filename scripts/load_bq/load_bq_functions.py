@@ -5,6 +5,8 @@ import os
 import tempfile
 import polars as pl
 from typing import Dict, Any
+import farmhash
+import ctypes
 
 
 def get_polars_dtype_from_bq_field(field: bigquery.SchemaField) -> pl.DataType:
@@ -169,7 +171,7 @@ def filter_csv_to_matching_columns(
         raise
 
     # 1. Get expected columns from BQ schema (excluding metadata columns we'll add)
-    metadata_cols = {"sushi_build", "screen"}
+    metadata_cols = {"sushi_build", "screen", "screen_hash"}
     bq_columns = [
         field.name for field in table.schema if field.name not in metadata_cols
     ]
@@ -203,6 +205,12 @@ def filter_csv_to_matching_columns(
         metadata_expressions.append(pl.lit(build_name).alias("sushi_build"))
     if screen and "screen" in schema_map:
         metadata_expressions.append(pl.lit(screen).alias("screen"))
+    if screen and "screen_hash" in schema_map:
+        unsigned_hash = farmhash.hash64(screen)
+        signed_hash = ctypes.c_int64(unsigned_hash).value
+        metadata_expressions.append(
+            pl.lit(signed_hash, dtype=pl.Int64).alias("screen_hash")
+        )
 
     if metadata_expressions:
         df = df.with_columns(metadata_expressions)
@@ -269,6 +277,27 @@ def delete_rows_for_build(client, dataset_id, table_id, build_name):
         f"Deleting rows from {dataset_id}.{table_id} for sushi_build='{build_name}'"
     )
     client.query(query, job_config=job_config).result()
+
+
+def add_screen_to_lookup_if_not_exists(client, dataset_id, screen_name):
+    """Adds a screen to the lookup table if it doesn't already exist."""
+    table_id = "sushi_screens_lookup"
+
+    merge_query = f"""
+    MERGE `{dataset_id}.{table_id}` T
+    USING (SELECT @screen AS screen) S
+    ON T.screen = S.screen
+    WHEN NOT MATCHED THEN
+      INSERT (screen) VALUES (screen)
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[bigquery.ScalarQueryParameter("screen", "STRING", screen_name)]
+    )
+
+    logging.info(f"Ensuring screen '{screen_name}' exists in {dataset_id}.{table_id}")
+    client.query(merge_query, job_config=job_config).result()  # Wait for completion
+    logging.info(f"Screen '{screen_name}' is present in {dataset_id}.{table_id}")
 
 
 def load_csv_to_bigquery(client, dataset_id, table_id, file_path, build_name, screen):

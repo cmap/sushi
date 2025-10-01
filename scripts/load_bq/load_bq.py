@@ -7,6 +7,7 @@ from load_bq_functions import (
     table_exists,
     load_csv_to_bigquery,
     init_logger,
+    add_screen_to_lookup_if_not_exists,
 )
 
 # Define your dataset name here or pass as an arg if needed
@@ -33,6 +34,14 @@ def build_parser():
 def main(args):
     init_logger()
     client = get_bigquery_client()
+
+    # Add screen to lookup table if it doesn't exist
+    if table_exists(client, BQ_DATASET_ID, "sushi_screens_lookup"):
+        add_screen_to_lookup_if_not_exists(client, BQ_DATASET_ID, args.screen)
+    else:
+        logging.warning(
+            "sushi_screens_lookup table not found. Skipping update for screen name."
+        )
 
     logging.info(f"Recursively scanning: {args.build_path}")
     for root, _, files in os.walk(args.build_path):

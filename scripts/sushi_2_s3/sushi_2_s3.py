@@ -212,11 +212,18 @@ def main(args):
 
     # From screen type, decide on which columns to use for compound key
     if config.SCREEN_TYPE == "CPS_SEQ":
-        compound_key_cols = ["x_project_id", "pert_plate", "pert_name", "pert_id", "pert2_name", "pert2_id"]
+        compound_key_cols = [
+            "x_project_id",
+            "pert_plate",
+            "pert_name",
+            "pert_id",
+            "pert2_name",
+            "pert2_id",
+        ]
     else:
         compound_key_cols = ["x_project_id", "pert_plate", "pert_name", "pert_id"]
 
-    key_df = generate_compound_key(sample_meta, filt_cols = compound_key_cols)
+    key_df = generate_compound_key(sample_meta, filt_cols=compound_key_cols)
 
     # Convert the key_df to json and write to the build directory
     logger.info("Writing compound key to JSON...")

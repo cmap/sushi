@@ -7,7 +7,6 @@ import json
 import logging
 
 
-
 def fetch_metadata(filter_dict, base_url, api_key):
     # Convert the filter to a JSON string
     filter_json = json.dumps(filter_dict)
