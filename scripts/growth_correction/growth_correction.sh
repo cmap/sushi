@@ -21,11 +21,10 @@ enforce_abs_path() {
 }
 
 enforce_abs_path LFC
-enforce_abs_path GROWTH_ANNOTATIONS
 
 args=(
 --l2fc "$LFC"
---growth_annotations "$GROWTH_ANNOTATIONS"
+--growth_pattern_col "$GROWTH_PATTERN_COL"
 --sig_cols "$SIG_COLS"
 )
 
