@@ -110,6 +110,14 @@ create_dmso_synergy_hdf5 = function(dmso_l2fc, group_name_cols, path,
   for (i in unique_group_names) {
     subset = dmso_l2fc[group_name == i, ]
 
+    # Check resampling maximum
+    num_pick_combinations = base::choose(nrow(subset), size)
+    if (num_pick_combinations < n_samples) {
+      message(nrow(subset), " choose ", size, " = ", num_pick_combinations)
+      message("WARNING: Cannot sample up to ", n_samples, ". Using ", num_pick_combinations, " instead.")
+      n_samples = num_pick_combinations
+    }
+
     # Resample to n_samples and create pert1, pert2, combo
     resampled_l2fc = median_resample(x = subset$l2fc, n_samples = n_samples, size = size,
                                      replace = replace, seed = seed)
@@ -142,14 +150,6 @@ create_dmso_synergy_hdf5 = function(dmso_l2fc, group_name_cols, path,
 #' @param replace Sampling with or without replacement for `size`.
 #' @param prob Optional vector of probability weights for `base::sample`.
 median_resample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, prob = NULL) {
-  # Stop if the number to sample up to is too high
-  num_pick_combinations = base::choose(length(x), size)
-  if (num_pick_combinations < n_samples) {
-    message(length(x), " choose ", size, " = ", num_pick_combinations)
-    message("WARNING: Cannot sample up to ", n_samples, ". Using ", num_pick_combinations, " instead.")
-    n_samples = num_pick_combinations
-  }
-
   # Reset seed and resample
   base::set.seed(seed)
   resampled_values = base::replicate(n_samples, median(base::sample(x, size, replace = replace, prob = prob)))
