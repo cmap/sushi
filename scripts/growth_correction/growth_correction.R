@@ -12,6 +12,7 @@ parser$add_argument("-q", "--quietly", action = "store_false", dest = "verbose",
 parser$add_argument("--l2fc", default = "l2fc.csv", help = "Path to file containing l2fc values.")
 parser$add_argument("--growth_pattern_col", default = "growth_pattern",
                     help = "Column containing growth pattern annotations.")
+parser$add_argument("--l2fc_col", default = "l2fc", help = "Column containing log2 fold change values to be corrected.")
 parser$add_argument("--sig_cols", default = "cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
 
@@ -19,8 +20,9 @@ args = parser$parse_args()
 
 # Read in files and set up any args
 l2fc = data.table::fread(args$l2fc)
-sig_cols = unlist(strsplit(args$sig_cols, ","))
 growth_pattern_col = args$growth_pattern_col
+l2fc_col = args$l2fc_col
+sig_cols = unlist(strsplit(args$sig_cols, ","))
 
 # Detect if bio_rep column exists - MAYBE make this into a parameter?
 if ("bio_rep" %in% colnames(l2fc)) {
@@ -38,7 +40,7 @@ if (any(unique(l2fc[[growth_pattern_col]]) %in% c(NA, "", " ", "NA"))) {
 # Correct l2fcs by regressing out cell line growth patterns
 corrected_l2fc = l2fc |>
   dplyr::group_split(dplyr::across(tidyselect::all_of(bio_rep_id_cols))) |>
-  lapply(apply_growth_correction, raw_l2fc_col = "l2fc", growth_pattern_col = growth_pattern_col) |>
+  lapply(apply_growth_correction, raw_l2fc_col = l2fc_col, growth_pattern_col = growth_pattern_col) |>
   dplyr::bind_rows() |>
   dplyr::ungroup()
 
