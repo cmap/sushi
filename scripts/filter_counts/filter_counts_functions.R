@@ -115,6 +115,10 @@ filter_raw_reads= function(prism_barcode_counts,
 
   # Add a column to indicate if a read was expected - this column is used by annotated counts
   template[, expected_read := TRUE]
+
+  # trouble shooting
+  print(colnames(template))
+  print(colnames(cell_set_and_pool_meta))
   
   # Annotating reads ----
   # From prism_barcode_counts, left join metadata to annotate all reads.
