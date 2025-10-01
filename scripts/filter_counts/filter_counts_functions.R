@@ -83,11 +83,11 @@ filter_raw_reads= function(prism_barcode_counts,
     # This will produce a warning if a depmap_id appears in a cell set more than once!
     # This currently does NOT error out
     validate_cell_set(cell_set_and_pool_meta)
-  
-    # Drop cell lines that appear in more than one pool of a cell set
-    cell_set_and_pool_meta %<>% dplyr::group_by(cell_set, depmap_id, lua) %>%
-      dplyr::summarise(pool_id = paste(sort(unique(pool_id)), collapse = "_+_"), .groups = "drop")
 
+    # Drop cell lines that appear in more than one pool of a cell set
+    cell_set_and_pool_meta = cell_set_and_pool_meta |>
+      dplyr::group_by(!pool_id) |>
+      dplyr::summarise(pool_id = paste(sort(unique(pool_id)), collapse = "_+_"), .groups = "drop")
   }
     
   # Creating a template of all expected reads in the run ----
@@ -115,10 +115,6 @@ filter_raw_reads= function(prism_barcode_counts,
 
   # Add a column to indicate if a read was expected - this column is used by annotated counts
   template[, expected_read := TRUE]
-
-  # trouble shooting
-  print(colnames(template))
-  print(colnames(cell_set_and_pool_meta))
   
   # Annotating reads ----
   # From prism_barcode_counts, left join metadata to annotate all reads.
