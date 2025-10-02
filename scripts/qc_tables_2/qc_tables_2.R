@@ -7,7 +7,7 @@ suppressPackageStartupMessages({
   library(jsonlite)
   library(dplyr)
 })
-source("qc_tables_post_lfc/qc_tables_2_functions.R")
+source("qc_tables_2/qc_tables_2_functions.R")
 source("utils/kitchen_utensils.R")
 
 # Argument parser ----
