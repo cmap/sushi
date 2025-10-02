@@ -123,8 +123,7 @@ trt_synergy[, group_name := do.call(paste, c(.SD, sep = "__")), .SDcols = group_
 trt_synergy = trt_synergy[group_name %in% existing_groups$name, ]
 
 # Calculate emperical pvalues using mapply
-trt_synergy[, p_val_emp := mapply(get_pvalue, group_name, synergy,
-                                  MoreArgs = list(h5_file = dmso_synergy, n_samples = args$n_samples))]
+trt_synergy[, p_val_emp := mapply(get_pvalue, group_name, synergy, MoreArgs = list(h5_file = dmso_synergy))]
 rhdf5::h5closeAll()
 print("Added empirical pvalues to synergies.")
 
