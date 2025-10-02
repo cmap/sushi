@@ -89,6 +89,7 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'GENERATE_QC_TABLES', defaultValue: true, description: 'Generate MTS style QC tables')
+        booleanParam(name: 'GENERATE_QC_TABLES_2', defaultValue: false, description: 'Generate QC tables post-lfc. Only check this if you are computing log fold changes.')
         booleanParam(name: 'QC_IMAGES', defaultValue: false, description: 'Check this to trigger the QC images job.')
         booleanParam(name: 'FILTER_QC_FLAGS', defaultValue: true, description: 'Filters data that have qc_flags.')
         booleanParam(name: 'FILTER_FAILED_LINES', defaultValue: true, description: 'Filter cell lines from LFC and collapsed LFC that have failed QC.')
@@ -404,6 +405,9 @@ pipeline {
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates/collapse_replicates.sh')
+                        }
+                        if (params.GENERATE_QC_TABLES_2) {
+                            scriptsToRun.add('qc_tables_2/qc_tables_2.sh')
                         }
                         if (params.DRC) {
                             scriptsToRun.add('drc/dose_response.sh')

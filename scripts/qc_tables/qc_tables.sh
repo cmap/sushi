@@ -32,7 +32,6 @@ enforce_abs_path QC_PARAMS
 enforce_abs_path SAMPLE_META
 enforce_abs_path CELL_LINE_META
 enforce_abs_path PRISM_BARCODE_COUNTS
-enforce_abs_path LFC
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
@@ -53,7 +52,6 @@ args=(
 --qc_params "$QC_PARAMS"
 --cell_line_meta "$CELL_LINE_META"
 --prism_barcode_counts "$PRISM_BARCODE_COUNTS"
---l2fc "$LFC"
 )
 
 echo Rscript qc_tables/qc_tables.R "${args[@]}"
