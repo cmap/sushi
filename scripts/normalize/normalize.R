@@ -52,7 +52,7 @@ normalized_counts = normalize(X = filtered_counts, id_cols = input_id_cols, req_
 if (input_pseudocount < read_detection_limit) {
   # Determine the number of negative control replicates
   negcon_reps = filtered_counts[pert_type == negcon_type] |>
-    dplyr::distinct(across(all_of(id_cols))) |>
+    dplyr::distinct(across(all_of(input_id_cols))) |>
     dplyr::group_by(pcr_plate) |>
     dplyr::summarise(num_negcon_reps = dplyr::n(), .groups = "drop")
 
