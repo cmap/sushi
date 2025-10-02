@@ -25,7 +25,7 @@ parser$add_argument(
   "--annotated_counts",
   default = "annotated_counts.csv", help = "annotated counts file"
 )
-parser$add_arguchment(
+parser$add_argument(
   "--filtered_counts",
   default = "filtered_counts.csv", help = "filtered counts file"
 )
