@@ -30,10 +30,6 @@ parser$add_argument(
   default = "filtered_counts.csv", help = "filtered counts file"
 )
 parser$add_argument(
-  "--l2fc",
-    default = "l2fc.csv", help = "l2fc file"
-)
-parser$add_argument(
   "-o", "--out",
   default = getwd(), help = "Output path. Default is working directory"
 )
@@ -89,12 +85,10 @@ print(paste0("Reading in ", args$filtered_counts, "....."))
 filtered_counts <- data.table::fread(args$filtered_counts, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$control_barcode_meta, "....."))
 cb_meta <- data.table::fread(args$control_barcode_meta, header = TRUE, sep = ",")
-print(paste0("Reading in ", args$unknown_barcode_counts, header = TRUE, sep = ","))
+print(paste0("Reading in ", args$unknown_barcode_counts, "....."))
 unknown_counts <- data.table::fread(args$unknown_barcode_counts, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$sample_meta, "....."))
 sample_meta <- data.table::fread(args$sample_meta, header = TRUE, sep = ",")
-print(paste0("Reading in ", args$l2fc, "....."))
-l2fc <- data.table::fread(args$l2fc, header = TRUE, sep = ",")
 # If normzlied_counts_original.csv exists, use that, otherwise use args$normalized_counts
 normalized_counts_original_path <- paste0(args$out, "/normalized_counts_original.csv")
 if (file.exists(normalized_counts_original_path)) {
@@ -234,19 +228,7 @@ final_filtered_normalized_counts <- pool_well_filtered_normalized_counts
 #    plate_cell_filtered_normalized_counts, pcr_plate_qc_flags_table,
 #    by = c("pcr_plate", "pert_plate"))
 
-# Pool replicate concordance
-pool_delta_df <- compute_pool_delta_df(l2fc, 2)
-
 # WRITE OUT RESULTS --------
-
-# Write pool_delta_df  table
-pool_delta_outpath <- paste0(args$out, "/qc_tables/pool_delta_table.csv")
-print(paste0("Writing out pool_delta_df to ", pool_delta_outpath))
-write.csv(
-  x = pool_delta_df, file = pool_delta_outpath, row.names = FALSE,
-  quote = FALSE
-)
-check_file_exists(pool_delta_outpath)
 
 # Write pcr_plate_qc_flags table
 pcr_plate_qc_flags_outpath <- paste0(args$out, "/qc_tables/pcr_plate_qc_flags.csv")
