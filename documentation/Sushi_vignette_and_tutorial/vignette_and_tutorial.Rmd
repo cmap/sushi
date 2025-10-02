@@ -60,6 +60,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# ==============================
+# TO DO: Please update both paths below before running this markdown!
+# ==============================
+# Path to local copy of the Sushi repository
+local_sushi_path = "~/GitHub/cmap/sushi"
+# Path to local copy of the vignette data
+local_test_data_path = "~/Downloads/vignette_test_data"
+# ==============================
+
+# Check that the provided directories exist
+if (!dir.exists(local_sushi_path)) {
+  stop("Local sushi repo not found at ", local_sushi_path)
+}
+
+if (!dir.exists(local_test_data_path)) {
+  stop("Local vignette data not found at ", local_sushi_path)
+}
 ```
 
 # Sushi pipeline overview
@@ -106,7 +124,7 @@ Next, the **filter_counts** module (`sushi/scripts/filter_counts/filter_counts.R
 To correct for amplification differences between wells, control barcodes at fixed concentrations are spiked into each PCR well. The raw counts of the control barcodes obtained from each well are linearly proportional to their input amount. The median of this proportionality factor is then used to scale raw counts in each well and obtain normalized counts in the **normalize** module (`sushi/scripts/normalize/normalize.R`). The CB_normalize module requires `filtered_counts.csv` and `CB_meta.csv` files as inputs. Although these files are not available to collaborators, the essential content used to normalize data is present in the normalized counts file shared to collaborators.
 
 
-For each combination of PCR plate, PCR well, and control barcode dosage: the dose intercept (`dose_intercept`) is the difference between the mean known log2 dose of the control barcode and the mean log2 raw count (plus a pseudocount). Then, for each PCR plate and PCR well, compute the control barcode intercept (`cb_intercept`) as the median of the dose intercepts across all control barcodes in that well.
+For each combination of PCR plate, PCR well, and control barcode dosage: the dose intercept (`dose_intercept`) is the difference between the known log2 dose of the control barcode and the mean log2 raw count. Then, for each PCR plate and PCR well, compute the control barcode intercept (`cb_intercept`) as the median of the dose intercepts across all control barcodes in that well. After normalization, a pseudovalue is added to avoid infinite values in log space. The exact pseudovalue is the normalized value for a read count of 10 using the fits of the negative controls of a PRC plate. The read count of 10 is the detection limit of the sequencers.
 
 You may recreate the necessary input from your level 3 data or normalized and raw counts data download found on your PRISM Portal page and using the downloadable excel sheet to ensure necessary columns in your input files:
 
@@ -118,14 +136,15 @@ Here, we describe an example of how to test run module on your own data from the
 # Load into environment ----
 require(magrittr)
 require(tidyverse)
-source("~/Desktop/sushi/scripts/utils/kitchen_utensils.R")
-source("~/Desktop/sushi/scripts/normalize/normalize_functions.R")
+source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
+source(file.path(local_sushi_path, "scripts", "normalize", "normalize_functions.R"))
 
 # Set up inputs ----
-filtered_counts <- data.table::fread("~/Desktop/data/vignette_test_data/data/filtered_counts.csv")
-CB_meta <- data.table::fread("~/Desktop/data/vignette_test_data/data/CB_meta.csv")
-pseudocount <- 20
+filtered_counts <- data.table::fread(file.path(local_test_data_path, "filtered_counts.csv"))
+CB_meta <- data.table::fread(file.path(local_test_data_path, "CB_meta.csv"))
+pseudocount <- 0
 input_id_cols <- c("pcr_plate", "pcr_well")
+negcon_cols <- c("pcr_plate", "pert_vehicle")
 
 # Normalize your counts ----
 normalized_counts = normalize(X = filtered_counts, 
@@ -133,8 +152,10 @@ normalized_counts = normalize(X = filtered_counts,
                               CB_meta = CB_meta, 
                               pseudocount = pseudocount)
 
-head(normalized_counts)
+normalized_counts = add_pseudovalue(normalized_counts, negcon_cols,
+                                    read_detection_limit = 10, negcon_type = "ctl_vehicle")
 
+head(normalized_counts)
 ```
 
 Example of raw counts-input dose relationship of the spiked-in control barcodes in a single PCR well is shown below:
@@ -226,11 +247,11 @@ Here is an example of how to run the compute_l2fc module on your own data. `cont
 # Load into environment ----
 require(magrittr)
 require(tidyverse)
-source("~/Desktop/sushi/scripts/utils/kitchen_utensils.R")
-source("~/Desktop/sushi/scripts/compute_l2fc/compute_l2fc_functions.R")
+source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
+source(file.path(local_sushi_path, "scripts", "compute_l2fc", "compute_l2fc_functions.R"))
 
 # Set up inputs ----
-normalized_counts <- data.table::fread("~/Desktop/data/vignette_test_data/data/normalized_counts.csv")
+normalized_counts <- data.table::fread(file.path(local_test_data_path, "normalized_counts.csv"))
 control_type <- "ctl_vehicle"
 sig_cols <- c("cell_set","pert_name","pert_dose","pert_dose_unit","day")
 ctrl_cols <- c("cell_set", "day", "pcr_plate", "replicate_plate")
@@ -253,7 +274,8 @@ head(l2fc)
 
 Cell lines that failed QC can be removed from the log fold-change files as described below:
 ```{r l2fc opt filt, echo = T, eval = F}
-qc_path <- data.table::fread("~/Desktop/data/vignette_test_data/data/qc_table.csv")
+# CURRENTLY DOES NOT EXISTS!
+qc_path <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
   
 # remove cell lines that fail for an entire pert_plate
 join_cols = c(cell_line_cols, "pert_plate")
@@ -278,11 +300,11 @@ Here is an example of how to run the collapse_replicates module on your own data
 # Load into environment ----
 require(magrittr)
 require(tidyverse)
-source("~/Desktop/sushi/scripts/utils/kitchen_utensils.R")
-source("~/Desktop/sushi/scripts/collapse_replicates/collapse_replicates_functions.R")
+source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
+source(file.path(local_sushi_path, "scripts", "collapse_replicates", "collapse_replicates_functions.R"))
 
 # Set up inputs ----
-l2fc <- data.table::fread("~/Desktop/data/vignette_test_data/data/l2fc.csv")
+l2fc <- data.table::fread(file.path(local_test_data_path, "l2fc.csv"))
 sig_cols <- c("cell_set","pert_name","pert_dose","pert_dose_unit","day")
 cell_line_cols <- c("depmap_id", "lua", "pool_id")
 
@@ -346,11 +368,11 @@ require(drc)
 require(magrittr)
 require(tidyverse)
 require(rlang)
-source("~/Desktop/sushi/scripts/utils/kitchen_utensils.R")
-source("~/Desktop/sushi/scripts/drc/dose_response_functions.R")
+source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
+source(file.path(local_sushi_path, "scripts", "drc", "dose_response_functions.R"))
 
 # Set up inputs ----
-l2fc <- data.table::fread("~/Desktop/data/vignette_test_data/data/l2fc.csv")
+l2fc <- data.table::fread(file.path(local_test_data_path, "l2fc.csv"))
 cell_line_cols <- c("depmap_id", "lua", "pool_id")
 sig_cols <- c("cell_set", "pert_name", "pert_dose", "pert_dose_unit", "day")
 dose_col <- "pert_dose"
@@ -450,8 +472,8 @@ print(drc_plot)
 Using more cell lines from the dose-response results in conjunction with the lineage information in the available h5 file (more information in the biomarker section), you can recreate the lineage enrichment boxplots seen on the PRISM portla by plotting lineages and the cell line's AUC.
 
 ```{r example univariate lineage boxplots, echo = T, eval = T}
-drc_table = data.table::fread("~/Desktop/data/vignette_test_data/data/drc_table.csv")
-depmap_file_path <- "~/Desktop/data/vignette_test_data/data/prism_biomarker_public_0625.h5"
+drc_table = data.table::fread(file.path(local_test_data_path, "drc_table.csv"))
+depmap_file_path <- file.path(local_test_data_path, "prism_biomarker_public_0625.h5")
 
 lineages <- rhdf5::h5read(depmap_file_path, name = "Lineage_Table/table")
 # Strip hdf5 columns of dimensionality before use
@@ -490,12 +512,12 @@ require(rhdf5)
 require(WGCNA)
 require(rlang)
 require(matrixStats)
-source("~/Desktop/sushi/scripts/utils/kitchen_utensils.R")
-source("~/Desktop/sushi/scripts/biomarker/biomarker_functions.R")
+source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
+source(file.path(local_sushi_path, "scripts", "biomarker", "biomarker_functions.R"))
 
 # Set up inputs ----
-depmap_file_path <- "~/Desktop/data/vignette_test_data/data/prism_biomarker_public_0625.h5"
-collapsed_l2fc <- data.table::fread("~/Desktop/data/vignette_test_data/data/collapsed_l2fc.csv")
+depmap_file_path <- file.path(local_test_data_path, "prism_biomarker_public_0625.h5")
+collapsed_l2fc <- data.table::fread(file.path(local_test_data_path, "collapsed_l2fc.csv"))
 cell_line_cols <- c("depmap_id","lua","pool_id")
 sig_cols <- c("cell_set","pert_name","pert_dose","pert_dose_unit","day")
 
@@ -577,7 +599,7 @@ for(dataset in c("Expression", "CRISPR", "Mutation")) {
 ##### If you have AUCs, here is an example of how to calculate univariate biomarkers using them.
 ```{r example univariate biomarker with aucs, echo = T, eval = T}
 # Biomarkers using AUC from DRC output ----
-drc_table <- data.table::fread("~/Desktop/data/vignette_test_data/data/drc_table.csv")
+drc_table <- data.table::fread(file.path(local_test_data_path, "drc_table.csv"))
 dr_column <- "auc"
 
 trt_cols_auc <- unique(c("day", sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)]))
@@ -585,8 +607,7 @@ trt_cols_auc <- unique(c("day", sig_cols[grepl("pert", sig_cols) & !grepl("dose"
 input_matrix_auc <- drc_table %>%
   dplyr::filter(is.finite(.data[[dr_column]])) %>%
   tidyr::unite(cn, trt_cols_auc, sep = "::") %>%
-  reshape2::acast(depmap_id ~ cn, value.var = dr_column, fun.aggregate = median) %>%
-  transform_function()
+  reshape2::acast(depmap_id ~ cn, value.var = dr_column, fun.aggregate = median)
 
 biomarkers_auc <- univariate_biomarker_table(
   Y = input_matrix_auc,
@@ -621,12 +642,12 @@ require(rhdf5)
 require(WGCNA)
 require(rlang)
 require(matrixStats)
-source("~/Desktop/sushi/scripts/utils/kitchen_utensils.R")
-source("~/Desktop/sushi/scripts/biomarker/biomarker_functions.R")
+source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
+source(file.path(local_sushi_path, "scripts", "biomarker", "biomarker_functions.R"))
 
 # Set up inputs ----
-depmap_file_path <- "~/Desktop/data/vignette_test_data/data/prism_biomarker_public_0625.h5"
-collapsed_l2fc <- data.table::fread("~/Desktop/data/vignette_test_data/data/collapsed_l2fc.csv")
+depmap_file_path <- file.path(local_test_data_path, "prism_biomarker_public_0625.h5")
+collapsed_l2fc <- data.table::fread(file.path(local_test_data_path, "collapsed_l2fc.csv"))
 cell_line_cols <- c("depmap_id", "lua", "pool_id")
 sig_cols <- c("cell_set", "pert_name", "pert_dose", "pert_dose_unit", "day")
 W = NULL # confounding matrix
@@ -658,8 +679,7 @@ biomarkers %>% arrange(., -RF.imp.mean) %>% head()
 ##### Here is an example of how to calculate multivariate biomarkers with AUCs
 
 ```{r example multivariate biomarker with aucs, echo = T, eval = T}
-
-drc_table <- data.table::fread("~/Desktop/data/vignette_test_data/data/drc_table.csv")
+drc_table <- data.table::fread(file.path(local_test_data_path, "drc_table.csv"))
 dr_column <- "log2_auc"
 
 trt_cols_auc <- unique(c("day", sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)]))

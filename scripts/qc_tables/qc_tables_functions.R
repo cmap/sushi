@@ -224,7 +224,7 @@ calculate_cb_metrics <- function(normalized_counts,
     dropped_cbs = cb_meta |> dplyr::filter(cb_type != "well_norm")
     
     if (nrow(dropped_cbs) > 0) {
-      print(" The following CBs are excluded from normalization.")
+      print("The following CBs are excluded from normalization.")
       print(dropped_cbs)
       cb_meta = cb_meta |> dplyr::filter(cb_type == "well_norm")
     }
@@ -251,7 +251,7 @@ calculate_cb_metrics <- function(normalized_counts,
       cb_spearman = cor(cb_log2_dose, log2(n + pseudocount), method = "spearman", use = "pairwise.complete.obs")
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::distinct(across(all_of(c(group_cols, "cb_mae", "cb_r2", "cb_spearman", "cb_intercept"))))
+    dplyr::distinct(across(all_of(c(group_cols, "cb_mae", "cb_r2", "cb_spearman", "cb_intercept", "log2_pseudovalue"))))
   return(fit_stats)
 }
 
@@ -292,7 +292,7 @@ generate_id_cols_table <- function(annotated_counts, normalized_counts, unknown_
   id_cols_table <- read_stats %>%
     dplyr::left_join(skew, by = c(id_cols_list, "pert_plate")) %>%
     dplyr::left_join(cb_metrics, by = c(id_cols_list, "pert_plate")) %>%
-    dplyr::left_join(normalized_counts %>% dplyr::select(c(id_cols_list, "cell_set")) %>% dplyr::distinct(),
+    dplyr::left_join(normalized_counts %>% dplyr::select(all_of(c(id_cols_list, "cell_set"))) %>% dplyr::distinct(),
       by = id_cols_list
     ) %>% dplyr::distinct()
 

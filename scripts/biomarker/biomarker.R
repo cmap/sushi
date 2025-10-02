@@ -74,7 +74,7 @@ message("INFO: synergy_biomarker is ", synergy_biomarker)
 # Create the treatment columns ----
 # Need to drop "cell_set"
 trt_cols = sig_cols[!grepl("cell_set", sig_cols)]
-message("INFO: Trt cols for are  ", paste(trt_cols, sep = ", "))
+message("INFO: Trt cols for are  ", paste(trt_cols, collapse = ", "))
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(out_path)) {
