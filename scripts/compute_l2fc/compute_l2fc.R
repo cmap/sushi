@@ -65,8 +65,8 @@ if (args$filter_failed_lines) {
   l2fc_unfiltered_outpath= paste(args$out, "l2fc_original.csv", sep= "/")
   write.csv(l2fc, l2fc_unfiltered_outpath, row.names= FALSE, quote= FALSE)
   # Read in QC file and filter lines that fail for an entire pert_plate
-  join_cols = c(cell_line_cols, "pert_plate")
   qc_data = data.table::fread(args$qc_path, header= TRUE, sep= ',', data.table= FALSE)
+  join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
   failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
 
   l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
