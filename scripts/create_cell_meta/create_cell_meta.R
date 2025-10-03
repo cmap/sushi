@@ -312,10 +312,10 @@ cb_meta <- cb_meta %>%
   dplyr::mutate(depmap_id = NA)
 
 # Create portal cell line table
-message("Creating portal cell line table...")
-portal_cell_line_table <- cell_set_assay_pool_meta %>%
-  left_join(cell_lines_df, by=c("lua","depmap_id"), suffix = c(".x", "")) %>%
-  select(depmap_id,lua,depmap_code,cell_line,cell_iname,pool_id,cell_set,growth_pattern,cell_lineage,primary_disease,subtype,cell_line_notes)
+# message("Creating portal cell line table...")
+# portal_cell_line_table <- cell_set_assay_pool_meta %>%
+#   left_join(cell_lines_df, by=c("lua","depmap_id"), suffix = c(".x", "")) %>%
+#   select(depmap_id,lua,depmap_code,cell_line,cell_iname,pool_id,cell_set,growth_pattern,cell_lineage,primary_disease,subtype,cell_line_notes)
 # Which growth pattern annotation should be used?
 # One from API is not filled out for all cell lines.
 
