@@ -348,16 +348,16 @@ if (nrow(control_bc_df) > 0) {
 }
 
 # Write portal cell line table
-portal_cell_line_out_file <- file.path(args$out, 'portal_cell_line_info.csv')
-if (args$verbose) {
-  message(sprintf("Writing portal cell line table to: %s", portal_cell_line_out_file))
-}
-write.csv(portal_cell_line_table, portal_cell_line_out_file, row.names = FALSE, quote = FALSE)
+# portal_cell_line_out_file <- file.path(args$out, 'portal_cell_line_info.csv')
+# if (args$verbose) {
+#   message(sprintf("Writing portal cell line table to: %s", portal_cell_line_out_file))
+# }
+# write.csv(portal_cell_line_table, portal_cell_line_out_file, row.names = FALSE, quote = FALSE)
 
 # Verify output files ----
 check_file_exists(cell_line_out_file)
 check_file_exists(cell_set_assay_pool_out_file)
-check_file_exists(portal_cell_line_out_file)
+# check_file_exists(portal_cell_line_out_file)
 
 if (args$verbose) {
   message("=== Cell Metadata Creation Complete ===")
