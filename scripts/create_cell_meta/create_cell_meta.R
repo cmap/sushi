@@ -47,6 +47,8 @@ parser$add_argument("--api_url", default = "https://api.clue.io/api/",
                    help = "Base API URL for CellDB")
 parser$add_argument("--api_key", default = "", 
                    help = "Clue API key")
+parser$add_argument("--growth_annotations", default = "growth_annotations.csv", 
+                   help = "File containing growth annotations.")
 
 # Parse arguments
 args <- parser$parse_args()
@@ -264,6 +266,21 @@ if (all_sets_exist) {
     dplyr::select(cell_set, pool_id, barcode_id, depmap_id = members) %>%
     dplyr::rename("lua" = "barcode_id") %>%
     dplyr::distinct()
+  
+  # Add cell line growth patterns
+  growth_annotations_path = file.path(args$out, args$growth_annotations)
+  if (file.exists(growth_annotations_path)) {
+    growth_annots = data.table::fread(growth_annotations_path)
+
+    cell_set_assay_pool_meta = cell_set_assay_pool_meta |>
+      dplyr::left_join(growth_annots, by = c("depmap_id", "pool_id"))
+    message("Growth annotations column added to cell_set_and_pool_meta.csv")
+
+  } else {
+    message("WARNING: A growth annotation file was not found in the given directory.")
+    message("No growth annotaiton column was added to cell_set_and_pool_meta.")
+  }
+
 } else {
   message("WARNING: One or more cell sets not found in assay pool metadata")
   message("Unable to include pool_id in cell set metadata")
@@ -295,10 +312,12 @@ cb_meta <- cb_meta %>%
   dplyr::mutate(depmap_id = NA)
 
 # Create portal cell line table
-message("Creating portal cell line table...")
-portal_cell_line_table <- cell_set_assay_pool_meta %>%
-  left_join(cell_lines_df, by=c("lua","depmap_id")) %>%
-  select(depmap_id,lua,depmap_code,cell_line,cell_iname,pool_id,cell_set,growth_pattern,cell_lineage,primary_disease,subtype,cell_line_notes)
+# message("Creating portal cell line table...")
+# portal_cell_line_table <- cell_set_assay_pool_meta %>%
+#   left_join(cell_lines_df, by=c("lua","depmap_id"), suffix = c(".x", "")) %>%
+#   select(depmap_id,lua,depmap_code,cell_line,cell_iname,pool_id,cell_set,growth_pattern,cell_lineage,primary_disease,subtype,cell_line_notes)
+# Which growth pattern annotation should be used?
+# One from API is not filled out for all cell lines.
 
 # Write output files ----
 if (args$verbose) {
@@ -329,16 +348,16 @@ if (nrow(control_bc_df) > 0) {
 }
 
 # Write portal cell line table
-portal_cell_line_out_file <- file.path(args$out, 'portal_cell_line_info.csv')
-if (args$verbose) {
-  message(sprintf("Writing portal cell line table to: %s", portal_cell_line_out_file))
-}
-write.csv(portal_cell_line_table, portal_cell_line_out_file, row.names = FALSE, quote = FALSE)
+# portal_cell_line_out_file <- file.path(args$out, 'portal_cell_line_info.csv')
+# if (args$verbose) {
+#   message(sprintf("Writing portal cell line table to: %s", portal_cell_line_out_file))
+# }
+# write.csv(portal_cell_line_table, portal_cell_line_out_file, row.names = FALSE, quote = FALSE)
 
 # Verify output files ----
 check_file_exists(cell_line_out_file)
 check_file_exists(cell_set_assay_pool_out_file)
-check_file_exists(portal_cell_line_out_file)
+# check_file_exists(portal_cell_line_out_file)
 
 if (args$verbose) {
   message("=== Cell Metadata Creation Complete ===")

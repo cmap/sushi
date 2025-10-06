@@ -107,6 +107,7 @@ args=(
 --out "$BUILD_DIR"
 --cb_ladder "$CONTROL_BARCODE_META"
 --api_key "$API_KEY"
+--growth_annotations "${GROWTH_ANNOTATIONS}"
 )
 
 echo Rscript create_cell_meta/create_cell_meta.R "${args[@]}"

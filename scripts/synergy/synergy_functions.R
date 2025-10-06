@@ -110,12 +110,22 @@ create_dmso_synergy_hdf5 = function(dmso_l2fc, group_name_cols, path,
   for (i in unique_group_names) {
     subset = dmso_l2fc[group_name == i, ]
 
+    # Check resampling maximum
+    num_pick_combinations = base::choose(nrow(subset), size)
+    if (num_pick_combinations < n_samples) {
+      message(nrow(subset), " choose ", size, " = ", num_pick_combinations)
+      message("WARNING: Cannot sample up to ", n_samples, ". Using ", num_pick_combinations, " instead.")
+      resample_n = num_pick_combinations
+    } else {
+      resample_n = n_samples
+    }
+
     # Resample to n_samples and create pert1, pert2, combo
-    resampled_l2fc = median_resample(x = subset$l2fc, n_samples = n_samples, size = size,
+    resampled_l2fc = median_resample(x = subset$l2fc, n_samples = resample_n, size = size,
                                      replace = replace, seed = seed)
     mock_values = data.table(mock1 = resampled_l2fc)
-    mock_values[, mock2 := sample(mock1, size = n_samples, replace = TRUE)]
-    mock_values[, mock3 := sample(mock1, size = n_samples, replace = TRUE)]
+    mock_values[, mock2 := sample(mock1, size = resample_n, replace = TRUE)]
+    mock_values[, mock3 := sample(mock1, size = resample_n, replace = TRUE)]
 
     # Calculate synergy - function occurs in place
     calculate_synergy(restructured_l2fc = mock_values, l2fc_cols = colnames(mock_values))
@@ -142,14 +152,6 @@ create_dmso_synergy_hdf5 = function(dmso_l2fc, group_name_cols, path,
 #' @param replace Sampling with or without replacement for `size`.
 #' @param prob Optional vector of probability weights for `base::sample`.
 median_resample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, prob = NULL) {
-  # Stop if the number to sample up to is too high
-  num_pick_combinations = base::choose(length(x), size)
-  if (num_pick_combinations < n_samples) {
-    message(length(x), " choose ", size, " = ", num_pick_combinations)
-    message("WARNING: Cannot sample up to ", n_samples, ". Using ", num_pick_combinations, " instead.")
-    n_samples = num_pick_combinations
-  }
-
   # Reset seed and resample
   base::set.seed(seed)
   resampled_values = base::replicate(n_samples, median(base::sample(x, size, replace = replace, prob = prob)))
@@ -165,10 +167,9 @@ median_resample = function(x, n_samples, size = 3, seed = 2, replace = FALSE, pr
 #' @param group_name String name in the `hf_file` hierarchy.
 #' @param synergy_value Synergy value
 #' @param h5_file hdf5 file containing values for null distributions.
-#' @param n_samples Size of the null distribution.
-get_pvalue = function(group_name, synergy_value, h5_file, n_samples = 10000) {
+get_pvalue = function(group_name, synergy_value, h5_file) {
   ecdf_obj = stats::ecdf(rhdf5::H5Dread(rhdf5::H5Dopen(h5_file, name = group_name)))
-  cdf_value = smooth_pvalue(ecdf_obj(synergy_value), n_samples)
+  cdf_value = smooth_pvalue(ecdf_obj(synergy_value), environment(ecdf_obj)$nobs)
   pvalue = 2 * pmin(1 - cdf_value, cdf_value)
 
   return(pvalue)
