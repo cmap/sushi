@@ -232,11 +232,14 @@ A PRISM screen may incorporate multiple types of replicates that is denoted as b
 Sushi first computes log2 fold changes (L2FCs) across technical replicates and then collapses these values into a summary for each biological replicate. To quantify cell line growth and sensitivity to treatments, the **compute_l2fc** (`sushi/scripts/compute_l2fc/compute_l2fc.R`) first computes the mean normalized counts across technical replicates since there is less variability between technical replicates compared to biological replicates. Then, log2 fold change is computed by comparing these means to those of the negative control samples, using the formula:
 
 $$
-L2FC_{i,j} = log_2( \frac{x_{t_{i,j}}}{x_{nc_{i,j}}}) 
+L2FC_{i,j} = log_2({x_{t_{i,j}}})-log_2({x_{nc_{i,j}}}) 
 $$
 
 where $i,j$ is cell line $i$ in a treatment condition $j$, $x_t$ is mean normalized counts across technical reps, and
-    $x_{nc}$ is the mean normalized counts of negative control taken across technical replicates, and then median across their biological replicates
+    $x_{nc}$ is the mean normalized counts of negative control taken across technical replicates, and then median across their biological replicates.
+    
+
+If pool level growth annotations are provided, the computed L2FCs can be corrected to remove variance associated with different pool growth conditions.
 
 ### Example
 
@@ -271,6 +274,25 @@ l2fc = compute_l2fc(normalized_counts = normalized_counts,
 head(l2fc)
 ```
 
+To apply the growth correction, there must be a column in the data frame that describes the growth pattern of a cell line or pool.
+
+```{r example growth correct, echo = T, eval = T}
+# Load into environment ----
+source(file.path(local_sushi_path, "scripts", "growth_correction", "growth_correction.R"))
+
+# Set up inputs ----
+bio_rep_id_cols = c(sig_cols, "bio_rep")
+growth_pattern_col = "growth_pattern"
+
+# Correct for growth conditions
+corrected_l2fc = l2fc |>
+  dplyr::group_split(dplyr::across(tidyselect::all_of(bio_rep_id_cols))) |>
+  lapply(apply_growth_correction, raw_l2fc_col = l2fc_col, growth_pattern_col = growth_pattern_col) |>
+  dplyr::bind_rows() |>
+  dplyr::ungroup()
+
+head(corrected_l2fc)
+```
 
 Cell lines that failed QC can be removed from the log fold-change files as described below:
 ```{r l2fc opt filt, echo = T, eval = F}
@@ -283,7 +305,6 @@ qc_data = data.table::fread(qc_path, header= TRUE, sep= ',', data.table= FALSE)
 failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
 
 l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
-
 ```
 
 ## Collapsing log2 fold changes across replicates {.tabset}
