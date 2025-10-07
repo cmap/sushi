@@ -48,7 +48,7 @@ delete_existing_files(args$out, "^l2fc")
 print("Collapsing tech reps and computing log-fold change ...")
 l2fc= compute_l2fc(normalized_counts= normalized_counts, 
                    control_type= control_type, 
-                   sig_cols= sig_cols, 
+                   sig_cols= c(sig_cols, "pcr_plate", "log2_pseudovalue"), # Add pcr plate and pseudovalue
                    ctrl_cols= ctrl_cols, 
                    count_col_name= count_col_name,
                    cell_line_cols= cell_line_cols)
@@ -75,6 +75,13 @@ if (args$filter_failed_lines) {
   #failed_lines_pcr_plate = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
   #l2fc = l2fc %>% anti_join(failed_lines_pcr_plate, by= join_cols)
 }
+
+# Add negcon normalized values to l2fc
+qc_vals = data.table::fread(file.path(args$out, "qc_tables", "plate_cell_qc_table_internal.csv"))
+l2fc = l2fc |>
+  dplyr::left_join(qc_vals, by = c("pcr_plate", "pool_id", "depmap_id", "lua", "cell_set"),
+                   suffix = c("", ".y")) |>
+  dplyr::select(!ends_with(".y"))
 
 # Write out file ----
 l2fc_outpath= paste(args$out, "l2fc.csv", sep= "/")
