@@ -1,7 +1,15 @@
-
-# Function expects annotation column to be "growth_pattern"
+#' Apply l2fc correction
+#'
+#' Corrects l2fc change values by reducing variance from growth patterns,
+#' cell sets, and abundance in the negative controls.
+#'
+#' @param df dataframe
+#' @param raw_l2fc_col String name of a column in df containing the l2fc values.
+#' @param growth_pattern_col String name of a column in df containing the growth annotations.
+#' @param negcon_norm_col String name of a column in df containing negcon_log2_norm_n.
+#' @param cell_set_col String name of a column in df containing cell set information.
 apply_growth_correction = function(df, raw_l2fc_col = "l2fc", growth_pattern_col = "growth_pattern",
-                                   negcon_norm_col = "median_log_normalized_ctl_vehicle",
+                                   negcon_norm_col = "negcon_log2_norm_n",
                                    cell_set_col = "cell_set") {
 
   # Filter out infinite/NA rows and set factors
@@ -42,7 +50,7 @@ create_model_formula = function(y, a, b, c, count_a, count_c) {
     }
   } else {
     if (count_c > 1) {
-      model_formula = sprintf("%s ~ %s 8 %s", y, b, c)
+      model_formula = sprintf("%s ~ %s * %s", y, b, c)
     } else {
       model_formula = sprintf("%s ~ %s", y, b)
     }
