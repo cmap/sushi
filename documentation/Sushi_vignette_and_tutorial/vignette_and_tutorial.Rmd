@@ -235,11 +235,10 @@ $$
 L2FC_{i,j} = log_2({x_{t_{i,j}}})-log_2({x_{nc_{i,j}}}) 
 $$
 
-where $i,j$ is cell line $i$ in a treatment condition $j$, $x_t$ is mean normalized counts across technical reps, and
-    $x_{nc}$ is the mean normalized counts of negative control taken across technical replicates, and then median across their biological replicates.
-    
+where $i,j$ is cell line $i$ in a treatment condition $j$, $x_t$ is mean normalized counts across technical reps, and $x_{nc}$ is the mean normalized counts of negative control taken across technical replicates, and then median across their biological replicates.
 
-If pool level growth annotations are provided, the computed L2FCs can be corrected to remove variance associated with different pool growth conditions.
+
+If pool level growth annotations are provided, the computed L2FCs can be corrected to remove variance associated with different growth patterns, cell sets, and abundance in the negative controls.
 
 ### Example
 
@@ -265,7 +264,7 @@ cell_line_cols <- c("lua", "depmap_id", "pool_id")
 # Calculated log2 fold changes
 l2fc = compute_l2fc(normalized_counts = normalized_counts, 
                    control_type = control_type, 
-                   sig_cols = sig_cols, 
+                   sig_cols = c(sig_cols, "pcr_plate"), 
                    ctrl_cols = ctrl_cols, 
                    count_col_name = count_col_name, 
                    count_threshold = count_threshold,
@@ -274,7 +273,20 @@ l2fc = compute_l2fc(normalized_counts = normalized_counts,
 head(l2fc)
 ```
 
-To apply the growth correction, there must be a column in the data frame that describes the growth pattern of a cell line or pool.
+Cell lines that failed QC can be removed from the log fold-change files as described below:
+```{r l2fc opt filt, echo = T, eval = F}
+# CURRENTLY DOES NOT EXISTS!
+qc_path <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
+  
+# remove cell lines that fail for an entire pert_plate
+qc_data = data.table::fread(qc_path, header= TRUE, sep= ',', data.table= FALSE)
+join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
+failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
+
+l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
+```
+
+To apply the growth correction, there must be a column in the data frame that describes the growth pattern of a cell line or pool and a column containing log2 normalized counts of the negative controls.
 
 ```{r example growth correct, echo = T, eval = T}
 # Load into environment ----
@@ -286,25 +298,14 @@ growth_pattern_col = "growth_pattern"
 
 # Correct for growth conditions
 corrected_l2fc = l2fc |>
+  dplyr::left_join(qc_data, by = c(join_cols, "pcr_plate"), suffix = c("", ".y")) |>
+  dplyr::select(!ends_with(".y")) |>
   dplyr::group_split(dplyr::across(tidyselect::all_of(bio_rep_id_cols))) |>
-  lapply(apply_growth_correction, raw_l2fc_col = l2fc_col, growth_pattern_col = growth_pattern_col) |>
+  lapply(apply_growth_correction, raw_l2fc_col = "l2fc", growth_pattern_col = growth_pattern_col) |>
   dplyr::bind_rows() |>
   dplyr::ungroup()
 
 head(corrected_l2fc)
-```
-
-Cell lines that failed QC can be removed from the log fold-change files as described below:
-```{r l2fc opt filt, echo = T, eval = F}
-# CURRENTLY DOES NOT EXISTS!
-qc_path <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
-  
-# remove cell lines that fail for an entire pert_plate
-join_cols = c(cell_line_cols, "pert_plate")
-qc_data = data.table::fread(qc_path, header= TRUE, sep= ',', data.table= FALSE)
-failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
-
-l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
 ```
 
 ## Collapsing log2 fold changes across replicates {.tabset}
