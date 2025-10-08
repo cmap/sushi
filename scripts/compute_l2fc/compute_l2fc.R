@@ -48,7 +48,7 @@ delete_existing_files(args$out, "^l2fc")
 print("Collapsing tech reps and computing log-fold change ...")
 l2fc= compute_l2fc(normalized_counts= normalized_counts,
                    control_type= control_type,
-                   sig_cols= c(sig_cols, "pcr_plate"),
+                   sig_cols= sig_cols,
                    ctrl_cols= ctrl_cols,
                    count_col_name= count_col_name,
                    cell_line_cols= cell_line_cols)
@@ -74,11 +74,6 @@ if (args$filter_failed_lines) {
   #join_cols = c(cell_line_cols, "pcr_plate")
   #failed_lines_pcr_plate = qc_data %>% filter(qc_pass == FALSE) %>% select(all_of(join_cols))
   #l2fc = l2fc %>% anti_join(failed_lines_pcr_plate, by= join_cols)
-
-  # Add negcon log2 norm n to l2fc for correction module
-  l2fc = l2fc |>
-    dplyr::left_join(qc_data, by = c(join_cols, "pcr_plate"), suffix = c("", ".y")) |>
-    dplyr::select(!ends_with(".y"))
 }
 
 # Write out file ----
