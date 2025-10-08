@@ -1,41 +1,51 @@
 
 # Function expects annotation column to be "growth_pattern"
-apply_growth_correction = function(df, raw_l2fc_col = "l2fc", growth_pattern_col = "growth_pattern") {
-  centered_df = df |>
-    dplyr::filter(is.finite(.data[[raw_l2fc_col]]), !is.na(.data[[growth_pattern_col]]),
-                  !is.na(cell_set)) |>
-    dplyr::mutate(growth_pattern = as.factor(.data[[growth_pattern_col]]),
-                  centered_l2fc = .data[[raw_l2fc_col]] - mean(.data[[raw_l2fc_col]]),
-                  cell_set = as.factor(cell_set))
+apply_growth_correction = function(df, raw_l2fc_col = "l2fc", growth_pattern_col = "growth_pattern",
+                                   negcon_norm_col = "median_log_normalized_ctl_vehicle",
+                                   cell_set_col = "cell_set") {
+
+  # Filter out infinite/NA rows and set factors
+  centered_df = df |> dplyr::filter(is.finite(.data[[raw_l2fc_col]]), is.finite(.data[[negcon_norm_col]]),
+                                    !is.na(.data[[growth_pattern_col]]), !is.na(.data[[cell_set_col]]))
+  centered_df[[growth_pattern_col]] = as.factor(centered_df[[growth_pattern_col]])
+  centered_df[[cell_set_col]] = as.factor(centered_df[[cell_set_col]])
+  centered_df$centered_l2fc = centered_df[[raw_l2fc_col]] - mean(centered_df[[raw_l2fc_col]])
 
   # Identify number of growth patterns
-  num_growth_annots = length(unique(centered_df[[growth_pattern_col]]))
+  num_growth_patterns = length(unique(centered_df[[growth_pattern_col]]))
+  num_cell_sets = length(unique(centered_df[[cell_set_col]]))
 
-  # Create right model depending on combinations
-  if (num_growth_annots > 1) {
-    if (length(unique(centered_df$cell_set)) > 1) {
-      # Use all three columns in model formula
-      model_formula = sprintf("centered_l2fc ~ %s + median_log_normalized_ctl_vehicle * cell_set",
-                              growth_pattern_col)
-    } else {
-      # Use just two
-      model_formula = sprintf("centered_l2fc ~ %s + median_log_normalized_ctl_vehicle",
-                              growth_pattern_col)
-    }
-  } else {
-    if (length(unique(centered_df$cell_set)) > 1) {
-      # dont fit with growth annots
-      model_formula = sprintf("centered_l2fc ~ median_log_normalized_ctl_vehicle * cell_set")
-    } else {
-      # just use negcon meds
-      model_formula = sprintf("centered_l2fc ~ median_log_normalized_ctl_vehicle")
-    }
-  }
+  model_formula = create_model_formula(y = "centered_l2fc",
+                                       a = growth_pattern_col, count_a = num_growth_patterns,
+                                       b = negcon_norm_col,
+                                       c = cell_set_col, count_c = num_cell_sets)
+  message("Correction model: ", model_formula)
 
+  # Fit model and adjust l2fcs
   fit = lm(formula = as.formula(model_formula), data = centered_df)
   centered_df$l2fc_uncorrected = centered_df$l2fc
   centered_df$l2fc = fit$residuals + mean(centered_df$l2fc)
 
   # Drop columns created by this function and return output
   return(centered_df |> dplyr::select(-centered_l2fc))
+}
+
+#' Create l2fc correction model
+#'
+#' Model is of the form y = a + b * c, but will change if there is just one group of a or b
+create_model_formula = function(y, a, b, c, count_a, count_c) {
+  if (count_a > 1) {
+    if (count_c > 1) {
+      model_formula = sprintf("%s ~ %s + %s * $s", y, a, b, c)
+    } else {
+      model_formula = sprintf("%s ~ %s + %s", y, a, b)
+    }
+  } else {
+    if (count_c > 1) {
+      model_formula = sprintf("%s ~ %s 8 %s", y, b, c)
+    } else {
+      model_formula = sprintf("%s ~ %s", y, b)
+    }
+  }
+  return(model_formula)
 }
