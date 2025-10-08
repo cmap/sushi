@@ -1,7 +1,9 @@
 #' Apply l2fc correction
 #'
 #' Corrects l2fc change values by reducing variance from growth patterns,
-#' cell sets, and abundance in the negative controls.
+#' cell sets, and abundance in the negative controls. This assumes that cell sets
+#' are on different PCR plates, so regressing this out may also be the same as regressing
+#' out PCR plate.
 #'
 #' @param df dataframe
 #' @param raw_l2fc_col String name of a column in df containing the l2fc values.
