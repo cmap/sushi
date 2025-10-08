@@ -262,13 +262,13 @@ count_threshold <- 40
 cell_line_cols <- c("lua", "depmap_id", "pool_id")
 
 # Calculated log2 fold changes
-l2fc = compute_l2fc(normalized_counts = normalized_counts, 
-                   control_type = control_type, 
-                   sig_cols = c(sig_cols, "pcr_plate"), 
-                   ctrl_cols = ctrl_cols, 
-                   count_col_name = count_col_name, 
-                   count_threshold = count_threshold,
-                   cell_line_col = cell_line_cols)
+l2fc = compute_l2fc(normalized_counts = normalized_counts,
+                    control_type = control_type,
+                    sig_cols = sig_cols,
+                    ctrl_cols = ctrl_cols,
+                    count_col_name = count_col_name,
+                    count_threshold = count_threshold,
+                    cell_line_col = cell_line_cols)
 
 head(l2fc)
 ```
@@ -277,7 +277,7 @@ Cell lines that failed QC can be removed from the log fold-change files as descr
 ```{r l2fc opt filt, echo = T, eval = F}
 # CURRENTLY DOES NOT EXISTS!
 qc_path <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
-  
+
 # remove cell lines that fail for an entire pert_plate
 qc_data = data.table::fread(qc_path, header= TRUE, sep= ',', data.table= FALSE)
 join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
@@ -298,8 +298,7 @@ growth_pattern_col = "growth_pattern"
 
 # Correct for growth conditions
 corrected_l2fc = l2fc |>
-  dplyr::left_join(qc_data, by = c(join_cols, "pcr_plate"), suffix = c("", ".y")) |>
-  dplyr::select(!ends_with(".y")) |>
+  dplyr::mutate(negcon_log2_norm_n = log2(control_median_normalized_n)) |>
   dplyr::group_split(dplyr::across(tidyselect::all_of(bio_rep_id_cols))) |>
   lapply(apply_growth_correction, raw_l2fc_col = "l2fc", growth_pattern_col = growth_pattern_col) |>
   dplyr::bind_rows() |>
