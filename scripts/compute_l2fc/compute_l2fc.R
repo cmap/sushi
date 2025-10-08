@@ -46,10 +46,10 @@ qc_path = args$qc_path
 delete_existing_files(args$out, "^l2fc")
 
 print("Collapsing tech reps and computing log-fold change ...")
-l2fc= compute_l2fc(normalized_counts= normalized_counts, 
-                   control_type= control_type, 
-                   sig_cols= sig_cols, 
-                   ctrl_cols= ctrl_cols, 
+l2fc= compute_l2fc(normalized_counts= normalized_counts,
+                   control_type= control_type,
+                   sig_cols= sig_cols,
+                   ctrl_cols= ctrl_cols,
                    count_col_name= count_col_name,
                    cell_line_cols= cell_line_cols)
 
