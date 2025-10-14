@@ -187,7 +187,7 @@ def main(args):
         logger.info("Reading SushiBuild object...")
         build = SushiBuild(build_path)
         for name, df in build:
-            logger.info(name, df.schema, df.shape)
+            logger.info(f"{name}, {df.schema}, {df.shape}")
         logger.info(f"Loaded build: {build}")
         build.update_tables(lambda df: df.filter(pl.col("day").is_in(days)))
     else:
