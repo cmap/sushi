@@ -140,7 +140,7 @@ class SushiBuild:
                 "schema_overrides": self._SCHEMA,
             }
 
-            df = pl.read_csv(p, schema=schema, **kwargs)
+            df = pl.read_csv(p, **kwargs)
 
             setattr(self, attr, df)
 
