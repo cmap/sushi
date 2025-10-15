@@ -46,7 +46,7 @@ apply_growth_correction = function(df, raw_l2fc_col = "l2fc", growth_pattern_col
 create_model_formula = function(y, a, b, c, count_a, count_c) {
   if (count_a > 1) {
     if (count_c > 1) {
-      model_formula = sprintf("%s ~ %s + %s * $s", y, a, b, c)
+      model_formula = sprintf("%s ~ %s + %s * %s", y, a, b, c)
     } else {
       model_formula = sprintf("%s ~ %s + %s", y, a, b)
     }
