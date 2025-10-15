@@ -32,6 +32,12 @@ if ("bio_rep" %in% colnames(l2fc)) {
   message("bio_rep column not detected. Assuming that there are NO biological replicates.")
 }
 
+# Drop cell set from grouping cols if is there
+if ("cell_set" %in% bio_rep_id_cols) {
+  message("Detecting cell_set column in bio_rep_id_cols. Dropping this column from the list.")
+  bio_rep_id_cols = bio_rep_id_cols[bio_rep_id_cols != "cell_set"]
+}
+
 # Throw an error if a cell line does not have a growth annotation
 if (any(unique(l2fc[[growth_pattern_col]]) %in% c(NA, "", " ", "NA"))) {
   stop("Detecting empty or missing values in the growth pattern column - ", growth_pattern_col)
