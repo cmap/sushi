@@ -1,6 +1,7 @@
 import polars as pl
 from pathlib import Path
 from typing import Callable
+from sushilib.sushi_io.reader import read_polars
 
 
 class SushiBuild:
@@ -140,7 +141,7 @@ class SushiBuild:
                 "schema_overrides": self._SCHEMA,
             }
 
-            df = pl.read_csv(p, **kwargs)
+            df = read_polars(p, **kwargs)
 
             setattr(self, attr, df)
 

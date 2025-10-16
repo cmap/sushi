@@ -18,7 +18,7 @@ create_qc_table= function(raw_counts_uncollapsed_path, unknown_barcode_counts,
   }
   
   # Pull out only the headers of the large file for validation
-  rcu_headers= data.table::fread(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
+  rcu_headers= read_data_table(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
   
   # Validation: Check that value_col exists in raw_counts_uncollapsed
   if(!validate_columns_exist(value_col, rcu_headers)) {
@@ -526,7 +526,7 @@ QC_images= function(raw_counts_uncollapsed_path,
   print('2. Generating index counts tables ...')
   
   # Pull out headers to perform checks
-  raw_counts_uncollapsed_headers= data.table::fread(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
+  raw_counts_uncollapsed_headers= read_data_table(raw_counts_uncollapsed_path, header= TRUE, sep= ',', nrow= 0)
   
   # Check that "index_1" is present. If so, calculate index summary and write out.
   if('index_1' %in% colnames(sample_meta) & 'index_1' %in% colnames(raw_counts_uncollapsed_headers)) {

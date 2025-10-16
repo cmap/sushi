@@ -78,31 +78,31 @@ args <- parser$parse_args()
 
 # Read in files as data.table objects ----
 print(paste0("Reading in ", args$cell_set_and_pool_meta, "....."))
-cell_set_meta <- data.table::fread(args$cell_set_and_pool_meta, header = TRUE, sep = ",")
+cell_set_meta <- read_data_table(args$cell_set_and_pool_meta, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$annotated_counts, "....."))
-annotated_counts <- data.table::fread(args$annotated_counts, header = TRUE, sep = ",")
+annotated_counts <- read_data_table(args$annotated_counts, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$filtered_counts, "....."))
-filtered_counts <- data.table::fread(args$filtered_counts, header = TRUE, sep = ",")
+filtered_counts <- read_data_table(args$filtered_counts, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$control_barcode_meta, "....."))
-cb_meta <- data.table::fread(args$control_barcode_meta, header = TRUE, sep = ",")
+cb_meta <- read_data_table(args$control_barcode_meta, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$unknown_barcode_counts, "....."))
-unknown_counts <- data.table::fread(args$unknown_barcode_counts, header = TRUE, sep = ",")
+unknown_counts <- read_data_table(args$unknown_barcode_counts, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$sample_meta, "....."))
-sample_meta <- data.table::fread(args$sample_meta, header = TRUE, sep = ",")
+sample_meta <- read_data_table(args$sample_meta, header = TRUE, sep = ",")
 # If normzlied_counts_original.csv exists, use that, otherwise use args$normalized_counts
 normalized_counts_original_path <- paste0(args$out, "/normalized_counts_original.csv")
 if (file.exists(normalized_counts_original_path)) {
   print("Original normalized counts found, will use this file for QC flags and tables.")
   print("Reading in normalized_counts_original.csv.....")
-  normalized_counts <- data.table::fread(normalized_counts_original_path, header = TRUE, sep = ",")
+  normalized_counts <- read_data_table(normalized_counts_original_path, header = TRUE, sep = ",")
 } else {
 print(paste0("Reading in ", args$normalized_counts, "....."))
-normalized_counts <- data.table::fread(args$normalized_counts, header = TRUE, sep = ",")
+normalized_counts <- read_data_table(args$normalized_counts, header = TRUE, sep = ",")
 }
 print(paste0("Reading in ", args$prism_barcode_counts, "....."))
-prism_barcode_counts <- data.table::fread(args$prism_barcode_counts, header = TRUE, sep = ",")
+prism_barcode_counts <- read_data_table(args$prism_barcode_counts, header = TRUE, sep = ",")
 print(paste0("Reading in ", args$cell_line_meta, "....."))
-cell_line_meta <- data.table::fread(args$cell_line_meta, header = TRUE, sep = ",")
+cell_line_meta <- read_data_table(args$cell_line_meta, header = TRUE, sep = ",")
 
 # Join unknown_counts and prism_barcode_counts with sample_meta to ensure only appropriate wells are kept
 unknown_counts <- unknown_counts %>%
