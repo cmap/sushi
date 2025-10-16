@@ -14,7 +14,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
   # Read in the column names. These names will be passed onto each chunk.
   # When reading a file in chunks, the column names in the first line are not always passed.
   # Use data.table to read in just the headers with nrow= 0.
-  header_col_names= read_data_table(large_file_path, header= TRUE, sep= ',', nrow= 0) %>% colnames()
+  header_col_names= data.table::fread(large_file_path, header= TRUE, sep= ',', nrow= 0) %>% colnames()
   chunk_idx= 1 # Counter to keep track of chunks in a loop
   current_chunk_size= chunk_size # Variable for loop exit condition
   chunk_collector= list() # List to collect processed chunks
@@ -24,7 +24,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
     # Read in a chunk of the large file and set the column names.
     # nrow - the number of rows to read in
     # skip - the number of rows to skip before starting to read in.
-    current_chunk= read_data_table(large_file_path, header= FALSE, sep= ',',
+    current_chunk= data.table::fread(large_file_path, header= FALSE, sep= ',',
                                      col.names= header_col_names,
                                      nrow= chunk_size, skip= chunk_size * (chunk_idx - 1) + 1)
 
@@ -48,7 +48,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
 #'
 #' This function reads a CSV file into a data.table, applying column types
 #' specified in a central schema.yaml file. It is designed for high performance
-#' by leveraging read_data_table. It uses the 'here' package to reliably
+#' by leveraging data.table::fread. It uses the 'here' package to reliably
 #' locate the schema file relative to the project root.
 #'
 #' @param csv_path The path to the CSV file to be read.
@@ -63,7 +63,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
 #'
 #' @examples
 #' \dontrun{
-#' df <- read_csv_with_schema("path/to/your/data.csv")
+#' df <- read_data_table("path/to/your/data.csv")
 #' }
 read_data_table <- function(csv_path, schema_path = NULL) {
 
@@ -105,21 +105,35 @@ read_data_table <- function(csv_path, schema_path = NULL) {
   # This creates a named character vector, e.g., c(col_a = "integer", col_b = "character")
   col_classes <- vapply(schema, function(dtype) type_mapping[[dtype]], FUN.VALUE = character(1))
 
-  cat("Applying data.table Schema:\n")
-  print(col_classes)
+  # --- NEW: Filter col_classes to only include columns present in the CSV ---
+  # This prevents fread from warning about schema columns not found in the file.
+  # First, efficiently read only the header of the target file.
+  file_headers <- names(data.table::fread(csv_path, nrows = 0))
 
-  # --- Read the CSV using fread ---
-  dt <- read_data_table(csv_path, colClasses = col_classes)
+  # Find the intersection of columns in the schema and columns in the file.
+  valid_cols <- intersect(names(col_classes), file_headers)
+
+  # Create a new col_classes vector containing only the columns that actually exist.
+  final_col_classes <- col_classes[valid_cols]
+  # --- END NEW ---
+
+  cat("Applying data.table Schema to existing columns:\n")
+  print(final_col_classes)
+
+  # --- Read the CSV using fread with the filtered schema ---
+  dt <- data.table::fread(csv_path, colClasses = final_col_classes)
 
   # --- Post-processing for datetime columns ---
-  # Find which columns were originally specified as 'datetime'
+  # Find which columns were originally specified as 'datetime' that also exist in the data
   datetime_cols <- names(schema)[which(unlist(schema) == "datetime")]
+  datetime_cols_in_data <- intersect(datetime_cols, names(dt)) # Ensure we only try to convert existing columns
 
-  if (length(datetime_cols) > 0) {
-    cat("\nConverting datetime columns:", paste(datetime_cols, collapse = ", "), "\n")
+  if (length(datetime_cols_in_data) > 0) {
+    cat("\nConverting datetime columns:", paste(datetime_cols_in_data, collapse = ", "), "\n")
     # Use data.table's efficient `:=` to convert columns by reference
-    for (col in datetime_cols) {
-      dt[, (col) := as.POSIXct(get(col))]
+    for (col in datetime_cols_in_data) {
+      # The get() is no longer needed in modern data.table when using (col)
+      dt[, (col) := as.POSIXct(dt[[col]])]
     }
   }
 
@@ -248,3 +262,4 @@ delete_existing_files <- function(out_dir, pattern) {
     message(paste("No existing files to delete in", out_dir))
   }
 }
+
