@@ -15,7 +15,7 @@
 #' @returns Dataframe with counts normalized to control barcodes
 #' @import tidyverse
 #' @import magrittr
-normalize <- function(X, id_cols, CB_meta, req_negcon_reps, negcon_type = "ctl_vehicle",
+normalize <- function(X, id_cols, CB_meta, req_negcon_reps = 6, negcon_type = "ctl_vehicle",
                       pseudocount = 0, cb_mad_cutoff = 1) {
   # Required functions
   require(magrittr)
