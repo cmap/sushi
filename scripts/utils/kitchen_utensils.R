@@ -105,9 +105,8 @@ read_data_table <- function(csv_path, schema_path = NULL) {
   # This creates a named character vector, e.g., c(col_a = "integer", col_b = "character")
   col_classes <- vapply(schema, function(dtype) type_mapping[[dtype]], FUN.VALUE = character(1))
 
-  # --- NEW: Filter col_classes to only include columns present in the CSV ---
-  # This prevents fread from warning about schema columns not found in the file.
-  # First, efficiently read only the header of the target file.
+  # --- Filter col_classes to only include columns present in the CSV ---
+  # First, read only the header of the target file.
   file_headers <- names(data.table::fread(csv_path, nrows = 0))
 
   # Find the intersection of columns in the schema and columns in the file.
@@ -115,7 +114,7 @@ read_data_table <- function(csv_path, schema_path = NULL) {
 
   # Create a new col_classes vector containing only the columns that actually exist.
   final_col_classes <- col_classes[valid_cols]
-  # --- END NEW ---
+
 
   cat("Applying data.table Schema to existing columns:\n")
   print(final_col_classes)
