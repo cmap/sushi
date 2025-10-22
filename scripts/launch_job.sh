@@ -157,7 +157,7 @@ echo "Running in container:"
   -v "$WORKSPACE:/workspace" \
   -v /cmap/tools/analysis2clue/credentials:/root/.aws/credentials:ro \
   -v /local/jenkins/.clue_api_key:/local/jenkins/.clue_api_key:ro \
-  -v /cmap/data/vdb/prismSeq:/data \
+  -v /cmap/obelix/pod/biomarker:/cmap/obelix/pod/biomarker
   -v "$BUILD_DIR:$BUILD_DIR" \
   -v /local/jenkins/.gcp_credentials.json:/.gcp_credentials.json:ro \
   -e GOOGLE_APPLICATION_CREDENTIALS=/.gcp_credentials.json \
