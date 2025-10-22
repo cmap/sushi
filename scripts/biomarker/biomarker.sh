@@ -68,5 +68,8 @@ args=(
 --out_path "$BUILD_DIR/biomarker"
 )
 
+ls -ld /cmap/obelix/data/biomarker
+touch "$BIOMARKER_FILE"
+
 echo Rscript biomarker/biomarker.R "${args[@]}"
 Rscript biomarker/biomarker.R "${args[@]}"
