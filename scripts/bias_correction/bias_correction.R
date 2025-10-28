@@ -2,7 +2,7 @@ library(argparse)
 library(tidyverse)
 
 source("utils/kitchen_utensils.R")
-source("growth_correction/growth_correction_functions.R")
+source("bias_correction/bias_correction_functions.R")
 
 # Shell script argument parser ----
 parser = ArgumentParser()
@@ -47,7 +47,7 @@ if (any(unique(l2fc[[growth_pattern_col]]) %in% c(NA, "", " ", "NA"))) {
 corrected_l2fc = l2fc |>
   dplyr::mutate(negcon_log2_norm_n = log2(control_median_normalized_n)) |>
   dplyr::group_split(dplyr::across(tidyselect::all_of(bio_rep_id_cols))) |>
-  lapply(apply_growth_correction,
+  lapply(apply_bias_correction,
          raw_l2fc_col = l2fc_col,
          growth_pattern_col = growth_pattern_col,
          cell_set_col = "cell_set") |>

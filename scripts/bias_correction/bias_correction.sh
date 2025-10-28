@@ -1,4 +1,4 @@
-echo Starting growth correction module ....
+echo Starting bias correction module ....
 
 if [ -z "$BUILD_DIR" ]
 then
@@ -29,5 +29,5 @@ args=(
 --sig_cols "${SIG_COLS}"
 )
 
-echo Rscript growth_correction/growth_correction.R "${args[@]}"
-Rscript growth_correction/growth_correction.R "${args[@]}"
+echo Rscript bias_correction/bias_correction.R "${args[@]}"
+Rscript bias_correction/bias_correction.R "${args[@]}"
