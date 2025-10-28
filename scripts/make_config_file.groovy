@@ -80,7 +80,7 @@ pipeline {
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Uses a data_to_remove.csv files to remove data. Runs as part of filter counts.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
-        booleanParam(name: 'GROWTH_CORRECTION', defaultValue: true, description: 'Correct fold change values using cell line growth annotations.')
+        booleanParam(name: 'BIAS_CORRECTION', defaultValue: true, description: 'Correct fold change values using cell line growth annotations.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
 
         separator(
@@ -416,8 +416,8 @@ pipeline {
                         if (params.COMPUTE_LFC) {
                             scriptsToRun.add('compute_l2fc/compute_l2fc.sh')
                         }
-                        if (params.GROWTH_CORRECTION) {
-                            scriptsToRun.add('growth_correction/growth_correction.sh')
+                        if (params.BIAS_CORRECTION) {
+                            scriptsToRun.add('bias_correction/bias_correction.sh')
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates/collapse_replicates.sh')
