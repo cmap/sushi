@@ -3,7 +3,7 @@ title: "PRISM Sushi Vignette and Documentation"
 author: 
   - "PRISM Analytics Team" 
   - "prism@broadinstitute.org"
-date: "Compiled June 2025"
+date: "Compiled October 2025"
 output: 
   html_document:
     toc: true
