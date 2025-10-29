@@ -255,11 +255,10 @@ source(file.path(local_sushi_path, "scripts", "compute_l2fc", "compute_l2fc_func
 # Set up inputs ----
 normalized_counts <- data.table::fread(file.path(local_test_data_path, "normalized_counts.csv"))
 control_type <- "ctl_vehicle"
-sig_cols <- c("cell_set","pert_name","pert_dose","pert_dose_unit","day")
+sig_cols <- c("pert_name","pert_dose","pert_dose_unit","day")
 ctrl_cols <- c("cell_set", "day", "pcr_plate", "replicate_plate")
 count_col_name <- "log2_normalized_n"
-count_threshold <- 40
-cell_line_cols <- c("lua", "depmap_id", "pool_id")
+cell_line_cols <- c("cell_set", "lua", "depmap_id", "pool_id", "growth_pattern")
 
 # Calculated log2 fold changes
 l2fc = compute_l2fc(normalized_counts = normalized_counts,
@@ -267,7 +266,6 @@ l2fc = compute_l2fc(normalized_counts = normalized_counts,
                     sig_cols = sig_cols,
                     ctrl_cols = ctrl_cols,
                     count_col_name = count_col_name,
-                    count_threshold = count_threshold,
                     cell_line_col = cell_line_cols)
 
 head(l2fc)
@@ -276,12 +274,11 @@ head(l2fc)
 Cell lines that failed QC can be removed from the log fold-change files as described below:
 ```{r l2fc opt filt, echo = T, eval = F}
 # CURRENTLY NOT AVAILABLE!
-qc_path <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
+qc_data <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
 
 # remove cell lines that fail for an entire pert_plate
-qc_data = data.table::fread(qc_path, header= TRUE, sep= ',', data.table= FALSE)
-join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
-failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
+join_cols = intersect(cell_line_cols, colnames(qc_data))
+failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% dplyr::select(all_of(join_cols))
 
 l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
 ```
@@ -290,7 +287,7 @@ To apply the growth correction, there must be a column in the data frame that de
 
 ```{r example growth correct, echo = T, eval = T}
 # Load into environment ----
-source(file.path(local_sushi_path, "scripts", "growth_correction", "growth_correction.R"))
+source(file.path(local_sushi_path, "scripts", "bias_correction", "bias_correction_functions.R"))
 
 # Set up inputs ----
 bio_rep_id_cols = c(sig_cols, "bio_rep")
@@ -300,7 +297,7 @@ growth_pattern_col = "growth_pattern"
 corrected_l2fc = l2fc |>
   dplyr::mutate(negcon_log2_norm_n = log2(control_median_normalized_n)) |>
   dplyr::group_split(dplyr::across(tidyselect::all_of(bio_rep_id_cols))) |>
-  lapply(apply_growth_correction, raw_l2fc_col = "l2fc", growth_pattern_col = growth_pattern_col) |>
+  lapply(apply_bias_correction, raw_l2fc_col = "l2fc", growth_pattern_col = growth_pattern_col) |>
   dplyr::bind_rows() |>
   dplyr::ungroup()
 
@@ -412,6 +409,7 @@ treatment_cols <- union(
 select_cell_lines <- c("ACH-000008", "ACH-000810")
 
 dose_response <- create_drc_table(LFC = l2fc %>% filter(depmap_id %in% select_cell_lines),
+                                  screen_type = "MTS_SEQ",
                                 cell_line_cols = cell_line_cols,
                                 treatment_cols = treatment_cols,
                                 dose_col = dose_col,
