@@ -13,7 +13,7 @@ parser$add_argument("--l2fc", default = "l2fc.csv", help = "Path to file contain
 parser$add_argument("--growth_pattern_col", default = "growth_pattern",
                     help = "Column containing growth pattern annotations.")
 parser$add_argument("--l2fc_col", default = "l2fc", help = "Column containing log2 fold change values to be corrected.")
-parser$add_argument("--sig_cols", default = "cell_set,pert_name,pert_dose,pert_dose_unit,day",
+parser$add_argument("--sig_cols", default = "pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
 
 args = parser$parse_args()

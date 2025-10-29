@@ -197,7 +197,7 @@ pipeline {
         string(name: 'MERGE_PATTERNS', defaultValue: 'log2_auc_multivariate_biomarkers*,log2_auc_univariate_biomarkers*,median_l2fc_multivariate_biomarkers*,median_l2fc_univariate_biomarkers*,DRC_TABLE*', description: 'Patterns to search for when merging files by project. May be changed based on modules run.')
 
         // Biomarker
-        string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_public_24q4.h5', description: 'Biomarker reference file.')
+        string(name: 'BIOMARKER_FILE', defaultValue: '/cmap/obelix/pod/biomarker/depmap_public_24q4.h5', description: 'Biomarker reference file.')
         string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis.')
         string(name: 'DR_PATH', defaultValue: 'DRC_TABLE.csv', description: 'File in drc/BUILD_DIR containing dose response curve data. This file is created by DRC.')
 
