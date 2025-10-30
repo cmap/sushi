@@ -24,9 +24,10 @@ enforce_abs_path LFC
 
 args=(
 --l2fc "${LFC}"
---growth_pattern_col "${GROWTH_PATTERN_COL}"
---l2fc_col "${L2FC_COLUMN}"
 --sig_cols "${SIG_COLS}"
+--bio_rep_col "${BIO_REP_COL}"
+--l2fc_col "${L2FC_COLUMN}"
+--growth_pattern_col "${GROWTH_PATTERN_COL}"
 )
 
 echo Rscript bias_correction/bias_correction.R "${args[@]}"

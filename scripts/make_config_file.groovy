@@ -172,6 +172,7 @@ pipeline {
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua,cell_set,growth_pattern', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'log2_normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
         string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Threshold for filtering the negative controls. In the negative control conditions, cell lines whose median counts are below this threshold are not confidently detected and thus are dropped. This defaults to \"40\" and is used in COMPUTE_LFC.')
+        string(name: 'BIO_REP_COL', defaultValue: 'bio_rep', description: 'Column identifying the biological replicates. Defaults to \"bio_rep\".')
         // Collapse replicates
         string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
         string(name: 'GROWTH_PATTERN_COL', defaultValue: 'growth_pattern', description: 'Name of the column containing the cell line growth annotations. This defaults to \"growth_pattern\".')
@@ -277,9 +278,9 @@ pipeline {
                         // normalize parameters
                         'PSEUDOCOUNT', 'READ_DETECTION_LIMIT',
 
-                        // compute_l2fc paramters
+                        // compute_l2fc parameters
                         'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
-                        'GROWTH_PATTERN_COL',
+                        'GROWTH_PATTERN_COL', 'BIO_REP_COL',
 
                         // biomarker parameters
                         'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE', 'DR_COLUMN', 'LFC_BIOMARKER', 'AUC_BIOMARKER',
