@@ -39,7 +39,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
 # 2. Setup Python virtual environment and install Python packages
 RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip setuptools wheel \
-    && /opt/venv/bin/pip install google-cloud-bigquery pyfarmhash pandas requests boto3 polars yaml
+    && /opt/venv/bin/pip install google-cloud-bigquery pyfarmhash pandas requests boto3 polars pyyaml
 
 # 3. Install local Python tools
 COPY scripts/utils/prism_tools ./prism_tools
