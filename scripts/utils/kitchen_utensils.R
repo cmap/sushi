@@ -65,7 +65,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
 #' \dontrun{
 #' df <- read_data_table("path/to/your/data.csv")
 #' }
-read_data_table <- function(csv_path, schema_path = NULL, nrows = NULL) {
+read_data_table <- function(csv_path, schema_path = NULL, nrows = Inf) {
 
   # Ensure required packages are available
   if (!requireNamespace("data.table", quietly = TRUE)) {
