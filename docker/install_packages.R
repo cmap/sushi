@@ -21,6 +21,7 @@ install.packages("R.utils", dependencies = TRUE)
 install.packages("PRROC", dependencies = TRUE)
 install.packages("aws.s3", dependencies = TRUE)
 install.packages("aws.signature", dependencies = TRUE)
+install.packages("here", dependencies = TRUE)
 devtools::install_github("https://github.com/broadinstitute/taigr")
 
 # Install other necessary Bioconductor packages explicitly
