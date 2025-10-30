@@ -9,11 +9,11 @@ from typing import Dict, Any, Optional
 # This makes the script work regardless of where it's run from.
 try:
     # This will work when the script is run as a file
-    DEFAULT_SCHEMA_PATH = Path(__file__).parent.parent / "sushilib" / "sushi_io" / "schema.yml"
+    DEFAULT_SCHEMA_PATH = Path(__file__).parent.parent / "sushi_io" / "schema.yml"
 except NameError:
     # This is a fallback for interactive environments (like Jupyter) where __file__ is not defined.
     # It assumes a project structure relative to the current working directory.
-    DEFAULT_SCHEMA_PATH = Path.cwd() / "sushilib" / "sushi_io" / "schema.yml"
+    DEFAULT_SCHEMA_PATH = Path.cwd()  / "sushi_io" / "schema.yml"
 
 
 def read_polars(csv_path: str, schema_path: Optional[str] = None) -> pl.DataFrame:
