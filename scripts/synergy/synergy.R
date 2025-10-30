@@ -44,8 +44,8 @@ parser$add_argument("-o", "--out", default = "", help = "Output path, defaults t
 args = parser$parse_args()
 
 # Read in files and set up parameters ----
-normalized_counts = data.table::fread(args$normalized_counts, sep = ",", header = TRUE)
-cps_l2fc = data.table::fread(args$l2fc, sep = ",", header = TRUE)
+normalized_counts = read_data_table(args$normalized_counts)
+cps_l2fc = read_data_table(args$l2fc)
 
 args$cell_line_cols = unlist(strsplit(args$cell_line_cols, ","))
 args$ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))

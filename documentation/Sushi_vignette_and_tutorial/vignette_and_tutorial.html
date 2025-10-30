@@ -1666,8 +1666,8 @@ source(&quot;~/Desktop/sushi/scripts/utils/kitchen_utensils.R&quot;)
 source(&quot;~/Desktop/sushi/scripts/normalize/normalize_functions.R&quot;)
 
 # Set up inputs ----
-filtered_counts &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/filtered_counts.csv&quot;)
-CB_meta &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/CB_meta.csv&quot;)
+filtered_counts &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/filtered_counts.csv&quot;)
+CB_meta &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/CB_meta.csv&quot;)
 pseudocount &lt;- 20
 input_id_cols &lt;- c(&quot;pcr_plate&quot;, &quot;pcr_well&quot;)
 
@@ -1880,7 +1880,7 @@ source(&quot;~/Desktop/sushi/scripts/utils/kitchen_utensils.R&quot;)
 source(&quot;~/Desktop/sushi/scripts/compute_l2fc/compute_l2fc_functions.R&quot;)
 
 # Set up inputs ----
-normalized_counts &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/normalized_counts.csv&quot;)
+normalized_counts &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/normalized_counts.csv&quot;)
 control_type &lt;- &quot;ctl_vehicle&quot;
 sig_cols &lt;- c(&quot;cell_set&quot;,&quot;pert_name&quot;,&quot;pert_dose&quot;,&quot;pert_dose_unit&quot;,&quot;day&quot;)
 ctrl_cols &lt;- c(&quot;cell_set&quot;, &quot;day&quot;, &quot;pcr_plate&quot;, &quot;replicate_plate&quot;)
@@ -1918,11 +1918,11 @@ l2fc = compute_l2fc(normalized_counts = normalized_counts,
 ## #   control_median_normalized_n &lt;dbl&gt;, num_ctrl_bio_reps &lt;int&gt;, l2fc &lt;dbl&gt;</code></pre>
 <p>Cell lines that failed QC can be removed from the log fold-change
 files as described below:</p>
-<pre class="r"><code>qc_path &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/qc_table.csv&quot;)
+<pre class="r"><code>qc_path &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/qc_table.csv&quot;)
   
 # remove cell lines that fail for an entire pert_plate
 join_cols = c(cell_line_cols, &quot;pert_plate&quot;)
-qc_data = data.table::fread(qc_path, header= TRUE, sep= &#39;,&#39;, data.table= FALSE)
+qc_data = read_data_table(qc_path, header= TRUE, sep= &#39;,&#39;, data.table= FALSE)
 failed_lines_pert_plate = qc_data %&gt;% filter(qc_pass_pert_plate == FALSE) %&gt;% select(all_of(join_cols))
 
 l2fc = l2fc %&gt;% anti_join(failed_lines_pert_plate, by= join_cols)</code></pre>
@@ -1950,7 +1950,7 @@ source(&quot;~/Desktop/sushi/scripts/utils/kitchen_utensils.R&quot;)
 source(&quot;~/Desktop/sushi/scripts/collapse_replicates/collapse_replicates_functions.R&quot;)
 
 # Set up inputs ----
-l2fc &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/l2fc.csv&quot;)
+l2fc &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/l2fc.csv&quot;)
 sig_cols &lt;- c(&quot;cell_set&quot;,&quot;pert_name&quot;,&quot;pert_dose&quot;,&quot;pert_dose_unit&quot;,&quot;day&quot;)
 cell_line_cols &lt;- c(&quot;depmap_id&quot;, &quot;lua&quot;, &quot;pool_id&quot;)
 
@@ -2065,7 +2065,7 @@ source(&quot;~/Desktop/sushi/scripts/utils/kitchen_utensils.R&quot;)
 source(&quot;~/Desktop/sushi/scripts/drc/dose_response_functions.R&quot;)
 
 # Set up inputs ----
-l2fc &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/l2fc.csv&quot;)
+l2fc &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/l2fc.csv&quot;)
 cell_line_cols &lt;- c(&quot;depmap_id&quot;, &quot;lua&quot;, &quot;pool_id&quot;)
 sig_cols &lt;- c(&quot;cell_set&quot;, &quot;pert_name&quot;, &quot;pert_dose&quot;, &quot;pert_dose_unit&quot;, &quot;day&quot;)
 dose_col &lt;- &quot;pert_dose&quot;
@@ -2203,7 +2203,7 @@ with the lineage information in the available h5 file (more information
 in the biomarker section), you can recreate the lineage enrichment
 boxplots seen on the PRISM portla by plotting lineages and the cell
 line’s AUC.</p>
-<pre class="r"><code>drc_table = data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/drc_table.csv&quot;)
+<pre class="r"><code>drc_table = read_data_table(&quot;~/Desktop/data/vignette_test_data/data/drc_table.csv&quot;)
 depmap_file_path &lt;- &quot;~/Desktop/data/vignette_test_data/data/prism_biomarker_public_0625.h5&quot;
 
 lineages &lt;- rhdf5::h5read(depmap_file_path, name = &quot;Lineage_Table/table&quot;)
@@ -2260,7 +2260,7 @@ source(&quot;~/Desktop/sushi/scripts/biomarker/biomarker_functions.R&quot;)
 
 # Set up inputs ----
 depmap_file_path &lt;- &quot;~/Desktop/data/vignette_test_data/data/prism_biomarker_public_0625.h5&quot;
-collapsed_l2fc &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/collapsed_l2fc.csv&quot;)
+collapsed_l2fc &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/collapsed_l2fc.csv&quot;)
 cell_line_cols &lt;- c(&quot;depmap_id&quot;,&quot;lua&quot;,&quot;pool_id&quot;)
 sig_cols &lt;- c(&quot;cell_set&quot;,&quot;pert_name&quot;,&quot;pert_dose&quot;,&quot;pert_dose_unit&quot;,&quot;day&quot;)
 
@@ -2382,7 +2382,7 @@ for(dataset in c(&quot;Expression&quot;, &quot;CRISPR&quot;, &quot;Mutation&quot
 AUCs, here is an example of how to calculate univariate biomarkers using
 them.</h5>
 <pre class="r"><code># Biomarkers using AUC from DRC output ----
-drc_table &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/drc_table.csv&quot;)
+drc_table &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/drc_table.csv&quot;)
 dr_column &lt;- &quot;auc&quot;
 
 trt_cols_auc &lt;- unique(c(&quot;day&quot;, sig_cols[grepl(&quot;pert&quot;, sig_cols) &amp; !grepl(&quot;dose&quot;, sig_cols)]))
@@ -2480,7 +2480,7 @@ source(&quot;~/Desktop/sushi/scripts/biomarker/biomarker_functions.R&quot;)
 
 # Set up inputs ----
 depmap_file_path &lt;- &quot;~/Desktop/data/vignette_test_data/data/prism_biomarker_public_0625.h5&quot;
-collapsed_l2fc &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/collapsed_l2fc.csv&quot;)
+collapsed_l2fc &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/collapsed_l2fc.csv&quot;)
 cell_line_cols &lt;- c(&quot;depmap_id&quot;, &quot;lua&quot;, &quot;pool_id&quot;)
 sig_cols &lt;- c(&quot;cell_set&quot;, &quot;pert_name&quot;, &quot;pert_dose&quot;, &quot;pert_dose_unit&quot;, &quot;day&quot;)
 W = NULL # confounding matrix
@@ -2534,7 +2534,7 @@ biomarkers &lt;- multivariate_biomarker_table(
 <div id="here-is-an-example-of-how-to-calculate-multivariate-biomarkers-with-aucs" class="section level5" number="4.2.2.2.1">
 <h5><span class="header-section-number">4.2.2.2.1</span> Here is an
 example of how to calculate multivariate biomarkers with AUCs</h5>
-<pre class="r"><code>drc_table &lt;- data.table::fread(&quot;~/Desktop/data/vignette_test_data/data/drc_table.csv&quot;)
+<pre class="r"><code>drc_table &lt;- read_data_table(&quot;~/Desktop/data/vignette_test_data/data/drc_table.csv&quot;)
 dr_column &lt;- &quot;log2_auc&quot;
 
 trt_cols_auc &lt;- unique(c(&quot;day&quot;, sig_cols[grepl(&quot;pert&quot;, sig_cols) &amp; !grepl(&quot;dose&quot;, sig_cols)]))
