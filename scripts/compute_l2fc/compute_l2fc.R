@@ -19,7 +19,8 @@ parser$add_argument("-c", "--normalized_counts", default="normalized_counts.csv"
 parser$add_argument("-ct", "--control_type", default="ctl_vehicle", help="pert_type to use as control")
 parser$add_argument("--sig_cols", default="cell_set,pert_name,pert_dose,pert_dose_unit,day",
                     help = "columns used to generate signature ids")
-parser$add_argument("--ctrl_cols", default="cell_set,day", 
+parser$add_argument("--bio_rep_col", default = "", help = "Column describing the biological replicate.")
+parser$add_argument("--ctrl_cols", default="cell_set,day",
                     help = "columns used to collapse controls to generate l2fc")
 parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
@@ -37,6 +38,7 @@ args <- parser$parse_args()
 control_type = args$control_type
 normalized_counts= data.table::fread(args$normalized_counts, header= TRUE, sep= ',', data.table= FALSE)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
+bio_rep_col = args$bio_rep_col
 ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 count_col_name = args$count_col_name
@@ -49,6 +51,7 @@ print("Collapsing tech reps and computing log-fold change ...")
 l2fc= compute_l2fc(normalized_counts= normalized_counts,
                    control_type= control_type,
                    sig_cols= sig_cols,
+                   bio_rep_col = bio_rep_col,
                    ctrl_cols= ctrl_cols,
                    count_col_name= count_col_name,
                    cell_line_cols= cell_line_cols)
