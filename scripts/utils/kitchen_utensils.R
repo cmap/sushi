@@ -13,8 +13,8 @@
 process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
   # Read in the column names. These names will be passed onto each chunk.
   # When reading a file in chunks, the column names in the first line are not always passed.
-  # Use data.table to read in just the headers with nrow= 0.
-  header_col_names= data.table::fread(large_file_path, header= TRUE, sep= ',', nrow= 0) %>% colnames()
+  # Use data.table to read in just the headers with nrows= 0.
+  header_col_names= data.table::fread(large_file_path, header= TRUE, sep= ',', nrows= 0) %>% colnames()
   chunk_idx= 1 # Counter to keep track of chunks in a loop
   current_chunk_size= chunk_size # Variable for loop exit condition
   chunk_collector= list() # List to collect processed chunks
@@ -65,7 +65,7 @@ process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
 #' \dontrun{
 #' df <- read_data_table("path/to/your/data.csv")
 #' }
-read_data_table <- function(csv_path, schema_path = NULL) {
+read_data_table <- function(csv_path, schema_path = NULL, nrows = NULL) {
 
   # Ensure required packages are available
   if (!requireNamespace("data.table", quietly = TRUE)) {
@@ -91,7 +91,7 @@ read_data_table <- function(csv_path, schema_path = NULL) {
   # --- Determine the schema path ---
   if (is.null(schema_path)) {
     # Automatically find the schema file from the project root
-    schema_path <- here::here("sushilib", "io", "schema.yaml")
+    schema_path <- here::here("sushilib", "sushi_io", "schema.yaml")
   }
 
   if (!file.exists(schema_path)) {
@@ -120,7 +120,7 @@ read_data_table <- function(csv_path, schema_path = NULL) {
   print(final_col_classes)
 
   # --- Read the CSV using fread with the filtered schema ---
-  dt <- data.table::fread(csv_path, colClasses = final_col_classes)
+  dt <- data.table::fread(csv_path, colClasses = final_col_classes, sep=",", header = TRUE, nrows = nrows)
 
   # --- Post-processing for datetime columns ---
   # Find which columns were originally specified as 'datetime' that also exist in the data

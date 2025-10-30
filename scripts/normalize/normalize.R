@@ -31,8 +31,8 @@ parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults
 args <- parser$parse_args()
 
 # Set up inputs ----
-filtered_counts= read_data_table(args$filtered_counts, header= TRUE, sep= ',')
-CB_meta= read_data_table(args$CB_meta, header= TRUE, sep= ',')
+filtered_counts= read_data_table(args$filtered_counts)
+CB_meta= read_data_table(args$CB_meta)
 input_pseudocount= as.numeric(args$pseudocount)
 input_id_cols= unlist(strsplit(args$id_cols, ","))
 read_detection_limit = as.integer(args$read_detection_limit)

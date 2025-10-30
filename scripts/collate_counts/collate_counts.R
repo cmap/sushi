@@ -41,9 +41,9 @@ if (args$out == "") {
 delete_existing_files(args$out, "barcode_counts")
 
 # Read in metadata files as data.table objects ----
-cell_line_meta= read_data_table(args$cell_line_meta, header= TRUE, sep= ',')
-CB_meta= read_data_table(args$CB_meta, header= TRUE, sep= ',')
-sample_meta= read_data_table(args$sample_meta, header= TRUE, sep= ',')
+cell_line_meta= read_data_table(args$cell_line_meta)
+CB_meta= read_data_table(args$CB_meta)
+sample_meta= read_data_table(args$sample_meta)
 ## if flowcell_lanes one lane, the integer gets read in as numeric, so force this to be a string
 if(validate_columns_exist("flowcell_lanes", sample_meta)){
   sample_meta %<>% mutate(flowcell_lanes = as.character(flowcell_lanes))
@@ -77,7 +77,7 @@ if(!args$barcode_col %in% colnames(cell_line_meta)) {
 }
 
 # Validation: Check that barcode_col is present in the raw_counts_uncollapsed ----
-raw_counts_uncollapsed_header <- read_data_table(args$raw_counts_uncollapsed, header= TRUE, sep= ',', nrows = 0)
+raw_counts_uncollapsed_header <- read_data_table(args$raw_counts_uncollapsed, nrows = 0)
 if (!args$barcode_col %in% colnames(raw_counts_uncollapsed_header)) {
   stop('barcode_col is NOT present in the raw_counts_uncollapsed.')
 }

@@ -26,7 +26,7 @@ args <- parser$parse_args()
 
 # Read in files as data.table objects ----
 print(paste0("Reading in ", args$l2fc, "....."))
-l2fc <- read_data_table(args$l2fc, header = TRUE, sep = ",")
+l2fc <- read_data_table(args$l2fc)
 
 # Check if the output directory exists, if not create it
 if (!dir.exists(paste0(args$out, "/qc_tables"))) {

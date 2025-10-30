@@ -28,7 +28,7 @@ parser$add_argument("--out_dir", default= "", help = "Path to the output directo
 args <- parser$parse_args()
 
 # Read in l2fc file ----
-l2fc= read_data_table(args$l2fc, header= TRUE, sep= ',')
+l2fc= read_data_table(args$l2fc)
 
 # Parse some parameters ----
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))

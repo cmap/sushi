@@ -21,13 +21,13 @@ if (args$out == "") {
 }
 
 # Read in files and prepare some parameters ----
-sample_meta= read_data_table(args$sample_meta, header= T, sep= ',')
+sample_meta= read_data_table(args$sample_meta)
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 
 # Add sample meta to l2fc table ----
 if(file.exists(args$lfc)) {
   print('Attempting to add sample_meta to l2fc file.')
-  l2fc= read_data_table(args$lfc, header= T, sep= ',')
+  l2fc= read_data_table(args$lfc)
   
   # Add sample meta columns to l2fc
   if('bio_rep' %in% colnames(sample_meta) & 'bio_rep' %in% colnames(l2fc)) {
@@ -49,7 +49,7 @@ if(file.exists(args$lfc)) {
 # Add sample meta to collapsed_l2fc table ----
 if(file.exists(args$collapsed_lfc)) {
   print('Attempting to add sample_meta to collapsed l2fc.')
-  collapsed_l2fc= read_data_table(args$collapsed_lfc, header= T, sep= ',')
+  collapsed_l2fc= read_data_table(args$collapsed_lfc)
   
   # Add sample meta columns to collapsed l2fc
   collapsed_l2fc_with_meta_columns= join_metadata(input_df= collapsed_l2fc, metadata= sample_meta, 

@@ -279,7 +279,7 @@ Cell lines that failed QC can be removed from the log fold-change files as descr
 qc_path <- read_data_table(file.path(local_test_data_path, "qc_table.csv"))
 
 # remove cell lines that fail for an entire pert_plate
-qc_data = read_data_table(qc_path, header= TRUE, sep= ',', data.table= FALSE)
+qc_data = read_data_table(qc_path)
 join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
 failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
 
