@@ -52,7 +52,7 @@ def read_polars(csv_path: str, schema_path: Optional[str] = None) -> pl.DataFram
         print(f"✅ Schema loaded and mapped for {len(polars_dtypes)} columns.")
 
         # Read the CSV file, enforcing the schema
-        df = pl.read_csv(csv_path, dtypes=polars_dtypes)
+        df = pl.read_csv(csv_path, dtypes=polars_dtypes, null_values="NA")
         print(f"✅ Success! Loaded {df.shape[0]} rows into a Polars DataFrame.\n")
         return df
 
