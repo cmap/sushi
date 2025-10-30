@@ -51,7 +51,7 @@ delete_existing_files(args$out, "filtered_counts")
 delete_existing_files(args$out, "annotated_counts")
 
 # Read in all input files ----
-prism_barcode_counts= read_data_table(args$prism_barcode_counts
+prism_barcode_counts= read_data_table(args$prism_barcode_counts)
 sample_meta= read_data_table(args$sample_meta)
 cell_set_and_pool_meta= read_data_table(args$cell_set_and_pool_meta)
 cell_line_meta= read_data_table(args$cell_line_meta)
