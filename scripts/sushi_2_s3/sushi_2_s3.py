@@ -1,7 +1,17 @@
+import sys
+import os
+
+# This line gets the absolute path to the current script file
+current_file_path = os.path.abspath(__file__)
+
+# This line goes "up" two levels (from sushi_2_s3.py -> sushi_2_s3/ -> scripts/)
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file_path)))
+
+# Add the project root to the list of places Python looks for modules
+sys.path.insert(0, project_root)
+
 import pandas as pd
 import argparse
-import os
-import sys
 import glob
 import json
 import boto3
