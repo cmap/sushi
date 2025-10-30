@@ -91,7 +91,7 @@ read_data_table <- function(csv_path, schema_path = NULL, nrows = NULL) {
   # --- Determine the schema path ---
   if (is.null(schema_path)) {
     # Automatically find the schema file from the project root
-    schema_path <- here::here("sushilib", "sushi_io", "schema.yaml")
+    schema_path <- here::here("sushilib", "sushi_io", "schema.yml")
   }
 
   if (!file.exists(schema_path)) {
