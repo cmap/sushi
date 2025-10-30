@@ -31,7 +31,7 @@ if (bio_rep_col == "") {
   message("No bio_rep column specified. Assuming that there are NO biological replicates.")
   sig_bio_rep_cols = sig_cols
 } else {
-  sig_bio_rep_cols = c(sig_cols, "bio_rep")
+  sig_bio_rep_cols = unique(c(sig_cols, bio_rep_col))
 }
 
 # Make sure cell_set is not in sig_bio_rep_cols
