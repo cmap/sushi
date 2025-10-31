@@ -24,8 +24,9 @@ parser$add_argument("--ctrl_cols", default="cell_set,day",
                     help = "columns used to collapse controls to generate l2fc")
 parser$add_argument("--cell_line_cols", default="pool_id,depmap_id,lua",
                     help = "Columns that can describe a cell line")
-parser$add_argument("-ccn", "--count_col_name", default="log2_normalized_n", 
+parser$add_argument("-ccn", "--count_col_name", default="log2_normalized_n",
                     help = "column containing counts with which to calculate l2fc")
+parser$add_argument("--output_file", default = "l2fc.csv", help = "Name of file to output l2fc values")
 parser$add_argument("-o","--out", default=getwd(), help = "Output path. Default is working directory")
 parser$add_argument("-ff", "--filter_failed_lines", type="logical",
                     help = "Filter out failed cell lines from the output file")
@@ -80,7 +81,7 @@ if (args$filter_failed_lines) {
 }
 
 # Write out file ----
-l2fc_outpath= paste(args$out, "l2fc.csv", sep= "/")
+l2fc_outpath = file.path(args$out, args$output_file)
 print(paste0('Writing out l2fc file to ', l2fc_outpath))
 write.csv(l2fc, l2fc_outpath, row.names= FALSE, quote= FALSE)
 

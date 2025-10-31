@@ -30,6 +30,7 @@ echo NORMALIZED_COUNTS is: $NORMALIZED_COUNTS
 
 args=(
 --normalized_counts "$NORMALIZED_COUNTS"
+--output_file "${LFC}"
 --out "$BUILD_DIR"
 --control_type "$CTL_TYPES"
 --count_col_name "$COUNT_COL_NAME"
