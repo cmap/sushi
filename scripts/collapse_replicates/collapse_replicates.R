@@ -42,7 +42,7 @@ collapsed_l2fc= collapse_bio_reps(l2fc= lfc_values, sig_cols= sig_cols, cell_lin
 # Write out file ----
 collapsed_l2fc_outpath = file.path(args$out, args$collapsed_l2fc_file)
 print(paste0('Writing out collapsed l2fc file to ', collapsed_l2fc_outpath))
-write.csv(x = collapsed_l2fc, file = collapsed_l2fc_outpath, row.names = FALSE, quote = FALSE)
+write_out_table(collapsed_l2fc, collapsed_l2fc_outpath)
 
 # Ensure that collapsed file was successfully generated ----
 check_file_exists(collapsed_l2fc_outpath)

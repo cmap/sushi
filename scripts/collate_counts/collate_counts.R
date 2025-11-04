@@ -120,14 +120,14 @@ if(nrow(prism_barcode_counts) == 0) {
 # Write out files ----
 out_file = file.path(args$out, args$prism_barcode_counts_file)
 print(paste("Writing prism_barcode_counts.csv to ", out_file))
-write_csv(prism_barcode_counts, out_file)
+write_out_table(prism_barcode_counts, out_file)
 
 # Ensure that files were successfully generated ----
 check_file_exists(out_file)
 
 out_file = file.path(args$out, args$unknown_barcode_counts_file)
 print(paste("Writing unknown_barcode_counts.csv to ", out_file))
-write_csv(unknown_barcode_counts, out_file)
+write_out_table(unknown_barcode_counts, out_file)
 
 # Ensure that files were successfully generated ----
 check_file_exists(out_file)

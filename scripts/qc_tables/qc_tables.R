@@ -233,19 +233,13 @@ final_filtered_normalized_counts <- pool_well_filtered_normalized_counts
 # Write pcr_plate_qc_flags table
 pcr_plate_qc_flags_outpath <- paste0(args$out, "/qc_tables/pcr_plate_qc_flags.csv")
 print(paste0("Writing out pcr_plate_qc_flags to ", pcr_plate_qc_flags_outpath))
-write.csv(
-  x = pcr_plate_qc_flags_table, file = pcr_plate_qc_flags_outpath, row.names = FALSE,
-  quote = FALSE
-)
+write_out_table(table = pcr_plate_qc_flags_table, path = pcr_plate_qc_flags_outpath)
 check_file_exists(pcr_plate_qc_flags_outpath)
 
 # Write plate_cell_qc_table for internal use
 plate_cell_qc_table_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_table_internal.csv")
 print(paste0("Writing out internal plate_cell_qc_table to ", plate_cell_qc_table_outpath))
-write.csv(
-  x = plate_cell_table, file = plate_cell_qc_table_outpath, row.names = FALSE,
-  quote = FALSE
-)
+write_out_table(table = plate_cell_table, path = plate_cell_qc_table_outpath)
 check_file_exists(plate_cell_qc_table_outpath)
 
 # Write plate_cell_qc_table for portal use
@@ -271,12 +265,8 @@ if (contains_poscon) {
     "qc_pass", "qc_pass_pert_plate"
   )
 }
-write.csv(
-  x = plate_cell_table %>%
-    dplyr::select(all_of(columns_to_write)),
-  file = plate_cell_qc_table_outpath_external, row.names = FALSE,
-  quote = FALSE
-)
+write_out_table(table = plate_cell_table %>% dplyr::select(all_of(columns_to_write)),
+                path = plate_cell_qc_table_outpath_external)
 check_file_exists(plate_cell_qc_table_outpath_external)
 
 # Write cl_pertplate_pass_rate_qc_table for portal
@@ -286,54 +276,38 @@ pertplate_cell_pass_rate <- plate_cell_table %>%
   dplyr::group_by(pert_plate, project_code) %>%
   dplyr::summarise(num_cl_pass=sum(qc_pass_pert_plate),
                    num_cl_failed=sum(!qc_pass_pert_plate)) %>%
-  dplyr::ungroup() 
-write.csv(pertplate_cell_pass_rate,
-          pertplate_cell_pass_rate_outpath,
-          row.names = F, quote = F)
+  dplyr::ungroup()
+write_out_table(pertplate_cell_pass_rate, pertplate_cell_pass_rate_outpath)
 check_file_exists(pertplate_cell_pass_rate_outpath)
 
 # Write plate_cell_qc_flags table
 plate_cell_qc_flags_outpath <- paste0(args$out, "/qc_tables/plate_cell_qc_flags.csv")
 print(paste0("Writing out plate_cell_qc_flags to ", plate_cell_qc_flags_outpath))
-write.csv(
-  x = plate_cell_qc_flags_table, file = plate_cell_qc_flags_outpath, row.names = FALSE,
-  quote = FALSE
-)
+write_out_table(table = plate_cell_qc_flags_table, path = plate_cell_qc_flags_outpath)
 check_file_exists(plate_cell_qc_flags_outpath)
 
 # Write pool_well_qc_table ----------
 pool_well_qc_table_outpath <- paste0(args$out, "/qc_tables/pool_well_qc_table.csv")
 print(paste0("Writing out pool_well_qc_table to ", pool_well_qc_table_outpath))
-write.csv(
-  x = pool_well_table, file = pool_well_qc_table_outpath, row.names = FALSE,
-  quote = FALSE
-)
+write_out_table(table = pool_well_table, path = pool_well_qc_table_outpath)
 check_file_exists(pool_well_qc_table_outpath)
 
 # Write pool_well_qc_flags table ----------
 pool_well_qc_flags_outpath <- paste0(args$out, "/qc_tables/pool_well_qc_flags.csv")
 print(paste0("Writing out pool_well_qc_flags to ", pool_well_qc_flags_outpath))
-write.csv(
-  x = pool_well_qc_flags_table, file = pool_well_qc_flags_outpath, row.names = FALSE,
-  quote = FALSE
-)
+write_out_table(table = pool_well_qc_flags_table, path = pool_well_qc_flags_outpath)
 check_file_exists(pool_well_qc_flags_outpath)
 
 # Write id_cols table ----------
 id_cols_outpath <- paste0(args$out, "/qc_tables/id_cols_qc_table.csv")
 print(paste0("Writing out id_cols_qc_table to ", id_cols_outpath))
-write.csv(
-  x = id_cols_table, file = id_cols_outpath, row.names = FALSE, quote = FALSE
-)
+write_out_table(table = id_cols_table, path = id_cols_outpath)
 check_file_exists(id_cols_outpath)
 
 # Write id_cols_qc_flags table ----------
 id_cols_qc_flags_outpath <- paste0(args$out, "/qc_tables/id_cols_qc_flags.csv")
 print(paste0("Writing out id_cols_qc_flags to ", id_cols_qc_flags_outpath))
-write.csv(
-  x = id_cols_qc_flags_table, file = id_cols_qc_flags_outpath, row.names = FALSE,
-  quote = FALSE
-)
+write_out_table(table = id_cols_qc_flags_table, path = id_cols_qc_flags_outpath)
 check_file_exists(id_cols_qc_flags_outpath)
 
 if (args$filter_qc_flags) {
@@ -342,19 +316,13 @@ if (args$filter_qc_flags) {
   # Write original normalized counts ----------
   normalized_counts_original_outpath <- paste0(args$out, "/normalized_counts_original.csv")
   print(paste0("Writing unfiltered normalized_counts to ", normalized_counts_original_outpath))
-  write.csv(
-    x = normalized_counts, file = normalized_counts_original_outpath, row.names = FALSE,
-    quote = FALSE
-  )
+  write_out_table(table = normalized_counts, path = normalized_counts_original_outpath)
   check_file_exists(normalized_counts_original_outpath)
 
   # Write filtered normalized counts ----------
   filtered_normalized_counts_outpath <- paste0(args$out, "/normalized_counts.csv")
   print(paste0("Writing filtered normalized_counts to ", filtered_normalized_counts_outpath))
-  write.csv(
-    x = final_filtered_normalized_counts, file = filtered_normalized_counts_outpath, row.names = FALSE,
-    quote = FALSE
-  )
+  write_out_table(table = final_filtered_normalized_counts, path = filtered_normalized_counts_outpath)
   check_file_exists(filtered_normalized_counts_outpath)
 } else {
   print("Nomalized counts not filtered for qc_flags.")
@@ -371,9 +339,7 @@ variance_decomp <- compute_variance_decomposition(
 )
 variance_decomp_outpath <- paste0(args$out, "/qc_tables/variance_decomposition.csv")
 print(paste0("Writing out variance_decomposition to ", variance_decomp_outpath))
-write.csv(
-  x = variance_decomp, file = variance_decomp_outpath, row.names = FALSE,
-  quote = FALSE)
+write_out_table(table = variance_decomp, path = variance_decomp_outpath)
 check_file_exists(variance_decomp_outpath)
 
 # Compute contamination tables
@@ -390,10 +356,7 @@ contamination_tables <- compute_contamination_qc_tables(
 for (table_name in names(contamination_tables)) {
   table_outpath <- paste0(args$out, "/qc_tables/", table_name, ".csv")
   print(paste0("Writing out ", table_name, " to ", table_outpath))
-  write.csv(
-    x = contamination_tables[[table_name]], file = table_outpath, row.names = FALSE,
-    quote = FALSE
-  )
+  write_out_table(table = contamination_tables[[table_name]], path = table_outpath)
   check_file_exists(table_outpath)
 }
 

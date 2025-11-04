@@ -67,7 +67,8 @@ if (args$filter_failed_lines) {
   # Write out the unfiltered l2fc file
   print("Writing out unfiltered l2fc file ...")
   l2fc_unfiltered_outpath= paste(args$out, "l2fc_original.csv", sep= "/")
-  write.csv(l2fc, l2fc_unfiltered_outpath, row.names= FALSE, quote= FALSE)
+  write_out_table(l2fc, l2fc_unfiltered_outpath)
+
   # Read in QC file and filter lines that fail for an entire pert_plate
   qc_data = read_data_table(args$qc_path)
   join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
@@ -83,7 +84,7 @@ if (args$filter_failed_lines) {
 # Write out file ----
 l2fc_outpath = file.path(args$out, args$output_file)
 print(paste0('Writing out l2fc file to ', l2fc_outpath))
-write.csv(l2fc, l2fc_outpath, row.names= FALSE, quote= FALSE)
+write_out_table(l2fc, l2fc_outpath)
 
 # Ensure that l2fc file was successfully generated ----
 check_file_exists(l2fc_outpath)

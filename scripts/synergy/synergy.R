@@ -139,6 +139,6 @@ trt_synergy[, num_sig_profiles := sum(q_val < 0.005), by = c(args$cell_line_cols
 # Write out file ----
 outpath = file.path(args$out, args$output_file)
 print(paste0("Writing out synergy file to ", outpath))
-write.csv(x = trt_synergy, file = outpath, row.names = FALSE)
+write_out_table(table = trt_synergy, path = outpath)
 
 # End ----

@@ -568,7 +568,7 @@ create_multivariate_biomarker_table <- function(in_path, out_path = NULL,
     tidyr::unite(y, all_of(treatment_columns), sep = "::", remove = FALSE) %>% 
     dplyr::inner_join(multivariate_biomarker_table) %>% 
     dplyr::select(-y) %>%
-    write.csv(file.path(out_path, output_file_name), row.names = FALSE)
+    write_out_table(path = file.path(out_path, output_file_name))
 }
 
 
@@ -651,5 +651,5 @@ create_univariate_biomarker_table <- function(in_path, out_path,
     tidyr::unite(y, all_of(treatment_columns), sep = "::", remove = FALSE) %>%
     dplyr::inner_join(univariate_biomarker_table) %>%
     dplyr::select(-y) %>%
-    write.csv(file.path(out_path, output_file_name), row.names = FALSE)
+    write_out_table(path = file.path(out_path, output_file_name))
 }

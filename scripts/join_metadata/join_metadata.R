@@ -39,9 +39,9 @@ if(file.exists(args$lfc)) {
   l2fc_with_meta_columns= join_metadata(input_df= l2fc, metadata= sample_meta, key_cols= input_cols)
   
   # Write out
-  outpath= paste(args$out, 'l2fc_with_meta_columns.csv', sep='/')
+  outpath= file.path(args$out, "l2fc_with_meta_columns.csv")
   print(paste("Writing l2fc_with_meta_columns.csv to ", outpath))
-  l2fc_with_meta_columns %>% write.csv(outpath, row.names= FALSE, quote= FALSE)
+  write_out_table(l2fc_with_meta_columns, outpath)
 } else {
   print('WARNING: l2fc.csv does not exist. Skipping this file.')
 }
@@ -56,9 +56,10 @@ if(file.exists(args$collapsed_lfc)) {
                                                   key_cols= sig_cols)
   
   # Write out
-  outpath= paste(args$out, 'collapsed_l2fc_with_meta_columns.csv', sep='/')
+  outpath= file.path(args$out, "collapsed_l2fc_with_meta_columns.csv")
   print(paste("Writing collapsed_l2fc_with_meta_columns.csv to ", outpath))
-  collapsed_l2fc_with_meta_columns %>% write.csv(outpath, row.names= FALSE, quote= FALSE)
+  write_out_table(collapsed_l2fc_with_meta_columns, outpath)
+
 } else {
   print('WARNING: collapsed_l2fc.csv does not exist. Skipping this file.')
 }
