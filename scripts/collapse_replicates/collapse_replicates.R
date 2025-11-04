@@ -30,7 +30,7 @@ args <- parser$parse_args()
 delete_existing_files(args$out, "collapsed_l2fc")
 
 # Collapse biological replicates ----
-lfc_values= data.table::fread(args$lfc, header=T, sep=',', data.table=F)
+lfc_values= read_data_table(args$lfc)
 sig_cols= unlist(strsplit(args$sig_cols, ","))
 cell_line_cols= unlist(strsplit(args$cell_line_cols, ","))
 

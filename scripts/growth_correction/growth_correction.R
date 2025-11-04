@@ -19,7 +19,7 @@ parser$add_argument("--sig_cols", default = "cell_set,pert_name,pert_dose,pert_d
 args = parser$parse_args()
 
 # Read in files and set up any args
-l2fc = data.table::fread(args$l2fc)
+l2fc = read_data_table(args$l2fc)
 growth_pattern_col = args$growth_pattern_col
 l2fc_col = args$l2fc_col
 sig_cols = unlist(strsplit(args$sig_cols, ","))

@@ -140,8 +140,8 @@ source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
 source(file.path(local_sushi_path, "scripts", "normalize", "normalize_functions.R"))
 
 # Set up inputs ----
-filtered_counts <- data.table::fread(file.path(local_test_data_path, "filtered_counts.csv"))
-CB_meta <- data.table::fread(file.path(local_test_data_path, "CB_meta.csv"))
+filtered_counts <- read_data_table(file.path(local_test_data_path, "filtered_counts.csv"))
+CB_meta <- read_data_table(file.path(local_test_data_path, "CB_meta.csv"))
 pseudocount <- 0
 input_id_cols <- c("pcr_plate", "pcr_well")
 negcon_cols <- c("pcr_plate", "pert_vehicle")
@@ -253,7 +253,7 @@ source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
 source(file.path(local_sushi_path, "scripts", "compute_l2fc", "compute_l2fc_functions.R"))
 
 # Set up inputs ----
-normalized_counts <- data.table::fread(file.path(local_test_data_path, "normalized_counts.csv"))
+normalized_counts <- read_data_table(file.path(local_test_data_path, "normalized_counts.csv"))
 control_type <- "ctl_vehicle"
 sig_cols <- c("cell_set","pert_name","pert_dose","pert_dose_unit","day")
 ctrl_cols <- c("cell_set", "day", "pcr_plate", "replicate_plate")
@@ -276,10 +276,10 @@ head(l2fc)
 Cell lines that failed QC can be removed from the log fold-change files as described below:
 ```{r l2fc opt filt, echo = T, eval = F}
 # CURRENTLY NOT AVAILABLE!
-qc_path <- data.table::fread(file.path(local_test_data_path, "qc_table.csv"))
+qc_path <- read_data_table(file.path(local_test_data_path, "qc_table.csv"))
 
 # remove cell lines that fail for an entire pert_plate
-qc_data = data.table::fread(qc_path, header= TRUE, sep= ',', data.table= FALSE)
+qc_data = read_data_table(qc_path)
 join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
 failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
 
@@ -325,7 +325,7 @@ source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
 source(file.path(local_sushi_path, "scripts", "collapse_replicates", "collapse_replicates_functions.R"))
 
 # Set up inputs ----
-l2fc <- data.table::fread(file.path(local_test_data_path, "l2fc.csv"))
+l2fc <- read_data_table(file.path(local_test_data_path, "l2fc.csv"))
 sig_cols <- c("cell_set","pert_name","pert_dose","pert_dose_unit","day")
 cell_line_cols <- c("depmap_id", "lua", "pool_id")
 
@@ -393,7 +393,7 @@ source(file.path(local_sushi_path, "scripts", "utils", "kitchen_utensils.R"))
 source(file.path(local_sushi_path, "scripts", "drc", "dose_response_functions.R"))
 
 # Set up inputs ----
-l2fc <- data.table::fread(file.path(local_test_data_path, "l2fc.csv"))
+l2fc <- read_data_table(file.path(local_test_data_path, "l2fc.csv"))
 cell_line_cols <- c("depmap_id", "lua", "pool_id")
 sig_cols <- c("cell_set", "pert_name", "pert_dose", "pert_dose_unit", "day")
 dose_col <- "pert_dose"
@@ -493,7 +493,7 @@ print(drc_plot)
 Using more cell lines from the dose-response results in conjunction with the lineage information in the available h5 file (more information in the biomarker section), you can recreate the lineage enrichment boxplots seen on the PRISM portla by plotting lineages and the cell line's AUC.
 
 ```{r example univariate lineage boxplots, echo = T, eval = T}
-drc_table = data.table::fread(file.path(local_test_data_path, "drc_table.csv"))
+drc_table = read_data_table(file.path(local_test_data_path, "drc_table.csv"))
 depmap_file_path <- file.path(local_test_data_path, "prism_biomarker_public_0625.h5")
 
 lineages <- rhdf5::h5read(depmap_file_path, name = "Lineage_Table/table")
@@ -538,7 +538,7 @@ source(file.path(local_sushi_path, "scripts", "biomarker", "biomarker_functions.
 
 # Set up inputs ----
 depmap_file_path <- file.path(local_test_data_path, "prism_biomarker_public_0625.h5")
-collapsed_l2fc <- data.table::fread(file.path(local_test_data_path, "collapsed_l2fc.csv"))
+collapsed_l2fc <- read_data_table(file.path(local_test_data_path, "collapsed_l2fc.csv"))
 cell_line_cols <- c("depmap_id","lua","pool_id")
 sig_cols <- c("cell_set","pert_name","pert_dose","pert_dose_unit","day")
 
@@ -620,7 +620,7 @@ for(dataset in c("Expression", "CRISPR", "Mutation")) {
 ##### If you have AUCs, here is an example of how to calculate univariate biomarkers using them.
 ```{r example univariate biomarker with aucs, echo = T, eval = T}
 # Biomarkers using AUC from DRC output ----
-drc_table <- data.table::fread(file.path(local_test_data_path, "drc_table.csv"))
+drc_table <- read_data_table(file.path(local_test_data_path, "drc_table.csv"))
 dr_column <- "auc"
 
 trt_cols_auc <- unique(c("day", sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)]))
@@ -668,7 +668,7 @@ source(file.path(local_sushi_path, "scripts", "biomarker", "biomarker_functions.
 
 # Set up inputs ----
 depmap_file_path <- file.path(local_test_data_path, "prism_biomarker_public_0625.h5")
-collapsed_l2fc <- data.table::fread(file.path(local_test_data_path, "collapsed_l2fc.csv"))
+collapsed_l2fc <- read_data_table(file.path(local_test_data_path, "collapsed_l2fc.csv"))
 cell_line_cols <- c("depmap_id", "lua", "pool_id")
 sig_cols <- c("cell_set", "pert_name", "pert_dose", "pert_dose_unit", "day")
 W = NULL # confounding matrix
@@ -700,7 +700,7 @@ biomarkers %>% arrange(., -RF.imp.mean) %>% head()
 ##### Here is an example of how to calculate multivariate biomarkers with AUCs
 
 ```{r example multivariate biomarker with aucs, echo = T, eval = T}
-drc_table <- data.table::fread(file.path(local_test_data_path, "drc_table.csv"))
+drc_table <- read_data_table(file.path(local_test_data_path, "drc_table.csv"))
 dr_column <- "log2_auc"
 
 trt_cols_auc <- unique(c("day", sig_cols[grepl("pert", sig_cols) & !grepl("dose", sig_cols)]))
