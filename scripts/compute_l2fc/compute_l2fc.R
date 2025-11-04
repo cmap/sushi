@@ -37,7 +37,7 @@ args <- parser$parse_args()
 
 # Set up parameters and run compute_l2fc ----
 control_type = args$control_type
-normalized_counts= data.table::fread(args$normalized_counts, header= TRUE, sep= ',', data.table= FALSE)
+normalized_counts= read_data_table(args$normalized_counts)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 bio_rep_col = args$bio_rep_col
 ctrl_cols = unlist(strsplit(args$ctrl_cols, ","))
@@ -69,7 +69,7 @@ if (args$filter_failed_lines) {
   l2fc_unfiltered_outpath= paste(args$out, "l2fc_original.csv", sep= "/")
   write.csv(l2fc, l2fc_unfiltered_outpath, row.names= FALSE, quote= FALSE)
   # Read in QC file and filter lines that fail for an entire pert_plate
-  qc_data = data.table::fread(args$qc_path, header= TRUE, sep= ',', data.table= FALSE)
+  qc_data = read_data_table(args$qc_path)
   join_cols = intersect(c(cell_line_cols, "pert_plate"), colnames(qc_data))
   failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% select(all_of(join_cols))
 

@@ -270,7 +270,7 @@ if (all_sets_exist) {
   # Add cell line growth patterns
   growth_annotations_path = file.path(args$out, args$growth_annotations)
   if (file.exists(growth_annotations_path)) {
-    growth_annots = data.table::fread(growth_annotations_path)
+    growth_annots = read_data_table(growth_annotations_path)
 
     cell_set_assay_pool_meta = cell_set_assay_pool_meta |>
       dplyr::left_join(growth_annots, by = c("depmap_id", "pool_id"))

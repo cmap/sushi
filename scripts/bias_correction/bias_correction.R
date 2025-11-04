@@ -20,7 +20,7 @@ parser$add_argument("--growth_pattern_col", default = "growth_pattern",
 args = parser$parse_args()
 
 # Read in files and set up any args
-l2fc = data.table::fread(args$l2fc)
+l2fc = read_data_table(args$l2fc)
 sig_cols = unlist(strsplit(args$sig_cols, ","))
 bio_rep_col = args$bio_rep_col
 l2fc_col = args$l2fc_col

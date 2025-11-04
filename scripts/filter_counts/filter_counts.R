@@ -53,17 +53,17 @@ delete_existing_files(args$out, "filtered_counts")
 delete_existing_files(args$out, "annotated_counts")
 
 # Read in all input files ----
-prism_barcode_counts= data.table::fread(args$prism_barcode_counts, header= TRUE, sep= ',')
-sample_meta= data.table::fread(args$sample_meta, header= TRUE, sep= ',')
-cell_set_and_pool_meta= data.table::fread(args$cell_set_and_pool_meta, header= TRUE, sep= ',')
-cell_line_meta= data.table::fread(args$cell_line_meta, header= TRUE, sep= ',')
-CB_meta= data.table::fread(args$CB_meta, header= TRUE, sep= ',')
+prism_barcode_counts= read_data_table(args$prism_barcode_counts)
+sample_meta= read_data_table(args$sample_meta)
+cell_set_and_pool_meta= read_data_table(args$cell_set_and_pool_meta)
+cell_line_meta= read_data_table(args$cell_line_meta)
+CB_meta= read_data_table(args$CB_meta)
 screen= args$screen
 api_key= args$api_key
 
 # If the skipped wells file exists, read it in ----
 if(file.exists(args$skipped_wells)){
-  skipped_wells <- data.table::fread(args$skipped_wells, header= TRUE, sep= ',')
+  skipped_wells <- read_data_table(args$skipped_wells)
   skipped_wells <- skipped_wells %>%
     drop_na(pool_id) %>%
     dplyr::rename(

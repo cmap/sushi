@@ -102,8 +102,7 @@ pipeline {
           sectionHeaderStyle: sectionHeaderStyleBlue
         )
         booleanParam(name: 'CONVERT_SUSHI', defaultValue: false, description: 'Convert output column headers to format for MTS pipeline and upload to s3.')
-        string(name: 'DAYS', defaultValue: '5', description: 'Provide any days/timepoints (separated by commas) that should be maintained. If left blank, all days will be maintained.')
-        
+
         separator(
           name: "analytics_modules",
           sectionHeader: "Analytics Modules",
@@ -260,7 +259,7 @@ pipeline {
                 script {
                     def paramList = [
                         'SEQ_TYPE', 'API_URL', 'BUILD_DIR', 'INDEX_1', 'INDEX_2', 'BARCODE_SUFFIX', 'CREATE_CELLDB_METADATA',
-                        'BUILD_NAME', 'CONVERT_SUSHI', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS', 'DAYS',
+                        'BUILD_NAME', 'CONVERT_SUSHI', 'REMOVE_DATA', 'FILTER_SKIPPED_WELLS',
                         'COUNTS', 'SCREEN', 'GENERATE_QC_TABLES', 'POSCON_TYPE', 'DRC', 'L2FC_COLUMN','COLLAPSED_L2FC_COLUMN',
                         'SKIPPED_WELLS','FILTER_QC_FLAGS', 'PERT_PLATES', 'SCREEN_TYPE',
 
