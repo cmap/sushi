@@ -7,8 +7,16 @@ import polars as pl
 from typing import Dict, Any
 import farmhash
 import ctypes
-from sushilib.sushi_io.reader import read_polars
 
+import sys
+import os
+
+#TODO: Update how sushilib is imported once we have proper packaging
+this_file_path = os.path.abspath(__file__)
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(this_file_path))))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+from sushilib.sushi_io.reader import read_polars
 
 def get_polars_dtype_from_bq_field(field: bigquery.SchemaField) -> pl.DataType:
     """Map BigQuery field types to Polars data types."""
