@@ -13,7 +13,7 @@ import os
 
 #TODO: Update how sushilib is imported once we have proper packaging
 this_file_path = os.path.abspath(__file__)
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(this_file_path))))
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(this_file_path)))
 if project_root not in sys.path:
     sys.path.append(project_root)
 from sushilib.sushi_io.reader import read_polars
