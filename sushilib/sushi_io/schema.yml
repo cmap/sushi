@@ -90,3 +90,4 @@ cb_spearman: float
 n_cell_lines: integer
 n_outliers: integer
 fraction_outliers: float
+l2fc_uncorrected: float
