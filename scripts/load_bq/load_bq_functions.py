@@ -7,6 +7,7 @@ import polars as pl
 from typing import Dict, Any
 import farmhash
 import ctypes
+from sushilib.sushi_io.reader import read_polars
 
 
 def get_polars_dtype_from_bq_field(field: bigquery.SchemaField) -> pl.DataType:
@@ -157,11 +158,8 @@ def filter_csv_to_matching_columns(
     null_values = ["", "NA", "NULL", "null", "N/A", "n/a", "NaN", "nan"]
 
     try:
-        df = pl.read_csv(
+        df = read_polars(
             file_path,
-            null_values=null_values,
-            infer_schema_length=10000,
-            ignore_errors=True,  # More forgiving parsing
         )
         logging.info(
             f"Successfully read CSV with {len(df)} rows and columns: {df.columns}"
