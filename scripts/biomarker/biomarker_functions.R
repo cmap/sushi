@@ -277,7 +277,7 @@ random_forest <- function (X, y, k = 5, vc = 0.01, lm = 25, p0 = 0.01, folds = N
 #' @export
 #'
 #' @examples
-read_dataset <- function(file = "/data/biomarker/current/prism_biomarker_public_0625.h5", dataset,
+read_dataset <- function(file = "/cmap/obelix/pod/biomarker/depmap_public_24q4.h5", dataset,
                          rownames_depmap_ids = TRUE) {
   require(rhdf5)
   if(word(file, sep = fixed("://")) %in% c("s3", "http", "https")){
@@ -314,7 +314,7 @@ read_dataset <- function(file = "/data/biomarker/current/prism_biomarker_public_
 #' @export
 #'
 #' @examples
-read_features <- function(file = "/data/biomarker/current/prism_biomarker_public_0625.h5",
+read_features <- function(file = "/cmap/obelix/pod/biomarker/depmap_public_24q4.h5",
                           dataset, feature_names = NULL,
                           rownames_depmap_ids = TRUE) {
   require(rhdf5)
