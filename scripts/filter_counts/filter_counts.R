@@ -147,7 +147,7 @@ if(exists("skipped_wells") && args$filter_skipped_wells && nrow(skipped_wells) >
 # Write out files ----
 annot_out_file = file.path(args$out, args$annot_file)
 print(paste('Writing annotated counts to: ', annot_out_file))
-write_out_table(annotated_counts, annot_out_file)
+write_out_table(module_outputs$annotated_counts, annot_out_file)
 
 filtrc_out_file = file.path(args$out, args$filt_file)
 print(paste("Writing filtered counts csv to: ", filtrc_out_file))
