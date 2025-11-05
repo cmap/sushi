@@ -275,7 +275,6 @@ head(l2fc)
 
 Cell lines that failed QC can be removed from the log fold-change files as described below:
 ```{r l2fc opt filt, echo = T, eval = F}
-# CURRENTLY NOT AVAILABLE!
 qc_data <- read_data_table(file.path(local_test_data_path, "qc_table.csv"), schema_path)
 
 # remove cell lines that fail for an entire pert_plate
@@ -285,7 +284,7 @@ failed_lines_pert_plate = qc_data %>% filter(qc_pass_pert_plate == FALSE) %>% dp
 l2fc = l2fc %>% anti_join(failed_lines_pert_plate, by= join_cols)
 ```
 
-To apply the growth correction, there must be a column in the data frame that describes the growth pattern of a cell line or pool and a column containing log2 normalized counts of the negative controls.
+To apply the bias correction, there must be a column in the data frame that describes the growth pattern of a cell line or pool and a column containing log2 normalized counts of the negative controls.
 
 ```{r example growth correct, echo = T, eval = T}
 # Load into environment ----
