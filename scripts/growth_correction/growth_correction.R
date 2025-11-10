@@ -10,7 +10,7 @@ parser = ArgumentParser()
 parser$add_argument("-v", "--verbose", action = "store_true", default = TRUE, help = "Print extra output [default]")
 parser$add_argument("-q", "--quietly", action = "store_false", dest = "verbose", help = "Print little output")
 parser$add_argument("--l2fc", default = "l2fc.csv", help = "Path to file containing l2fc values.")
-parser$add_argument("--growth_pattern_col", default = "growth_pattern",
+parser$add_argument("--growth_pattern_col", default = "growth_condition",
                     help = "Column containing growth pattern annotations.")
 parser$add_argument("--l2fc_col", default = "l2fc", help = "Column containing log2 fold change values to be corrected.")
 parser$add_argument("--sig_cols", default = "cell_set,pert_name,pert_dose,pert_dose_unit,day",
