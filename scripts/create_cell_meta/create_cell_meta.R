@@ -47,9 +47,14 @@ parser$add_argument("--api_url", default = "https://api.clue.io/api/",
                    help = "Base API URL for CellDB")
 parser$add_argument("--api_key", default = "", 
                    help = "Clue API key")
+parser$add_argument("--cell_line_cols", default = "depmap_id,lua,pool_id,depmap_id,lua,cell_set,growth_pattern", 
+                   help = "Comma-separated list of cell line metadata columns to include")
 
 # Parse arguments
 args <- parser$parse_args()
+
+# Set cell_line_cols
+cell_line_cols <- unlist(strsplit(args$cell_line_cols, split = ","))
 
 # Setup output directory ----
 if (args$out == "") {
@@ -107,7 +112,6 @@ cell_pools_url <- paste(args$api_url, "cell-db", "assay-pools", sep = "/")
 cell_lines_url <- paste(args$api_url, "cell-db", "cell-lines", sep = "/")
 assay_pools_url <- paste(args$api_url, "cell-db", "cell-sets", sep = "/")
 control_barcodes_url <- paste(args$api_url, "cell-db", "bq-control-barcodes", sep = "/")
-# Need to add control barcodes
 
 # Fetch data
 cell_sets_df <- get_cell_api_info(cell_sets_url, api_key)
@@ -189,10 +193,10 @@ if (args$verbose) {
   message("Preparing cell line metadata...")
 }
 
-cell_line_cols <- c('depmap_id', 'forward_read_barcode', 'lua')
+cell_line_meta_cols <- c('depmap_id', 'forward_read_barcode', 'lua')
 cell_line_meta <- cell_lines_df %>%
   dplyr::rename("forward_read_barcode" = "dna_sequence") %>% 
-  dplyr::select(dplyr::any_of(c(cell_line_cols))) %>%
+  dplyr::select(dplyr::any_of(c(cell_line_meta_cols))) %>%
   dplyr::distinct() %>%
   dplyr::filter(!is.na(depmap_id)) %>%
     dplyr::filter(!is.na(forward_read_barcode))
@@ -264,6 +268,13 @@ if (all_sets_exist) {
     dplyr::select(cell_set, pool_id, barcode_id, growth_condition, depmap_id = members) %>%
     dplyr::rename("lua" = "barcode_id") %>%
     dplyr::distinct()
+
+  # Make sure all rows contain a value for growth_condition. If not, stop with error.
+  if (any(is.na(cell_set_assay_pool_meta$growth_condition)) && "growth_condition" %in% cell_line_cols) {
+    stop("ERROR: One or more cell lines are missing growth_condition values. Missing lines are: ", 
+         paste(cell_set_assay_pool_meta %>% filter(is.na(growth_condition)) %>% pull(depmap_id), collapse = ", "),
+         paste("Please ensure all cell lines have growth_condition values assigned in cellDB, or remove growth_condition from cell_line_cols, disable the bias correction module and re-run."))
+  }
   
 } else {
   message("WARNING: One or more cell sets not found in assay pool metadata")
@@ -331,8 +342,3 @@ check_file_exists(cell_set_assay_pool_out_file)
 if (args$verbose) {
   message("=== Cell Metadata Creation Complete ===")
 }
-
-
-
-
-
