@@ -47,7 +47,8 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
 
   ## -------- Get header and total lines -------- ##
   header_col_names <- fread(local_path, header = TRUE, sep = ",", nrows = 0) |> colnames()
-  total_lines <- as.numeric(system(paste("wc -l", shQuote(local_path)), intern = TRUE) |> strsplit(" ") |> unlist() |> .[1])
+  wc_out <- system(paste("wc -l", shQuote(local_path)), intern = TRUE)
+  total_lines <- as.numeric(strsplit(wc_out, " ")[[1]][1])
   message("Detected ", total_lines, " total lines (including header).")
 
   message("Starting parallel chunk processing with ", workers, " workers...")
