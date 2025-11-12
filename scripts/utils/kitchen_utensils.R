@@ -15,41 +15,40 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ..., wo
   library(data.table)
   library(furrr)
 
-  plan(multisession, workers = workers)
+  plan(multicore, workers = workers)  # use forked processes on Linux
+  header_col_names <- fread(cmd = sprintf("zcat %s | head -n 1", shQuote(large_file_path)),
+                            header = TRUE, sep = ",", nrows = 0) |> colnames()
 
-  # Read header
-  header_col_names <- fread(large_file_path, header = TRUE, sep = ",", nrows = 0) |> colnames()
+  message("Starting parallel chunk processing with ", workers, " workers...")
 
-  # Count total lines robustly
-  wc_out <- system(paste("wc -l", shQuote(large_file_path)), intern = TRUE)
-  total_lines <- as.numeric(strsplit(wc_out, " ")[[1]][1])
-  total_rows <- total_lines - 1
-  total_chunks <- ceiling(total_rows / chunk_size)
-
-  message("File has ~", total_rows, " rows. Processing in ", total_chunks, " chunks using ", workers, " workers...")
-
-  # Helper to read a chunk
-  read_chunk <- function(i) {
-    skip <- chunk_size * (i - 1) + 1
-    fread(large_file_path, header = FALSE, sep = ",",
-          col.names = header_col_names,
-          nrows = chunk_size, skip = skip)
+  chunk_idx <- 1
+  chunk_collector <- list()
+  repeat {
+    # read next batch of chunks in parallel
+    chunk_indices <- chunk_idx:(chunk_idx + workers - 1)
+    chunk_results <- future_map(
+      chunk_indices,
+      function(i) {
+        skip <- chunk_size * (i - 1) + 1
+        cmd <- sprintf("zcat %s | tail -n +%d | head -n %d",
+                       shQuote(large_file_path), skip, chunk_size)
+        dt <- fread(cmd, header = FALSE, sep = ",", col.names = header_col_names)
+        if (nrow(dt) == 0) return(NULL)
+        message("Working on chunk ", i, " with ", nrow(dt), " rows.")
+        do.call(action, c(list(uncollapsed_raw_counts = dt), list(...)))
+      },
+      .progress = TRUE
+    )
+    chunk_results <- Filter(Negate(is.null), chunk_results)
+    if (length(chunk_results) == 0) break
+    chunk_collector <- c(chunk_collector, chunk_results)
+    chunk_idx <- chunk_idx + workers
   }
 
-  # Parallel processing
-  chunk_results <- future_map(
-    1:total_chunks,
-    function(i) {
-      dt <- read_chunk(i)
-      message("Working on chunk ", i, " with ", nrow(dt), " rows.")
-      do.call(action, c(list(uncollapsed_raw_counts = dt), list(...)))
-    },
-    .progress = TRUE
-  )
-
   plan(sequential)
-  return(chunk_results)
+  chunk_collector
 }
+
 
 
 #' Read a CSV file with enforced data types from a master schema using data.table
