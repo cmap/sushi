@@ -39,8 +39,9 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
   }
 
   ## -------- Parallel plan setup -------- ##
-  # Only set plan if user hasn’t already
-  if (is.null(future::strategy())) {
+  # Check if a plan already exists
+  current_plan <- tryCatch(future::plan("list"), error = function(e) NULL)
+  if (is.null(current_plan) || length(current_plan) == 0) {
     plan_type <- if (.Platform$OS.type == "unix") multicore else multisession
     plan(plan_type, workers = workers)
   }
@@ -76,6 +77,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
   plan(sequential)
   chunk_collector
 }
+
 
 #' Read a CSV file with enforced data types from a master schema using data.table
 #'
