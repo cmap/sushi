@@ -15,28 +15,28 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ..., wo
   library(data.table)
   library(furrr)
 
-  # plan() must be called once per session
   plan(multisession, workers = workers)
 
   # Read header
   header_col_names <- fread(large_file_path, header = TRUE, sep = ",", nrows = 0) |> colnames()
 
-  # Find total lines (including header)
-  total_lines <- as.numeric(system(paste("wc -l", shQuote(large_file_path)), intern = TRUE) |> strsplit(" ") |> unlist() |> .[1])
+  # Count total lines robustly
+  wc_out <- system(paste("wc -l", shQuote(large_file_path)), intern = TRUE)
+  total_lines <- as.numeric(strsplit(wc_out, " ")[[1]][1])
   total_rows <- total_lines - 1
   total_chunks <- ceiling(total_rows / chunk_size)
 
   message("File has ~", total_rows, " rows. Processing in ", total_chunks, " chunks using ", workers, " workers...")
 
-  # Define helper to read one chunk
+  # Helper to read a chunk
   read_chunk <- function(i) {
-    skip <- chunk_size * (i - 1) + 1  # skip header + prior chunks
+    skip <- chunk_size * (i - 1) + 1
     fread(large_file_path, header = FALSE, sep = ",",
           col.names = header_col_names,
           nrows = chunk_size, skip = skip)
   }
 
-  # Parallel map
+  # Parallel processing
   chunk_results <- future_map(
     1:total_chunks,
     function(i) {
@@ -47,9 +47,10 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ..., wo
     .progress = TRUE
   )
 
-  plan(sequential) # cleanup
+  plan(sequential)
   return(chunk_results)
 }
+
 
 #' Read a CSV file with enforced data types from a master schema using data.table
 #'
