@@ -16,21 +16,20 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
   library(data.table)
   library(furrr)
   library(fs)
+  library(future)
 
-  ## -------- Detect compressed input and stage locally -------- ##
+  ## -------- Decompress once if .gz -------- ##
   local_path <- large_file_path
   staged <- FALSE
 
   if (grepl("\\.gz$", large_file_path, ignore.case = TRUE)) {
     staged <- TRUE
-    # create a unique temp file path
     tmp_file <- file.path(tmp_dir, paste0("decompressed_", basename(tools::file_path_sans_ext(large_file_path))))
     message("Decompressing ", large_file_path, " to ", tmp_file, " ...")
     system2("zcat", args = shQuote(large_file_path), stdout = tmp_file)
     message("Decompression complete.")
     local_path <- tmp_file
 
-    # ensure cleanup on exit
     on.exit({
       if (file_exists(tmp_file)) {
         file_delete(tmp_file)
@@ -39,15 +38,19 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
     }, add = TRUE)
   }
 
-  ## -------- Parallel plan -------- ##
-  # use multicore (faster) if on Linux
-  plan(if (.Platform$OS.type == "unix") multicore else multisession, workers = workers)
+  ## -------- Parallel plan setup -------- ##
+  # Only set plan if user hasn’t already
+  if (is.null(future::strategy())) {
+    plan_type <- if (.Platform$OS.type == "unix") multicore else multisession
+    plan(plan_type, workers = workers)
+  }
 
   header_col_names <- fread(local_path, header = TRUE, sep = ",", nrows = 0) |> colnames()
   message("Starting parallel chunk processing with ", workers, " workers...")
 
   chunk_idx <- 1
   chunk_collector <- list()
+
   repeat {
     chunk_indices <- chunk_idx:(chunk_idx + workers - 1)
     chunk_results <- future_map(
@@ -63,6 +66,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
       },
       .progress = TRUE
     )
+
     chunk_results <- Filter(Negate(is.null), chunk_results)
     if (length(chunk_results) == 0) break
     chunk_collector <- c(chunk_collector, chunk_results)
@@ -72,9 +76,6 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
   plan(sequential)
   chunk_collector
 }
-
-
-
 
 #' Read a CSV file with enforced data types from a master schema using data.table
 #'
