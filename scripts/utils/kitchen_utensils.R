@@ -11,28 +11,52 @@
 #' @param action Function to apply to each chunk.
 #' @param ... Additional parameters to pass to the action.
 #' @param workers Number of parallel workers (default: 6)
-process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ..., workers = 6) {
+process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
+                              workers = 6, tmp_dir = "/tmp") {
   library(data.table)
   library(furrr)
+  library(fs)
 
-  plan(multicore, workers = workers)  # use forked processes on Linux
-  header_col_names <- fread(cmd = sprintf("zcat %s | head -n 1", shQuote(large_file_path)),
-                            header = TRUE, sep = ",", nrows = 0) |> colnames()
+  ## -------- Detect compressed input and stage locally -------- ##
+  local_path <- large_file_path
+  staged <- FALSE
 
+  if (grepl("\\.gz$", large_file_path, ignore.case = TRUE)) {
+    staged <- TRUE
+    # create a unique temp file path
+    tmp_file <- file.path(tmp_dir, paste0("decompressed_", basename(tools::file_path_sans_ext(large_file_path))))
+    message("Decompressing ", large_file_path, " to ", tmp_file, " ...")
+    system2("zcat", args = shQuote(large_file_path), stdout = tmp_file)
+    message("Decompression complete.")
+    local_path <- tmp_file
+
+    # ensure cleanup on exit
+    on.exit({
+      if (file_exists(tmp_file)) {
+        file_delete(tmp_file)
+        message("Temporary file ", tmp_file, " deleted.")
+      }
+    }, add = TRUE)
+  }
+
+  ## -------- Parallel plan -------- ##
+  # use multicore (faster) if on Linux
+  plan(if (.Platform$OS.type == "unix") multicore else multisession, workers = workers)
+
+  header_col_names <- fread(local_path, header = TRUE, sep = ",", nrows = 0) |> colnames()
   message("Starting parallel chunk processing with ", workers, " workers...")
 
   chunk_idx <- 1
   chunk_collector <- list()
   repeat {
-    # read next batch of chunks in parallel
     chunk_indices <- chunk_idx:(chunk_idx + workers - 1)
     chunk_results <- future_map(
       chunk_indices,
       function(i) {
         skip <- chunk_size * (i - 1) + 1
-        cmd <- sprintf("zcat %s | tail -n +%d | head -n %d",
-                       shQuote(large_file_path), skip, chunk_size)
-        dt <- fread(cmd, header = FALSE, sep = ",", col.names = header_col_names)
+        dt <- fread(local_path, header = FALSE, sep = ",",
+                    col.names = header_col_names,
+                    nrows = chunk_size, skip = skip)
         if (nrow(dt) == 0) return(NULL)
         message("Working on chunk ", i, " with ", nrow(dt), " rows.")
         do.call(action, c(list(uncollapsed_raw_counts = dt), list(...)))
@@ -48,6 +72,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ..., wo
   plan(sequential)
   chunk_collector
 }
+
 
 
 
