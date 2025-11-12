@@ -2,46 +2,53 @@
 # This file contains functions for the pipeline.
 # The functions are sorted alphabetically
 
-#' process_in_chunks
+#' process_in_chunks (parallel)
 #'
-#' This function runs some action over chunks of a large file. At the end, returns a list of all the chunks
+#' Run an action over chunks of a large file in parallel.
 #'
-#' @param large_file_path Path to a large csv file. This file may be too large to read into R.
-#' @param chunk_size The number of rows in a chunk.
-#' @param action A function to perform over a chunk.
-#' @param ... Additional parameters to be passed into the action parameter
-process_in_chunks= function(large_file_path, chunk_size= 10^6, action, ...) {
-  # Read in the column names. These names will be passed onto each chunk.
-  # When reading a file in chunks, the column names in the first line are not always passed.
-  # Use data.table to read in just the headers with nrows= 0.
-  header_col_names= data.table::fread(large_file_path, header= TRUE, sep= ',', nrows= 0) %>% colnames()
-  chunk_idx= 1 # Counter to keep track of chunks in a loop
-  current_chunk_size= chunk_size # Variable for loop exit condition
-  chunk_collector= list() # List to collect processed chunks
+#' @param large_file_path Path to a large csv file.
+#' @param chunk_size Number of rows per chunk.
+#' @param action Function to apply to each chunk.
+#' @param ... Additional parameters to pass to the action.
+#' @param workers Number of parallel workers (default: 6)
+process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ..., workers = 6) {
+  library(data.table)
+  library(furrr)
 
-  # For each chunk, call an action
-  while(current_chunk_size == chunk_size) {
-    # Read in a chunk of the large file and set the column names.
-    # nrow - the number of rows to read in
-    # skip - the number of rows to skip before starting to read in.
-    current_chunk= data.table::fread(large_file_path, header= FALSE, sep= ',',
-                                     col.names= header_col_names,
-                                     nrow= chunk_size, skip= chunk_size * (chunk_idx - 1) + 1)
+  # plan() must be called once per session
+  plan(multisession, workers = workers)
 
-    current_chunk_size= nrow(current_chunk) # set current chunk size to stop loop
-    print(paste('Working on chunk', chunk_idx, 'with', current_chunk_size, 'rows.', sep= ' '))
+  # Read header
+  header_col_names <- fread(large_file_path, header = TRUE, sep = ",", nrows = 0) |> colnames()
 
-    # Call the action over the chunk
-    chunk_collector[[chunk_idx]] <- do.call(
-    action,
-    c(list(uncollapsed_raw_counts = current_chunk), list(...))
-    )
+  # Find total lines (including header)
+  total_lines <- as.numeric(system(paste("wc -l", shQuote(large_file_path)), intern = TRUE) |> strsplit(" ") |> unlist() |> .[1])
+  total_rows <- total_lines - 1
+  total_chunks <- ceiling(total_rows / chunk_size)
 
-    chunk_idx= chunk_idx + 1
+  message("File has ~", total_rows, " rows. Processing in ", total_chunks, " chunks using ", workers, " workers...")
+
+  # Define helper to read one chunk
+  read_chunk <- function(i) {
+    skip <- chunk_size * (i - 1) + 1  # skip header + prior chunks
+    fread(large_file_path, header = FALSE, sep = ",",
+          col.names = header_col_names,
+          nrows = chunk_size, skip = skip)
   }
 
-  # Return a list of all the chunks
-  return(chunk_collector)
+  # Parallel map
+  chunk_results <- future_map(
+    1:total_chunks,
+    function(i) {
+      dt <- read_chunk(i)
+      message("Working on chunk ", i, " with ", nrow(dt), " rows.")
+      do.call(action, c(list(uncollapsed_raw_counts = dt), list(...)))
+    },
+    .progress = TRUE
+  )
+
+  plan(sequential) # cleanup
+  return(chunk_results)
 }
 
 #' Read a CSV file with enforced data types from a master schema using data.table
