@@ -39,16 +39,18 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
   }
 
   ## -------- Parallel plan setup -------- ##
-  # Check if a plan already exists
   current_plan <- tryCatch(future::plan("list"), error = function(e) NULL)
   if (is.null(current_plan) || length(current_plan) == 0) {
     plan_type <- if (.Platform$OS.type == "unix") multicore else multisession
     plan(plan_type, workers = workers)
   }
 
+  ## -------- Get header and total lines -------- ##
   header_col_names <- fread(local_path, header = TRUE, sep = ",", nrows = 0) |> colnames()
-  message("Starting parallel chunk processing with ", workers, " workers...")
+  total_lines <- as.numeric(system(paste("wc -l", shQuote(local_path)), intern = TRUE) |> strsplit(" ") |> unlist() |> .[1])
+  message("Detected ", total_lines, " total lines (including header).")
 
+  message("Starting parallel chunk processing with ", workers, " workers...")
   chunk_idx <- 1
   chunk_collector <- list()
 
@@ -58,6 +60,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
       chunk_indices,
       function(i) {
         skip <- chunk_size * (i - 1) + 1
+        if (skip > total_lines) return(NULL)  # ✅ stop overshoot
         dt <- fread(local_path, header = FALSE, sep = ",",
                     col.names = header_col_names,
                     nrows = chunk_size, skip = skip)
@@ -77,6 +80,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
   plan(sequential)
   chunk_collector
 }
+
 
 
 #' Read a CSV file with enforced data types from a master schema using data.table
