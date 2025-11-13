@@ -32,7 +32,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
 
     on.exit({
       if (fs::file_exists(tmp_file)) {
-        file_delete(tmp_file)
+        fs::file_delete(tmp_file)
         message("Temporary file ", tmp_file, " deleted.")
       }
     }, add = TRUE)
