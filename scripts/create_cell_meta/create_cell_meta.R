@@ -47,7 +47,7 @@ parser$add_argument("--api_url", default = "https://api.clue.io/api/",
                    help = "Base API URL for CellDB")
 parser$add_argument("--api_key", default = "", 
                    help = "Clue API key")
-parser$add_argument("--cell_line_cols", default = "depmap_id,lua,pool_id,depmap_id,lua,cell_set,growth_pattern", 
+parser$add_argument("--cell_line_cols", default = "depmap_id,lua,pool_id,depmap_id,lua,cell_set,growth_condition",
                    help = "Comma-separated list of cell line metadata columns to include")
 
 # Parse arguments
