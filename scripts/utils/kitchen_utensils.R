@@ -31,7 +31,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
     local_path <- tmp_file
 
     on.exit({
-      if (file_exists(tmp_file)) {
+      if (fs::file_exists(tmp_file)) {
         file_delete(tmp_file)
         message("Temporary file ", tmp_file, " deleted.")
       }
