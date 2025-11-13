@@ -81,7 +81,7 @@ if (input_pseudocount < read_detection_limit) {
 # Write out file ----
 normcounts_outpath = file.path(args$out, output_file)
 print(paste0("Writing normalized count file to ", normcounts_outpath))
-write.csv(normalized_counts, normcounts_outpath, row.names= FALSE, quote= FALSE)
+write_out_table(normalized_counts, normcounts_outpath)
 
 # Ensure that normalized file was sucessfully generated ----
 check_file_exists(normcounts_outpath)

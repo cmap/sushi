@@ -27,6 +27,10 @@ parser$add_argument("--barcode_col", default= "forward_read_barcode",
 parser$add_argument('--low_abundance_threshold', default= 20, 
                     help= 'For unknown barcodes, counts below this threshold will be marked as an unknown barcode.')
 parser$add_argument('--chunk_size', default= 10000000, help= 'Integer number of rows for a chunk.')
+parser$add_argument("--prism_barcode_counts_file", default = "prism_barcode_counts.csv",
+                    help = "Name of file for prism barcodes.")
+parser$add_argument("--unknown_barcode_counts_file", default = "unknown_barcode_counts.csv",
+                    help = "Name of file for unknown barcodes.")
 parser$add_argument("-o", "--out", default=getwd(), help = "Output path. Default is working directory")
 
 # get command line options, if help option encountered print help and exit
@@ -114,16 +118,16 @@ if(nrow(prism_barcode_counts) == 0) {
 }
 
 # Write out files ----
-out_file= paste(args$out, 'prism_barcode_counts.csv', sep='/')
+out_file = file.path(args$out, args$prism_barcode_counts_file)
 print(paste("Writing prism_barcode_counts.csv to ", out_file))
-write.csv(prism_barcode_counts, out_file, row.names= FALSE, quote= FALSE)
+write_out_table(prism_barcode_counts, out_file)
 
 # Ensure that files were successfully generated ----
 check_file_exists(out_file)
 
-out_file= paste(args$out, 'unknown_barcode_counts.csv', sep='/')
+out_file = file.path(args$out, args$unknown_barcode_counts_file)
 print(paste("Writing unknown_barcode_counts.csv to ", out_file))
-write.csv(unknown_barcode_counts, out_file, row.names= FALSE, quote= FALSE)
+write_out_table(unknown_barcode_counts, out_file)
 
 # Ensure that files were successfully generated ----
 check_file_exists(out_file)

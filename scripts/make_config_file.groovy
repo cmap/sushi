@@ -80,7 +80,7 @@ pipeline {
         booleanParam(name: 'REMOVE_DATA', defaultValue: false, description: 'Uses a data_to_remove.csv files to remove data. Runs as part of filter counts.')
         booleanParam(name: 'CBNORMALIZE', defaultValue: true, description: 'Normalizes counts. Requires vehicle controls and a control barcode ladder.')
         booleanParam(name: 'COMPUTE_LFC', defaultValue: true, description: 'Compute the fold changes from vehicle controls of each cell line for each treatment condition.')
-        booleanParam(name: 'GROWTH_CORRECTION', defaultValue: true, description: 'Correct fold change values using cell line growth annotations.')
+        booleanParam(name: 'BIAS_CORRECTION', defaultValue: true, description: 'Correct fold change values using cell line growth annotations.')
         booleanParam(name: 'COLLAPSE', defaultValue: true, description: 'Median collapses biological replicates.')
 
         separator(
@@ -170,6 +170,7 @@ pipeline {
         string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua,cell_set,growth_condition', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'log2_normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
         string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Threshold for filtering the negative controls. In the negative control conditions, cell lines whose median counts are below this threshold are not confidently detected and thus are dropped. This defaults to \"40\" and is used in COMPUTE_LFC.')
+        string(name: 'BIO_REP_COL', defaultValue: 'bio_rep', description: 'Column identifying the biological replicates. Defaults to \"bio_rep\".')
         // Collapse replicates
         string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
         string(name: 'GROWTH_PATTERN_COL', defaultValue: 'growth_condition', description: 'Name of the column containing the cell line growth annotations. This defaults to \"growth_condition\".')
@@ -195,7 +196,7 @@ pipeline {
         string(name: 'MERGE_PATTERNS', defaultValue: 'log2_auc_multivariate_biomarkers*,log2_auc_univariate_biomarkers*,median_l2fc_multivariate_biomarkers*,median_l2fc_univariate_biomarkers*,DRC_TABLE*', description: 'Patterns to search for when merging files by project. May be changed based on modules run.')
 
         // Biomarker
-        string(name: 'BIOMARKER_FILE', defaultValue: '/data/biomarker/current/depmap_public_24q4.h5', description: 'Biomarker reference file.')
+        string(name: 'BIOMARKER_FILE', defaultValue: '/cmap/obelix/pod/biomarker/depmap_public_24q4.h5', description: 'Biomarker reference file.')
         string(name: 'DR_COLUMN', defaultValue: 'log2_auc', description: 'Name of the column containing AUC values used in biomarker analysis.')
         string(name: 'DR_PATH', defaultValue: 'DRC_TABLE.csv', description: 'File in drc/BUILD_DIR containing dose response curve data. This file is created by DRC.')
 
@@ -274,9 +275,9 @@ pipeline {
                         // normalize parameters
                         'PSEUDOCOUNT', 'READ_DETECTION_LIMIT',
 
-                        // compute_l2fc paramters
+                        // compute_l2fc parameters
                         'SIG_COLS', 'CONTROL_COLS', 'CELL_LINE_COLS', 'COUNT_COL_NAME', 'CTL_TYPES', 'COUNT_THRESHOLD', 'VIABILITY_CAP',
-                        'GROWTH_PATTERN_COL',
+                        'GROWTH_PATTERN_COL', 'BIO_REP_COL',
 
                         // biomarker parameters
                         'UNIVARIATE_BIOMARKER', 'MULTIVARIATE_BIOMARKER', 'BIOMARKER_FILE', 'DR_COLUMN', 'LFC_BIOMARKER', 'AUC_BIOMARKER',
@@ -413,8 +414,8 @@ pipeline {
                         if (params.COMPUTE_LFC) {
                             scriptsToRun.add('compute_l2fc/compute_l2fc.sh')
                         }
-                        if (params.GROWTH_CORRECTION) {
-                            scriptsToRun.add('growth_correction/growth_correction.sh')
+                        if (params.BIAS_CORRECTION) {
+                            scriptsToRun.add('bias_correction/bias_correction.sh')
                         }
                         if (params.COLLAPSE) {
                             scriptsToRun.add('collapse_replicates/collapse_replicates.sh')

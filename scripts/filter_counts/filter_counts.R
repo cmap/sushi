@@ -31,6 +31,8 @@ parser$add_argument('--id_cols', default= 'pcr_plate,pcr_well',
 parser$add_argument("--barcode_col", default= "forward_read_barcode",
                     help= "Name of the column in uncollapsed_raw_counts that contains the barcode sequences.")
 parser$add_argument("--rm_data", type="logical", help = "Remove bad experimental data")
+parser$add_argument("--annot_file", default = "annotated_counts.csv", help = "File for annotated_counts output.")
+parser$add_argument("--filt_file", default = "filtered_counts.csv", help = "File for filtered_counts output.")
 parser$add_argument("-o", "--out", default="", help = "Output path. Default is working directory")
 parser$add_argument("-s", "--screen", default="", help = "Screen")
 parser$add_argument("--filter_skipped_wells", type="logical", help = "Filter out skipped wells")
@@ -112,7 +114,7 @@ if(sum(cl_entries$n) == 0) {
 # If we plan to remove any data, first write a copy of the original unfiltered filtered_counts ----
 if(args$rm_data | args$filter_skipped_wells){
   filtered_counts_original <- filtered_counts
-  write.csv(filtered_counts_original, paste(args$out, 'filtered_counts_original.csv', sep='/'), row.names=F, quote=F)
+  write_out_table(filtered_counts_original, file.path(args$out, "filtered_counts_original.csv"))
 }
 
 # Remove data ----
@@ -143,13 +145,13 @@ if(exists("skipped_wells") && args$filter_skipped_wells && nrow(skipped_wells) >
 }
 
 # Write out files ----
-annot_out_file= paste0(args$out, '/annotated_counts.csv')
+annot_out_file = file.path(args$out, args$annot_file)
 print(paste('Writing annotated counts to: ', annot_out_file))
-module_outputs$annotated_counts %>% write.csv(annot_out_file, row.names= FALSE)
+write_out_table(module_outputs$annotated_counts, annot_out_file)
 
-filtrc_out_file = paste(args$out, 'filtered_counts.csv', sep='/')
+filtrc_out_file = file.path(args$out, args$filt_file)
 print(paste("Writing filtered counts csv to: ", filtrc_out_file))
-write.csv(filtered_counts, filtrc_out_file, row.names=F, quote=F)
+write_out_table(filtered_counts, filtrc_out_file)
 
 # Ensure that files were successfully generated ----
 check_file_exists(annot_out_file)

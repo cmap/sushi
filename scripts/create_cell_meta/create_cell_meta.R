@@ -47,7 +47,7 @@ parser$add_argument("--api_url", default = "https://api.clue.io/api/",
                    help = "Base API URL for CellDB")
 parser$add_argument("--api_key", default = "", 
                    help = "Clue API key")
-parser$add_argument("--cell_line_cols", default = "depmap_id,lua,pool_id,depmap_id,lua,cell_set,growth_pattern", 
+parser$add_argument("--cell_line_cols", default = "depmap_id,lua,pool_id,depmap_id,lua,cell_set,growth_condition",
                    help = "Comma-separated list of cell line metadata columns to include")
 
 # Parse arguments
@@ -316,14 +316,15 @@ cell_line_out_file <- file.path(args$out, 'cell_line_meta.csv')
 if (args$verbose) {
   message(sprintf("Writing cell line metadata to: %s", cell_line_out_file))
 }
-write.csv(cell_line_meta, cell_line_out_file, row.names = FALSE, quote = FALSE)
+write_out_table(cell_line_meta, cell_line_out_file)
+
 
 # Write cell set and pool metadata
 cell_set_assay_pool_out_file <- file.path(args$out, 'cell_set_and_pool_meta.csv')
 if (args$verbose) {
   message(sprintf("Writing cell set and pool metadata to: %s", cell_set_assay_pool_out_file))
 }
-write.csv(cell_set_assay_pool_meta, cell_set_assay_pool_out_file, row.names = FALSE, quote = FALSE)
+write_out_table(cell_set_assay_pool_meta, cell_set_assay_pool_out_file)
 
 # Write control barcode metadata if available
 if (nrow(control_bc_df) > 0) {
@@ -331,7 +332,7 @@ if (nrow(control_bc_df) > 0) {
   if (args$verbose) {
     message(sprintf("Writing control barcode metadata to: %s", control_barcode_out_file))
   }
-  write.csv(cb_meta, control_barcode_out_file, row.names = FALSE, quote = FALSE)
+  write_out_table(cb_meta, control_barcode_out_file)
 }
 
 # Verify output files ----

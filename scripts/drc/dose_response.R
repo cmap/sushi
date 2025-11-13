@@ -98,7 +98,7 @@ if (nrow(dose_response) == 0) {
 
   drc_outpath = file.path(args$out_dir, "DRC_TABLE.csv")
   paste0("Writing DRC_TABLE.csv to ", drc_outpath)
-  write.csv(dose_response, drc_outpath, row.names = FALSE)
+  write_out_table(dose_response, drc_outpath)
 
   # Check to make sure that the file was generated
   check_file_exists(drc_outpath)

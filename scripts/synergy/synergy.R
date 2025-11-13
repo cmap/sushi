@@ -39,6 +39,8 @@ parser$add_argument("--n_samples", default = 10000, help = "Size of the resampli
 # Used to create mock DMSO l2fcs
 parser$add_argument("--negcon_type", default = "ctl_vehicle",
                     help = "String in pert_type that identifies the negative control")
+# Name of synergy output
+parser$add_argument("--output_file", default = "synergy_scores.csv", help = "File to output synergy scores")
 parser$add_argument("-o", "--out", default = "", help = "Output path, defaults to working directory")
 
 args = parser$parse_args()
@@ -135,8 +137,8 @@ sig_cols_wo_dose = args$sig_cols[!grepl("_dose", args$sig_cols)]
 trt_synergy[, num_sig_profiles := sum(q_val < 0.005), by = c(args$cell_line_cols, sig_cols_wo_dose)]
 
 # Write out file ----
-outpath = file.path(args$out, "synergy_scores.csv")
+outpath = file.path(args$out, args$output_file)
 print(paste0("Writing out synergy file to ", outpath))
-write.csv(x = trt_synergy, file = outpath, row.names = FALSE)
+write_out_table(table = trt_synergy, path = outpath)
 
 # End ----

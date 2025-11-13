@@ -302,3 +302,13 @@ delete_existing_files <- function(out_dir, pattern) {
   }
 }
 
+#' Writes out a table to a csv
+#'
+#' This function uses readr's write_csv to write out a table to a given path.
+#'
+#' @param table Table of data
+#' @param path Path to the output csv file.
+write_out_table = function(table, path) {
+  # Defaults should be no rownames and quote only when necessary
+  readr::write_csv(x = table, file = path)
+}
