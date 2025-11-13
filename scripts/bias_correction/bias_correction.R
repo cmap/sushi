@@ -2,7 +2,7 @@ library(argparse)
 library(tidyverse)
 
 source("utils/kitchen_utensils.R")
-source("growth_correction/growth_correction_functions.R")
+source("bias_correction/bias_correction_functions.R")
 
 # Shell script argument parser ----
 parser = ArgumentParser()
