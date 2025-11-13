@@ -260,7 +260,7 @@ control_type <- "ctl_vehicle"
 sig_cols <- c("pert_name","pert_dose","pert_dose_unit","day")
 ctrl_cols <- c("cell_set", "day", "pcr_plate", "replicate_plate")
 count_col_name <- "log2_normalized_n"
-cell_line_cols <- c("cell_set", "lua", "depmap_id", "pool_id", "growth_pattern")
+cell_line_cols <- c("cell_set", "lua", "depmap_id", "pool_id", "growth_condition")
 
 # Calculated log2 fold changes
 l2fc = compute_l2fc(normalized_counts = normalized_counts,
