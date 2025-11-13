@@ -155,7 +155,6 @@ pipeline {
         string(name: 'SAMPLE_META', defaultValue: 'sample_meta.csv', description: 'File name in BUILD_DIR of the sample meta.')
         string(name: 'CELL_SET_AND_POOL_META', defaultValue: 'cell_set_and_pool_meta.csv', description: 'Cell set and pool information for this run.')
         string(name: 'CELL_LINE_META', defaultValue: 'cell_line_meta.csv', description: 'File in BUILD_DIR containing cell line metadata')
-        string(name: 'GROWTH_ANNOTATIONS', defaultValue: 'growth_annotations.csv', description: 'File in BUILD_DIR containing growth annotations.')
        
         // Additional parameters ordered by when they first appear
         // Collate FASTQ reads
@@ -168,13 +167,13 @@ pipeline {
         string(name: 'PSEUDOCOUNT', defaultValue: '0', description: 'Pseudocount value added to all reads before log transformations. This defaults to \"0\" and is used in CBNORMALIZE.')
         string(name: 'READ_DETECTION_LIMIT', defaultValue: '10', description: 'Smallest read count value used to compute pseudovalues.')
         // Compute l2fc 
-        string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua,cell_set,growth_pattern', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
+        string(name: 'CELL_LINE_COLS', defaultValue: 'pool_id,depmap_id,lua,cell_set,growth_condition', description: 'List of columns across the metadata files that are used to identify a unique cell line. This defaults to \"pool_id,depmap_id,lua\", but can also include \"cell_set\" or descriptive columns like \"project_code\" that you would like to pass through the pipeline. This parameter is first used in COMPUTE_LFC.')
         string(name: 'COUNT_COL_NAME', defaultValue: 'log2_normalized_n', description: 'Name of the numerical column that should be used to compute log2 fold change values. This defaults to \"normalized_n\" and is used in COMPUTE_LFC.')
         string(name: 'COUNT_THRESHOLD', defaultValue: '40', description: 'Threshold for filtering the negative controls. In the negative control conditions, cell lines whose median counts are below this threshold are not confidently detected and thus are dropped. This defaults to \"40\" and is used in COMPUTE_LFC.')
         string(name: 'BIO_REP_COL', defaultValue: 'bio_rep', description: 'Column identifying the biological replicates. Defaults to \"bio_rep\".')
         // Collapse replicates
         string(name: 'L2FC_COLUMN', defaultValue: 'l2fc', description: 'Name of the column containing the log2 fold change values used in DRC. This defaults to \"l2fc\".')
-        string(name: 'GROWTH_PATTERN_COL', defaultValue: 'growth_pattern', description: 'Name of the column containing the cell line growth annotations. This defaults to \"growth_pattern\".')
+        string(name: 'GROWTH_PATTERN_COL', defaultValue: 'growth_condition', description: 'Name of the column containing the cell line growth annotations. This defaults to \"growth_condition\".')
         string(name: 'COLLAPSED_L2FC_COLUMN', defaultValue: 'median_l2fc', description: 'Name of the column containing the collapsed log2 fold change values used in biomarker. This defaults to \"collapsed_l2fc\".')
         // DRC
         string(name: 'VIABILITY_CAP', defaultValue: '1.5', description: 'Cap for viability values used when computing LFC. This defaults to \"1.5\".')
@@ -265,7 +264,6 @@ pipeline {
 
                         // sushi input files
                         'RAW_COUNTS_UNCOLLAPSED', 'SAMPLE_META', 'CELL_SET_AND_POOL_META', 'CELL_LINE_META', 'CONTROL_BARCODE_META',
-                        'GROWTH_ANNOTATIONS',
 
                         // sushi output files
                         'PRISM_BARCODE_COUNTS', 'UNKNOWN_BARCODE_COUNTS', 'ANNOTATED_COUNTS', 'FILTERED_COUNTS', 'NORMALIZED_COUNTS',

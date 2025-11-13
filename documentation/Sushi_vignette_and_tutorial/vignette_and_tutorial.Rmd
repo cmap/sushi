@@ -292,7 +292,7 @@ source(file.path(local_sushi_path, "scripts", "bias_correction", "bias_correctio
 
 # Set up inputs ----
 bio_rep_id_cols = c(sig_cols, "bio_rep")
-growth_pattern_col = "growth_pattern"
+growth_pattern_col = "growth_condition"
 
 # Correct for growth conditions
 corrected_l2fc = l2fc |>
