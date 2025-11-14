@@ -122,7 +122,7 @@ print(paste("rm_data:", args$rm_data))
 # Remove data if needed
 if(args$rm_data){
   print('rm_data is TRUE, removing supplied data.')
-  data_to_remove <- read.csv(paste(args$out, 'data_to_remove.csv', sep='/'))
+  data_to_remove = read_data_table(file.path(args$out, "data_to_remove.csv"))
   print('Data to remove:')
   print(head(data_to_remove))
   filt_rm <- remove_data(filtered_counts, data_to_remove)
