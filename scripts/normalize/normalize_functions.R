@@ -1,3 +1,61 @@
+
+get_valid_norm_cbs = function(filtered_counts, CB_meta, id_cols, negcon_type,
+                              cb_mad_cutoff, req_negcon_reps) {
+  # Create a CB flag column
+  # This will later be merged onto a df of all CBs.
+  cb_annot = CB_meta |>
+    dplyr::distinct(cb_ladder, cb_name) |>
+    dplyr::mutate(keep_cb = "Yes")
+
+  valid_cbs = filtered_counts |>
+    dplyr::filter(!is.na(cb_name)) |>
+    dplyr::left_join(cb_annot, by = c("cb_ladder", "cb_name")) |>
+    dplyr::mutate(keep_cb = dplyr::case_when(
+      is.na(keep_cb) ~ "Not in CB meta", # Flag CBs not in CB_meta
+      n == 0 ~ "Undetected CB", # Flag undetected CBs
+      .default = "Yes")
+    )
+
+  # Calculate negcon MADs of CBs for normalization
+  cb_mad = get_cb_mad(valid_cbs[pert_type == negcon_type & keep_cb != "Not in CB meta"],
+                      id_cols = id_cols,
+                      cb_mad_cutoff = cb_mad_cutoff)
+  high_mad_cbs = cb_mad |>
+    dplyr::filter(keep_cb == FALSE, num_reps >= req_negcon_reps) |>
+    dplyr::rename(cb_mad_flag = keep_cb)
+
+  # Print out some messages showing which CBs are dropped due to MAD and
+  # the number of CBs that fall below the req_negcon_reps limit and thus are not filtered.
+  message("The following CBs are dropped due to high MAD.")
+  print(high_mad_cbs)
+  message(sprintf("The MAD filter did not apply to %d CBs where the number of replicates is below %d.",
+                  nrow(cb_mad |> dplyr::filter(keep_cb == FALSE, num_reps < req_negcon_reps)),
+                  req_negcon_reps))
+
+  # Flag CBs with high MAD and profiles without enough valid CBs
+  valid_cbs = valid_cbs |>
+    dplyr::left_join(high_mad_cbs, by = c("pcr_plate", "cb_name"), suffix = c("", ".y")) |>
+    dplyr::select(!tidyselect::ends_with(".y")) |>
+    dplyr::mutate(keep_cb = dplyr::case_when(cb_mad_flag == FALSE & keep_cb == "Yes" ~ "High negcon MAD",
+                                             .default = keep_cb)) |>
+    dplyr::group_by(across(all_of(id_cols))) |>
+    # Identify profiles without enough valid CBs
+    dplyr::mutate(keep_cb = ifelse(sum(keep_cb == "Yes") <= 4 & keep_cb == "Yes",
+                                   "Not enough valid CBs", keep_cb)) |>
+    dplyr::ungroup()
+
+  # Print out the number of PRC wells that can be normalized
+  num_pcr_wells = filtered_counts |> dplyr::distinct(dplyr::across(tidyselect::all_of(id_cols))) |> nrow()
+  num_passing_wells = valid_cbs |>
+    dplyr::filter(keep_cb == "Yes") |>
+    dplyr::distinct(dplyr::across(tidyselect::all_of(id_cols))) |>
+    nrow()
+  message(sprintf("Out of %d PCR wells, %d wells contain enough CBs for normalization.",
+                  num_pcr_wells, num_passing_wells))
+
+  return(valid_cbs)
+}
+
 #'  normalize
 #'
 #'  takes a filtered dataframe of raw read counts and normalizes
@@ -26,7 +84,7 @@ normalize <- function(X, id_cols, CB_meta, req_negcon_reps = 6, negcon_type = "c
 
   # Filter out any duplicate cell lines if pool_id has a particular string ----
   if('pool_id' %in% colnames(X)) {
-    X %<>% dplyr::filter(!grepl('|', pool_id, fixed = TRUE))
+    X %<>% dplyr::filter(!grepl("_+_", pool_id, fixed = TRUE))
   }
 
   # Validation: Check that id_cols are present in the dataframe ----
