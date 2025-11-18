@@ -1,6 +1,7 @@
 options(cli.unicode = FALSE)
 library(argparse)
 library(magrittr)
+library(tidyverse)
 source("normalize/normalize_functions.R")
 source("utils/kitchen_utensils.R")
 source("qc_tables/qc_tables_functions.R")
