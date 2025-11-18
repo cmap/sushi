@@ -40,16 +40,27 @@ negcon_cols = unlist(strsplit(args$negcon_cols, split = ","))
 negcon_type = args$negcon_type
 output_file = args$output_file
 
-# Some hard coded inputs
+# Hard coded input -
+# This is the number of negative control replicates required to perform
+# the MAD filter on the control barcodes and to add a plate specific pseudocount.
 req_negcon_reps = 6
 
-# If normalized counts files already exists, remove them ----
+# Remove normalized files that already exist in the directory
 delete_existing_files(args$out, "normalized_counts")
 
-# Run normalize ----
-print("Creating normalized count file ...")
-normalized_counts = normalize(X = filtered_counts, id_cols = input_id_cols, req_negcon_reps = req_negcon_reps,
-                              negcon_type = negcon_type, CB_meta = CB_meta, pseudocount = input_pseudocount)
+# Identify CBs in PCR wells that can be normalized.
+message("Identifying control barcodes to normalize ...")
+cbs_to_norm = get_valid_norm_cbs(filtered_count = filtered_counts,
+                                 CB_meta = CB_meta,
+                                 id_cols = input_id_cols,
+                                 negcon_type = negcon_type,
+                                 cb_mad_cutoff = 1,
+                                 req_negcon_reps = req_negcon_reps)
+
+normalized_counts = normalize(X = filtered_counts,
+                              valid_cbs = cbs_to_norm,
+                              id_cols = input_id_cols,
+                              pseudocount = input_pseudocount)
 
 # Check if pseudovalue addition is needed
 if (input_pseudocount < read_detection_limit) {
@@ -66,7 +77,7 @@ if (input_pseudocount < read_detection_limit) {
                                         read_detection_limit = read_detection_limit,
                                         negcon_type = negcon_type)
   } else {
-    # Error out if no pseudocount is provided, but there are not enough negative control replicates
+    # Error out if no pseudocount is provided and there are not enough negative control replicates
     message("Not enough negative control replicates for pseudovalue calculations.")
     message("Provide a pseudocount for normalization instead. ")
     stop("Not enough negative control replicates for every PCR plate.")
