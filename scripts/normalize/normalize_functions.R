@@ -1,6 +1,37 @@
-
+#' get_valid_norm_cbs
+#'
+#' Extracts the control barcodes from the input filtered counts table and
+#' identifies control barcodes that can be used for normalization.
+#'
+#' This function flags control barcodes that are not present in the CB meta table,
+#' undetected in sequencing, and have high MAD in the negative control wells of the PCR plate.
+#' It also flags PCR wells that do not have enough usable control barcodes (<= 4).
+#'
+#' @param filtered_counts Data table of filtered counts.
+#' @param CB_meta Data table of the control barcode metadata.
+#' @param id_cols Vector of columns that uniquely identify each PCR well.
+#' @param negcon_type String identifying the negative controls in the pert_type column.
+#' @param cb_mad_cutoff Numeric maximum MAD value for the control barcodes.
+#' @param req_negcon_reps Integer number of negative control replicates required for the MAD filter.
+#' @return Data frame of control barcodes with column indicating status or failure mode.
 get_valid_norm_cbs = function(filtered_counts, CB_meta, id_cols, negcon_type,
                               cb_mad_cutoff = 1, req_negcon_reps = 6) {
+  # Drop any control barcodes in CB_meta NOT marked with "well_norm".
+  if ("cb_type" %in% colnames(CB_meta)) {
+    dropped_cbs = CB_meta |> dplyr::filter(cb_type != "well_norm")
+
+    if (nrow(dropped_cbs) > 0) {
+      message("The following CBs in CB_meta are excluded from normalization.")
+      print(dropped_cbs)
+      CB_meta = CB_meta |> dplyr::filter(cb_type == "well_norm")
+
+      if (nrow(CB_meta) == 0) {
+        message("There are no CBs in CB_meta that can be used for normalization.")
+        stop("CB_meta needs a control barcode ladder marked with 'well_norm' in the 'cb_type' column.")
+      }
+    }
+  }
+
   # Create a CB flag column
   # This will later be merged onto a df of all CBs.
   cb_annot = CB_meta |>
@@ -58,9 +89,27 @@ get_valid_norm_cbs = function(filtered_counts, CB_meta, id_cols, negcon_type,
   message(sprintf("Out of %d PCR wells, %d wells contain enough CBs for normalization.",
                   num_pcr_wells, num_passing_wells))
 
+  # Throw an error if there are no valid PCR wells to normalize
+  if (num_passing_wells == 0) {
+    flag_summary = valid_cbs |>
+      dplyr::group_by(keep_cb) |>
+      dplyr::summarise(num_cbs = dplyr::n(), .groups = "drop")
+    print(flag_summary)
+    stop("No valid PCR wells identified for normalization.")
+  }
+
   return(valid_cbs)
 }
 
+#' normalize
+#'
+#' Normalize read counts using valid control barcodes.
+#'
+#' @param X Data table of filtered read counts.
+#' @param valid_cbs Data frame of the control barcodes with a column "keep_cb".
+#' @param id_cols Vector of columns that uniquely identify each PCR well.
+#' @param pseudocount Integer to be added to all counts so that logs can be taken.
+#' @return Data frame of normalized counts.
 normalize = function(X, valid_cbs, id_cols, pseudocount = 0) {
   # Validation: Check that id_cols are present in the dataframe
   if (!validate_columns_exist(id_cols, X)) {
