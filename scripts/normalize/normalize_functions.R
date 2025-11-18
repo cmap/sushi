@@ -14,6 +14,7 @@
 #' @param cb_mad_cutoff Numeric maximum MAD value for the control barcodes.
 #' @param req_negcon_reps Integer number of negative control replicates required for the MAD filter.
 #' @return Data frame of control barcodes with column indicating status or failure mode.
+#' @import tidyverse
 get_valid_norm_cbs = function(filtered_counts, CB_meta, id_cols, negcon_type,
                               cb_mad_cutoff = 1, req_negcon_reps = 6) {
   # Drop any control barcodes in CB_meta NOT marked with "well_norm".
@@ -110,6 +111,7 @@ get_valid_norm_cbs = function(filtered_counts, CB_meta, id_cols, negcon_type,
 #' @param id_cols Vector of columns that uniquely identify each PCR well.
 #' @param pseudocount Integer to be added to all counts so that logs can be taken.
 #' @return Data frame of normalized counts.
+#' @import tidyverse
 normalize = function(X, valid_cbs, id_cols, pseudocount = 0) {
   # Validation: Check that id_cols are present in the dataframe
   if (!validate_columns_exist(id_cols, X)) {
