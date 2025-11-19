@@ -61,7 +61,7 @@ process_in_chunks <- function(large_file_path, chunk_size = 1e6, action, ...,
       chunk_indices,
       function(i) {
         skip <- chunk_size * (i - 1) + 1
-        if (skip > total_lines) return(NULL)  # ✅ stop overshoot
+        if (skip > total_lines) return(NULL)  # stop overshoot
         dt <- fread(local_path, header = FALSE, sep = ",",
                     col.names = header_col_names,
                     nrows = chunk_size, skip = skip)
