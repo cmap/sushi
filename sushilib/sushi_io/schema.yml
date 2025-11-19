@@ -34,7 +34,7 @@ mad_log2_cb_frac: float
 num_reps: integer
 log2_pseudovalue: float
 l2fc: float
-contrrol_median_normalized_n: float
+control_median_normalized_n: float
 mean_normalized_n: float
 x_project_id: string
 index_1: string
