@@ -63,7 +63,7 @@ if ("l2fc_uncorrected" %in% colnames(corrected_l2fc)) {
   }
   # Write out
   message("Writing corrected l2fc value to ", args$l2fc)
-  write.csv(corrected_l2fc, args$l2fc, row.names = FALSE, quote = FALSE)
+  write_out_table(corrected_l2fc, args$l2fc)
   
 } else {
   stop("Error: l2fc_uncorrected was not generated.")
