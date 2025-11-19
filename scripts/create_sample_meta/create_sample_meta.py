@@ -90,6 +90,18 @@ def filter_nan_flowcells(df, build_dir):
     return df.dropna(subset=["flowcell_names"])
 
 
+def rename_val_projects(df, screen):
+    # Where pert_type is 'trt_val', rename 'x_project_id' to {screen}_VALIDATION_COMPOUNDS
+    df.loc[df["pert_type"] == "trt_val", "x_project_id"] = f"{screen}_VALIDATION_COMPOUNDS"
+    return df
+
+
+def update_project_code(df, screen):
+    # Rename the 'screen' column to have consistent naming; used when screens have overlapping treatments
+    df["project_code"] = screen
+    return df
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fetch data from API and save to a CSV file."
@@ -139,6 +151,8 @@ def main():
                 api_key=api_key,
             )
             .pipe(rename_sample_meta)
+            .pipe(rename_val_projects, screen)
+            .pipe(update_project_code, screen)
             .pipe(
                 remove_sample_meta_columns,
                 [
