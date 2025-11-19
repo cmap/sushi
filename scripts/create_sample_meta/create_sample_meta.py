@@ -134,7 +134,7 @@ def main():
     try:
         df = (
             fetch_metadata(
-                filter_dict={"where": {"project_code": screen}},
+                filter_dict={"where": {"project_code": {"like": f"%{screen}%"}}},
                 base_url="https://api.clue.io/api/v_seq_metadata",
                 api_key=api_key,
             )
@@ -196,7 +196,7 @@ def main():
 
     try:
         df = fetch_metadata(
-            filter_dict={"where": {"screen": screen}},
+            filter_dict={"where": {"screen": {"like": f"%{screen}%"}}},
             base_url="https://api.clue.io/api/v_c_assay_plate_skipped_well",
             api_key=api_key,
         )
