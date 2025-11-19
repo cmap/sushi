@@ -59,24 +59,33 @@ get_valid_norm_cbs = function(filtered_counts, CB_meta, id_cols, negcon_type,
     dplyr::filter(keep_cb == FALSE, num_reps >= req_negcon_reps) |>
     dplyr::rename(cb_mad_flag = keep_cb)
 
-  # Print out some messages showing which CBs are dropped due to MAD and
-  # the number of CBs that fall below the req_negcon_reps limit and thus are not filtered.
-  message("The following CBs are dropped due to high MAD.")
-  print(high_mad_cbs)
-  message(sprintf("The MAD filter did not apply to %d CBs where the number of replicates is below %d.",
-                  nrow(cb_mad |> dplyr::filter(keep_cb == FALSE, num_reps < req_negcon_reps)),
-                  req_negcon_reps))
+  # Flag barcodes with high MAD if there are any
+  if (nrow(high_mad_cbs) > 0) {
+    message("The following CBs are dropped due to high MAD.")
+    print(high_mad_cbs)
+
+    # Flag control barcodes that:
+    # 3. have high MAD (variability) in the negative controls of a PCR plate.
+    valid_cbs = valid_cbs |>
+      dplyr::left_join(high_mad_cbs, by = c("pcr_plate", "cb_name"), suffix = c("", ".y")) |>
+      dplyr::select(!tidyselect::ends_with(".y")) |>
+      dplyr::mutate(keep_cb = dplyr::case_when(cb_mad_flag == FALSE & keep_cb == "Yes" ~ "High negcon MAD",
+                                               .default = keep_cb))
+
+    # Note the number of CBs that have high MAD, but did not have enough negcon replicates to be filtered out
+    message(sprintf("The MAD filter did not apply to %d CBs where the number of replicates is below %d.",
+                    nrow(cb_mad |> dplyr::filter(keep_cb == FALSE, num_reps < req_negcon_reps)),
+                    req_negcon_reps))
+  } else {
+    message("There are no high MAD control barcodes to flag.")
+  }
 
   # Flag control barcodes that:
-  # 3. have high MAD (variability) in the negative controls of a PCR plate.
   # 4. Flag PCR wells without enough unflagged control barcodes for normalization.
+  # In a PCR well if there are 4 or fewer CBs tagged with "Yes" in keep_cb,
+  # those "Yes" notes are converted into "Not enough valid CBs".
   valid_cbs = valid_cbs |>
-    dplyr::left_join(high_mad_cbs, by = c("pcr_plate", "cb_name"), suffix = c("", ".y")) |>
-    dplyr::select(!tidyselect::ends_with(".y")) |>
-    dplyr::mutate(keep_cb = dplyr::case_when(cb_mad_flag == FALSE & keep_cb == "Yes" ~ "High negcon MAD",
-                                             .default = keep_cb)) |>
-    dplyr::group_by(across(all_of(id_cols))) |>
-    # Identify profiles without enough valid CBs
+    dplyr::group_by(dplyr::across(tidyselect::all_of(id_cols))) |>
     dplyr::mutate(keep_cb = ifelse(sum(keep_cb == "Yes") <= 4 & keep_cb == "Yes",
                                    "Not enough valid CBs", keep_cb)) |>
     dplyr::ungroup()
