@@ -271,9 +271,12 @@ if (all_sets_exist) {
 
   # Make sure all rows contain a value for growth_condition. If not, stop with error.
   if (any(is.na(cell_set_assay_pool_meta$growth_condition)) && "growth_condition" %in% cell_line_cols) {
-    stop("ERROR: One or more cell lines are missing growth_condition values. Missing lines are: ", 
-         paste(cell_set_assay_pool_meta %>% filter(is.na(growth_condition)) %>% pull(depmap_id), collapse = ", "),
-         paste("Please ensure all cell lines have growth_condition values assigned in cellDB, or remove growth_condition from cell_line_cols, disable the bias correction module and re-run."))
+    stop(paste(
+      "ERROR: One or more cell lines are missing growth_condition values. Missing lines are:",
+      paste(cell_set_assay_pool_meta %>% filter(is.na(growth_condition)) %>% pull(depmap_id), collapse = ", "),
+      "Please ensure all cell lines have growth_condition values assigned in cellDB, or remove growth_condition from cell_line_cols, disable the bias correction module and re-run.",
+      sep = " "
+    ))
   }
   
 } else {
