@@ -51,33 +51,40 @@ get_valid_norm_cbs = function(filtered_counts, CB_meta, id_cols, negcon_type,
       .default = "Yes")
     )
 
-  # Calculate negcon MADs of CBs for normalization
-  cb_mad = get_cb_mad(valid_cbs[pert_type == negcon_type & keep_cb != "Not in CB meta"],
-                      id_cols = id_cols,
-                      cb_mad_cutoff = cb_mad_cutoff)
-  high_mad_cbs = cb_mad |>
-    dplyr::filter(keep_cb == FALSE, num_reps >= req_negcon_reps) |>
-    dplyr::rename(cb_mad_flag = keep_cb)
+  # Flag control barcodes that:
+  # 3. have high MAD (variability) in the negative controls of a PCR plate.
+  # If there are negative controls, then calculate MADs of the CBs across the negative controls
+  # and flag CBs with high MADs on PCR plates with enough negative controls.
+  if (negcon_type %in% unique(valid_cbs$pert_type)) {
+    # Calculate negcon MADs of CBs for normalization
+    cb_mad = get_cb_mad(valid_cbs[pert_type == negcon_type & keep_cb != "Not in CB meta"],
+                        id_cols = id_cols,
+                        cb_mad_cutoff = cb_mad_cutoff)
+    high_mad_cbs = cb_mad |>
+      dplyr::filter(keep_cb == FALSE, num_reps >= req_negcon_reps) |>
+      dplyr::rename(cb_mad_flag = keep_cb)
+    # TO DO: consider different control conditions - different days or different conditions.
 
-  # Flag barcodes with high MAD if there are any
-  if (nrow(high_mad_cbs) > 0) {
-    message("The following CBs are dropped due to high MAD.")
-    print(high_mad_cbs)
+    # Flag barcodes with high MAD if there are any
+    if (nrow(high_mad_cbs) > 0) {
+      message("The following CBs are dropped due to high MAD.")
+      print(high_mad_cbs)
 
-    # Flag control barcodes that:
-    # 3. have high MAD (variability) in the negative controls of a PCR plate.
-    valid_cbs = valid_cbs |>
-      dplyr::left_join(high_mad_cbs, by = c("pcr_plate", "cb_name"), suffix = c("", ".y")) |>
-      dplyr::select(!tidyselect::ends_with(".y")) |>
-      dplyr::mutate(keep_cb = dplyr::case_when(cb_mad_flag == FALSE & keep_cb == "Yes" ~ "High negcon MAD",
-                                               .default = keep_cb))
+      valid_cbs = valid_cbs |>
+        dplyr::left_join(high_mad_cbs, by = c("pcr_plate", "cb_name"), suffix = c("", ".y")) |>
+        dplyr::select(!tidyselect::ends_with(".y")) |>
+        dplyr::mutate(keep_cb = dplyr::case_when(cb_mad_flag == FALSE & keep_cb == "Yes" ~ "High negcon MAD",
+                                                 .default = keep_cb))
 
-    # Note the number of CBs that have high MAD, but did not have enough negcon replicates to be filtered out
-    message(sprintf("The MAD filter did not apply to %d CBs where the number of replicates is below %d.",
-                    nrow(cb_mad |> dplyr::filter(keep_cb == FALSE, num_reps < req_negcon_reps)),
-                    req_negcon_reps))
+      # Note the number of CBs that have high MAD, but did not have enough negcon replicates to be filtered out
+      message(sprintf("The MAD filter did not apply to %d CBs where the number of replicates is below %d.",
+                      nrow(cb_mad |> dplyr::filter(keep_cb == FALSE, num_reps < req_negcon_reps)),
+                      req_negcon_reps))
+    } else {
+      message("There are no high MAD control barcodes to flag.")
+    }
   } else {
-    message("There are no high MAD control barcodes to flag.")
+    message("No negative controls detected. Skipping the CB MAD filter.")
   }
 
   # Flag control barcodes that:
