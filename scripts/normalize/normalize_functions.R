@@ -147,6 +147,7 @@ normalize = function(X, valid_cbs, id_cols, pseudocount = 0) {
   # Calculate fit intercept for valid profiles using median intercept
   fit_intercepts = valid_cbs |>
     dplyr::filter(keep_cb == "Yes") |>
+    dplyr::mutate(log2_n = log2(n + pseudocount)) |>
     dplyr::group_by(dplyr::across(tidyselect::all_of(c(id_cols, "cb_log2_dose")))) |>
     dplyr::summarize(dose_intercept = mean(cb_log2_dose) - mean(log2_n), .groups = "drop") |>
     dplyr::group_by(dplyr::across(tidyselect::all_of(id_cols))) |>
