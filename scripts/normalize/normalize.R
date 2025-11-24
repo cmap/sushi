@@ -47,7 +47,7 @@ req_negcon_reps = 6
 delete_existing_files(args$out, "normalized_counts")
 
 # Hotfix: Catch dev runs without negative controls
-if (pseudocount == 0 & !negcon_type %in% unique(filtered_counts$pert_type)) {
+if (input_pseudocount == 0 & !negcon_type %in% unique(filtered_counts$pert_type)) {
   message("Error: The pseudocount is set to zero.")
   message("If this is a NextSeq run change the pseudocount from 0 to 20.")
   stop("Pseudocount parameter in the config needs to be non zero if there are no negative controls!")
