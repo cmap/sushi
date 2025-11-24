@@ -285,7 +285,8 @@ if (all_sets_exist) {
   
   cell_set_assay_pool_meta <- cell_set_meta_long %>%
     dplyr::select(cell_set, depmap_id = members) %>%
-    dplyr::distinct()
+    dplyr::distinct() %>%
+    dplyr::inner_join(cell_line_meta %>% select(depmap_id, lua), by = "depmap_id")
 }
 
 # Prepare control barcode metadata ----
