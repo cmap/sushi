@@ -51,21 +51,33 @@ delete_existing_files(args$out, "normalized_counts")
 
 # Identify CBs in PCR wells that can be normalized.
 message("Identifying control barcodes to normalize ...")
-cbs_to_norm = get_valid_norm_cbs(filtered_count = filtered_counts,
-                                 CB_meta = CB_meta,
-                                 id_cols = input_id_cols,
-                                 negcon_type = negcon_type,
-                                 cb_mad_cutoff = 1,
-                                 req_negcon_reps = req_negcon_reps)
+cb_annots = flag_control_bcs(filtered_count = filtered_counts,
+                             CB_meta = CB_meta,
+                             id_cols = input_id_cols,
+                             negcon_type = negcon_type,
+                             cb_mad_cutoff = 1,
+                             req_negcon_reps = req_negcon_reps)
 
-normalized_counts = normalize(X = filtered_counts,
-                              valid_cbs = cbs_to_norm,
-                              id_cols = input_id_cols,
-                              pseudocount = input_pseudocount)
+# Extract just the necessary columns from cb_annots
+cb_annots = cb_annots |> dplyr::select(all_of(c(input_id_cols, "cb_ladder", "cb_name", "keep_cb")))
 
-# Check if pseudovalue addition is needed
-if (input_pseudocount < read_detection_limit) {
-  # Determine the number of negative control replicates
+# Normalize with pseudocount
+message(sprintf("Normalization method: %s", norm_method))
+message(sprintf("Normalizing reads using a pseudocount of %d.", input_pseudocount))
+normalized_counts = normalize(X = filtered_counts, cb_annots = cb_annots,
+                              id_cols = input_id_cols, pseudocount = input_pseudocount)
+
+# Check that an appropriate pseudocount is provide if normalizing with a pseudocount
+if (norm_method == "normalize_with_pseudocount" && input_pseudocount < read_detection_limit) {
+  message(sprintf("The normalization method is %s but the pseudocount value (%d) is too low!",
+                  norm_method, input_pseudocount))
+  warning("Use a pseudocount value greater than the read detection limit of", read_detection_limit,
+          "or use the other normalization method.")
+}
+
+# If normalization_then_offset is selected, add offset to normalized values
+if (norm_method == "normalize_then_shift") {
+  # Verify that there are enough negative controls
   negcon_reps = filtered_counts[pert_type == negcon_type] |>
     dplyr::distinct(across(all_of(input_id_cols))) |>
     dplyr::group_by(pcr_plate) |>
@@ -79,15 +91,9 @@ if (input_pseudocount < read_detection_limit) {
                                         negcon_type = negcon_type)
   } else {
     # Error out if no pseudocount is provided and there are not enough negative control replicates
-    message("Not enough negative control replicates for pseudovalue calculations.")
-    message("Provide a pseudocount for normalization instead. ")
-    stop("Not enough negative control replicates for every PCR plate.")
+    message("There are not enough negative control replicates on every PCR plate to calculate the pseudovalue.")
+    stop("Not enough negative control replicates. Try normalize_with_pseudocount instead.")
   }
-
-} else {
-  # Continue without pseudovalue addition if a large pseudocount is provided.
-  message("Read counts normalized with a pseudocount of ", input_pseudocount, ".")
-  message("Pseudovalue addition was skipped due to high pseudocount provided for normalization.")
 }
 
 # Write out file ----
