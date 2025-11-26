@@ -60,6 +60,12 @@ cb_annots = flag_control_bcs(filtered_count = filtered_counts,
 # Extract just the necessary columns from cb_annots
 cb_annots = cb_annots |> dplyr::select(all_of(c(input_id_cols, "cb_ladder", "cb_name", "keep_cb")))
 
+# Error out if an incorrect normalization method is supplied
+if (!norm_method %in% c("normalize_with_pseudocount", "normalize_then_shift")) {
+  stop("'", norm_method, "' is not a valid normalization method. 
+       Please set NORM_METHOD to either 'normalize_with_pseudocount' or 'normalize_then_shift'.")
+}
+
 # Normalize with pseudocount
 message("Normalization method: ", norm_method)
 message("Pseudocount value: ", input_pseudocount)
@@ -83,7 +89,7 @@ if (norm_method == "normalize_then_shift") {
 
   if (min(negcon_reps$num_negcon_reps) >= req_negcon_reps) {
     # Run pseudovalue addition if enough negcon reps are present
-    message("Adding pseudovalue corresponding to a read count of ", read_detection_limit, "...")
+    message("Adding pseudovalue corresponding to a read count of ", read_detection_limit, " ...")
     normalized_counts = add_pseudovalue(normalized_counts, negcon_cols = negcon_cols,
                                         read_detection_limit = read_detection_limit,
                                         negcon_type = negcon_type)
