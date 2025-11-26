@@ -26,27 +26,24 @@ parser$add_argument("--negcon_cols", default = "pcr_plate,pert_vehicle",
 parser$add_argument("--negcon_type", default = "ctl_vehicle",
                     help = "String in the column pert_type that indicates a negative control.")
 parser$add_argument("--pseudocount", default = 0, help = "Pseudocount used in normalization.")
+parser$add_argument("--req_negcon_reps", default = 6, help = "Number of required negcons per plate.")
 parser$add_argument("--output_file", default = "normalized_counts.csv", help = "File name for normalized counts.")
 parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults to working directory")
 
 # get command line options, if help option encountered print help and exit
 args <- parser$parse_args()
 
-# Set up inputs ----
+# Set up inputs
 norm_method = args$norm_method
-filtered_counts= read_data_table(args$filtered_counts)
-CB_meta= read_data_table(args$CB_meta)
-input_pseudocount= as.numeric(args$pseudocount)
-input_id_cols= unlist(strsplit(args$id_cols, ","))
+filtered_counts = read_data_table(args$filtered_counts)
+CB_meta = read_data_table(args$CB_meta)
+input_pseudocount = as.integer(args$pseudocount)
+input_id_cols = unlist(strsplit(args$id_cols, ","))
 read_detection_limit = as.integer(args$read_detection_limit)
 negcon_cols = unlist(strsplit(args$negcon_cols, split = ","))
 negcon_type = args$negcon_type
 output_file = args$output_file
-
-# Hard coded input -
-# This is the number of negative control replicates required to perform
-# the MAD filter on the control barcodes and to add a plate specific pseudocount.
-req_negcon_reps = 6
+req_negcon_reps = as.integer(args$req_negcon_reps) # Using default value
 
 # Remove normalized files that already exist in the directory
 delete_existing_files(args$out, "normalized_counts")
@@ -64,17 +61,16 @@ cb_annots = flag_control_bcs(filtered_count = filtered_counts,
 cb_annots = cb_annots |> dplyr::select(all_of(c(input_id_cols, "cb_ladder", "cb_name", "keep_cb")))
 
 # Normalize with pseudocount
-message(sprintf("Normalization method: %s", norm_method))
-message(sprintf("Normalizing reads using a pseudocount of %d.", input_pseudocount))
+message("Normalization method: ", norm_method)
+message("Pseudocount value: ", input_pseudocount)
 normalized_counts = normalize(X = filtered_counts, cb_annots = cb_annots,
                               id_cols = input_id_cols, pseudocount = input_pseudocount)
 
 # Check that an appropriate pseudocount is provide if normalizing with a pseudocount
 if (norm_method == "normalize_with_pseudocount" && input_pseudocount < read_detection_limit) {
-  message(sprintf("The normalization method is %s but the pseudocount value (%d) is too low!",
-                  norm_method, input_pseudocount))
-  warning("Use a pseudocount value greater than the read detection limit of", read_detection_limit,
-          "or use the other normalization method.")
+  message(sprintf("The pseudocount value (%d) is too low for this normalization method.", input_pseudocount))
+  warning("Use a pseudocount value greater than the read detection limit of ", read_detection_limit,
+          " or use the other normalization method.")
 }
 
 # If normalization_then_offset is selected, add offset to normalized values
@@ -98,10 +94,10 @@ if (norm_method == "normalize_then_shift") {
   }
 }
 
-# Write out file ----
+# Write out file
 normcounts_outpath = file.path(args$out, output_file)
-print(paste0("Writing normalized count file to ", normcounts_outpath))
+message("Writing normalized count file to: ", normcounts_outpath)
 write_out_table(normalized_counts, normcounts_outpath)
 
-# Ensure that normalized file was sucessfully generated ----
+# Ensure that normalized file was sucessfully generated
 check_file_exists(normcounts_outpath)
