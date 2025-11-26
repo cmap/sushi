@@ -15,6 +15,7 @@ parser$add_argument("-q", "--quietly", action="store_false",
                     dest="verbose", help="Print little output")
 parser$add_argument("-c", "--filtered_counts", default="filtered_counts.csv",
                     help="path to file containing filtered counts")
+parser$add_argument("--norm_method", default = "normalize_then_shift", help = "Normalization method to use")
 parser$add_argument("--id_cols", default="pcr_plate,pcr_well",
                     help = "Columns to identify each PCR well")
 parser$add_argument("--CB_meta", default="CB_meta.csv", help= "Control Barcode metadata")
