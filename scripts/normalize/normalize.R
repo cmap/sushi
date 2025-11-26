@@ -33,6 +33,7 @@ parser$add_argument("-o", "--out", default=getwd(), help= "Output path. Defaults
 args <- parser$parse_args()
 
 # Set up inputs ----
+norm_method = args$norm_method
 filtered_counts= read_data_table(args$filtered_counts)
 CB_meta= read_data_table(args$CB_meta)
 input_pseudocount= as.numeric(args$pseudocount)
